@@ -23,10 +23,15 @@
 *.pem
 
 # debug
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+
+# generated deployment archives
+*.tar.gz
+*.tgz
 
 # env files (can opt-in for committing if needed)
 .env*
