@@ -24,13 +24,6 @@ $stations = @($stationRows | ForEach-Object {
   }
 })
 
-$siteSubtypes = @($siteSubtypeRows | ForEach-Object {
-  [ordered]@{
-    siteType = $_.'Tipe Site'.Trim()
-    subtype = $_.'Sub Tipe Site'.Trim()
-  }
-})
-
 $barangByJenis = [ordered]@{}
 foreach ($row in $barangRows) {
   $jenis = $row.Jenis.Trim()
@@ -40,6 +33,43 @@ foreach ($row in $barangRows) {
   }
   if (-not $barangByJenis[$jenis].Contains($barang)) {
     $barangByJenis[$jenis].Add($barang)
+  }
+}
+
+function Resolve-BarangProfile([string]$subtype) {
+  if ($barangByJenis.Contains($subtype)) {
+    return $subtype
+  }
+  if (-not $subtype.StartsWith('AWOS Kategori III')) {
+    return ''
+  }
+  if ($subtype.EndsWith('End Point')) { return 'AWOS End Point' }
+  if ($subtype.EndsWith('Station')) { return 'AWOS Station' }
+  if ($subtype.EndsWith('TDZ')) { return 'AWOS TDZ' }
+  if ($subtype.EndsWith('Mid')) { return 'AWOS Mid' }
+  return ''
+}
+
+$siteSubtypes = @($siteSubtypeRows | ForEach-Object {
+  $siteType = $_.'Tipe Site'.Trim()
+  $subtype = $_.'Sub Tipe Site'.Trim()
+  [ordered]@{
+    siteType = $siteType
+    subtype = $subtype
+    profile = Resolve-BarangProfile $subtype
+  }
+})
+
+$usedSiteTypes = @($stations.siteType | Sort-Object -Unique)
+foreach ($siteType in $usedSiteTypes) {
+  $matchingSubtypes = @($siteSubtypes | Where-Object { $_.siteType -eq $siteType })
+  if (-not $matchingSubtypes.Count) {
+    throw "Tipe site aktif belum mempunyai subtipe: $siteType"
+  }
+  foreach ($mapping in $matchingSubtypes) {
+    if (-not $mapping.profile -or -not $barangByJenis.Contains($mapping.profile)) {
+      throw "Subtipe site aktif belum mempunyai profil Barang: $($mapping.subtype)"
+    }
   }
 }
 

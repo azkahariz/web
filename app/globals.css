@@ -89,6 +89,7 @@ select:disabled { color: #9aa39f; background: #f2f2ee; cursor: not-allowed; }
 .suggestions button { display: block; width: 100%; padding: 10px; border: 0; border-radius: 8px; background: white; text-align: left; font-size: 12px; line-height: 1.4; cursor: pointer; }
 .suggestions button:hover { background: var(--green-soft); }
 .suggestions p { margin: 8px; color: var(--muted); font-size: 12px; }
+.suggestions .suggestion-count { position: sticky; top: -6px; z-index: 1; margin: -6px -6px 4px; padding: 10px 14px; background: #f7f5ef; border-bottom: 1px solid var(--line); font-weight: 600; }
 .field-hint, .warning-copy { margin: 7px 2px 0; color: var(--muted); font-size: 11px; line-height: 1.45; }
 .warning-copy { color: #9a4a3f; }
 .selection-summary { margin-top: 24px; padding: 17px; border-radius: 14px; background: var(--green-soft); border-left: 3px solid var(--green); }

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import rawData from "./data.generated.json";
 
 type StationSite = { station: string; site: string; siteType: string };
-type SiteSubtype = { siteType: string; subtype: string };
+type SiteSubtype = { siteType: string; subtype: string; profile: string };
 type Product = { brand: string; model: string };
 type DataSet = {
   stationSites: StationSite[];
@@ -28,16 +28,6 @@ type SourceMode = "site" | "template";
 
 const data = rawData as DataSet;
 const STORAGE_KEY = "irm-collect-local-drafts-v1";
-
-function profileForSubtype(subtype: string): string {
-  if (data.barangByJenis[subtype]) return subtype;
-  if (!subtype.startsWith("AWOS Kategori III")) return "";
-  if (subtype.endsWith("End Point")) return "AWOS End Point";
-  if (subtype.endsWith("Station")) return "AWOS Station";
-  if (subtype.endsWith("TDZ")) return "AWOS TDZ";
-  if (subtype.endsWith("Mid")) return "AWOS Mid";
-  return "";
-}
 
 function makeId() {
   return globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`;
@@ -131,7 +121,7 @@ export default function InventoryApp() {
 
   const stationSuggestions = useMemo(() => {
     const query = normalizeSearch(stationQuery);
-    return stations.filter((name) => !query || normalizeSearch(name).includes(query)).slice(0, 8);
+    return stations.filter((name) => !query || normalizeSearch(name).includes(query));
   }, [stationQuery, stations]);
 
   const sites = useMemo(
@@ -139,13 +129,15 @@ export default function InventoryApp() {
     [station],
   );
   const selectedSite = sites.find((row) => row.site === site);
-  const subtypes = useMemo(
-    () => data.siteSubtypes.filter((row) => row.siteType === selectedSite?.siteType).map((row) => row.subtype),
+  const subtypeOptions = useMemo(
+    () => data.siteSubtypes.filter((row) => row.siteType === selectedSite?.siteType),
     [selectedSite],
   );
+  const subtypes = subtypeOptions.map((row) => row.subtype);
 
   const currentSubtype = subtypes.length === 1 ? subtypes[0] : subtype;
-  const profile = mode === "template" ? templateProfile : profileForSubtype(currentSubtype);
+  const selectedSubtype = subtypeOptions.find((row) => row.subtype === currentSubtype);
+  const profile = mode === "template" ? templateProfile : selectedSubtype?.profile ?? "";
   const categories = data.barangByJenis[profile] ?? [];
   const draftKey = mode === "template"
     ? `template::${profile}`
@@ -288,7 +280,7 @@ export default function InventoryApp() {
         </div>
         <div className="dataset-facts" aria-label="Ringkasan data">
           <div><strong>{stations.length}</strong><span>stasiun</span></div>
-          <div><strong>{data.stationSites.length}</strong><span>site</span></div>
+          <div><strong>{data.stationSites.length}</strong><span>aloptama / site</span></div>
           <div><strong>{data.products.length}</strong><span>produk</span></div>
         </div>
       </section>
@@ -325,6 +317,7 @@ export default function InventoryApp() {
                 />
                 {stationPickerOpen && (
                   <div className="suggestions" role="listbox">
+                    <p className="suggestion-count">{stationSuggestions.length} stasiun ditemukan</p>
                     {stationSuggestions.map((name) => (
                       <button key={name} role="option" aria-selected={name === station} onMouseDown={() => selectStation(name)}>{name}</button>
                     ))}
@@ -333,7 +326,7 @@ export default function InventoryApp() {
                 )}
               </div>
 
-              <label className="field-label" htmlFor="site-select">Site</label>
+              <label className="field-label" htmlFor="site-select">Aloptama / Site</label>
               <select id="site-select" value={site} disabled={!station} onChange={(event) => { setSite(event.target.value); setSubtype(""); }}>
                 <option value="">{station ? "Pilih site" : "Pilih stasiun dahulu"}</option>
                 {sites.map((row) => <option key={`${row.site}-${row.siteType}`} value={row.site}>{row.site}</option>)}

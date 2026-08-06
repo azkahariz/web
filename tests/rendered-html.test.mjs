@@ -39,6 +39,24 @@ function parseCsvLine(line) {
   return cells;
 }
 
+function parseCsv(text) {
+  const lines = text.replace(/^\uFEFF/, "").trim().split(/\r?\n/);
+  const headers = parseCsvLine(lines[0]);
+  return lines.slice(1).map((line) => {
+    const cells = parseCsvLine(line);
+    return Object.fromEntries(headers.map((header, index) => [header, cells[index] ?? ""]));
+  });
+}
+
+function profileForSubtype(subtype, barangByJenis) {
+  if (barangByJenis[subtype]) return subtype;
+  if (!subtype.startsWith("AWOS Kategori III")) return "";
+  for (const suffix of ["End Point", "Station", "TDZ", "Mid"]) {
+    if (subtype.endsWith(suffix)) return `AWOS ${suffix}`;
+  }
+  return "";
+}
+
 test("server merender aplikasi inventaris lokal", async () => {
   const response = await render();
   assert.equal(response.status, 200);
@@ -53,19 +71,19 @@ test("server merender aplikasi inventaris lokal", async () => {
 
 test("data hasil CSV lengkap dan Water Level memiliki 17 kategori", async () => {
   const data = JSON.parse(await readFile(new URL("../app/data.generated.json", import.meta.url), "utf8"));
-  const productCsv = await readFile(
-    new URL("../../List Barang Terpasang_Group By Stamet - products.csv", import.meta.url),
-    "utf8",
-  );
+  const [stationCsv, siteSubtypeCsv, barangCsv, productCsv] = await Promise.all([
+    readFile(new URL("../../List Barang Terpasang_Group By Stamet - Nama Stasiun.csv", import.meta.url), "utf8"),
+    readFile(new URL("../../List Barang Terpasang_Group By Stamet - Jenis Site.csv", import.meta.url), "utf8"),
+    readFile(new URL("../../List Barang Terpasang_Group By Stamet - Barang.csv", import.meta.url), "utf8"),
+    readFile(new URL("../../List Barang Terpasang_Group By Stamet - products.csv", import.meta.url), "utf8"),
+  ]);
+  const stationRows = parseCsv(stationCsv);
+  const siteSubtypeRows = parseCsv(siteSubtypeCsv);
+  const barangRows = parseCsv(barangCsv);
+  const barangByJenis = Object.groupBy(barangRows, (row) => row.Jenis);
   const expectedProductCount = new Set(
-    productCsv
-      .trim()
-      .split(/\r?\n/)
-      .slice(1)
-      .map((line) => {
-        const [brand, model] = parseCsvLine(line);
-        return `${brand.trim()}\u001f${model.trim()}`.toLocaleLowerCase("id-ID");
-      })
+    parseCsv(productCsv)
+      .map(({ Merk: brand, Tipe: model }) => `${brand.trim()}\u001f${model.trim()}`.toLocaleLowerCase("id-ID"))
       .filter((key) => !key.startsWith("\u001f") && !key.endsWith("\u001f")),
   ).size;
   const expectedWaterLevel = [
@@ -76,11 +94,47 @@ test("data hasil CSV lengkap dan Water Level memiliki 17 kategori", async () => 
     "Proteksi Petir", "Sensor Hujan",
   ];
 
-  assert.equal(new Set(data.stationSites.map((row) => row.station)).size, 116);
-  assert.equal(data.stationSites.length, 277);
+  const expectedStationSites = stationRows.map((row) => ({
+    station: row["Nama Stasiun"].trim(),
+    site: row["Nama Site"].trim(),
+    siteType: row["Tipe Site"].trim(),
+  }));
+  const expectedSiteSubtypes = siteSubtypeRows.map((row) => {
+    const subtype = row["Sub Tipe Site"].trim();
+    return {
+      siteType: row["Tipe Site"].trim(),
+      subtype,
+      profile: profileForSubtype(subtype, data.barangByJenis),
+    };
+  });
+
+  assert.deepEqual(data.stationSites, expectedStationSites);
+  assert.deepEqual(data.siteSubtypes, expectedSiteSubtypes);
+  assert.equal(
+    new Set(data.stationSites.map((row) => row.station)).size,
+    new Set(expectedStationSites.map((row) => row.station)).size,
+  );
   assert.equal(data.products.length, expectedProductCount);
   assert.deepEqual(data.barangByJenis["Water Level"], expectedWaterLevel);
   assert.ok(data.products.every((product) => product.brand.trim() && product.model.trim()));
+
+  const usedSiteTypes = new Set(data.stationSites.map((row) => row.siteType));
+  for (const siteType of usedSiteTypes) {
+    const mappings = data.siteSubtypes.filter((row) => row.siteType === siteType);
+    assert.ok(mappings.length > 0, `${siteType} tidak mempunyai subtipe`);
+    assert.ok(
+      mappings.every((row) => row.profile && data.barangByJenis[row.profile]?.length > 0),
+      `${siteType} mempunyai subtipe tanpa profil Barang`,
+    );
+  }
+  assert.equal(Object.keys(barangByJenis).length, Object.keys(data.barangByJenis).length);
+});
+
+test("pemilih stasiun tidak membatasi daftar hanya pada hasil awal", async () => {
+  const source = await readFile(new URL("../app/InventoryApp.tsx", import.meta.url), "utf8");
+  assert.doesNotMatch(source, /stationSuggestions[\s\S]{0,400}\.slice\(/);
+  assert.match(source, /stationSuggestions\.length\}\s*stasiun ditemukan/);
+  assert.match(source, /aloptama \/ site/i);
 });
 
 test("pencarian gabungan menemukan nilai dari merek maupun tipe", async () => {

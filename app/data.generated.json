@@ -1389,107 +1389,133 @@
     "siteSubtypes":  [
                          {
                              "siteType":  "AWOS Kategori III",
-                             "subtype":  "AWOS Kategori III AllWeather TDZ"
+                             "subtype":  "AWOS Kategori III AllWeather TDZ",
+                             "profile":  "AWOS TDZ"
                          },
                          {
                              "siteType":  "AWOS Kategori III",
-                             "subtype":  "AWOS Kategori III AllWeather Mid"
+                             "subtype":  "AWOS Kategori III AllWeather Mid",
+                             "profile":  "AWOS Mid"
                          },
                          {
                              "siteType":  "AWOS Kategori III",
-                             "subtype":  "AWOS Kategori III AllWeather End Point"
+                             "subtype":  "AWOS Kategori III AllWeather End Point",
+                             "profile":  "AWOS End Point"
                          },
                          {
                              "siteType":  "AWOS Kategori III",
-                             "subtype":  "AWOS Kategori III AllWeather Station"
+                             "subtype":  "AWOS Kategori III AllWeather Station",
+                             "profile":  "AWOS Station"
                          },
                          {
                              "siteType":  "AWOS Kategori III",
-                             "subtype":  "AWOS Kategori III Coastal TDZ"
+                             "subtype":  "AWOS Kategori III Coastal TDZ",
+                             "profile":  "AWOS TDZ"
                          },
                          {
                              "siteType":  "AWOS Kategori III",
-                             "subtype":  "AWOS Kategori III Coastal Mid"
+                             "subtype":  "AWOS Kategori III Coastal Mid",
+                             "profile":  "AWOS Mid"
                          },
                          {
                              "siteType":  "AWOS Kategori III",
-                             "subtype":  "AWOS Kategori III Coastal End Point"
+                             "subtype":  "AWOS Kategori III Coastal End Point",
+                             "profile":  "AWOS End Point"
                          },
                          {
                              "siteType":  "AWOS Kategori III",
-                             "subtype":  "AWOS Kategori III Coastal Station"
+                             "subtype":  "AWOS Kategori III Coastal Station",
+                             "profile":  "AWOS Station"
                          },
                          {
                              "siteType":  "AWOS Kategori III",
-                             "subtype":  "AWOS Kategori III Degreane TDZ"
+                             "subtype":  "AWOS Kategori III Degreane TDZ",
+                             "profile":  "AWOS TDZ"
                          },
                          {
                              "siteType":  "AWOS Kategori III",
-                             "subtype":  "AWOS Kategori III Degreane Mid"
+                             "subtype":  "AWOS Kategori III Degreane Mid",
+                             "profile":  "AWOS Mid"
                          },
                          {
                              "siteType":  "AWOS Kategori III",
-                             "subtype":  "AWOS Kategori III Degreane End Point"
+                             "subtype":  "AWOS Kategori III Degreane End Point",
+                             "profile":  "AWOS End Point"
                          },
                          {
                              "siteType":  "AWOS Kategori III",
-                             "subtype":  "AWOS Kategori III Degreane Station"
+                             "subtype":  "AWOS Kategori III Degreane Station",
+                             "profile":  "AWOS Station"
                          },
                          {
                              "siteType":  "AWOS Kategori III",
-                             "subtype":  "AWOS Kategori III Microstep TDZ"
+                             "subtype":  "AWOS Kategori III Microstep TDZ",
+                             "profile":  "AWOS TDZ"
                          },
                          {
                              "siteType":  "AWOS Kategori III",
-                             "subtype":  "AWOS Kategori III Microstep Mid"
+                             "subtype":  "AWOS Kategori III Microstep Mid",
+                             "profile":  "AWOS Mid"
                          },
                          {
                              "siteType":  "AWOS Kategori III",
-                             "subtype":  "AWOS Kategori III Microstep End Point"
+                             "subtype":  "AWOS Kategori III Microstep End Point",
+                             "profile":  "AWOS End Point"
                          },
                          {
                              "siteType":  "AWOS Kategori III",
-                             "subtype":  "AWOS Kategori III Microstep Station"
+                             "subtype":  "AWOS Kategori III Microstep Station",
+                             "profile":  "AWOS Station"
                          },
                          {
                              "siteType":  "AWOS Kategori II",
-                             "subtype":  "AWOS Kategori II"
+                             "subtype":  "AWOS Kategori II",
+                             "profile":  "AWOS Kategori II"
                          },
                          {
                              "siteType":  "AWOS Kategori I",
-                             "subtype":  "AWOS Kategori I"
+                             "subtype":  "AWOS Kategori I",
+                             "profile":  "AWOS Kategori I"
                          },
                          {
                              "siteType":  "Digitalisasi Taman Alat Meteorologi",
-                             "subtype":  "Digitalisasi Taman Alat Meteorologi"
+                             "subtype":  "Digitalisasi Taman Alat Meteorologi",
+                             "profile":  "Digitalisasi Taman Alat Meteorologi"
                          },
                          {
                              "siteType":  "AWS Rekayasa",
-                             "subtype":  "AWS Rekayasa"
+                             "subtype":  "AWS Rekayasa",
+                             "profile":  "AWS Rekayasa"
                          },
                          {
                              "siteType":  "AWS Maritim",
-                             "subtype":  "AWS Maritim"
+                             "subtype":  "AWS Maritim",
+                             "profile":  "AWS Maritim"
                          },
                          {
                              "siteType":  "Water Level",
-                             "subtype":  "Water Level"
+                             "subtype":  "Water Level",
+                             "profile":  "Water Level"
                          },
                          {
                              "siteType":  "Radar EEC",
-                             "subtype":  "Radar EEC"
+                             "subtype":  "Radar EEC",
+                             "profile":  ""
                          },
                          {
                              "siteType":  "Radar Baron",
-                             "subtype":  "Radar Baron"
+                             "subtype":  "Radar Baron",
+                             "profile":  ""
                          },
                          {
                              "siteType":  "Radar Vaisala",
-                             "subtype":  "Radar Vaisala"
+                             "subtype":  "Radar Vaisala",
+                             "profile":  ""
                          },
                          {
                              "siteType":  "Radar Gematronik",
-                             "subtype":  "Radar Gematronik"
+                             "subtype":  "Radar Gematronik",
+                             "profile":  ""
                          }
                      ],
     "barangByJenis":  {
