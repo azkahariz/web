@@ -150,6 +150,20 @@ test("aplikasi menyediakan ekspor CSV lengkap dengan BOM dan metadata", async ()
   const source = await readFile(new URL("../app/InventoryApp.tsx", import.meta.url), "utf8");
   assert.match(source, /Unduh hasil CSV/);
   assert.match(source, /\\uFEFF/);
-  assert.match(source, /"Stasiun"[\s\S]*"Kategori Barang"[\s\S]*"Tipe Produk"/);
+  assert.match(source, /"Stasiun"[\s\S]*"Kategori Barang"[\s\S]*"Bahan Mounting"[\s\S]*"Tipe Produk"/);
   assert.match(source, /inventory\[category\]\?\.length[\s\S]*:\s*\[null\]/);
+});
+
+test("kategori mounting memakai pilihan bahan dan tetap mendukung bahan lainnya", async () => {
+  const [source, barangCsv] = await Promise.all([
+    readFile(new URL("../app/InventoryApp.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../../List Barang Terpasang_Group By Stamet - Barang.csv", import.meta.url), "utf8"),
+  ]);
+  const mountingCategories = parseCsv(barangCsv).filter((row) => /^mounting\b/i.test(row["Barang Terpasang"]));
+
+  assert.ok(mountingCategories.length > 0);
+  assert.match(source, /function isMountingCategory[\s\S]*\^mounting\\b/i);
+  assert.match(source, /Besi galvanis[\s\S]*Stainless steel[\s\S]*Aluminium[\s\S]*Fiberglass/);
+  assert.match(source, /Bahan lainnya/);
+  assert.match(source, /item\?\.itemKind === "material" \? item\.material/);
 });

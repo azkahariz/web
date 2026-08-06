@@ -15,6 +15,8 @@ type DataSet = {
 
 type InstalledItem = Product & {
   id: string;
+  itemKind?: "product" | "material";
+  material?: string;
   serialNumber: string;
   quantity: number;
   condition: "Baik" | "Rusak ringan" | "Rusak" | "Tidak beroperasi";
@@ -28,6 +30,18 @@ type SourceMode = "site" | "template";
 
 const data = rawData as DataSet;
 const STORAGE_KEY = "irm-collect-local-drafts-v1";
+const MOUNTING_MATERIALS = [
+  "Besi galvanis",
+  "Stainless steel",
+  "Aluminium",
+  "Besi",
+  "PVC",
+  "Fiberglass",
+];
+
+function isMountingCategory(category: string | null): boolean {
+  return Boolean(category && /^mounting\b/i.test(category));
+}
 
 function makeId() {
   return globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`;
@@ -69,6 +83,7 @@ export default function InventoryApp() {
   const [categoryQuery, setCategoryQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [productQuery, setProductQuery] = useState("");
+  const [customMaterial, setCustomMaterial] = useState("");
   const [drafts, setDrafts] = useState<Drafts>({});
   const [hydrated, setHydrated] = useState(false);
 
@@ -174,6 +189,7 @@ export default function InventoryApp() {
     const nextItem: InstalledItem = {
       ...product,
       id: makeId(),
+      itemKind: "product",
       serialNumber: "",
       quantity: 1,
       condition: "Baik",
@@ -186,6 +202,28 @@ export default function InventoryApp() {
     });
     setActiveCategory(null);
     setProductQuery("");
+  }
+
+  function addMaterial(material: string) {
+    if (!activeCategory || !material.trim()) return;
+    const nextItem: InstalledItem = {
+      brand: "",
+      model: "",
+      id: makeId(),
+      itemKind: "material",
+      material: material.trim(),
+      serialNumber: "",
+      quantity: 1,
+      condition: "Baik",
+      installedYear: "",
+      notes: "",
+    };
+    setInventory({
+      ...inventory,
+      [activeCategory]: [...(inventory[activeCategory] ?? []), nextItem],
+    });
+    setActiveCategory(null);
+    setCustomMaterial("");
   }
 
   function updateItem(category: string, id: string, patch: Partial<InstalledItem>) {
@@ -229,7 +267,7 @@ export default function InventoryApp() {
   function exportCurrentDraftCsv() {
     const headers = [
       "Stasiun", "Site", "Tipe Site", "Subtipe Site", "Profil Barang",
-      "Kategori Barang", "Merk", "Tipe Produk", "Nomor Seri", "Jumlah",
+      "Kategori Barang", "Bahan Mounting", "Merk", "Tipe Produk", "Nomor Seri", "Jumlah",
       "Kondisi", "Tahun Pasang", "Catatan",
     ];
     const rows = categories.flatMap((category) => {
@@ -243,8 +281,9 @@ export default function InventoryApp() {
         mode === "site" ? currentSubtype : "",
         profile,
         category,
-        item?.brand ?? "",
-        item?.model ?? "",
+        item?.itemKind === "material" ? item.material ?? "" : "",
+        item?.itemKind === "material" ? "" : item?.brand ?? "",
+        item?.itemKind === "material" ? "" : item?.model ?? "",
         item?.serialNumber ?? "",
         item?.quantity ?? "",
         item?.condition ?? "",
@@ -396,25 +435,29 @@ export default function InventoryApp() {
               <div className="category-list">
                 {filteredCategories.map((category) => {
                   const items = inventory[category] ?? [];
+                  const mountingCategory = isMountingCategory(category);
                   return (
                     <article className={`category-card ${items.length ? "is-filled" : ""}`} key={category}>
                       <div className="category-title-row">
                         <span className="category-number">{String(categories.indexOf(category) + 1).padStart(2, "0")}</span>
-                        <div className="category-name"><h4>{category}</h4><p>{items.length ? `${items.length} produk terpasang` : "Belum memilih produk"}</p></div>
-                        <button className="add-product" onClick={() => { setActiveCategory(category); setProductQuery(""); }}>
-                          <span aria-hidden="true">＋</span> Pilih produk
+                        <div className="category-name"><h4>{category}</h4><p>{items.length ? `${items.length} ${mountingCategory ? "bahan mounting" : "produk terpasang"}` : mountingCategory ? "Belum memilih bahan" : "Belum memilih produk"}</p></div>
+                        <button className="add-product" onClick={() => { setActiveCategory(category); setProductQuery(""); setCustomMaterial(""); }}>
+                          <span aria-hidden="true">＋</span> {mountingCategory ? "Pilih bahan" : "Pilih produk"}
                         </button>
                       </div>
 
                       {items.map((item) => (
                         <div className="installed-item" key={item.id}>
                           <div className="product-identity">
-                            <div><span>{item.brand.slice(0, 2).toUpperCase()}</span></div>
-                            <p><strong>{item.brand}</strong><span>{item.model}</span></p>
-                            <button aria-label={`Hapus ${item.brand} ${item.model}`} onClick={() => removeItem(category, item.id)}>Hapus</button>
+                            <div><span>{item.itemKind === "material" ? "BM" : item.brand.slice(0, 2).toUpperCase()}</span></div>
+                            <p>
+                              <strong>{item.itemKind === "material" ? "Bahan mounting" : item.brand}</strong>
+                              <span>{item.itemKind === "material" ? item.material : item.model}</span>
+                            </p>
+                            <button aria-label={`Hapus ${item.itemKind === "material" ? item.material : `${item.brand} ${item.model}`}`} onClick={() => removeItem(category, item.id)}>Hapus</button>
                           </div>
                           <div className="metadata-grid">
-                            <label>Nomor seri<input value={item.serialNumber} onChange={(event) => updateItem(category, item.id, { serialNumber: event.target.value })} placeholder="Opsional" /></label>
+                            {item.itemKind !== "material" && <label>Nomor seri<input value={item.serialNumber} onChange={(event) => updateItem(category, item.id, { serialNumber: event.target.value })} placeholder="Opsional" /></label>}
                             <label>Jumlah<input type="number" min="1" value={item.quantity} onChange={(event) => updateItem(category, item.id, { quantity: Math.max(1, Number(event.target.value) || 1) })} /></label>
                             <label>Kondisi<select value={item.condition} onChange={(event) => updateItem(category, item.id, { condition: event.target.value as InstalledItem["condition"] })}><option>Baik</option><option>Rusak ringan</option><option>Rusak</option><option>Tidak beroperasi</option></select></label>
                             <label>Tahun pasang<input inputMode="numeric" maxLength={4} value={item.installedYear} onChange={(event) => updateItem(category, item.id, { installedYear: event.target.value.replace(/\D/g, "").slice(0, 4) })} placeholder="YYYY" /></label>
@@ -447,24 +490,48 @@ export default function InventoryApp() {
         <div className="drawer-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setActiveCategory(null); }}>
           <section className="product-drawer" role="dialog" aria-modal="true" aria-labelledby="product-dialog-title">
             <div className="drawer-head">
-              <div><p className="eyebrow">PILIH PRODUK UNTUK</p><h3 id="product-dialog-title">{activeCategory}</h3></div>
+              <div><p className="eyebrow">{isMountingCategory(activeCategory) ? "PILIH BAHAN UNTUK" : "PILIH PRODUK UNTUK"}</p><h3 id="product-dialog-title">{activeCategory}</h3></div>
               <button aria-label="Tutup pencarian produk" onClick={() => setActiveCategory(null)}>×</button>
             </div>
-            <label className="product-search">
-              <span aria-hidden="true">⌕</span>
-              <input autoFocus value={productQuery} onChange={(event) => setProductQuery(event.target.value)} placeholder="Cari merek atau tipe produk…" />
-            </label>
-            <p className="search-caption">Mencari pada seluruh kolom <strong>Merk</strong> dan <strong>Tipe</strong> · menampilkan maksimal 60 hasil</p>
-            <div className="product-results">
-              {visibleProducts.map((product) => (
-                <button key={`${product.brand}::${product.model}`} onClick={() => addProduct(product)}>
-                  <span className="product-avatar">{product.brand.slice(0, 2).toUpperCase()}</span>
-                  <span><strong>{product.brand}</strong><small>{product.model}</small></span>
-                  <span className="choose-label">Pilih</span>
-                </button>
-              ))}
-              {!visibleProducts.length && <div className="no-product"><strong>Produk tidak ditemukan</strong><span>Coba kata lain dari merek atau tipe produk.</span></div>}
-            </div>
+            {isMountingCategory(activeCategory) ? (
+              <>
+                <p className="search-caption material-caption">Pilih bahan utama mounting. Jika tidak ada di daftar, tulis bahan lain.</p>
+                <div className="product-results material-results">
+                  {MOUNTING_MATERIALS.map((material) => (
+                    <button key={material} onClick={() => addMaterial(material)}>
+                      <span className="product-avatar">BM</span>
+                      <span><strong>{material}</strong><small>Bahan mounting</small></span>
+                      <span className="choose-label">Pilih</span>
+                    </button>
+                  ))}
+                </div>
+                <div className="custom-material">
+                  <label htmlFor="custom-material">Bahan lainnya</label>
+                  <div>
+                    <input id="custom-material" autoFocus value={customMaterial} onChange={(event) => setCustomMaterial(event.target.value)} placeholder="Contoh: baja ringan" onKeyDown={(event) => { if (event.key === "Enter") addMaterial(customMaterial); }} />
+                    <button disabled={!customMaterial.trim()} onClick={() => addMaterial(customMaterial)}>Tambahkan</button>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <>
+                <label className="product-search">
+                  <span aria-hidden="true">⌕</span>
+                  <input autoFocus value={productQuery} onChange={(event) => setProductQuery(event.target.value)} placeholder="Cari merek atau tipe produk…" />
+                </label>
+                <p className="search-caption">Mencari pada seluruh kolom <strong>Merk</strong> dan <strong>Tipe</strong> · menampilkan maksimal 60 hasil</p>
+                <div className="product-results">
+                  {visibleProducts.map((product) => (
+                    <button key={`${product.brand}::${product.model}`} onClick={() => addProduct(product)}>
+                      <span className="product-avatar">{product.brand.slice(0, 2).toUpperCase()}</span>
+                      <span><strong>{product.brand}</strong><small>{product.model}</small></span>
+                      <span className="choose-label">Pilih</span>
+                    </button>
+                  ))}
+                  {!visibleProducts.length && <div className="no-product"><strong>Produk tidak ditemukan</strong><span>Coba kata lain dari merek atau tipe produk.</span></div>}
+                </div>
+              </>
+            )}
           </section>
         </div>
       )}

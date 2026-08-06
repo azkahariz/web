@@ -156,7 +156,9 @@ select:disabled { color: #9aa39f; background: #f2f2ee; cursor: not-allowed; }
 .product-search { position: relative; margin: 20px 26px 0; }
 .product-search input { min-height: 51px; font-size: 13px; }
 .search-caption { margin: 9px 27px 14px; color: var(--muted); font-size: 10px; }
+.material-caption { margin-top: 20px; font-size: 11px; line-height: 1.5; }
 .product-results { flex: 1; overflow: auto; padding: 0 18px 24px; }
+.material-results { flex: 0 1 auto; padding-bottom: 10px; }
 .product-results > button { width: 100%; padding: 12px 9px; display: flex; align-items: center; gap: 12px; border: 0; border-bottom: 1px solid #e8e9e5; background: transparent; text-align: left; cursor: pointer; }
 .product-results > button:hover { background: var(--green-soft); border-radius: 10px; }
 .product-avatar { width: 38px; height: 38px; display: grid; place-items: center; flex: 0 0 auto; border-radius: 10px; background: #edf0ec; color: var(--green-deep); font-size: 10px; font-weight: 900; }
@@ -168,6 +170,12 @@ select:disabled { color: #9aa39f; background: #f2f2ee; cursor: not-allowed; }
 .no-product { padding: 60px 20px; text-align: center; }
 .no-product strong, .no-product span { display: block; }
 .no-product span { margin-top: 7px; color: var(--muted); font-size: 12px; }
+.custom-material { margin-top: auto; padding: 18px 26px 24px; border-top: 1px solid var(--line); background: #faf9f5; }
+.custom-material > label { display: block; margin-bottom: 7px; color: var(--muted); font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; }
+.custom-material > div { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+.custom-material input { min-height: 43px; font-size: 12px; }
+.custom-material button { min-height: 43px; padding: 8px 15px; border: 1px solid var(--green-deep); border-radius: 9px; background: var(--green); color: white; font-size: 11px; font-weight: 800; cursor: pointer; }
+.custom-material button:disabled { opacity: .45; cursor: not-allowed; }
 
 @media (max-width: 900px) {
   .intro { grid-template-columns: 1fr; }
