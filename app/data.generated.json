@@ -1,0 +1,3189 @@
+{
+    "stationSites":  [
+                         {
+                             "station":  "BMKG Pusat",
+                             "site":  "AWS Bandara Halim Perdana Kusuma",
+                             "siteType":  "AWS Rekayasa"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Aek Godang - Padang Sidempuan",
+                             "site":  "AWOS All Weather Kat. 1 Stamet Aek Godang - Padang Sidempuan",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Aek Godang - Padang Sidempuan",
+                             "site":  "AWS Digi Aek Godang",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Ahmad Yani - Semarang",
+                             "site":  "AWOS All Weather Kat. 1 Bandara Ngloran – Blora",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Ahmad Yani - Semarang",
+                             "site":  "AWOS All Weather Kat. 3 Semarang",
+                             "siteType":  "AWOS Kategori III"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Ahmad Yani - Semarang",
+                             "site":  "AWOS Coastal Kat. 1 Bandara Karimun Jawa",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Ahmad Yani - Semarang",
+                             "site":  "AWS Digi Semarang",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Aji Pangeran Tumenggung Pranoto - Samarinda",
+                             "site":  "AWOS All Weather Kat. 3 Stamet APT Pranoto - Samarinda",
+                             "siteType":  "AWOS Kategori III"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Aji Pangeran Tumenggung Pranoto - Samarinda",
+                             "site":  "AWS Digi Samarinda",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Aji Pangeran Tumenggung Pranoto - Samarinda",
+                             "site":  "AWS Stamet BSB Samarinda",
+                             "siteType":  "AWS Rekayasa"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Amahai - Maluku Tengah",
+                             "site":  "AWOS All Weather Kat. 1 Stamet Amahai – Amahai",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Amahai - Maluku Tengah",
+                             "site":  "AWS Digi Amahai",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Andi Jemma - Luwu Utara",
+                             "site":  "AWOS All Weather Kat. 1 Bandara Bua Lagaligo - Palopo",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Andi Jemma - Luwu Utara",
+                             "site":  "AWOS All Weather Kat. 1 Bandara Rampi - Luwu Utara",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Andi Jemma - Luwu Utara",
+                             "site":  "AWOS All Weather Kat. 1 Bandara Seko - Luwu Utara",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Andi Jemma - Luwu Utara",
+                             "site":  "AWOS All Weather Kat. 1 Stamet Andi Jemma - Masamba",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Andi Jemma - Luwu Utara",
+                             "site":  "AWOS Coastal Kat. 1 Bandara Pongtiku Toraja",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Andi Jemma - Luwu Utara",
+                             "site":  "AWS Digi Masamba",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Bandaneira - Maluku Tengah",
+                             "site":  "AWOS All Weather Kat. 1 Stamet Bandaneira - Kep. Banda",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Bandaneira - Maluku Tengah",
+                             "site":  "AWS Digi Bandaneira",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Banyuwangi - Banyuwangi",
+                             "site":  "AWS Digi Banyuwangi",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Banyuwangi - Banyuwangi",
+                             "site":  "AWOS All Weather Kat.1 Bandara Noto Hadinegoro – Jember",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Beringin - Barito Utara",
+                             "site":  "AWOS All Weather Kat. 1 Sta. Met. Beringin - Muara Teweh",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Beto Ambari - Bau Bau",
+                             "site":  "AWOS All Weather Kat. 1 Bandara Sugimanuru – Raha",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Beto Ambari - Bau Bau",
+                             "site":  "AWS Digi Bau Bau",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Binaka - Gunung Sitoli",
+                             "site":  "AWOS All Weather Kat. 1 Stamet Binaka - Gunung Sitoli",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Budiarto - Tangerang",
+                             "site":  "AWOS All Weather Kat. 3 Budiarto - Curug",
+                             "siteType":  "AWOS Kategori III"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Budiarto - Tangerang",
+                             "site":  "AWS Digi Curug",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Citeko - Bogor",
+                             "site":  "AWS Stamet Citeko",
+                             "siteType":  "AWS Rekayasa"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Cut Nyak Dhien Nagan Raya - Nagan Raya",
+                             "site":  "AWOS All Weather Kat. 1 Stamet Cut Nyak Dhien - Nagan Raya",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi David Constantijn Saudale - Rote Ndao",
+                             "site":  "AWOS All Weather Kat. 1 Stamet David Constantijn Saudale - Rote Ndao",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Depati Amir - Pangkal Pinang",
+                             "site":  "AWOS All Weather Kat. 3 Stamet Depati Amir - Pangkal Pinang",
+                             "siteType":  "AWOS Kategori III"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Depati Amir - Pangkal Pinang",
+                             "site":  "AWS Digi Pangkal Pinang",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Depati Parbo - Kerinci",
+                             "site":  "AWS Digi Kerinci",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Dhoho - Kediri",
+                             "site":  "AWS Stamet 745 Kemayoran",
+                             "siteType":  "AWS Rekayasa"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Djalaluddin - Gorontalo",
+                             "site":  "AWOS All Weather Kat. 1 Bandara Pohuwato - Gorontalo",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Djalaluddin - Gorontalo",
+                             "site":  "AWS Digi Gorontalo",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Domine Eduard Osok - Sorong",
+                             "site":  "AWOS All Weather Kat. 1 Bandara Ayawasi - Ayawasi",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Domine Eduard Osok - Sorong",
+                             "site":  "AWOS All Weather Kat. 1 Bandara Babo - Babo",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Domine Eduard Osok - Sorong",
+                             "site":  "AWOS All Weather Kat. 1 Bandara Inanwatan - Inanwatan",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Domine Eduard Osok - Sorong",
+                             "site":  "AWOS All Weather Kat. 1 Bandara Kambuaya - Ayamaru",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Domine Eduard Osok - Sorong",
+                             "site":  "AWOS All Weather Kat. 1 Bandara Marinda - Raja Ampat",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Domine Eduard Osok - Sorong",
+                             "site":  "AWOS All Weather Kat. 1 Teminabuan",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Domine Eduard Osok - Sorong",
+                             "site":  "AWOS Vaisala Kat. 3 Sorong",
+                             "siteType":  "AWOS Kategori III"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Domine Eduard Osok - Sorong",
+                             "site":  "AWS Digi Sorong",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Domine Eduard Osok - Sorong",
+                             "site":  "AWS Maritim Sorong",
+                             "siteType":  "AWS Maritim"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Eltari - Kupang",
+                             "site":  "AWOS All Weather Kat. 1 Bandara A. A. Bere Tallo – Atambua",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Eltari - Kupang",
+                             "site":  "AWOS All Weather Kat. 1 Bandara Wonopito - Lewoleba",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Eltari - Kupang",
+                             "site":  "AWS Digi Kupang",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Emalamo - Kepulauan Sula",
+                             "site":  "AWOS All Weather Kat. 1 Bandara Emalamo - Sanana",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Enarotali - Paniai",
+                             "site":  "AWOS All Weather Kat. 1 Bandara Waghete - Waghete",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Enarotali - Paniai",
+                             "site":  "AWS Digi Enarotali",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Fatmawati Soekarno - Bengkulu",
+                             "site":  "AWOS All Weather Kat. 1 Bandara Enggano - Kep. Enggano",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Fatmawati Soekarno - Bengkulu",
+                             "site":  "AWOS All Weather Kat. 1 Bandara Mukomuko – Mukomuko",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Fatmawati Soekarno - Bengkulu",
+                             "site":  "AWOS All Weather Kat. 3 Bengkulu",
+                             "siteType":  "AWOS Kategori III"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Fatmawati Soekarno - Bengkulu",
+                             "site":  "AWS Digi Bengkulu",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi FL Tobing - Tapanuli Tengah",
+                             "site":  "AWOS All Weather Kat. 2 Stamet F.L Tobing - Sibolga",
+                             "siteType":  "AWOS Kategori II"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Frans Kaisiepo - Biak Numfor",
+                             "site":  "AWOS All Weather Kat. 1 Bandara Kornasoren – Numfoor",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Frans Kaisiepo - Biak Numfor",
+                             "site":  "AWOS All Weather Kat. 1 Stamet Sudjarwo Tjondronegoro – Serui",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Frans Kaisiepo - Biak Numfor",
+                             "site":  "AWS Digi Biak",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Frans Sales Lega - Manggarai",
+                             "site":  "AWOS All Weather Kat. 1 Bandara Soa - Bajawa",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Frans Sales Lega - Manggarai",
+                             "site":  "AWOS All Weather Kat. 1 Stamet Frans Sales Lega - Ruteng",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Frans Sales Lega - Manggarai",
+                             "site":  "AWS Digi Ruteng",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Fransiskus Xaverius Seda - Sikka",
+                             "site":  "AWOS All Weather Kat. 1 Bandara H. Hasan Aroeboesman - Ende",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Fransiskus Xaverius Seda - Sikka",
+                             "site":  "AWS Pos Met Ende",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Gamar Malamo - Halmahera Utara",
+                             "site":  "AWOS All Weather Kat. 1 Stamet Gamar Malamo - Galela",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Gewayantana - Flores Timur",
+                             "site":  "AWOS All Weather Kat. 1 Stamet Gewayantana - Larantuka",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Gewayantana - Flores Timur",
+                             "site":  "AWS Digi Larantuka",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Gusti Syamsir Alam - Kotabaru",
+                             "site":  "AWOS All Weather Kat. 1 Stamet Gusti Syamsir Alam – Kotabaru",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Gusti Syamsir Alam - Kotabaru",
+                             "site":  "AWOS Coastal Kat. 1 Bandara Batu Licin",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Gusti Syamsir Alam - Kotabaru",
+                             "site":  "AWS Digi GSA Kotabaru",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Gusti Syamsir Alam - Kotabaru",
+                             "site":  "AWS Maritim Kotabaru",
+                             "siteType":  "AWS Maritim"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi H. Asan - Kotawaringin Timur",
+                             "site":  "AWOS All Weather Kat. 1 Bandara Kapten Mulyono - Kuala Pembuang",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi H. Asan - Kotawaringin Timur",
+                             "site":  "AWOS All Weather Kat. 2 Stamet H. Asan - Sampit",
+                             "siteType":  "AWOS Kategori II"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi H. Asan - Kotawaringin Timur",
+                             "site":  "AWS Digi Sampit",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi H.AS. Hanandjoeddin - Belitung",
+                             "site":  "AWOS Coastal Kat. 2 Stamet Tanjung Pandan",
+                             "siteType":  "AWOS Kategori II"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi H.AS. Hanandjoeddin - Belitung",
+                             "site":  "AWS Digi Tanjung Pandan",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Hang Nadim - Batam",
+                             "site":  "AWOS All Weather Kat. 1 Stamet Dabo Singkep – Lingga",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Hang Nadim - Batam",
+                             "site":  "AWOS All Weather Kat. 1 Stamet Raja Haji Abdullah - Tj. Balai Karimun",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Hang Nadim - Batam",
+                             "site":  "AWOS All Weather Kat. 3 Stamet Hang Nadim - Batam",
+                             "siteType":  "AWOS Kategori III"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Hang Nadim - Batam",
+                             "site":  "AWS Digi Batam",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Hang Nadim - Batam",
+                             "site":  "AWS Maritim Batam",
+                             "siteType":  "AWS Maritim"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi I Gusti Ngurah Rai - Badung",
+                             "site":  "AWS Digi Denpasar",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Iskandar - Kotawaringin Barat",
+                             "site":  "AWS Digi Pangkalan Bun",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Japura - Indragiri",
+                             "site":  "AWOS All Weather Kat. 1 Stamet Japura - Rengat",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Juanda - Sidoarjo",
+                             "site":  "AWOS Coastal Kat. 3 Surabaya",
+                             "siteType":  "AWOS Kategori III"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Juanda - Sidoarjo",
+                             "site":  "AWS Digi Surabaya",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Juwata - Tarakan",
+                             "site":  "AWOS Coastal Kat. 2 Stamet Tarakan",
+                             "siteType":  "AWOS Kategori II"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Juwata - Tarakan",
+                             "site":  "AWS Digi Tarakan",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Kalimarau - Berau",
+                             "site":  "AWOS All Weather Kat. 1 Bandara Maratua - Derawan",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Kalimarau - Berau",
+                             "site":  "AWOS All Weather Kat. 2 Stamet Berau - Tanjung Redep",
+                             "siteType":  "AWOS Kategori II"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Kalimarau - Berau",
+                             "site":  "AWS Digi Kalimarau Berau",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Karel Sadsuitubun - Maluku Tenggara",
+                             "site":  "AWOS All Weather Kat. 1 Stamet Karel Sadsuitubun - Tual",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Kasiguncu - Poso",
+                             "site":  "AWOS All Weather Kat. 1 Stamet Kasiguncu – Poso",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Kertajati - Majalengka",
+                             "site":  "AWOS All Weather Kat. 1 Bandara Cakrabhuwana – Penggung",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Kertajati - Majalengka",
+                             "site":  "AWOS All Weather Kat. 1 Bandara Kertajati - Majalengka",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Kertajati - Majalengka",
+                             "site":  "AWOS All Weather Kat. 2 Kertajati",
+                             "siteType":  "AWOS Kategori II"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Kertajati - Majalengka",
+                             "site":  "AWS Digi Kertajati",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Kertajati - Majalengka",
+                             "site":  "AWS Stamet Jatiwangi",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Komodo - Manggarai Barat",
+                             "site":  "AWOS All Weather Kat. 3 Stamet Komodo",
+                             "siteType":  "AWOS Kategori III"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Komodo - Manggarai Barat",
+                             "site":  "AWS Digi Komodo",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Kualanamu - Deli Serdang",
+                             "site":  "AWOS All Weather Kat. 3 Stamet Kualanamu - Medan",
+                             "siteType":  "AWOS Kategori III"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Kualanamu - Deli Serdang",
+                             "site":  "AWS Digi Kualanamu",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Maimun Saleh - Sabang",
+                             "site":  "AWS Maritim Sabang",
+                             "siteType":  "AWS Maritim"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Mali - Alor",
+                             "site":  "AWOS All Weather Kat. 1 Stamet Mali - Alor",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Mali - Alor",
+                             "site":  "AWS Digi Alor",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Malikussaleh - Aceh Utara",
+                             "site":  "AWOS All Weather Kat. 1 Stamet Malikul Saleh - Lhokseumawe",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Maritim Ambon - Ambon",
+                             "site":  "AWS Maritim Ambon",
+                             "siteType":  "AWS Maritim"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Maritim Belawan - Medan",
+                             "site":  "AWS Digi Maritim Belawan",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Maritim Bitung - Bitung",
+                             "site":  "AWS Digi Bitung",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Maritim Dok II Jayapura - Jayapura",
+                             "site":  "AWS Digi Dok II Jayapura",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Maritim Dok II Jayapura - Jayapura",
+                             "site":  "AWS Maritim Jayapura",
+                             "siteType":  "AWS Maritim"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Maritim Kendari - Kendari",
+                             "site":  "AWOS All Weather Kat. 1 Stamet Sangia Ni Bandera – Kolaka",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Maritim Kendari - Kendari",
+                             "site":  "AWS Digi Kendari",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Maritim Merak - Cilegon",
+                             "site":  "AWS Digi Serang",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Maritim Merak - Cilegon",
+                             "site":  "AWS Maritim Cilegon / Ciwandan",
+                             "siteType":  "AWS Maritim"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Maritim Panjang - Bandar Lampung",
+                             "site":  "AWS Digi Maritim Lampung",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Maritim Pontianak - Pontianak",
+                             "site":  "AWS Maritim Pontianak",
+                             "siteType":  "AWS Maritim"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Maritim Tanjung Emas - Semarang",
+                             "site":  "AWS Digi Tanjung Mas Semarang",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Maritim Tanjung Perak - Surabaya",
+                             "site":  "AWS Maritim Perak II Sby",
+                             "siteType":  "AWS Maritim"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Maritim Tanjung Perak - Surabaya",
+                             "site":  "AWS Stamet Tanjung Perak",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Maritim Tanjung Priok - Jakarta Utara",
+                             "site":  "AWS Maritim Tg. Priok",
+                             "siteType":  "AWS Maritim"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Maritim Teluk Bayur - Padang",
+                             "site":  "AWS Maritim Bungus - Padang",
+                             "siteType":  "AWS Maritim"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Mathilda Batlayeri - Maluku Tenggara Barat",
+                             "site":  "AWOS All Weather Kat. 1 Stamet Mathilda Batyaleri - Saumlaki",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Minangkabau - Padang",
+                             "site":  "AWOS All Weather Kat. 1 Bandara Rokot - Kep. Mentawai",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Minangkabau - Padang",
+                             "site":  "AWOS All Weather Kat. 3 Stamet BIM - Padang",
+                             "siteType":  "AWOS Kategori III"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Minangkabau - Padang",
+                             "site":  "AWS Digi Padang",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Mopah - Merauke",
+                             "site":  "AWOS All Weather Kat. 1 Bandara Kepi - Mappi",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Mopah - Merauke",
+                             "site":  "AWOS All Weather Kat. 1 Bandara Kimaam - Kimaam",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Mopah - Merauke",
+                             "site":  "AWOS All Weather Kat. 1 Bandara Okaba - Okaba",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Mopah - Merauke",
+                             "site":  "AWOS Vaisala Kat. 2 Merauke",
+                             "siteType":  "AWOS Kategori II"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Mopah - Merauke",
+                             "site":  "AWS Digi Merauke",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Mozez Kilangin - Mimika",
+                             "site":  "AWOS All Weather Kat. 1 Bandara Ewer - Ewer",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Mozez Kilangin - Mimika",
+                             "site":  "AWOS All Weather Kat. 1 Bandara Ilaga - Ilaga",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Mozez Kilangin - Mimika",
+                             "site":  "AWOS Coastal Kat. 2 Timika",
+                             "siteType":  "AWOS Kategori II"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Mozez Kilangin - Mimika",
+                             "site":  "AWS Digi Timika",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Mutiara Sis-Al Jufri - Palu",
+                             "site":  "AWOS All Weather Kat. 1 Bandara Pogogul - Buol",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Mutiara Sis-Al Jufri - Palu",
+                             "site":  "AWOS All Weather Kat. 1 Stamet Sultan Bantilan – Tolitoli",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Mutiara Sis-Al Jufri - Palu",
+                             "site":  "AWS Digi Palu",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Nabire - Nabire",
+                             "site":  "AWOS Coastal Kat. 2 Nabire",
+                             "siteType":  "AWOS Kategori II"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Nabire - Nabire",
+                             "site":  "AWS Digi Nabire",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Naha - Kepulauan Sangihe",
+                             "site":  "AWOS All Weather Kat. 1 Stamet Naha Tahuna - Kep. Sangihe",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Naha - Kepulauan Sangihe",
+                             "site":  "AWS Digi Naha",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Namlea - Buru",
+                             "site":  "AWOS All Weather Kat. 1 Bandara Namniwel - Namlea",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Namlea - Buru",
+                             "site":  "AWOS All Weather Kat. 1 Stamet Namlea – Namlea",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Namlea - Buru",
+                             "site":  "AWS Digi Namlea",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Nangapinoh - Melawi",
+                             "site":  "AWS Digi Nangapinoh",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Nunukan - Nunukan",
+                             "site":  "AWOS All Weather Kat. 1 Stamet Nunukan – Nunukan",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Nunukan - Nunukan",
+                             "site":  "AWOS All Weather Kat. 1 Stamet Yuvai Semaring - Longbawan",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Nunukan - Nunukan",
+                             "site":  "AWS Digi Nunukan",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Nunukan - Nunukan",
+                             "site":  "AWS Maritim Nunukan",
+                             "siteType":  "AWS Maritim"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Oesman Sadik - Halmahera Selatan",
+                             "site":  "AWOS All Weather Kat. 1 Stamet Oesman Sadik – Labuha",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Oesman Sadik - Halmahera Selatan",
+                             "site":  "AWS Digi Labuha",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Pangsuma - Kapuas",
+                             "site":  "AWOS All Weather Kat. 1 Stamet Pangsuma – Putusibau",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Pangsuma - Kapuas",
+                             "site":  "AWS Digi Putussibau",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Paotere - Makassar",
+                             "site":  "AWS Digi Paotere",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Pattimura - Ambon",
+                             "site":  "AWOS All Weather Kat. 1 Bandara Dobo - Kep. Aru",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Pattimura - Ambon",
+                             "site":  "AWOS All Weather Kat. 1 Bandara John Becker - Kep. Kisar",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Pattimura - Ambon",
+                             "site":  "AWOS All Weather Kat. 1 Bandara Jos Orno Imsula - Moa",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Pattimura - Ambon",
+                             "site":  "AWOS All Weather Kat. 1 Bandara Kufar - Seram Timur",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Pattimura - Ambon",
+                             "site":  "AWOS All Weather Kat. 1 Bandara Liwur Bunga_Larat_ Maluku",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Pattimura - Ambon",
+                             "site":  "AWOS All Weather Kat. 1 Bandara Namrole - Namrole",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Pattimura - Ambon",
+                             "site":  "AWOS All Weather Kat. 1 Bandara Wahai - Wahai",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Pattimura - Ambon",
+                             "site":  "AWS Digi Ambon",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Radin Intern II - Lampung Selatan",
+                             "site":  "AWOS All Weather Kat. 1 Bandara Pekon Serai - Krui",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Radin Intern II - Lampung Selatan",
+                             "site":  "AWOS All Weather Kat. 1 Bandara Way Kanan - Lampung",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Radin Intern II - Lampung Selatan",
+                             "site":  "AWOS All Weather Kat. 3 Lampung",
+                             "siteType":  "AWOS Kategori III"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Radin Intern II - Lampung Selatan",
+                             "site":  "AWS Digi Radin Inten Lampung",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Rahadi Oesman - Ketapang",
+                             "site":  "AWOS All Weather Kat. 1 Rahadi Oesman - Ketapang",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Rahadi Oesman - Ketapang",
+                             "site":  "AWS Digi Ketapang",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Raja Haji Abdullah - Karimun",
+                             "site":  "AWS Digi Tanjung Balai Karimun",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Raja Haji Fisabilillah - Tanjung Pinang",
+                             "site":  "AWOS All Weather Kat. 1 Bandara Tambelan - Kepri",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Raja Haji Fisabilillah - Tanjung Pinang",
+                             "site":  "AWOS Coastal Kat. 3 Tanjung Pinang",
+                             "siteType":  "AWOS Kategori III"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Raja Haji Fisabilillah - Tanjung Pinang",
+                             "site":  "AWS Digi Tanjung Pinang",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Rendani - Manokwari",
+                             "site":  "AWOS All Weather Kat. 1 Bandara Bintuni – Bintuni",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Rendani - Manokwari",
+                             "site":  "AWOS All Weather Kat. 1 Bandara Wasior - Wasior",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Rendani - Manokwari",
+                             "site":  "AWOS Coastal Kat. 2 Manokwari",
+                             "siteType":  "AWOS Kategori II"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Rendani - Manokwari",
+                             "site":  "AWS Stamet Manokwari",
+                             "siteType":  "AWS Rekayasa"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Sam Ratulangi - Manado",
+                             "site":  "AWOS All Weather Kat. 1 Bandara Melonguane - Melonguane",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Sam Ratulangi - Manado",
+                             "site":  "AWOS All Weather Kat. 1 Bandara Miangas - Talaud",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Sam Ratulangi - Manado",
+                             "site":  "AWS Digi Manado",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Sam Ratulangi - Manado",
+                             "site":  "AWS Bandara Melonguane",
+                             "siteType":  "AWS Rekayasa"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Sanggu - Barito Selatan",
+                             "site":  "AWOS All Weather Kat. 1 Stamet Buntok",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Sangia Ni Bandera - Kolaka",
+                             "site":  "AWOS All Weather Kat. 1 Stamet Sangia Ni Bandera – Kolaka",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Sangia Ni Bandera - Kolaka",
+                             "site":  "AWS Digi Kolaka",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Sangkapura - Gresik",
+                             "site":  "AWOS All Weather Kat. 1 Bandara Harun Thohir – Bawean",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Sentani - Jayapura",
+                             "site":  "AWOS All Weather Kat. 1 Bandara Kasonaweja - Memberamo Raya",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Sentani - Jayapura",
+                             "site":  "AWOS All Weather Kat. 1 Bandara Oksibil - Oksibil",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Sentani - Jayapura",
+                             "site":  "AWOS All Weather Kat. 1 Bandara Yakuhimo – Yakuhimo",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Sentani - Jayapura",
+                             "site":  "AWOS All Weather Kat. 1 Senggeh - Keerom",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Sentani - Jayapura",
+                             "site":  "AWS Digi Sentani",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Silangit - Tapanuli Utara",
+                             "site":  "AWOS All Weather Kat. 3 Silangit",
+                             "siteType":  "AWOS Kategori III"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Silangit - Tapanuli Utara",
+                             "site":  "AWOS All Weather Kat. 1 Bandara Sibisa Kab. Toba",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Silangit - Tapanuli Utara",
+                             "site":  "AWS Digi Silangit",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Singkawang - Singkawang",
+                             "site":  "AWOS All Weather Kat. 3 Singkawang",
+                             "siteType":  "AWOS Kategori III"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Singkawang - Singkawang",
+                             "site":  "AWS Digi Sambas Paloh",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Soekarno Hatta - Tangerang",
+                             "site":  "AWOS Coastal Kat. 3 Tangerang",
+                             "siteType":  "AWOS Kategori III"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Soekarno Hatta - Tangerang",
+                             "site":  "AWS Digi Cengkareng",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Stevanus Rumbewas - Yapen",
+                             "site":  "AWS Stamet Serui",
+                             "siteType":  "AWS Rekayasa"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Sultan Aji Muhammad Sulaiman Sepinggan - Balikpapan",
+                             "site":  "AWOS All Weather Kat. 3 Stamet SAMS Sepinggan -Balikpapan",
+                             "siteType":  "AWOS Kategori III"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Sultan Aji Muhammad Sulaiman Sepinggan - Balikpapan",
+                             "site":  "AWOS Coastal Kat. 1 Bandara Melalan Melak",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Sultan Aji Muhammad Sulaiman Sepinggan - Balikpapan",
+                             "site":  "AWS Maritim KKT Balikpapan",
+                             "siteType":  "AWS Maritim"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Sultan Babullah - Ternate",
+                             "site":  "AWOS All Weather Kat. 1 Bandara Buli - Maba",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Sultan Babullah - Ternate",
+                             "site":  "AWOS All Weather Kat. 1 Bandara Gebe - Kep. Gebe",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Sultan Babullah - Ternate",
+                             "site":  "AWOS All Weather Kat. 1 Bandara Kuabang - Kao",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Sultan Hasanuddin - Maros",
+                             "site":  "AWOS All Weather Kat. 1 Bandara Arung Palakka - Bone",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Sultan Hasanuddin - Maros",
+                             "site":  "AWOS All Weather Kat. 1 Bandara H. Aroeppala - Kep. Selayar",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Sultan Hasanuddin - Maros",
+                             "site":  "AWOS All Weather Kat. 1 Bandara Matahora – Wakatobi",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Sultan Hasanuddin - Maros",
+                             "site":  "AWOS All Weather Kat. 3 Stamet Hasanuddin",
+                             "siteType":  "AWOS Kategori III"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Sultan Hasanuddin - Maros",
+                             "site":  "AWOS Coastal Kat. 1 Bandara Morowali",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Sultan Hasanuddin - Maros",
+                             "site":  "AWS Digi Makassar",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Sultan Iskandar Muda - Banda Aceh",
+                             "site":  "AWOS All Weather Kat. 1 Bandara Alas Leuser - Kutacane",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Sultan Iskandar Muda - Banda Aceh",
+                             "site":  "AWOS All Weather Kat. 1 Bandara Kualabete - Blang Pidie",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Sultan Iskandar Muda - Banda Aceh",
+                             "site":  "AWOS All Weather Kat. 1 Bandara Rembele - Rembele",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Sultan Iskandar Muda - Banda Aceh",
+                             "site":  "AWOS All Weather Kat. 1 Bandara Simeulue Lasikin - Simeulue",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Sultan Iskandar Muda - Banda Aceh",
+                             "site":  "AWOS All Weather Kat. 1 Bandara Tapak Tuan - Aceh",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Sultan Iskandar Muda - Banda Aceh",
+                             "site":  "AWOS Coastal Kat. 1 Bandara Sabang",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Sultan Iskandar Muda - Banda Aceh",
+                             "site":  "AWS Digi Iskandar Muda Aceh",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Sultan Mahmud Badaruddin II - Palembang",
+                             "site":  "AWOS All Weather Kat. 1 Bandara Atung Bungsu - Pagar Alam",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Sultan Mahmud Badaruddin II - Palembang",
+                             "site":  "AWOS All Weather Kat. 1 Bandara Silampari - Lubuk Linggau",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Sultan Mahmud Badaruddin II - Palembang",
+                             "site":  "AWOS All Weather Kat. 3 Stamet SMB II - Palembang",
+                             "siteType":  "AWOS Kategori III"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Sultan Mahmud Badaruddin II - Palembang",
+                             "site":  "AWS Digi SMB II Palembang",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Sultan Muhammad Salahuddin - Bima",
+                             "site":  "AWOS All Weather Kat. 1 Bandara Sekongkang",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Sultan Muhammad Salahuddin - Bima",
+                             "site":  "AWOS All Weather Kat. 1 Stamet Sultan M. Kaharuddin – Sumbawa",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Sultan Muhammad Salahuddin - Bima",
+                             "site":  "AWOS Coastal Kat. 2 Stamet Bima",
+                             "siteType":  "AWOS Kategori II"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Sultan Muhammad Salahuddin - Bima",
+                             "site":  "AWS Digi Bima",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Sultan Syarif Kasim II - Pekanbaru",
+                             "site":  "AWOS All Weather Kat. 1 Bandara Tuanku Tambusai - Pasir Pengaraian",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Sultan Syarif Kasim II - Pekanbaru",
+                             "site":  "AWOS Coastal Kat. 1 Bandara Dumai",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Sultan Syarif Kasim II - Pekanbaru",
+                             "site":  "AWS Digi Pekanbaru",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Sultan Thaha - Jambi",
+                             "site":  "AWOS All Weather Kat. 1 Bandara Muara Bungo - Muara Bungo",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Sultan Thaha - Jambi",
+                             "site":  "AWOS All Weather Kat. 1 Stamet Depati Parbo - Kerinci",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Sultan Thaha - Jambi",
+                             "site":  "AWOS All Weather Kat. 3 Jambi",
+                             "siteType":  "AWOS Kategori III"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Sultan Thaha - Jambi",
+                             "site":  "AWS Digi Jambi",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Supadio - Pontianak",
+                             "site":  "AWS Digi Pontianak",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Syamsudin Noor - Banjarmasin",
+                             "site":  "AWOS All Weather Kat. 1 Bandara Warukin - Tabalong",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Syamsudin Noor - Banjarmasin",
+                             "site":  "AWOS All Weather Kat. 3 Stamet Syamsudin Noor -Banjarmasin",
+                             "siteType":  "AWOS Kategori III"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Syamsudin Noor - Banjarmasin",
+                             "site":  "AWS Digi Banjarmasin",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Syukuran Aminudin Amir - Banggai",
+                             "site":  "AWOS All Weather Kat. 1 Bandara Tanjung Api – Ampana",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Tampa Padang - Mamuju",
+                             "site":  "AWS Digi Majene",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Tampa Padang - Mamuju",
+                             "site":  "AWOS All Weather Kat. 1 Bandara Tampa Padang - Mamuju",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Tampa Padang - Mamuju",
+                             "site":  "AWS Pos Met Mamuju",
+                             "siteType":  "AWS Rekayasa"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Tanah Merah - Boven Digoel",
+                             "site":  "AWOS All Weather Kat. 1 Bandara Boven Digul - Tanah Merah",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Tanah Merah - Boven Digoel",
+                             "site":  "AWOS All Weather Kat. 1 Bandara Mindiptana – Mindiptana",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Tanjung Harapan - Bulungan",
+                             "site":  "AWOS All Weather Kat. 1 Bandara Long Ampung - Long Apung",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Tanjung Harapan - Bulungan",
+                             "site":  "AWOS All Weather Kat. 1 Bandara Robert Atty Bessing – Malinau",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Tanjung Harapan - Bulungan",
+                             "site":  "AWOS All Weather Kat. 1 Stamet Tanjung Harapan - Tanjung Selor",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Tanjung Harapan - Bulungan",
+                             "site":  "AWS Digi Tanjung Selor",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Tardamu - Sabu Raijua",
+                             "site":  "AWOS All Weather Kat. 1 Stamet Tardamu - Sabu Raijua",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Tardamu - Sabu Raijua",
+                             "site":  "AWS Digi Tardamu Sabu",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Tarempa - Kepulauan Anambas",
+                             "site":  "AWOS All Weather Kat. 1 Bandara Letung - Kep. Anambas",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Tarempa - Kepulauan Anambas",
+                             "site":  "AWOS All Weather Kat. 1 Bandara Matak - Kep. Anambas",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Tebelian - Sintang",
+                             "site":  "AWOS All Weather Kat. 1 Bandara Tebelian - Sintang",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Tebelian - Sintang",
+                             "site":  "AWS Digi Sintang",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Tjilik Riwut - Palangkaraya",
+                             "site":  "AWOS All Weather Kat. 1 Bandara Kuala Kurun - Kuala Kurun",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Tjilik Riwut - Palangkaraya",
+                             "site":  "AWOS All Weather Kat. 1 Bandara Puruk Cahu - Puruk Cahu",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Tjilik Riwut - Palangkaraya",
+                             "site":  "AWOS All Weather Kat. 3 Stamet Tjilikriwut - Palangkaraya",
+                             "siteType":  "AWOS Kategori III"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Tjilik Riwut - Palangkaraya",
+                             "site":  "AWS Digi Palangkaraya",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Torea - Fakfak",
+                             "site":  "AWOS All Weather Kat. 1 Stamet Torea - Fakfak",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Trunojoyo - Sumenep",
+                             "site":  "AWOS All Weather Kat. 1 Bandara Trunojoyo – Sumenep",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Trunojoyo - Sumenep",
+                             "site":  "AWS Digi Kalianget",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Tuban - Tuban",
+                             "site":  "AWS Digi Tuban",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Tunggul Wulung – Cilacap",
+                             "site":  "AWOS All Weather Kat. 1 Bandara Nusawiru – Pangandaran",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Tunggul Wulung – Cilacap",
+                             "site":  "AWOS All Weather Kat. 1 Stamet Tunggul Wulung – Cilacap",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Tunggul Wulung – Cilacap",
+                             "site":  "AWS Digi Cilacap",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Tunggul Wulung – Cilacap",
+                             "site":  "AWS Rekayasa Tunggul Wulung",
+                             "siteType":  "AWS Rekayasa"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Umbu Mehang Kunda - Sumba Timur",
+                             "site":  "AWOS All Weather Kat. 1 Stamet Umbu Mehang Kunda - Waingapu",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Umbu Mehang Kunda - Sumba Timur",
+                             "site":  "AWS Pos Met Tambolaka",
+                             "siteType":  "AWS Rekayasa"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Utarom - Kaimana",
+                             "site":  "AWOS All Weather Kat. 1 Stamet Utarom - Kaimana",
+                             "siteType":  "AWOS Kategori I"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Wamena - Jayawijaya",
+                             "site":  "AWOS Vaisala Kat. 2 Wamena",
+                             "siteType":  "AWOS Kategori II"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Wamena - Jayawijaya",
+                             "site":  "AWS Digi Wamena",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Yogyakarta - Kulon Progo",
+                             "site":  "AWS Digi Yogyakarta",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Yuvai Semaring - Nunukan",
+                             "site":  "AWS Digi Longbawan",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Zainuddin Abdul Madjid - Lombok Tengah",
+                             "site":  "AWOS Degreane Kat. 3 Lombok",
+                             "siteType":  "AWOS Kategori III"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Zainuddin Abdul Madjid - Lombok Tengah",
+                             "site":  "AWS Digi Mataram",
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Zainuddin Abdul Madjid - Lombok Tengah",
+                             "site":  "AWS Maritim Lembar Lombok",
+                             "siteType":  "AWS Maritim"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Zainuddin Abdul Madjid - Lombok Tengah",
+                             "site":  "AWS Mandalika Circuit Tunnel",
+                             "siteType":  "AWS Rekayasa"
+                         },
+                         {
+                             "station":  "Stasiun Meteorologi Zainuddin Abdul Madjid - Lombok Tengah",
+                             "site":  "AWS Mandalika Turn 10th",
+                             "siteType":  "AWS Rekayasa"
+                         }
+                     ],
+    "siteSubtypes":  [
+                         {
+                             "siteType":  "AWOS Kategori III",
+                             "subtype":  "AWOS Kategori III AllWeather TDZ"
+                         },
+                         {
+                             "siteType":  "AWOS Kategori III",
+                             "subtype":  "AWOS Kategori III AllWeather Mid"
+                         },
+                         {
+                             "siteType":  "AWOS Kategori III",
+                             "subtype":  "AWOS Kategori III AllWeather End Point"
+                         },
+                         {
+                             "siteType":  "AWOS Kategori III",
+                             "subtype":  "AWOS Kategori III AllWeather Station"
+                         },
+                         {
+                             "siteType":  "AWOS Kategori III",
+                             "subtype":  "AWOS Kategori III Coastal TDZ"
+                         },
+                         {
+                             "siteType":  "AWOS Kategori III",
+                             "subtype":  "AWOS Kategori III Coastal Mid"
+                         },
+                         {
+                             "siteType":  "AWOS Kategori III",
+                             "subtype":  "AWOS Kategori III Coastal End Point"
+                         },
+                         {
+                             "siteType":  "AWOS Kategori III",
+                             "subtype":  "AWOS Kategori III Coastal Station"
+                         },
+                         {
+                             "siteType":  "AWOS Kategori III",
+                             "subtype":  "AWOS Kategori III Degreane TDZ"
+                         },
+                         {
+                             "siteType":  "AWOS Kategori III",
+                             "subtype":  "AWOS Kategori III Degreane Mid"
+                         },
+                         {
+                             "siteType":  "AWOS Kategori III",
+                             "subtype":  "AWOS Kategori III Degreane End Point"
+                         },
+                         {
+                             "siteType":  "AWOS Kategori III",
+                             "subtype":  "AWOS Kategori III Degreane Station"
+                         },
+                         {
+                             "siteType":  "AWOS Kategori III",
+                             "subtype":  "AWOS Kategori III Microstep TDZ"
+                         },
+                         {
+                             "siteType":  "AWOS Kategori III",
+                             "subtype":  "AWOS Kategori III Microstep Mid"
+                         },
+                         {
+                             "siteType":  "AWOS Kategori III",
+                             "subtype":  "AWOS Kategori III Microstep End Point"
+                         },
+                         {
+                             "siteType":  "AWOS Kategori III",
+                             "subtype":  "AWOS Kategori III Microstep Station"
+                         },
+                         {
+                             "siteType":  "AWOS Kategori II",
+                             "subtype":  "AWOS Kategori II"
+                         },
+                         {
+                             "siteType":  "AWOS Kategori I",
+                             "subtype":  "AWOS Kategori I"
+                         },
+                         {
+                             "siteType":  "Digitalisasi Taman Alat Meteorologi",
+                             "subtype":  "Digitalisasi Taman Alat Meteorologi"
+                         },
+                         {
+                             "siteType":  "AWS Rekayasa",
+                             "subtype":  "AWS Rekayasa"
+                         },
+                         {
+                             "siteType":  "AWS Maritim",
+                             "subtype":  "AWS Maritim"
+                         },
+                         {
+                             "siteType":  "Water Level",
+                             "subtype":  "Water Level"
+                         },
+                         {
+                             "siteType":  "Radar EEC",
+                             "subtype":  "Radar EEC"
+                         },
+                         {
+                             "siteType":  "Radar Baron",
+                             "subtype":  "Radar Baron"
+                         },
+                         {
+                             "siteType":  "Radar Vaisala",
+                             "subtype":  "Radar Vaisala"
+                         },
+                         {
+                             "siteType":  "Radar Gematronik",
+                             "subtype":  "Radar Gematronik"
+                         }
+                     ],
+    "barangByJenis":  {
+                          "AWOS End Point":  [
+                                                 "Data Akuisisi",
+                                                 "Sensor Arah Angin",
+                                                 "Sensor Suhu Udara",
+                                                 "Sensor Kelembaban Udara",
+                                                 "Sensor Tekanan Udara",
+                                                 "Sensor Hujan",
+                                                 "Sensor Radiasi Matahari",
+                                                 "Sensor ketinggian awan",
+                                                 "Sensor jarak pandang",
+                                                 "Sensor Pendeteksi Petir",
+                                                 "Display",
+                                                 "Sistem Radio",
+                                                 "Sistem catu daya tidak terputus",
+                                                 "Mounting Sensor",
+                                                 "Boks Panel",
+                                                 "Proteksi Petir",
+                                                 "Sekring Pengaman",
+                                                 "Arrester"
+                                             ],
+                          "AWOS Kategori I":  [
+                                                  "Data Akuisisi",
+                                                  "Sensor Arah Angin",
+                                                  "Sensor Suhu Udara",
+                                                  "Sensor Kelembaban Udara",
+                                                  "Sensor Tekanan Udara",
+                                                  "Sensor Hujan",
+                                                  "Sensor Radiasi Matahari",
+                                                  "Sensor ketinggian awan",
+                                                  "Sensor jarak pandang",
+                                                  "Sensor Pendeteksi Petir",
+                                                  "Display",
+                                                  "Sistem Radio",
+                                                  "Sistem catu daya tidak terputus",
+                                                  "Mounting Sensor Suhu dan Kelembaban Udara",
+                                                  "Boks Panel",
+                                                  "Konverter",
+                                                  "Arrester",
+                                                  "Proteksi Petir"
+                                              ],
+                          "AWOS Kategori II":  [
+                                                   "Data Akuisisi",
+                                                   "Sensor Arah Angin",
+                                                   "Sensor Suhu Udara",
+                                                   "Sensor Kelembaban Udara",
+                                                   "Sensor Tekanan Udara",
+                                                   "Sensor Hujan",
+                                                   "Sensor Radiasi Matahari",
+                                                   "Sensor ketinggian awan",
+                                                   "Sensor jarak pandang",
+                                                   "Sensor Pendeteksi Petir",
+                                                   "Display",
+                                                   "Sistem Radio",
+                                                   "Sistem catu daya tidak terputus",
+                                                   "Mounting Sensor Suhu dan Kelembaban Udara",
+                                                   "Boks Panel",
+                                                   "Konverter",
+                                                   "Arrester",
+                                                   "Proteksi Petir"
+                                               ],
+                          "AWOS Mid":  [
+                                           "Data Akuisisi",
+                                           "Sensor Arah Angin",
+                                           "Sensor Suhu Udara",
+                                           "Sensor Kelembaban Udara",
+                                           "Sensor Tekanan Udara",
+                                           "Sensor Hujan",
+                                           "Sensor Radiasi Matahari",
+                                           "Sensor ketinggian awan",
+                                           "Sensor jarak pandang",
+                                           "Sensor Pendeteksi Petir",
+                                           "Display",
+                                           "Sistem Radio",
+                                           "Sistem catu daya tidak terputus",
+                                           "Mounting Sensor Suhu dan Kelembaban Udara",
+                                           "Boks Panel",
+                                           "Proteksi Petir",
+                                           "Sekring Pengaman",
+                                           "Arrester"
+                                       ],
+                          "AWOS TDZ":  [
+                                           "Data Akuisisi",
+                                           "Sensor Arah Angin",
+                                           "Sensor Suhu Udara",
+                                           "Sensor Kelembaban Udara",
+                                           "Sensor Tekanan Udara",
+                                           "Sensor Hujan",
+                                           "Sensor Radiasi Matahari",
+                                           "Sensor ketinggian awan",
+                                           "Sensor jarak pandang",
+                                           "Sensor Pendeteksi Petir",
+                                           "Display",
+                                           "Sistem Radio",
+                                           "Sistem catu daya tidak terputus",
+                                           "Mounting Sensor Suhu dan Kelembaban Udara",
+                                           "Boks Panel",
+                                           "Proteksi Petir",
+                                           "Sekring Pengaman",
+                                           "Arrester"
+                                       ],
+                          "Digitalisasi Taman Alat Meteorologi":  [
+                                                                      "Antena",
+                                                                      "Baterai",
+                                                                      "Data Akuisisi",
+                                                                      "Mounting Sensor Arah dan Kecepatan Angin",
+                                                                      "Mounting Sensor Hujan",
+                                                                      "Mounting Sensor Radiasi Matahari",
+                                                                      "Mounting Sensor Suhu dan Kelembaban Udara",
+                                                                      "Mounting Sensor Kecepatan Angin 0.5m",
+                                                                      "Kabel Data",
+                                                                      "Kabel antena",
+                                                                      "Sistem Radio",
+                                                                      "Pagar Pengaman",
+                                                                      "Pengolah Data",
+                                                                      "Adaptor",
+                                                                      "Regulator",
+                                                                      "Sistem catu daya tidak terputus",
+                                                                      "Sekring Pengaman",
+                                                                      "Sensor Arah Angin",
+                                                                      "Sensor Kecepatan Angin",
+                                                                      "Sensor Kelembaban Udara",
+                                                                      "Sensor Ketinggian Air",
+                                                                      "Sensor Radiasi Matahari",
+                                                                      "Sensor Suhu Air",
+                                                                      "Sensor Suhu Udara",
+                                                                      "Sensor Tekanan Udara",
+                                                                      "Sensor Kecepatan Angin 0.5m",
+                                                                      "Sensor Hujan",
+                                                                      "Solar Panel",
+                                                                      "Display",
+                                                                      "Tiang 10 meter",
+                                                                      "Kabel Listrik",
+                                                                      "Arrester",
+                                                                      "Proteksi Petir",
+                                                                      "Penyimpanan",
+                                                                      "Konverter",
+                                                                      "Sangkar Sensor Suhu dan Kelembaban Udara"
+                                                                  ],
+                          "AWS Maritim":  [
+                                              "Adaptor",
+                                              "Baterai",
+                                              "Data Akuisisi",
+                                              "Mounting Sensor Arah dan Kecepatan Angin",
+                                              "Mounting Sensor Radiasi Matahari",
+                                              "Mounting Sensor Suhu dan Kelembaban Udara",
+                                              "Kabel Data",
+                                              "Mounting Sensor Pasut",
+                                              "Pengolah Data",
+                                              "Penyimpanan",
+                                              "Regulator",
+                                              "Sensor Arah Angin",
+                                              "Sensor Hujan",
+                                              "Sensor Kecepatan Angin",
+                                              "Sensor Kelembaban Udara",
+                                              "Sensor Radiasi Matahari",
+                                              "Sensor Suhu Udara",
+                                              "Sensor Tekanan Udara",
+                                              "Sensor Suhu Air",
+                                              "Sensor pasut",
+                                              "Modem Komunikasi",
+                                              "Sistem catu daya tidak terputus",
+                                              "Sekring Pengaman",
+                                              "Solar Panel",
+                                              "Tiang",
+                                              "Arrester",
+                                              "Proteksi Petir"
+                                          ],
+                          "AWS Rekayasa":  [
+                                               "Antena",
+                                               "Baterai",
+                                               "Data Akuisisi",
+                                               "Mounting Sensor Arah dan Kecepatan Angin",
+                                               "Mounting Sensor Hujan",
+                                               "Mounting Sensor Radiasi Matahari",
+                                               "Mounting Sensor Suhu dan Kelembaban Udara",
+                                               "Mounting Sensor Kecepatan Angin 0.5m",
+                                               "Kabel Data",
+                                               "Kabel antena",
+                                               "Sistem Radio",
+                                               "Pagar Pengaman",
+                                               "Pengolah Data",
+                                               "Adaptor",
+                                               "Regulator",
+                                               "Sistem catu daya tidak terputus",
+                                               "Sekring Pengaman",
+                                               "Sensor Arah Angin",
+                                               "Sensor Kecepatan Angin",
+                                               "Sensor Kelembaban Udara",
+                                               "Sensor Radiasi Matahari",
+                                               "Sensor Suhu Udara",
+                                               "Sensor Tekanan Udara",
+                                               "Sensor Hujan",
+                                               "Solar Panel",
+                                               "Display",
+                                               "Tiang 10 meter",
+                                               "Kabel Listrik",
+                                               "Arrester",
+                                               "Proteksi Petir",
+                                               "Penyimpanan",
+                                               "Konverter"
+                                           ],
+                          "Water Level":  [
+                                              "Adaptor",
+                                              "Arrester",
+                                              "Boks Panel",
+                                              "Data Akuisisi",
+                                              "Kabel Data",
+                                              "Mounting Sensor Pasut",
+                                              "Pengolah Data",
+                                              "Penyimpanan",
+                                              "Regulator",
+                                              "Sensor Tekanan Udara",
+                                              "Sensor Pasut",
+                                              "Modem Komunikasi",
+                                              "SIstem Catu Daya Tidak Terputus",
+                                              "Solar Panel",
+                                              "Mounting Sensor Hujan",
+                                              "Proteksi Petir",
+                                              "Sensor Hujan"
+                                          ],
+                          "AWOS Station":  [
+                                               "Pengolah Data",
+                                               "Sistem catu daya tidak terputus",
+                                               "Sistem Radio",
+                                               "Modem Komunikasi",
+                                               "Display",
+                                               "Perangkat Jaringan",
+                                               "Konverter",
+                                               "Regulator"
+                                           ]
+                      },
+    "products":  [
+                     {
+                         "brand":  "All Weather Inc",
+                         "model":  "AC/DC Converter For Lightning M438152"
+                     },
+                     {
+                         "brand":  "All Weather Inc",
+                         "model":  "ALS Head M488171"
+                     },
+                     {
+                         "brand":  "All Weather Inc",
+                         "model":  "ALS Head M488171-01"
+                     },
+                     {
+                         "brand":  "All Weather Inc",
+                         "model":  "Baterai DCP 11903"
+                     },
+                     {
+                         "brand":  "All Weather Inc",
+                         "model":  "Blower Ceilometer 83397-00"
+                     },
+                     {
+                         "brand":  "All Weather Inc",
+                         "model":  "Booster DC"
+                     },
+                     {
+                         "brand":  "All Weather Inc",
+                         "model":  "Booster DC DC-DC Booster"
+                     },
+                     {
+                         "brand":  "All Weather Inc",
+                         "model":  "CDP (Rackmount Server) 2090-I"
+                     },
+                     {
+                         "brand":  "All Weather Inc",
+                         "model":  "CDP (Rackmount) M406112-03"
+                     },
+                     {
+                         "brand":  "All Weather Inc",
+                         "model":  "Ceilometer 8339-G"
+                     },
+                     {
+                         "brand":  "All Weather Inc",
+                         "model":  "Ceilometer DAC Board"
+                     },
+                     {
+                         "brand":  "All Weather Inc",
+                         "model":  "Ceilometer DAC Board M404848-04"
+                     },
+                     {
+                         "brand":  "All Weather Inc",
+                         "model":  "DCP 1190 M404804-03"
+                     },
+                     {
+                         "brand":  "All Weather Inc",
+                         "model":  "DCP 1191 M404558-00"
+                     },
+                     {
+                         "brand":  "All Weather Inc",
+                         "model":  "DCP 1192 - 240"
+                     },
+                     {
+                         "brand":  "All Weather Inc",
+                         "model":  "DCP 1192 M403576-00"
+                     },
+                     {
+                         "brand":  "All Weather Inc",
+                         "model":  "DCP 1192 M4043558-00"
+                     },
+                     {
+                         "brand":  "All Weather Inc",
+                         "model":  "Detector Head M105060-01"
+                     },
+                     {
+                         "brand":  "All Weather Inc",
+                         "model":  "Detector Head M105060-03"
+                     },
+                     {
+                         "brand":  "All Weather Inc",
+                         "model":  "Dual BP Pressure 7150"
+                     },
+                     {
+                         "brand":  "All Weather Inc",
+                         "model":  "Emitter Head M105061-00"
+                     },
+                     {
+                         "brand":  "All Weather Inc",
+                         "model":  "Kabel Temperature Probe 5190-F Cable"
+                     },
+                     {
+                         "brand":  "All Weather Inc",
+                         "model":  "Lightning Interface M404806-01"
+                     },
+                     {
+                         "brand":  "All Weather Inc",
+                         "model":  "Micro Processor BL 1500 M488290-00"
+                     },
+                     {
+                         "brand":  "All Weather Inc",
+                         "model":  "Optical Rain Gauge 6030"
+                     },
+                     {
+                         "brand":  "All Weather Inc",
+                         "model":  "ORG Interface M404806-02"
+                     },
+                     {
+                         "brand":  "All Weather Inc",
+                         "model":  "Rain Gauge Tipping Bucket 6011-B"
+                     },
+                     {
+                         "brand":  "All Weather Inc",
+                         "model":  "Rain Gauge Tipping Bucket 6021"
+                     },
+                     {
+                         "brand":  "All Weather Inc",
+                         "model":  "Remote Desktop 2212"
+                     },
+                     {
+                         "brand":  "All Weather Inc",
+                         "model":  "SARS 8141-D"
+                     },
+                     {
+                         "brand":  "All Weather Inc",
+                         "model":  "Sensor Ceilometer"
+                     },
+                     {
+                         "brand":  "All Weather Inc",
+                         "model":  "Serial Spliter M403470-00"
+                     },
+                     {
+                         "brand":  "All Weather Inc",
+                         "model":  "Solar Radiation 3121"
+                     },
+                     {
+                         "brand":  "All Weather Inc",
+                         "model":  "Spread Spectrum Radio M489140-01"
+                     },
+                     {
+                         "brand":  "All Weather Inc",
+                         "model":  "Ultrasonic Wind Sensor 2040"
+                     },
+                     {
+                         "brand":  "All Weather Inc",
+                         "model":  "Ultrasonic Wind Sensor 9620"
+                     },
+                     {
+                         "brand":  "All Weather Inc",
+                         "model":  "Universal Power Communication Module 2715"
+                     },
+                     {
+                         "brand":  "All Weather Inc",
+                         "model":  "Visibility Board M404811"
+                     },
+                     {
+                         "brand":  "Amaron",
+                         "model":  "VRLA 12AL100N 100AH"
+                     },
+                     {
+                         "brand":  "AMF",
+                         "model":  "AMF"
+                     },
+                     {
+                         "brand":  "APC",
+                         "model":  "SRTG20KXLI UPS 20 KVA"
+                     },
+                     {
+                         "brand":  "APC",
+                         "model":  "SRTG5KXLI UPS 5 KVA"
+                     },
+                     {
+                         "brand":  "APC",
+                         "model":  "Surge protector PNET1GB"
+                     },
+                     {
+                         "brand":  "APC",
+                         "model":  "UPS 1 KVA BVX1200LI-MS"
+                     },
+                     {
+                         "brand":  "APC",
+                         "model":  "UPS 1 KVA BX1100LI-MS"
+                     },
+                     {
+                         "brand":  "APC",
+                         "model":  "UPS 2 KVA SMC2000I"
+                     },
+                     {
+                         "brand":  "APC",
+                         "model":  "UPS 3 KVA SRT3000XLI"
+                     },
+                     {
+                         "brand":  "Apogee",
+                         "model":  "Sensor Radiasi Matahari SP-510"
+                     },
+                     {
+                         "brand":  "Apple",
+                         "model":  "Mac Mini"
+                     },
+                     {
+                         "brand":  "ASUS",
+                         "model":  "PC All in One A3402WBAK-BA585WS"
+                     },
+                     {
+                         "brand":  "ASUS",
+                         "model":  "VivoMini VM65N"
+                     },
+                     {
+                         "brand":  "ASUS",
+                         "model":  "VX239"
+                     },
+                     {
+                         "brand":  "ATEN",
+                         "model":  "UC232A"
+                     },
+                     {
+                         "brand":  "BAFO",
+                         "model":  "Konverter Serial to USB  BF-810"
+                     },
+                     {
+                         "brand":  "Balden",
+                         "model":  "Kabel Data LAN"
+                     },
+                     {
+                         "brand":  "Balena",
+                         "model":  "BalenaFin v1.1"
+                     },
+                     {
+                         "brand":  "Baumer",
+                         "model":  "Homing sensor NPN FEG 14.24.45"
+                     },
+                     {
+                         "brand":  "Belden",
+                         "model":  "Kabel LAN 300 meter 50105F"
+                     },
+                     {
+                         "brand":  "Belden",
+                         "model":  "Kabel LAN 300 meter 7814A"
+                     },
+                     {
+                         "brand":  "Belden",
+                         "model":  "Multi Pair Cable 8723"
+                     },
+                     {
+                         "brand":  "Brothe Union",
+                         "model":  "Kabel Data 9 9C 24 AWG"
+                     },
+                     {
+                         "brand":  "Campbell Scientific",
+                         "model":  "03101-L Wind Sentry Anemometer"
+                     },
+                     {
+                         "brand":  "Campbell Scientific",
+                         "model":  "AWS Compact"
+                     },
+                     {
+                         "brand":  "Campbell Scientific",
+                         "model":  "BaroVUE10"
+                     },
+                     {
+                         "brand":  "Campbell Scientific",
+                         "model":  "CH201"
+                     },
+                     {
+                         "brand":  "Campbell Scientific",
+                         "model":  "ClimaVue 50"
+                     },
+                     {
+                         "brand":  "Campbell Scientific",
+                         "model":  "CR1000"
+                     },
+                     {
+                         "brand":  "Campbell Scientific",
+                         "model":  "CR1000X"
+                     },
+                     {
+                         "brand":  "Campbell Scientific",
+                         "model":  "CR1000Xe"
+                     },
+                     {
+                         "brand":  "Campbell Scientific",
+                         "model":  "CR310"
+                     },
+                     {
+                         "brand":  "Campbell Scientific",
+                         "model":  "CR310 WiFi"
+                     },
+                     {
+                         "brand":  "Campbell Scientific",
+                         "model":  "CR6"
+                     },
+                     {
+                         "brand":  "Campbell Scientific",
+                         "model":  "CS/IO SC232B"
+                     },
+                     {
+                         "brand":  "Campbell Scientific",
+                         "model":  "CS475A-L Radar Water-Level Sensor"
+                     },
+                     {
+                         "brand":  "Campbell Scientific",
+                         "model":  "Datalogger CR3000"
+                     },
+                     {
+                         "brand":  "Campbell Scientific",
+                         "model":  "Datalogger CR310"
+                     },
+                     {
+                         "brand":  "Campbell Scientific",
+                         "model":  "Datalogger CR6"
+                     },
+                     {
+                         "brand":  "Campbell Scientific",
+                         "model":  "ENC16/18"
+                     },
+                     {
+                         "brand":  "Campbell Scientific",
+                         "model":  "Enclosure ENC8/10"
+                     },
+                     {
+                         "brand":  "Campbell Scientific",
+                         "model":  "Ethernet interface NL121"
+                     },
+                     {
+                         "brand":  "Campbell Scientific",
+                         "model":  "HMP155D"
+                     },
+                     {
+                         "brand":  "Campbell Scientific",
+                         "model":  "HygroVue10"
+                     },
+                     {
+                         "brand":  "Campbell Scientific",
+                         "model":  "PS100"
+                     },
+                     {
+                         "brand":  "Campbell Scientific",
+                         "model":  "QST6 6 ft Tripod"
+                     },
+                     {
+                         "brand":  "Campbell Scientific",
+                         "model":  "Rain Gauge TB4"
+                     },
+                     {
+                         "brand":  "Campbell Scientific",
+                         "model":  "RainVue20"
+                     },
+                     {
+                         "brand":  "Campbell Scientific",
+                         "model":  "RS-232 Interface SC32B"
+                     },
+                     {
+                         "brand":  "Campbell Scientific",
+                         "model":  "Sensor Angin 50cm 03101-L"
+                     },
+                     {
+                         "brand":  "Campbell Scientific",
+                         "model":  "SkyVue 8 LIDAR Ceilometer"
+                     },
+                     {
+                         "brand":  "Campbell Scientific",
+                         "model":  "SoilVue 10"
+                     },
+                     {
+                         "brand":  "Campbell Scientific",
+                         "model":  "Sonic Distance Sensor SR50A-L"
+                     },
+                     {
+                         "brand":  "Campbell Scientific",
+                         "model":  "Temp 109SS"
+                     },
+                     {
+                         "brand":  "Campbell Scientific",
+                         "model":  "Wind Sentry Anemometer"
+                     },
+                     {
+                         "brand":  "Casella Cell",
+                         "model":  "120720D-02"
+                     },
+                     {
+                         "brand":  "Coastal",
+                         "model":  "Lightning Detection Antenna 805-10930-001"
+                     },
+                     {
+                         "brand":  "Coastal",
+                         "model":  "Lightning Detection Processor 805-11500-001"
+                     },
+                     {
+                         "brand":  "Commfront",
+                         "model":  "Converter RS232 to RS485/422 CVT-485-422"
+                     },
+                     {
+                         "brand":  "Commfront",
+                         "model":  "Modem FO to RJ45 FBR-Ethernet2"
+                     },
+                     {
+                         "brand":  "Commfront",
+                         "model":  "Modem FO to RS 232/485m FBR-Serial2"
+                     },
+                     {
+                         "brand":  "Commfront",
+                         "model":  "Surge Supressor SPD-422-1"
+                     },
+                     {
+                         "brand":  "Controller Panel Solar Cell",
+                         "model":  "CMP12"
+                     },
+                     {
+                         "brand":  "Custom",
+                         "model":  "Adaptor 12V 10A"
+                     },
+                     {
+                         "brand":  "Custom",
+                         "model":  "Adaptor 12V 3A"
+                     },
+                     {
+                         "brand":  "Custom",
+                         "model":  "Box Power Outdoor"
+                     },
+                     {
+                         "brand":  "Custom",
+                         "model":  "Dudukan dan Bracket Solar Panel"
+                     },
+                     {
+                         "brand":  "Custom",
+                         "model":  "Kabel Duct 50 set"
+                     },
+                     {
+                         "brand":  "Custom",
+                         "model":  "Kabel LAN Cross 1 m"
+                     },
+                     {
+                         "brand":  "Custom",
+                         "model":  "Kabel Serabut Hijau"
+                     },
+                     {
+                         "brand":  "Custom",
+                         "model":  "Kabel Serabut Hitam"
+                     },
+                     {
+                         "brand":  "Custom",
+                         "model":  "Kabel Serabut Merah"
+                     },
+                     {
+                         "brand":  "Custom",
+                         "model":  "Kabel Serabut Putih"
+                     },
+                     {
+                         "brand":  "Custom",
+                         "model":  "Lengan sensor TRH \u0026 Pyranometer"
+                     },
+                     {
+                         "brand":  "Custom",
+                         "model":  "Lengan Sensor TRH / Angin"
+                     },
+                     {
+                         "brand":  "Custom",
+                         "model":  "Pagar BRC ARG"
+                     },
+                     {
+                         "brand":  "Custom",
+                         "model":  "Pagar BRC AWS/AAWS"
+                     },
+                     {
+                         "brand":  "Custom",
+                         "model":  "Perangkat Telekomunikasi UHF"
+                     },
+                     {
+                         "brand":  "Custom",
+                         "model":  "Sistem Peneguh Tiang (Sling)"
+                     },
+                     {
+                         "brand":  "Custom",
+                         "model":  "Tiang Teleskopik \u0026 Dudukan Tipping Bucket"
+                     },
+                     {
+                         "brand":  "Custom",
+                         "model":  "Tiang Teleskopik Untuk Enclosure ARG"
+                     },
+                     {
+                         "brand":  "Custom",
+                         "model":  "Tiang Triangle 10 meter Alumunium"
+                     },
+                     {
+                         "brand":  "Custom",
+                         "model":  "Transformator Isolated 3 KVA"
+                     },
+                     {
+                         "brand":  "DataTaker",
+                         "model":  "DT80 Series 4"
+                     },
+                     {
+                         "brand":  "DataTaker",
+                         "model":  "DT82E"
+                     },
+                     {
+                         "brand":  "DELL",
+                         "model":  "Dell 27 Monitor - S2721H"
+                     },
+                     {
+                         "brand":  "DELL",
+                         "model":  "Dell EMC PowerEdge T150"
+                     },
+                     {
+                         "brand":  "DELL",
+                         "model":  "Laptop XPS-13 9320"
+                     },
+                     {
+                         "brand":  "DELL",
+                         "model":  "Monitor Dislpay 22 Inch E2219HN"
+                     },
+                     {
+                         "brand":  "Dell",
+                         "model":  "PC Client AIO"
+                     },
+                     {
+                         "brand":  "DELL",
+                         "model":  "PowerEdge T40"
+                     },
+                     {
+                         "brand":  "Delta T Devices",
+                         "model":  "SM150"
+                     },
+                     {
+                         "brand":  "D-Link",
+                         "model":  "Switch Hub 24 Port DGS1024"
+                     },
+                     {
+                         "brand":  "DSE",
+                         "model":  "Charger Genset Deep Sea 9470"
+                     },
+                     {
+                         "brand":  "DTECH",
+                         "model":  "DT-5001A USB to RS232 adapter"
+                     },
+                     {
+                         "brand":  "Ebmpapst",
+                         "model":  "MARS Fan 8312"
+                     },
+                     {
+                         "brand":  "Eko Instruments",
+                         "model":  "EKO MS802"
+                     },
+                     {
+                         "brand":  "EML",
+                         "model":  "ARG100"
+                     },
+                     {
+                         "brand":  "EML",
+                         "model":  "ARG314"
+                     },
+                     {
+                         "brand":  "EML",
+                         "model":  "LogSys"
+                     },
+                     {
+                         "brand":  "EnviroPro",
+                         "model":  "EP100D-12"
+                     },
+                     {
+                         "brand":  "EPEVER",
+                         "model":  "Solar Cell Controller XTRA3210N"
+                     },
+                     {
+                         "brand":  "EPEVER",
+                         "model":  "Tracer2210AN 20A"
+                     },
+                     {
+                         "brand":  "EPEVER",
+                         "model":  "Tracer4210AN G3 40A"
+                     },
+                     {
+                         "brand":  "EPEVER",
+                         "model":  "XTRA 2210N"
+                     },
+                     {
+                         "brand":  "ETS",
+                         "model":  "ETS 2 KVA M1-2000"
+                     },
+                     {
+                         "brand":  "ETS",
+                         "model":  "ETS 21 KVA  2100 MB2-3P"
+                     },
+                     {
+                         "brand":  "Eyc-tech",
+                         "model":  "THS307 Outdoor"
+                     },
+                     {
+                         "brand":  "Freewave",
+                         "model":  "Spread Spectrum Radio FGR3"
+                     },
+                     {
+                         "brand":  "Geekom",
+                         "model":  "Mini PC IT8 SE (Intel Core i3-8109U)"
+                     },
+                     {
+                         "brand":  "Gemalto",
+                         "model":  "Gemalto 3G - 4G"
+                     },
+                     {
+                         "brand":  "GH Solar",
+                         "model":  "GH 50WP"
+                     },
+                     {
+                         "brand":  "GILL Instrument",
+                         "model":  "WindObserver 75"
+                     },
+                     {
+                         "brand":  "GILL Instrument",
+                         "model":  "WindSonic 75"
+                     },
+                     {
+                         "brand":  "GS",
+                         "model":  "65D26R Baterai 12V 65Ah"
+                     },
+                     {
+                         "brand":  "Gtekgeo",
+                         "model":  "AX27"
+                     },
+                     {
+                         "brand":  "Gtekgeo",
+                         "model":  "G250S"
+                     },
+                     {
+                         "brand":  "HandyPort",
+                         "model":  "Kabel Antena Wireless HPC-130"
+                     },
+                     {
+                         "brand":  "HandyPort",
+                         "model":  "Patch Antenna HPA-120"
+                     },
+                     {
+                         "brand":  "Handywave",
+                         "model":  "Handy Port Serial HPS-120"
+                     },
+                     {
+                         "brand":  "Holux",
+                         "model":  "GPS time + USB Extension M215+"
+                     },
+                     {
+                         "brand":  "Honda",
+                         "model":  "Genset Silent Inverter EU22IT-R-R280"
+                     },
+                     {
+                         "brand":  "HP",
+                         "model":  "280 Pro G4 Small Form Factor PC"
+                     },
+                     {
+                         "brand":  "HP",
+                         "model":  "HPE ML350 G10 4110"
+                     },
+                     {
+                         "brand":  "HP",
+                         "model":  "PC ALL IN ONE HP ELITEONE 800-G3"
+                     },
+                     {
+                         "brand":  "HPE",
+                         "model":  "DL380-G10"
+                     },
+                     {
+                         "brand":  "Hydrological Services",
+                         "model":  "TB3"
+                     },
+                     {
+                         "brand":  "Hydrological Services",
+                         "model":  "TB-4"
+                     },
+                     {
+                         "brand":  "Hyquest Solutions",
+                         "model":  "Sensor Hujan TB4 Series II"
+                     },
+                     {
+                         "brand":  "Hyquest Solutions",
+                         "model":  "TB4"
+                     },
+                     {
+                         "brand":  "ICA Solar",
+                         "model":  "Solar Cell 150W IPV 150P /w Bracket"
+                     },
+                     {
+                         "brand":  "ICAL",
+                         "model":  "Baterai 12 V 150 Ah"
+                     },
+                     {
+                         "brand":  "InHand",
+                         "model":  "InRouter305 Wifi"
+                     },
+                     {
+                         "brand":  "Inhand",
+                         "model":  "InRouter615-SL3DS"
+                     },
+                     {
+                         "brand":  "Inhand",
+                         "model":  "IR300"
+                     },
+                     {
+                         "brand":  "Inhand",
+                         "model":  "IR302"
+                     },
+                     {
+                         "brand":  "Inhand",
+                         "model":  "IR305"
+                     },
+                     {
+                         "brand":  "InHand",
+                         "model":  "Modem InRouter302 Wifi"
+                     },
+                     {
+                         "brand":  "Inhand",
+                         "model":  "Modem IR302 + Antenna Omni"
+                     },
+                     {
+                         "brand":  "Jucindo Utama Mandiri",
+                         "model":  "Enclosure P Series"
+                     },
+                     {
+                         "brand":  "Kabel",
+                         "model":  "Kabel Sensor Angin"
+                     },
+                     {
+                         "brand":  "Kamtex Solar",
+                         "model":  "solar panel 60 WP KMX-60W"
+                     },
+                     {
+                         "brand":  "KCM",
+                         "model":  "Logger KCM MQTT"
+                     },
+                     {
+                         "brand":  "KIJO",
+                         "model":  "Baterai 12 V 100 Ah JDG12-100"
+                     },
+                     {
+                         "brand":  "KIJO",
+                         "model":  "Baterai 12V 80 Ah JDG12-80"
+                     },
+                     {
+                         "brand":  "Kipp \u0026 Zonen",
+                         "model":  "CHP1"
+                     },
+                     {
+                         "brand":  "Kipp \u0026 Zonen",
+                         "model":  "CMP3 Pyranometer"
+                     },
+                     {
+                         "brand":  "Kipp \u0026 Zonen",
+                         "model":  "CSD3"
+                     },
+                     {
+                         "brand":  "Kipp \u0026 Zonen",
+                         "model":  "PQS 1 PAR Quantum Sensor"
+                     },
+                     {
+                         "brand":  "Kipp \u0026 Zonen",
+                         "model":  "SMP3"
+                     },
+                     {
+                         "brand":  "Kipp \u0026 Zonen",
+                         "model":  "Solar Radiation 3121"
+                     },
+                     {
+                         "brand":  "Kipp \u0026 Zonen",
+                         "model":  "SP LITE 2"
+                     },
+                     {
+                         "brand":  "Kisters",
+                         "model":  "TB-4"
+                     },
+                     {
+                         "brand":  "Lambrecht",
+                         "model":  "Prelog data logger 00.15190.100000"
+                     },
+                     {
+                         "brand":  "Lenovo",
+                         "model":  "M720S"
+                     },
+                     {
+                         "brand":  "Lenovo",
+                         "model":  "Monitor ThinkVision E2054"
+                     },
+                     {
+                         "brand":  "Lenovo",
+                         "model":  "ThinkBook 14s Yoga (14”) 2-in-1 Laptop"
+                     },
+                     {
+                         "brand":  "Lenovo",
+                         "model":  "ThinkSystem ST250 Tower Server"
+                     },
+                     {
+                         "brand":  "LG",
+                         "model":  "Display Monitor 43 Inch"
+                     },
+                     {
+                         "brand":  "Logic IO",
+                         "model":  "MX2 Turbo"
+                     },
+                     {
+                         "brand":  "Logitech",
+                         "model":  "MK345 Comfort Wireless Keyboard dan Mouse Combo"
+                     },
+                     {
+                         "brand":  "LSI LASTEM",
+                         "model":  "DQA230/DQA231/DQA235"
+                     },
+                     {
+                         "brand":  "LSI LASTEM",
+                         "model":  "X-LOG"
+                     },
+                     {
+                         "brand":  "Luminous",
+                         "model":  "Solar Cell 150W LUM150P /w Bracket"
+                     },
+                     {
+                         "brand":  "M Power Plus",
+                         "model":  "VRLAJP 65-12G 65AH"
+                     },
+                     {
+                         "brand":  "Manvis",
+                         "model":  "RJ45"
+                     },
+                     {
+                         "brand":  "Meanwell",
+                         "model":  "HDR 60-15 Adaptor 15V 4A"
+                     },
+                     {
+                         "brand":  "Microstep",
+                         "model":  "Wind Monitoring"
+                     },
+                     {
+                         "brand":  "Morningstar Corporation",
+                         "model":  "SunSaver-10L"
+                     },
+                     {
+                         "brand":  "Morningstar Corporation",
+                         "model":  "SunSaver-20L"
+                     },
+                     {
+                         "brand":  "Morningstar Corporation",
+                         "model":  "SunSaver-6L"
+                     },
+                     {
+                         "brand":  "MOXA",
+                         "model":  "N-PORT 5130"
+                     },
+                     {
+                         "brand":  "MOXA",
+                         "model":  "NPORT 5150 serial to rj45"
+                     },
+                     {
+                         "brand":  "MOXA",
+                         "model":  "NPORT-5110"
+                     },
+                     {
+                         "brand":  "MOXA",
+                         "model":  "TC-80I Konverter RS232 to RS422"
+                     },
+                     {
+                         "brand":  "MSI",
+                         "model":  "PC Prestige 15 A10SC"
+                     },
+                     {
+                         "brand":  "MTC",
+                         "model":  "VRLA OT100-12 100AH"
+                     },
+                     {
+                         "brand":  "MTC",
+                         "model":  "VRLA OT65-12 65AH"
+                     },
+                     {
+                         "brand":  "MY SOLAR",
+                         "model":  "Bohlam Obstruction DC"
+                     },
+                     {
+                         "brand":  "NET Line",
+                         "model":  "Serial Card PCI Express to 2 serial RS232"
+                     },
+                     {
+                         "brand":  "OBO",
+                         "model":  "arrester V25, 4-pole 280 V"
+                     },
+                     {
+                         "brand":  "OBO",
+                         "model":  "MDP-2 D-5-T"
+                     },
+                     {
+                         "brand":  "OBO",
+                         "model":  "SparkGap"
+                     },
+                     {
+                         "brand":  "OSKA",
+                         "model":  "Bohlam Obstruction AC"
+                     },
+                     {
+                         "brand":  "Panasonic",
+                         "model":  "Baterai 17 Ah LC-VD1217NA"
+                     },
+                     {
+                         "brand":  "Panasonic",
+                         "model":  "CS-PN18WKJ AC 2 PK"
+                     },
+                     {
+                         "brand":  "Panasonic",
+                         "model":  "LC-VD1217NA Baterai 12 V 17 Ah"
+                     },
+                     {
+                         "brand":  "Panasonic",
+                         "model":  "VRLA 12V 28AH"
+                     },
+                     {
+                         "brand":  "Panasonic",
+                         "model":  "VRLA 28 AH"
+                     },
+                     {
+                         "brand":  "Panasonic",
+                         "model":  "VRLA LC-P1228 28 AH"
+                     },
+                     {
+                         "brand":  "Panasonic",
+                         "model":  "VRLA LC-P1242NA 42AH"
+                     },
+                     {
+                         "brand":  "Panasonic",
+                         "model":  "VRLA LC-RD1217NA 17AH"
+                     },
+                     {
+                         "brand":  "Panasonic",
+                         "model":  "VRLA LC-V127R2NA 7.2 AH"
+                     },
+                     {
+                         "brand":  "Panasonic",
+                         "model":  "VRLA LC-VD1217NA 17AH"
+                     },
+                     {
+                         "brand":  "Phocos",
+                         "model":  "CIS-MPPT 85/14"
+                     },
+                     {
+                         "brand":  "Powerlite",
+                         "model":  "Stabilitzer 1 KVA SH1000VA"
+                     },
+                     {
+                         "brand":  "Powerlite",
+                         "model":  "Stabilitzer 3 KVA SH3000VA"
+                     },
+                     {
+                         "brand":  "R. M. Young",
+                         "model":  "05103"
+                     },
+                     {
+                         "brand":  "R. M. Young",
+                         "model":  "05103V"
+                     },
+                     {
+                         "brand":  "R. M. Young",
+                         "model":  "05305"
+                     },
+                     {
+                         "brand":  "R. M. Young",
+                         "model":  "41382V"
+                     },
+                     {
+                         "brand":  "R. M. Young",
+                         "model":  "52203"
+                     },
+                     {
+                         "brand":  "R. M. Young",
+                         "model":  "61402L"
+                     },
+                     {
+                         "brand":  "R. M. Young",
+                         "model":  "61402V"
+                     },
+                     {
+                         "brand":  "R. M. Young",
+                         "model":  "RAD14"
+                     },
+                     {
+                         "brand":  "Raspberry",
+                         "model":  "Micro PC PI 4"
+                     },
+                     {
+                         "brand":  "Raspberry",
+                         "model":  "Touchscreen 7 Inch"
+                     },
+                     {
+                         "brand":  "RHM (Rekayasa Hijau Mandiri)",
+                         "model":  "SL100W 100WP"
+                     },
+                     {
+                         "brand":  "RHM (Rekayasa Hijau Mandiri)",
+                         "model":  "SL200W 200WP"
+                     },
+                     {
+                         "brand":  "RHM (Rekayasa Hijau Mandiri)",
+                         "model":  "Solar Panel 50 WP"
+                     },
+                     {
+                         "brand":  "RHM (Rekayasa Hijau Mandiri)",
+                         "model":  "Solar Panel 50 WP SLP0500S-12"
+                     },
+                     {
+                         "brand":  "RM Young",
+                         "model":  "Marine Wind Monitor 05106"
+                     },
+                     {
+                         "brand":  "RM Young",
+                         "model":  "Meteorological Translator 26800"
+                     },
+                     {
+                         "brand":  "RM Young",
+                         "model":  "Sensor Arah dan Kecepatan Angin 5106"
+                     },
+                     {
+                         "brand":  "RM Young",
+                         "model":  "Wind Sentry Anemometer \u0026 Vane 03002"
+                     },
+                     {
+                         "brand":  "RM Young",
+                         "model":  "Wind Sentry Anemometer 03102-L"
+                     },
+                     {
+                         "brand":  "Robustel",
+                         "model":  "R3000 4L"
+                     },
+                     {
+                         "brand":  "Robustel",
+                         "model":  "R3000 L4L (Lite)"
+                     },
+                     {
+                         "brand":  "SAFT",
+                         "model":  "Battery SAFT 1/2 AA  3.6 V"
+                     },
+                     {
+                         "brand":  "Saipwell",
+                         "model":  "SMC-504020G"
+                     },
+                     {
+                         "brand":  "Saipwell",
+                         "model":  "SP-CAG 436323"
+                     },
+                     {
+                         "brand":  "Saipwell",
+                         "model":  "SP-CAG-435320"
+                     },
+                     {
+                         "brand":  "Samsung",
+                         "model":  "50\" TU8500 Crystal UHD 4K"
+                     },
+                     {
+                         "brand":  "Samsung",
+                         "model":  "55\" Crystal UHD CU8500 4K"
+                     },
+                     {
+                         "brand":  "Samsung",
+                         "model":  "860 EVO SATA 2.5\" SSD 2TB"
+                     },
+                     {
+                         "brand":  "Samsung",
+                         "model":  "870 Evo 1 TB"
+                     },
+                     {
+                         "brand":  "Samsung",
+                         "model":  "870 EVO 2 TB"
+                     },
+                     {
+                         "brand":  "Samsung",
+                         "model":  "870 QVO 2TB"
+                     },
+                     {
+                         "brand":  "Samsung",
+                         "model":  "Smart TV 50\" Crystal UHD 4K AU9000"
+                     },
+                     {
+                         "brand":  "Samsung",
+                         "model":  "Smart TV UHD DU7000"
+                     },
+                     {
+                         "brand":  "Samsung",
+                         "model":  "SSD 2 TB EVO"
+                     },
+                     {
+                         "brand":  "Schneider",
+                         "model":  "Inverter SW2524 230"
+                     },
+                     {
+                         "brand":  "Schneider",
+                         "model":  "MCB 2A"
+                     },
+                     {
+                         "brand":  "schneider",
+                         "model":  "MCB Domae C2"
+                     },
+                     {
+                         "brand":  "schneider",
+                         "model":  "MCB Domae C20"
+                     },
+                     {
+                         "brand":  "schneider",
+                         "model":  "MCB Domae C4"
+                     },
+                     {
+                         "brand":  "schneider",
+                         "model":  "MCB Domae C6"
+                     },
+                     {
+                         "brand":  "Schneider",
+                         "model":  "Solar Charge Controller MPPT 60 150"
+                     },
+                     {
+                         "brand":  "Seagate",
+                         "model":  "HDD 1 TB ST1000DM010"
+                     },
+                     {
+                         "brand":  "Seagate",
+                         "model":  "HDD Eksternal 1 TB 2EP102-300"
+                     },
+                     {
+                         "brand":  "Sharp",
+                         "model":  "Solar Panel 180 WP NU S0E3E"
+                     },
+                     {
+                         "brand":  "Shengda",
+                         "model":  "Antenna Omni SDBF0.5-6-4G"
+                     },
+                     {
+                         "brand":  "Shinyoku",
+                         "model":  "Solar Panel 156P-100 WP Polycrystallin"
+                     },
+                     {
+                         "brand":  "Sierra",
+                         "model":  "FX30 3G"
+                     },
+                     {
+                         "brand":  "Sierra",
+                         "model":  "RV50"
+                     },
+                     {
+                         "brand":  "SIRA",
+                         "model":  "AWOS Processing Unit (APU) SIRA"
+                     },
+                     {
+                         "brand":  "Skytech Solar",
+                         "model":  "Solar  Panel"
+                     },
+                     {
+                         "brand":  "SMT",
+                         "model":  "Baterai 12V 7.5Ah"
+                     },
+                     {
+                         "brand":  "SMT-Power",
+                         "model":  "VRLA SMT12100 100Ah"
+                     },
+                     {
+                         "brand":  "Solar Land",
+                         "model":  "SLC-NR2410A"
+                     },
+                     {
+                         "brand":  "Solar Land",
+                         "model":  "SLP050S-12U"
+                     },
+                     {
+                         "brand":  "Solar Land",
+                         "model":  "Solar Panel 100WP"
+                     },
+                     {
+                         "brand":  "Solar Land",
+                         "model":  "Solar Panel Monocrystalline 50WP"
+                     },
+                     {
+                         "brand":  "Solar Module",
+                         "model":  "Solar Module SP-55-M36"
+                     },
+                     {
+                         "brand":  "Sony",
+                         "model":  "Display Monitor 55 Inch"
+                     },
+                     {
+                         "brand":  "Starlink",
+                         "model":  "Starlink Business Service-Land Priority Airtime 40GB"
+                     },
+                     {
+                         "brand":  "Starlink",
+                         "model":  "Starlink Roam 40 GB + Power Supply"
+                     },
+                     {
+                         "brand":  "Stromscope",
+                         "model":  "Lightning Detection Processor WX 500"
+                     },
+                     {
+                         "brand":  "Sun solar",
+                         "model":  "Solar Panel 100 WP"
+                     },
+                     {
+                         "brand":  "Sun solar",
+                         "model":  "Solar Panel 30 WP"
+                     },
+                     {
+                         "brand":  "Sun solar",
+                         "model":  "Solar Panel 50 WP"
+                     },
+                     {
+                         "brand":  "Sundaya",
+                         "model":  "Apple 10"
+                     },
+                     {
+                         "brand":  "Sunsaver",
+                         "model":  "Morningstar SS-10-12V Charge Controller"
+                     },
+                     {
+                         "brand":  "TEE (Trisari Environmental Expert)",
+                         "model":  "MD51"
+                     },
+                     {
+                         "brand":  "Telit",
+                         "model":  "GT863-3EU"
+                     },
+                     {
+                         "brand":  "Thies Clima",
+                         "model":  "Anemometer Ultrasonic  2D Compact Plus 4.3875.70.340"
+                     },
+                     {
+                         "brand":  "Thies Clima",
+                         "model":  "Baro Transmitter B-278"
+                     },
+                     {
+                         "brand":  "Thies Clima",
+                         "model":  "Clima Sensor 4.90203.00.0000"
+                     },
+                     {
+                         "brand":  "Thies Clima",
+                         "model":  "Evaporation Transmitter 6.1432.x0.xxx"
+                     },
+                     {
+                         "brand":  "Thies Clima",
+                         "model":  "Hygro-Thermo Transmitter 1.1005.54.000"
+                     },
+                     {
+                         "brand":  "Thies Clima",
+                         "model":  "Hygro-Thermo-Baro Transmitter Compact 1.1006.54.160"
+                     },
+                     {
+                         "brand":  "Thies Clima",
+                         "model":  "Hygro-Thermo-Baro Transmitter Compact 1.1006.54.760"
+                     },
+                     {
+                         "brand":  "Thies Clima",
+                         "model":  "PT-100 Temperature Transmitter"
+                     },
+                     {
+                         "brand":  "Thies Clima",
+                         "model":  "Sensor Water Level 6.1432.10.073"
+                     },
+                     {
+                         "brand":  "Thies Clima",
+                         "model":  "Silicon Sensor PAR 5.3 7.1418.00.051"
+                     },
+                     {
+                         "brand":  "Thies Clima",
+                         "model":  "Thies Clima 1.1005.54.701"
+                     },
+                     {
+                         "brand":  "Thies Clima",
+                         "model":  "Ultrasonic Evaporation Transmitter"
+                     },
+                     {
+                         "brand":  "Thies Clima",
+                         "model":  "Wind Direction Transmitter-4.3151.10.173"
+                     },
+                     {
+                         "brand":  "Thies Clima",
+                         "model":  "Wind Speed 0.5 meter"
+                     },
+                     {
+                         "brand":  "Thies Clima",
+                         "model":  "Wind Transmitter “First Class” Advanced 4.3351.00.141"
+                     },
+                     {
+                         "brand":  "Thies Clima",
+                         "model":  "Wind Transmitter “First Class” Advanced 4.3351.10.173"
+                     },
+                     {
+                         "brand":  "Thies Clima",
+                         "model":  "Wind Transmitter compact"
+                     },
+                     {
+                         "brand":  "TP-Link",
+                         "model":  "CPE220"
+                     },
+                     {
+                         "brand":  "TP-Link",
+                         "model":  "CPE510 radio 5 GHz"
+                     },
+                     {
+                         "brand":  "TP-Link",
+                         "model":  "Konverter USB to LAN"
+                     },
+                     {
+                         "brand":  "TP-Link",
+                         "model":  "Switch Hub 8 Port TL-SF1008D"
+                     },
+                     {
+                         "brand":  "TP-Link",
+                         "model":  "TG-3468 Gigabit PCI Express Network Adapter"
+                     },
+                     {
+                         "brand":  "Tycon",
+                         "model":  "POE Camera TP-DCDC-1248D"
+                     },
+                     {
+                         "brand":  "Tycon Systems",
+                         "model":  "Tycon Systems TP-DCDC-1224G-4P"
+                     },
+                     {
+                         "brand":  "Ubiquiti",
+                         "model":  "airMAX 5 GHz"
+                     },
+                     {
+                         "brand":  "Ubiquiti",
+                         "model":  "Radio Wireless 2.4 GHz Rocket M2"
+                     },
+                     {
+                         "brand":  "Ubiquiti",
+                         "model":  "Radio Wireless 5 GHz  NanoStation M5"
+                     },
+                     {
+                         "brand":  "Vaisala",
+                         "model":  "CL31"
+                     },
+                     {
+                         "brand":  "Vaisala",
+                         "model":  "Display Signal Generator SMB 100A"
+                     },
+                     {
+                         "brand":  "Vaisala",
+                         "model":  "Ethernet Communication Module DSE101"
+                     },
+                     {
+                         "brand":  "Vaisala",
+                         "model":  "HMP155A"
+                     },
+                     {
+                         "brand":  "Vaisala",
+                         "model":  "PTB110"
+                     },
+                     {
+                         "brand":  "Vaisala",
+                         "model":  "PTB210"
+                     },
+                     {
+                         "brand":  "Vaisala",
+                         "model":  "PTB330"
+                     },
+                     {
+                         "brand":  "Vaisala",
+                         "model":  "QML201"
+                     },
+                     {
+                         "brand":  "Vaisala",
+                         "model":  "QMT107"
+                     },
+                     {
+                         "brand":  "Vaisala",
+                         "model":  "QMT110"
+                     },
+                     {
+                         "brand":  "Vaisala",
+                         "model":  "Soil/Water Temperature Probe QMT110"
+                     },
+                     {
+                         "brand":  "Vaisala",
+                         "model":  "WINDCAP Ultrasonic Wind Sensor WMT700"
+                     },
+                     {
+                         "brand":  "Vega",
+                         "model":  "Sensor Water Level Vegapuls C23"
+                     },
+                     {
+                         "brand":  "Vega",
+                         "model":  "Vegapuls 61"
+                     },
+                     {
+                         "brand":  "Vega",
+                         "model":  "Vegapuls C21"
+                     },
+                     {
+                         "brand":  "Vega",
+                         "model":  "Vegapuls C23"
+                     },
+                     {
+                         "brand":  "Vektor",
+                         "model":  "MS II 6kVA"
+                     },
+                     {
+                         "brand":  "Victron Energy",
+                         "model":  "SmartSolar MPPT 75/15"
+                     },
+                     {
+                         "brand":  "VivoTek",
+                         "model":  "Camera IB9381_EHT"
+                     },
+                     {
+                         "brand":  "VOZ",
+                         "model":  "Baterai 100 Ah"
+                     },
+                     {
+                         "brand":  "VOZ",
+                         "model":  "Baterai 12V 33 Ah VOZ-VA12-33"
+                     },
+                     {
+                         "brand":  "VOZ",
+                         "model":  "VOZ-VA12-18 Baterai 18 Ah"
+                     },
+                     {
+                         "brand":  "VOZ",
+                         "model":  "VRLA VA12-28 28AH"
+                     },
+                     {
+                         "brand":  "VOZ",
+                         "model":  "VRLA VA12-42 42AH"
+                     },
+                     {
+                         "brand":  "VRLA GEL",
+                         "model":  "VRLA 12VDC 45AH"
+                     },
+                     {
+                         "brand":  "VRLA GEL",
+                         "model":  "VRLA 12VDC 65AH"
+                     },
+                     {
+                         "brand":  "VRLA GEL",
+                         "model":  "VRLA GEL 12VDC, 100 AH"
+                     },
+                     {
+                         "brand":  "W5 Pro",
+                         "model":  "Mini PC X5-Z8350"
+                     },
+                     {
+                         "brand":  "WTI",
+                         "model":  "WTI Management Control AC Power RPC-40L8A4-24"
+                     },
+                     {
+                         "brand":  "X Solar",
+                         "model":  "SWP 100"
+                     },
+                     {
+                         "brand":  "Xiaomi",
+                         "model":  "Display Xiaomi 43\""
+                     },
+                     {
+                         "brand":  "Yuasa",
+                         "model":  "VRLA 6V 1.2AH"
+                     },
+                     {
+                         "brand":  "Yuasa",
+                         "model":  "VRLA NP18-12 17.2 AH"
+                     },
+                     {
+                         "brand":  "Yuasa",
+                         "model":  "VRLA NP25-12 24AH"
+                     },
+                     {
+                         "brand":  "Yuasa",
+                         "model":  "VRLA NP38-12 38Ah"
+                     }
+                 ]
+}
