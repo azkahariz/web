@@ -123,11 +123,23 @@ export const SITE_METADATA_CSV_HEADERS = [
 ];
 
 const TRANSPORT_METHODS = ["MQTT", "HTTP POST", "FTP", "TCP/IP Direct"];
-const REGION_API_BASE = "https://api.kodewilayah.web.id";
+const REGION_API_ROUTE = "/api/regions";
 const regionCache = new Map<string, RegionOption[]>();
 
 type RegionOption = { code: string; name: string };
-type RegionApiResponse = { success: boolean; data?: Array<{ code: string | number; name: string }> };
+type RegionApiResponse = { data?: Array<{ code: string | number; name: string }> };
+
+function normalizeRegionCode(code: string, level: 1 | 2 | 3 | 4) {
+  const digits = code.replace(/\D/g, "");
+  const lengths = [2, 2, 2, 4].slice(0, level);
+  const parts: string[] = [];
+  let offset = 0;
+  for (const length of lengths) {
+    parts.push(digits.slice(offset, offset + length));
+    offset += length;
+  }
+  return parts.filter(Boolean).join(".");
+}
 
 function useRegionOptions(path: string | null, reloadToken: number) {
   const [result, setResult] = useState<{
@@ -144,11 +156,11 @@ function useRegionOptions(path: string | null, reloadToken: number) {
     if (cached) return;
 
     const controller = new AbortController();
-    fetch(`${REGION_API_BASE}${path}`, { signal: controller.signal, headers: { Accept: "application/json" } })
+    fetch(`${REGION_API_ROUTE}?path=${encodeURIComponent(path)}`, { signal: controller.signal, headers: { Accept: "application/json" } })
       .then(async (response) => {
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const body = await response.json() as RegionApiResponse;
-        if (!body.success || !Array.isArray(body.data)) throw new Error("Respons wilayah tidak valid");
+        if (!Array.isArray(body.data)) throw new Error("Respons wilayah tidak valid");
         return body.data.map((item) => ({ code: String(item.code), name: item.name }));
       })
       .then((items) => {
@@ -233,10 +245,14 @@ type Props = {
 export default function SiteMetadataForm({ value, automatic, onChange, onReset }: Props) {
   const [regionReloadToken, setRegionReloadToken] = useState(0);
   const [manualRegionEntry, setManualRegionEntry] = useState(false);
-  const provinces = useRegionOptions("/provinces", regionReloadToken);
-  const cities = useRegionOptions(value.provinceCode ? `/regencies/${value.provinceCode}` : null, regionReloadToken);
-  const districts = useRegionOptions(value.cityCode ? `/districts/${value.cityCode}` : null, regionReloadToken);
-  const villages = useRegionOptions(value.districtCode ? `/villages/${value.districtCode}` : null, regionReloadToken);
+  const normalizedProvinceCode = normalizeRegionCode(value.provinceCode ?? "", 1);
+  const normalizedCityCode = normalizeRegionCode(value.cityCode ?? "", 2);
+  const normalizedDistrictCode = normalizeRegionCode(value.districtCode ?? "", 3);
+  const normalizedVillageCode = normalizeRegionCode(value.villageCode ?? "", 4);
+  const provinces = useRegionOptions("/provinces.json", regionReloadToken);
+  const cities = useRegionOptions(normalizedProvinceCode ? `/regencies/${normalizedProvinceCode}.json` : null, regionReloadToken);
+  const districts = useRegionOptions(normalizedCityCode ? `/districts/${normalizedCityCode}.json` : null, regionReloadToken);
+  const villages = useRegionOptions(normalizedDistrictCode ? `/villages/${normalizedDistrictCode}.json` : null, regionReloadToken);
   const regionError = provinces.error || cities.error || districts.error || villages.error;
   const hasLegacyRegionNames = Boolean(
     (value.province && !value.provinceCode)
@@ -355,7 +371,7 @@ export default function SiteMetadataForm({ value, automatic, onChange, onReset }
             <>
               <label>Nama Provinsi
                 <select
-                  value={value.provinceCode ?? ""}
+                  value={normalizedProvinceCode}
                   disabled={provinces.loading}
                   onChange={(event) => chooseRegion("provinceCode", "province", event.target.value, provinces.options, {
                     cityCode: "", city: "", districtCode: "", district: "", villageCode: "", village: "",
@@ -367,7 +383,7 @@ export default function SiteMetadataForm({ value, automatic, onChange, onReset }
               </label>
               <label>Kab/Kota
                 <select
-                  value={value.cityCode ?? ""}
+                  value={normalizedCityCode}
                   disabled={!value.provinceCode || cities.loading}
                   onChange={(event) => chooseRegion("cityCode", "city", event.target.value, cities.options, {
                     districtCode: "", district: "", villageCode: "", village: "",
@@ -379,7 +395,7 @@ export default function SiteMetadataForm({ value, automatic, onChange, onReset }
               </label>
               <label>Kecamatan
                 <select
-                  value={value.districtCode ?? ""}
+                  value={normalizedDistrictCode}
                   disabled={!value.cityCode || districts.loading}
                   onChange={(event) => chooseRegion("districtCode", "district", event.target.value, districts.options, {
                     villageCode: "", village: "",
@@ -391,7 +407,7 @@ export default function SiteMetadataForm({ value, automatic, onChange, onReset }
               </label>
               <label>Desa/Kelurahan
                 <select
-                  value={value.villageCode ?? ""}
+                  value={normalizedVillageCode}
                   disabled={!value.districtCode || villages.loading}
                   onChange={(event) => chooseRegion("villageCode", "village", event.target.value, villages.options, {})}
                 >

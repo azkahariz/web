@@ -254,14 +254,22 @@ test("metadata Aloptama ikut dalam ekspor JSON dan CSV", async () => {
   assert.match(metadataSource, /value\.transportMethods\.join\("; "\)/);
 });
 
-test("wilayah administratif memakai API bertingkat dan menyimpan kode wilayah", async () => {
-  const source = await readFile(new URL("../app/SiteMetadataForm.tsx", import.meta.url), "utf8");
+test("wilayah administratif memakai wilayah.id secara bertingkat dan menyimpan kode wilayah", async () => {
+  const [source, routeSource] = await Promise.all([
+    readFile(new URL("../app/SiteMetadataForm.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/regions/route.ts", import.meta.url), "utf8"),
+  ]);
 
-  assert.match(source, /https:\/\/api\.kodewilayah\.web\.id/);
-  assert.match(source, /useRegionOptions\("\/provinces"/);
-  assert.match(source, /`\/regencies\/\$\{value\.provinceCode\}`/);
-  assert.match(source, /`\/districts\/\$\{value\.cityCode\}`/);
-  assert.match(source, /`\/villages\/\$\{value\.districtCode\}`/);
+  assert.match(source, /REGION_API_ROUTE = "\/api\/regions"/);
+  assert.match(source, /encodeURIComponent\(path\)/);
+  assert.match(routeSource, /https:\/\/wilayah\.id\/api/);
+  assert.match(routeSource, /ALLOWED_PATH/);
+  assert.match(routeSource, /Cache-Control/);
+  assert.match(source, /useRegionOptions\("\/provinces\.json"/);
+  assert.match(source, /`\/regencies\/\$\{normalizedProvinceCode\}\.json`/);
+  assert.match(source, /`\/districts\/\$\{normalizedCityCode\}\.json`/);
+  assert.match(source, /`\/villages\/\$\{normalizedDistrictCode\}\.json`/);
+  assert.match(source, /function normalizeRegionCode/);
   assert.match(source, /provinceCode:[\s\S]*cityCode:[\s\S]*districtCode:[\s\S]*villageCode:/);
   assert.match(source, /cityCode: "", city: "", districtCode: "", district: "", villageCode: "", village: ""/);
   assert.match(source, /Data wilayah belum dapat dimuat/);
