@@ -203,3 +203,53 @@ test("produk di luar daftar dapat ditambahkan dengan brand dan tipe", async () =
   assert.match(source, />Brand<input[\s\S]*>Tipe<input/);
   assert.match(source, />Tambahkan produk</);
 });
+
+test("metadata Aloptama tersimpan per site dan memakai nilai lokasi otomatis", async () => {
+  const [source, metadataSource] = await Promise.all([
+    readFile(new URL("../app/InventoryApp.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/SiteMetadataForm.tsx", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(source, /site-metadata::\$\{station\}::\$\{site\}/);
+  assert.match(source, /stationName: station/);
+  assert.match(source, /equipmentType: selectedSite\?\.siteType/);
+  assert.match(source, /fieldDomain: "Meteorology"/);
+  assert.match(source, /uptManager: station/);
+  assert.match(source, /siteMetadataDrafts[\s\S]*localStorage\.setItem/);
+  assert.match(metadataSource, /Nama Stasiun<input value=\{automatic\.stationName\} readOnly/);
+  assert.match(metadataSource, /Equipment Type<input value=\{automatic\.equipmentType\} readOnly/);
+});
+
+test("form metadata menyediakan seluruh pilihan operasional dan komunikasi", async () => {
+  const source = await readFile(new URL("../app/SiteMetadataForm.tsx", import.meta.url), "utf8");
+  const expectedLabels = [
+    "Sumber Anggaran Pemeliharaan", "Merk Pengadaan", "WIGOS ID", "AWS Center ID",
+    "Status Kepemilikan", "Kode BMN (NUP)", "Tanggal Instalasi", "Status Operasional",
+    "Alamat Detail", "Desa/Kelurahan", "Kecamatan", "Kab/Kota", "Nama Provinsi",
+    "Nama Instansi Mitra", "Alamat Instansi", "Nama Penjaga", "No HP Penjaga",
+    "Latitude", "Longitude", "Elevasi (meter)", "Metode Ukur", "Tanggal Ukur",
+    "No SIM/GSM", "Metode Transport", "Zona Waktu", "Nama Teknisi", "No HP Teknisi",
+    "Instansi Teknisi", "Mulai Interval", "Akhir Interval", "Interval Data (menit)",
+  ];
+
+  for (const label of expectedLabels) assert.match(source, new RegExp(label.replace(/[()]/g, "\\$&")));
+  assert.match(source, /OPERATIONAL[\s\S]*TRIAL[\s\S]*INACTIVE[\s\S]*RETIRED/);
+  assert.match(source, /MQTT[\s\S]*HTTP POST[\s\S]*FTP[\s\S]*TCP\/IP Direct/);
+  assert.match(source, /WIB \(UTC\+7\)[\s\S]*WITA \(UTC\+8\)[\s\S]*WIT \(UTC\+9\)/);
+  assert.match(source, /value="1">1 Menit[\s\S]*value="60">60 Menit[\s\S]*Lainnya/);
+  assert.match(source, /transportMethods\.includes\(method\)/);
+  assert.match(source, /Gunakan titik sebagai pemisah desimal/);
+});
+
+test("metadata Aloptama ikut dalam ekspor JSON dan CSV", async () => {
+  const [source, metadataSource] = await Promise.all([
+    readFile(new URL("../app/InventoryApp.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/SiteMetadataForm.tsx", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(source, /siteMetadata: mode === "site"/);
+  assert.match(source, /\.\.\.SITE_METADATA_CSV_HEADERS/);
+  assert.match(source, /\.\.\.siteMetadataCells/);
+  assert.match(metadataSource, /export const SITE_METADATA_CSV_HEADERS/);
+  assert.match(metadataSource, /value\.transportMethods\.join\("; "\)/);
+});

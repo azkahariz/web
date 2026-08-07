@@ -2,6 +2,12 @@
 
 import { useEffect, useMemo, useState } from "react";
 import rawData from "./data.generated.json";
+import SiteMetadataForm, {
+  EMPTY_SITE_METADATA,
+  SITE_METADATA_CSV_HEADERS,
+  siteMetadataCsvValues,
+  type SiteMetadata,
+} from "./SiteMetadataForm";
 
 type StationSite = { station: string; site: string; siteType: string };
 type SiteSubtype = { siteType: string; subtype: string; profile: string };
@@ -39,6 +45,7 @@ type InstalledItem = Product & {
 type Inventory = Record<string, InstalledItem[]>;
 type Drafts = Record<string, Inventory>;
 type DraftContexts = Record<string, { runwayAzimuth?: string }>;
+type SiteMetadataDrafts = Record<string, SiteMetadata>;
 type SourceMode = "site" | "template";
 
 const data = rawData as DataSet;
@@ -115,6 +122,13 @@ export default function InventoryApp() {
     [],
   );
   const profiles = useMemo(() => Object.keys(data.barangByJenis), []);
+  const cityOptions = useMemo(() => {
+    const names = data.stationSites.flatMap((row) => [row.station, row.site]).flatMap((name) => {
+      const parts = name.split(/\s[-–]\s/);
+      return parts.length > 1 ? [parts.at(-1)?.trim() ?? ""] : [];
+    });
+    return Array.from(new Set(names.filter(Boolean))).sort((a, b) => a.localeCompare(b, "id"));
+  }, []);
 
   const [mode, setMode] = useState<SourceMode>("site");
   const [station, setStation] = useState("");
@@ -131,6 +145,7 @@ export default function InventoryApp() {
   const [customModel, setCustomModel] = useState("");
   const [drafts, setDrafts] = useState<Drafts>({});
   const [draftContexts, setDraftContexts] = useState<DraftContexts>({});
+  const [siteMetadataDrafts, setSiteMetadataDrafts] = useState<SiteMetadataDrafts>({});
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
@@ -146,6 +161,7 @@ export default function InventoryApp() {
             templateProfile?: string;
             drafts?: Drafts;
             draftContexts?: DraftContexts;
+            siteMetadataDrafts?: SiteMetadataDrafts;
           };
           setMode(parsed.mode ?? "site");
           setStation(parsed.station ?? "");
@@ -155,6 +171,7 @@ export default function InventoryApp() {
           setTemplateProfile(parsed.templateProfile ?? "");
           setDrafts(parsed.drafts ?? {});
           setDraftContexts(parsed.draftContexts ?? {});
+          setSiteMetadataDrafts(parsed.siteMetadataDrafts ?? {});
         }
       } catch {
         // Draf yang rusak diabaikan agar aplikasi tetap dapat digunakan.
@@ -169,9 +186,9 @@ export default function InventoryApp() {
     if (!hydrated) return;
     localStorage.setItem(
       STORAGE_KEY,
-      JSON.stringify({ mode, station, site, subtype, templateProfile, drafts, draftContexts }),
+      JSON.stringify({ mode, station, site, subtype, templateProfile, drafts, draftContexts, siteMetadataDrafts }),
     );
-  }, [mode, station, site, subtype, templateProfile, drafts, draftContexts, hydrated]);
+  }, [mode, station, site, subtype, templateProfile, drafts, draftContexts, siteMetadataDrafts, hydrated]);
 
   useEffect(() => {
     if (!activeCategory) return;
@@ -212,6 +229,15 @@ export default function InventoryApp() {
     ? `template::${profile}`
     : `site::${station}::${site}::${currentSubtype}`;
   const inventory = drafts[draftKey] ?? {};
+  const metadataKey = `site-metadata::${station}::${site}`;
+  const siteMetadata = siteMetadataDrafts[metadataKey] ?? EMPTY_SITE_METADATA;
+  const automaticMetadata = {
+    stationName: station,
+    siteName: site,
+    equipmentType: selectedSite?.siteType ?? "",
+    fieldDomain: "Meteorology" as const,
+    uptManager: station,
+  };
   const runwayAzimuth = draftContexts[draftKey]?.runwayAzimuth ?? "";
   const acceptsRunwayAzimuth = /(?:TDZ|End Point)$/i.test(currentSubtype);
   const filledCount = categories.filter((category) => (inventory[category]?.length ?? 0) > 0).length;
@@ -314,6 +340,19 @@ export default function InventoryApp() {
     }));
   }
 
+  function updateSiteMetadata(next: SiteMetadata) {
+    setSiteMetadataDrafts((current) => ({ ...current, [metadataKey]: next }));
+  }
+
+  function resetSiteMetadata() {
+    if (!window.confirm("Kosongkan seluruh metadata Aloptama untuk site ini?")) return;
+    setSiteMetadataDrafts((current) => {
+      const next = { ...current };
+      delete next[metadataKey];
+      return next;
+    });
+  }
+
   function removeItem(category: string, id: string) {
     setInventory({
       ...inventory,
@@ -344,6 +383,7 @@ export default function InventoryApp() {
       siteType: mode === "site" ? selectedSite?.siteType : null,
       subtype: mode === "site" ? currentSubtype : null,
       runwayAzimuth: mode === "site" && acceptsRunwayAzimuth ? runwayAzimuth : null,
+      siteMetadata: mode === "site" ? { ...automaticMetadata, ...siteMetadata } : null,
       profile,
       items: categories.map((category) => ({ category, products: inventory[category] ?? [] })),
     };
@@ -353,10 +393,13 @@ export default function InventoryApp() {
 
   function exportCurrentDraftCsv() {
     const headers = [
-      "Stasiun", "Site", "Tipe Site", "Subtipe Site", "Azimuth Runway", "Profil Barang",
+      "Stasiun", "Site", "Tipe Site", "Subtipe Site", "Azimuth Runway", ...SITE_METADATA_CSV_HEADERS, "Profil Barang",
       "Kategori Barang", "Bahan Mounting", "Merk", "Tipe Produk", "Unit Ke", "Nomor Seri", "Jumlah",
       "Kondisi", "Tahun Pasang", "Catatan",
     ];
+    const siteMetadataCells = mode === "site"
+      ? siteMetadataCsvValues(siteMetadata, automaticMetadata)
+      : SITE_METADATA_CSV_HEADERS.map(() => "");
     const rows = categories.flatMap((category) => {
       const items = inventory[category] ?? [];
       const itemUnits = items.length
@@ -368,6 +411,7 @@ export default function InventoryApp() {
         mode === "site" ? selectedSite?.siteType ?? "" : "",
         mode === "site" ? currentSubtype : "",
         mode === "site" && acceptsRunwayAzimuth ? runwayAzimuth : "",
+        ...siteMetadataCells,
         profile,
         category,
         item?.itemKind === "material" ? item.material ?? "" : "",
@@ -404,8 +448,8 @@ export default function InventoryApp() {
       <section className="intro">
         <div>
           <p className="kicker">INVENTARISASI BARANG TERPASANG</p>
-          <h2>Catat Perangkat di Setiap Site.</h2>
-          <p className="intro-copy">Pilih lokasi, tentukan subtipe, lalu cari produk berdasarkan merek atau tipe. Draf tersimpan otomatis di browser ini.</p>
+          <h2>Lengkapi Site dan Perangkatnya.</h2>
+          <p className="intro-copy">Pilih lokasi, lengkapi metadata Aloptama, tentukan subtipe, lalu catat setiap perangkat. Draf tersimpan otomatis di browser ini.</p>
         </div>
         <div className="dataset-facts" aria-label="Ringkasan data">
           <div><strong>{stations.length}</strong><span>stasiun</span></div>
@@ -505,7 +549,18 @@ export default function InventoryApp() {
           )}
         </aside>
 
-        <section className="inventory-panel">
+        <div className="content-column">
+          {mode === "site" && selectedSite && (
+            <SiteMetadataForm
+              value={siteMetadata}
+              automatic={automaticMetadata}
+              cityOptions={cityOptions}
+              onChange={updateSiteMetadata}
+              onReset={resetSiteMetadata}
+            />
+          )}
+
+          <section className="inventory-panel">
           {!locationReady ? (
             <div className="empty-state">
               <span className="empty-index">01</span>
@@ -520,7 +575,7 @@ export default function InventoryApp() {
             <>
               <div className="inventory-head">
                 <div>
-                  <p className="eyebrow">LANGKAH KEDUA</p>
+                  <p className="eyebrow">{mode === "site" ? "LANGKAH KETIGA" : "LANGKAH KEDUA"}</p>
                   <h3>Pilih barang terpasang</h3>
                   <p>{mode === "site" ? site : `Pratinjau ${profile}`}</p>
                 </div>
@@ -598,7 +653,8 @@ export default function InventoryApp() {
               </div>
             </>
           )}
-        </section>
+          </section>
+        </div>
       </div>
 
       {activeCategory && (
