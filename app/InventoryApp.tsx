@@ -314,7 +314,7 @@ export default function InventoryApp() {
       <section className="intro">
         <div>
           <p className="kicker">INVENTARISASI BARANG TERPASANG</p>
-          <h2>Pencatatan Inventaris Alat Terpasang.</h2>
+          <h2>Catat Perangkat di Setiap Site.</h2>
           <p className="intro-copy">Pilih lokasi, tentukan subtipe, lalu cari produk berdasarkan merek atau tipe. Draf tersimpan otomatis di browser ini.</p>
         </div>
         <div className="dataset-facts" aria-label="Ringkasan data">
