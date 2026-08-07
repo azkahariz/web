@@ -1,120 +1,39 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { CONDITION_OPTIONS, MOUNTING_MATERIALS } from "./config/form-options";
 import rawData from "./data.generated.json";
-import SiteMetadataForm, {
+import { loadLocalDraft, saveLocalDraft } from "./lib/draft-storage";
+import { csvCell, downloadText } from "./lib/download";
+import {
+  createUnitDetail,
+  getItemUnits,
+  inferKat3Family,
+  isMountingCategory,
+  makeId,
+  normalizeSearch,
+} from "./lib/inventory";
+import {
   EMPTY_SITE_METADATA,
   SITE_METADATA_CSV_HEADERS,
   siteMetadataCsvValues,
-  type SiteMetadata,
-} from "./SiteMetadataForm";
-
-type StationSite = { station: string; site: string; siteType: string };
-type SiteSubtype = { siteType: string; subtype: string; profile: string };
-type Product = { brand: string; model: string };
-type DataSet = {
-  stationSites: StationSite[];
-  siteSubtypes: SiteSubtype[];
-  barangByJenis: Record<string, string[]>;
-  products: Product[];
-};
-
-type Condition = "Baik" | "Rusak ringan" | "Rusak" | "Tidak beroperasi";
-
-type UnitDetail = {
-  id: string;
-  serialNumber: string;
-  condition: Condition;
-  installedYear: string;
-  notes: string;
-};
-
-type InstalledItem = Product & {
-  id: string;
-  itemKind?: "product" | "custom-product" | "material";
-  material?: string;
-  quantity: number;
-  units?: UnitDetail[];
-  // Kolom lama dipertahankan agar draf browser versi sebelumnya tetap terbaca.
-  serialNumber?: string;
-  condition?: Condition;
-  installedYear?: string;
-  notes?: string;
-};
-
-type Inventory = Record<string, InstalledItem[]>;
-type Drafts = Record<string, Inventory>;
-type DraftContexts = Record<string, { runwayAzimuth?: string }>;
-type SiteMetadataDrafts = Record<string, SiteMetadata>;
-type SourceMode = "site" | "template";
+} from "./lib/site-metadata";
+import SiteMetadataForm from "./SiteMetadataForm";
+import type {
+  Condition,
+  DataSet,
+  DraftContexts,
+  Drafts,
+  InstalledItem,
+  Inventory,
+  Product,
+  SiteMetadataDrafts,
+  SourceMode,
+  UnitDetail,
+} from "./types/inventory";
+import type { SiteMetadata } from "./types/site-metadata";
 
 const data = rawData as DataSet;
-const STORAGE_KEY = "irm-collect-local-drafts-v1";
-const MOUNTING_MATERIALS = [
-  "Besi galvanis",
-  "Stainless steel",
-  "Aluminium",
-  "Besi",
-  "PVC",
-  "Fiberglass",
-];
-
-function isMountingCategory(category: string | null): boolean {
-  return Boolean(category && /^mounting\b/i.test(category));
-}
-
-function makeId() {
-  return globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`;
-}
-
-function normalizeSearch(value: string) {
-  return value.toLocaleLowerCase("id-ID").trim();
-}
-
-function createUnitDetail(): UnitDetail {
-  return {
-    id: makeId(),
-    serialNumber: "",
-    condition: "Baik",
-    installedYear: "",
-    notes: "",
-  };
-}
-
-function getItemUnits(item: InstalledItem): UnitDetail[] {
-  if (item.units?.length) return item.units;
-  return Array.from({ length: Math.max(1, item.quantity || 1) }, (_, index) => ({
-    id: `${item.id}-unit-${index + 1}`,
-    serialNumber: index === 0 ? item.serialNumber ?? "" : "",
-    condition: index === 0 ? item.condition ?? "Baik" : "Baik",
-    installedYear: index === 0 ? item.installedYear ?? "" : "",
-    notes: index === 0 ? item.notes ?? "" : "",
-  }));
-}
-
-function inferKat3Family(siteName: string, options: SiteSubtype[]): string {
-  const normalizedSite = normalizeSearch(siteName).replace(/[^a-z0-9]/g, "");
-  const families = options.flatMap((option) => {
-    const match = option.subtype.match(/^AWOS Kategori III (.+?) (?:TDZ|Mid|End Point|Station)$/i);
-    return match ? [match[1]] : [];
-  });
-  return families.find((family) => normalizedSite.includes(normalizeSearch(family).replace(/[^a-z0-9]/g, ""))) ?? "";
-}
-
-function csvCell(value: string | number | null | undefined) {
-  const normalized = String(value ?? "").replace(/\r?\n/g, " ");
-  return `"${normalized.replace(/"/g, '""')}"`;
-}
-
-function downloadText(filename: string, content: string, type: string) {
-  const blob = new Blob([content], { type });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = filename;
-  link.click();
-  URL.revokeObjectURL(url);
-}
 
 export default function InventoryApp() {
   const stations = useMemo(
@@ -144,18 +63,8 @@ export default function InventoryApp() {
   useEffect(() => {
     const timer = window.setTimeout(() => {
       try {
-        const saved = localStorage.getItem(STORAGE_KEY);
-        if (saved) {
-          const parsed = JSON.parse(saved) as {
-            mode?: SourceMode;
-            station?: string;
-            site?: string;
-            subtype?: string;
-            templateProfile?: string;
-            drafts?: Drafts;
-            draftContexts?: DraftContexts;
-            siteMetadataDrafts?: SiteMetadataDrafts;
-          };
+        const parsed = loadLocalDraft();
+        if (parsed) {
           setMode(parsed.mode ?? "site");
           setStation(parsed.station ?? "");
           setStationQuery(parsed.station ?? "");
@@ -177,10 +86,7 @@ export default function InventoryApp() {
 
   useEffect(() => {
     if (!hydrated) return;
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({ mode, station, site, subtype, templateProfile, drafts, draftContexts, siteMetadataDrafts }),
-    );
+    saveLocalDraft({ mode, station, site, subtype, templateProfile, drafts, draftContexts, siteMetadataDrafts });
   }, [mode, station, site, subtype, templateProfile, drafts, draftContexts, siteMetadataDrafts, hydrated]);
 
   useEffect(() => {
@@ -618,7 +524,11 @@ export default function InventoryApp() {
                                 <strong>Unit {unitIndex + 1}</strong>
                                 <div className="metadata-grid">
                                   {item.itemKind !== "material" && <label>Nomor seri<input value={unit.serialNumber} onChange={(event) => updateUnit(category, item, unit.id, { serialNumber: event.target.value })} placeholder="Opsional" /></label>}
-                                  <label>Kondisi<select value={unit.condition} onChange={(event) => updateUnit(category, item, unit.id, { condition: event.target.value as Condition })}><option>Baik</option><option>Rusak ringan</option><option>Rusak</option><option>Tidak beroperasi</option></select></label>
+                                  <label>Kondisi
+                                    <select value={unit.condition} onChange={(event) => updateUnit(category, item, unit.id, { condition: event.target.value as Condition })}>
+                                      {CONDITION_OPTIONS.map((condition) => <option key={condition}>{condition}</option>)}
+                                    </select>
+                                  </label>
                                   <label>Tahun pasang<input inputMode="numeric" maxLength={4} value={unit.installedYear} onChange={(event) => updateUnit(category, item, unit.id, { installedYear: event.target.value.replace(/\D/g, "").slice(0, 4) })} placeholder="YYYY" /></label>
                                   <label className="notes-field">Catatan<input value={unit.notes} onChange={(event) => updateUnit(category, item, unit.id, { notes: event.target.value })} placeholder="Keterangan tambahan" /></label>
                                 </div>

@@ -1,0 +1,47 @@
+export type SiteMetadata = {
+  maintenanceBudgetSource: string;
+  procurementBrand: string;
+  wigosId: string;
+  awsCenterId: string;
+  ownershipStatus: string;
+  ownershipOther: string;
+  bmnCode: string;
+  installationDate: string;
+  operationalStatus: string;
+  detailAddress: string;
+  provinceCode: string;
+  cityCode: string;
+  districtCode: string;
+  villageCode: string;
+  village: string;
+  district: string;
+  city: string;
+  province: string;
+  partnerAgencyName: string;
+  partnerAgencyAddress: string;
+  guardName: string;
+  guardPhone: string;
+  latitude: string;
+  longitude: string;
+  elevationMeters: string;
+  measurementMethod: string;
+  measurementDate: string;
+  simNumber: string;
+  transportMethods: string[];
+  timezone: string;
+  technicianName: string;
+  technicianPhone: string;
+  technicianAgency: string;
+  intervalStart: string;
+  intervalEnd: string;
+  dataInterval: string;
+  dataIntervalOther: string;
+};
+
+export type AutomaticMetadata = {
+  stationName: string;
+  siteName: string;
+  equipmentType: string;
+  fieldDomain: "Meteorology";
+  uptManager: string;
+};
