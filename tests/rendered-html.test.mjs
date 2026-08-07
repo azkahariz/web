@@ -253,3 +253,19 @@ test("metadata Aloptama ikut dalam ekspor JSON dan CSV", async () => {
   assert.match(metadataSource, /export const SITE_METADATA_CSV_HEADERS/);
   assert.match(metadataSource, /value\.transportMethods\.join\("; "\)/);
 });
+
+test("wilayah administratif memakai API bertingkat dan menyimpan kode wilayah", async () => {
+  const source = await readFile(new URL("../app/SiteMetadataForm.tsx", import.meta.url), "utf8");
+
+  assert.match(source, /https:\/\/api\.kodewilayah\.web\.id/);
+  assert.match(source, /useRegionOptions\("\/provinces"/);
+  assert.match(source, /`\/regencies\/\$\{value\.provinceCode\}`/);
+  assert.match(source, /`\/districts\/\$\{value\.cityCode\}`/);
+  assert.match(source, /`\/villages\/\$\{value\.districtCode\}`/);
+  assert.match(source, /provinceCode:[\s\S]*cityCode:[\s\S]*districtCode:[\s\S]*villageCode:/);
+  assert.match(source, /cityCode: "", city: "", districtCode: "", district: "", villageCode: "", village: ""/);
+  assert.match(source, /Data wilayah belum dapat dimuat/);
+  assert.match(source, /Coba lagi/);
+  assert.match(source, /Input manual/);
+  assert.match(source, /"Kode Provinsi"[\s\S]*"Kode Kab\/Kota"[\s\S]*"Kode Kecamatan"[\s\S]*"Kode Desa\/Kelurahan"/);
+});

@@ -1,3 +1,7 @@
+"use client";
+
+import { useEffect, useState } from "react";
+
 export type SiteMetadata = {
   maintenanceBudgetSource: string;
   procurementBrand: string;
@@ -9,6 +13,10 @@ export type SiteMetadata = {
   installationDate: string;
   operationalStatus: string;
   detailAddress: string;
+  provinceCode: string;
+  cityCode: string;
+  districtCode: string;
+  villageCode: string;
   village: string;
   district: string;
   city: string;
@@ -45,6 +53,10 @@ export const EMPTY_SITE_METADATA: SiteMetadata = {
   installationDate: "",
   operationalStatus: "",
   detailAddress: "",
+  provinceCode: "",
+  cityCode: "",
+  districtCode: "",
+  villageCode: "",
   village: "",
   district: "",
   city: "",
@@ -81,10 +93,14 @@ export const SITE_METADATA_CSV_HEADERS = [
   "Tanggal Instalasi",
   "Status Operasional",
   "Alamat Detail",
-  "Desa/Kelurahan",
-  "Kecamatan",
-  "Kab/Kota",
   "Nama Provinsi",
+  "Kode Provinsi",
+  "Kab/Kota",
+  "Kode Kab/Kota",
+  "Kecamatan",
+  "Kode Kecamatan",
+  "Desa/Kelurahan",
+  "Kode Desa/Kelurahan",
   "UPT Pengelola",
   "Nama Instansi Mitra",
   "Alamat Instansi",
@@ -106,18 +122,56 @@ export const SITE_METADATA_CSV_HEADERS = [
   "Interval Data (menit)",
 ];
 
-const PROVINCES = [
-  "Aceh", "Sumatera Utara", "Sumatera Barat", "Riau", "Kepulauan Riau",
-  "Jambi", "Sumatera Selatan", "Kepulauan Bangka Belitung", "Bengkulu", "Lampung",
-  "DKI Jakarta", "Banten", "Jawa Barat", "Jawa Tengah", "DI Yogyakarta", "Jawa Timur",
-  "Bali", "Nusa Tenggara Barat", "Nusa Tenggara Timur", "Kalimantan Barat",
-  "Kalimantan Tengah", "Kalimantan Selatan", "Kalimantan Timur", "Kalimantan Utara",
-  "Sulawesi Utara", "Gorontalo", "Sulawesi Tengah", "Sulawesi Barat", "Sulawesi Selatan",
-  "Sulawesi Tenggara", "Maluku", "Maluku Utara", "Papua", "Papua Barat",
-  "Papua Selatan", "Papua Tengah", "Papua Pegunungan", "Papua Barat Daya",
-];
-
 const TRANSPORT_METHODS = ["MQTT", "HTTP POST", "FTP", "TCP/IP Direct"];
+const REGION_API_BASE = "https://api.kodewilayah.web.id";
+const regionCache = new Map<string, RegionOption[]>();
+
+type RegionOption = { code: string; name: string };
+type RegionApiResponse = { success: boolean; data?: Array<{ code: string | number; name: string }> };
+
+function useRegionOptions(path: string | null, reloadToken: number) {
+  const [result, setResult] = useState<{
+    path: string | null;
+    reloadToken: number;
+    options: RegionOption[];
+    error: boolean;
+  }>({ path: null, reloadToken: -1, options: [], error: false });
+
+  useEffect(() => {
+    if (!path) return;
+
+    const cached = regionCache.get(path);
+    if (cached) return;
+
+    const controller = new AbortController();
+    fetch(`${REGION_API_BASE}${path}`, { signal: controller.signal, headers: { Accept: "application/json" } })
+      .then(async (response) => {
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const body = await response.json() as RegionApiResponse;
+        if (!body.success || !Array.isArray(body.data)) throw new Error("Respons wilayah tidak valid");
+        return body.data.map((item) => ({ code: String(item.code), name: item.name }));
+      })
+      .then((items) => {
+        regionCache.set(path, items);
+        setResult({ path, reloadToken, options: items, error: false });
+      })
+      .catch((fetchError: unknown) => {
+        if (!(fetchError instanceof DOMException && fetchError.name === "AbortError")) {
+          setResult({ path, reloadToken, options: [], error: true });
+        }
+      });
+
+    return () => controller.abort();
+  }, [path, reloadToken]);
+
+  const cached = path ? regionCache.get(path) : undefined;
+  const isCurrent = result.path === path && result.reloadToken === reloadToken;
+  return {
+    options: cached ?? (isCurrent ? result.options : []),
+    loading: Boolean(path && !cached && !isCurrent),
+    error: Boolean(path && !cached && isCurrent && result.error),
+  };
+}
 
 type AutomaticMetadata = {
   stationName: string;
@@ -139,10 +193,14 @@ export function siteMetadataCsvValues(value: SiteMetadata, automatic: AutomaticM
     value.installationDate,
     value.operationalStatus,
     value.detailAddress,
-    value.village,
-    value.district,
-    value.city,
     value.province,
+    value.provinceCode,
+    value.city,
+    value.cityCode,
+    value.district,
+    value.districtCode,
+    value.village,
+    value.villageCode,
     automatic.uptManager,
     value.partnerAgencyName,
     value.partnerAgencyAddress,
@@ -168,12 +226,25 @@ export function siteMetadataCsvValues(value: SiteMetadata, automatic: AutomaticM
 type Props = {
   value: SiteMetadata;
   automatic: AutomaticMetadata;
-  cityOptions: string[];
   onChange: (next: SiteMetadata) => void;
   onReset: () => void;
 };
 
-export default function SiteMetadataForm({ value, automatic, cityOptions, onChange, onReset }: Props) {
+export default function SiteMetadataForm({ value, automatic, onChange, onReset }: Props) {
+  const [regionReloadToken, setRegionReloadToken] = useState(0);
+  const [manualRegionEntry, setManualRegionEntry] = useState(false);
+  const provinces = useRegionOptions("/provinces", regionReloadToken);
+  const cities = useRegionOptions(value.provinceCode ? `/regencies/${value.provinceCode}` : null, regionReloadToken);
+  const districts = useRegionOptions(value.cityCode ? `/districts/${value.cityCode}` : null, regionReloadToken);
+  const villages = useRegionOptions(value.districtCode ? `/villages/${value.districtCode}` : null, regionReloadToken);
+  const regionError = provinces.error || cities.error || districts.error || villages.error;
+  const hasLegacyRegionNames = Boolean(
+    (value.province && !value.provinceCode)
+    || (value.city && !value.cityCode)
+    || (value.district && !value.districtCode)
+    || (value.village && !value.villageCode),
+  );
+  const regionEntryIsManual = manualRegionEntry || hasLegacyRegionNames;
   function update<K extends keyof SiteMetadata>(key: K, nextValue: SiteMetadata[K]) {
     onChange({ ...value, [key]: nextValue });
   }
@@ -187,6 +258,39 @@ export default function SiteMetadataForm({ value, automatic, cityOptions, onChan
 
   function normalizeCoordinate(coordinate: string) {
     return coordinate.replace(",", ".").replace(/[^0-9.-]/g, "");
+  }
+
+  function chooseRegion(
+    codeKey: "provinceCode" | "cityCode" | "districtCode" | "villageCode",
+    nameKey: "province" | "city" | "district" | "village",
+    code: string,
+    options: RegionOption[],
+    clearedFields: Partial<SiteMetadata>,
+  ) {
+    const selected = options.find((option) => option.code === code);
+    onChange({ ...value, [codeKey]: code, [nameKey]: selected?.name ?? "", ...clearedFields });
+  }
+
+  function useManualRegions() {
+    setManualRegionEntry(true);
+    onChange({
+      ...value,
+      provinceCode: "",
+      cityCode: "",
+      districtCode: "",
+      villageCode: "",
+    });
+  }
+
+  function useApiRegions() {
+    setManualRegionEntry(false);
+    onChange({
+      ...value,
+      provinceCode: "", province: "",
+      cityCode: "", city: "",
+      districtCode: "", district: "",
+      villageCode: "", village: "",
+    });
   }
 
   return (
@@ -236,17 +340,74 @@ export default function SiteMetadataForm({ value, automatic, cityOptions, onChan
         <summary><span>Lokasi dan pengelola</span><small>Alamat, mitra, penjaga</small></summary>
         <div className="site-metadata-grid">
           <label className="wide-field">Alamat Detail<textarea value={value.detailAddress} onChange={(event) => update("detailAddress", event.target.value)} placeholder="Jl. Bukit Golf I BSD Sektor VI" /></label>
-          <label>Desa/Kelurahan<input value={value.village} onChange={(event) => update("village", event.target.value)} /></label>
-          <label>Kecamatan<input value={value.district} onChange={(event) => update("district", event.target.value)} /></label>
-          <label>Kab/Kota
-            <input list="city-options" value={value.city} onChange={(event) => update("city", event.target.value)} placeholder="Pilih atau ketik Kab/Kota" />
-            <datalist id="city-options">{cityOptions.map((city) => <option value={city} key={city} />)}</datalist>
-          </label>
-          <label>Nama Provinsi
-            <select value={value.province} onChange={(event) => update("province", event.target.value)}>
-              <option value="">Pilih provinsi</option>{PROVINCES.map((province) => <option key={province}>{province}</option>)}
-            </select>
-          </label>
+          <div className="region-source-row wide-field">
+            <span>Wilayah administratif</span>
+            <button type="button" onClick={regionEntryIsManual ? useApiRegions : useManualRegions}>{regionEntryIsManual ? "Gunakan API wilayah" : "Input manual"}</button>
+          </div>
+          {regionEntryIsManual ? (
+            <>
+              <label>Nama Provinsi<input value={value.province} onChange={(event) => update("province", event.target.value)} /></label>
+              <label>Kab/Kota<input value={value.city} onChange={(event) => update("city", event.target.value)} /></label>
+              <label>Kecamatan<input value={value.district} onChange={(event) => update("district", event.target.value)} /></label>
+              <label>Desa/Kelurahan<input value={value.village} onChange={(event) => update("village", event.target.value)} /></label>
+            </>
+          ) : (
+            <>
+              <label>Nama Provinsi
+                <select
+                  value={value.provinceCode ?? ""}
+                  disabled={provinces.loading}
+                  onChange={(event) => chooseRegion("provinceCode", "province", event.target.value, provinces.options, {
+                    cityCode: "", city: "", districtCode: "", district: "", villageCode: "", village: "",
+                  })}
+                >
+                  <option value="">{provinces.loading ? "Memuat provinsi..." : "Pilih provinsi"}</option>
+                  {provinces.options.map((option) => <option value={option.code} key={option.code}>{option.name}</option>)}
+                </select>
+              </label>
+              <label>Kab/Kota
+                <select
+                  value={value.cityCode ?? ""}
+                  disabled={!value.provinceCode || cities.loading}
+                  onChange={(event) => chooseRegion("cityCode", "city", event.target.value, cities.options, {
+                    districtCode: "", district: "", villageCode: "", village: "",
+                  })}
+                >
+                  <option value="">{cities.loading ? "Memuat Kab/Kota..." : value.provinceCode ? "Pilih Kab/Kota" : "Pilih provinsi dahulu"}</option>
+                  {cities.options.map((option) => <option value={option.code} key={option.code}>{option.name}</option>)}
+                </select>
+              </label>
+              <label>Kecamatan
+                <select
+                  value={value.districtCode ?? ""}
+                  disabled={!value.cityCode || districts.loading}
+                  onChange={(event) => chooseRegion("districtCode", "district", event.target.value, districts.options, {
+                    villageCode: "", village: "",
+                  })}
+                >
+                  <option value="">{districts.loading ? "Memuat kecamatan..." : value.cityCode ? "Pilih kecamatan" : "Pilih Kab/Kota dahulu"}</option>
+                  {districts.options.map((option) => <option value={option.code} key={option.code}>{option.name}</option>)}
+                </select>
+              </label>
+              <label>Desa/Kelurahan
+                <select
+                  value={value.villageCode ?? ""}
+                  disabled={!value.districtCode || villages.loading}
+                  onChange={(event) => chooseRegion("villageCode", "village", event.target.value, villages.options, {})}
+                >
+                  <option value="">{villages.loading ? "Memuat Desa/Kelurahan..." : value.districtCode ? "Pilih Desa/Kelurahan" : "Pilih kecamatan dahulu"}</option>
+                  {villages.options.map((option) => <option value={option.code} key={option.code}>{option.name}</option>)}
+                </select>
+              </label>
+              {regionError && (
+                <div className="region-error wide-field">
+                  <span>Data wilayah belum dapat dimuat.</span>
+                  <button type="button" onClick={() => setRegionReloadToken((current) => current + 1)}>Coba lagi</button>
+                  <button type="button" onClick={useManualRegions}>Input manual</button>
+                </div>
+              )}
+            </>
+          )}
           <label>Nama Instansi Mitra<input value={value.partnerAgencyName} onChange={(event) => update("partnerAgencyName", event.target.value)} placeholder="Contoh: BPTPHP Banten" /></label>
           <label className="wide-field">Alamat Instansi<textarea value={value.partnerAgencyAddress} onChange={(event) => update("partnerAgencyAddress", event.target.value)} placeholder="Gedung A, Jl. Raya Serang Km. 4" /></label>
           <label>Nama Penjaga<input value={value.guardName} onChange={(event) => update("guardName", event.target.value)} /></label>

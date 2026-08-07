@@ -122,13 +122,6 @@ export default function InventoryApp() {
     [],
   );
   const profiles = useMemo(() => Object.keys(data.barangByJenis), []);
-  const cityOptions = useMemo(() => {
-    const names = data.stationSites.flatMap((row) => [row.station, row.site]).flatMap((name) => {
-      const parts = name.split(/\s[-–]\s/);
-      return parts.length > 1 ? [parts.at(-1)?.trim() ?? ""] : [];
-    });
-    return Array.from(new Set(names.filter(Boolean))).sort((a, b) => a.localeCompare(b, "id"));
-  }, []);
 
   const [mode, setMode] = useState<SourceMode>("site");
   const [station, setStation] = useState("");
@@ -554,7 +547,6 @@ export default function InventoryApp() {
             <SiteMetadataForm
               value={siteMetadata}
               automatic={automaticMetadata}
-              cityOptions={cityOptions}
               onChange={updateSiteMetadata}
               onReset={resetSiteMetadata}
             />
