@@ -133,7 +133,12 @@ select:disabled { color: #9aa39f; background: #f2f2ee; cursor: not-allowed; }
 .product-identity strong { font-size: 12px; }
 .product-identity p span { margin-top: 2px; color: var(--muted); font-size: 11px; line-height: 1.35; }
 .product-identity button { border: 0; background: transparent; color: var(--red); font-size: 10px; font-weight: 800; cursor: pointer; }
-.metadata-grid { margin-top: 13px; display: grid; grid-template-columns: 1.15fr .65fr 1fr .8fr; gap: 9px; }
+.quantity-field { width: min(150px, 100%); display: block; margin-top: 13px; color: var(--muted); font-size: 10px; font-weight: 700; }
+.quantity-field input { margin-top: 5px; min-height: 38px; padding: 7px 9px; border-radius: 8px; font-size: 11px; }
+.unit-list { margin-top: 12px; display: flex; flex-direction: column; gap: 9px; }
+.unit-detail { padding: 12px; border: 1px solid #dfe5e1; border-radius: 8px; background: white; }
+.unit-detail > strong { display: block; color: var(--green-deep); font-size: 10px; text-transform: uppercase; letter-spacing: .06em; }
+.metadata-grid { margin-top: 9px; display: grid; grid-template-columns: 1.1fr 1fr .7fr; gap: 9px; }
 .metadata-grid label { color: var(--muted); font-size: 10px; font-weight: 700; }
 .metadata-grid input, .metadata-grid select { margin-top: 5px; min-height: 38px; padding: 7px 9px; border-radius: 8px; font-size: 11px; }
 .metadata-grid .notes-field { grid-column: 1 / -1; }
@@ -176,6 +181,16 @@ select:disabled { color: #9aa39f; background: #f2f2ee; cursor: not-allowed; }
 .custom-material input { min-height: 43px; font-size: 12px; }
 .custom-material button { min-height: 43px; padding: 8px 15px; border: 1px solid var(--green-deep); border-radius: 9px; background: var(--green); color: white; font-size: 11px; font-weight: 800; cursor: pointer; }
 .custom-material button:disabled { opacity: .45; cursor: not-allowed; }
+.custom-product { padding: 16px 26px 22px; border-top: 1px solid var(--line); background: #faf9f5; }
+.custom-product > p { margin: 0 0 12px; }
+.custom-product > p strong, .custom-product > p span { display: block; }
+.custom-product > p strong { font-size: 12px; }
+.custom-product > p span { margin-top: 3px; color: var(--muted); font-size: 10px; }
+.custom-product > div { display: grid; grid-template-columns: 1fr 1fr auto; align-items: end; gap: 8px; }
+.custom-product label { color: var(--muted); font-size: 10px; font-weight: 800; }
+.custom-product input { margin-top: 5px; min-height: 41px; font-size: 11px; }
+.custom-product button { min-height: 41px; padding: 8px 14px; border: 1px solid var(--green-deep); border-radius: 8px; background: var(--green); color: white; font-size: 10px; font-weight: 800; cursor: pointer; }
+.custom-product button:disabled { opacity: .45; cursor: not-allowed; }
 
 @media (max-width: 900px) {
   .intro { grid-template-columns: 1fr; }
@@ -212,6 +227,9 @@ select:disabled { color: #9aa39f; background: #f2f2ee; cursor: not-allowed; }
   .add-product span { display: none; }
   .installed-item { padding: 14px 12px; }
   .metadata-grid { grid-template-columns: 1fr 1fr; }
+  .custom-product { padding: 14px 18px 18px; }
+  .custom-product > div { grid-template-columns: 1fr 1fr; }
+  .custom-product button { grid-column: 1 / -1; }
   .bottom-actions { padding: 16px; align-items: stretch; flex-direction: column-reverse; }
   .bottom-actions > .save-actions { align-items: stretch; flex-direction: column; gap: 8px; }
   .export-actions { display: grid; grid-template-columns: 1fr 1fr; }

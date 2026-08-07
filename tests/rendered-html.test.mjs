@@ -150,8 +150,8 @@ test("aplikasi menyediakan ekspor CSV lengkap dengan BOM dan metadata", async ()
   const source = await readFile(new URL("../app/InventoryApp.tsx", import.meta.url), "utf8");
   assert.match(source, /Unduh hasil CSV/);
   assert.match(source, /\\uFEFF/);
-  assert.match(source, /"Stasiun"[\s\S]*"Kategori Barang"[\s\S]*"Bahan Mounting"[\s\S]*"Tipe Produk"/);
-  assert.match(source, /inventory\[category\]\?\.length[\s\S]*:\s*\[null\]/);
+  assert.match(source, /"Stasiun"[\s\S]*"Azimuth Runway"[\s\S]*"Kategori Barang"[\s\S]*"Tipe Produk"[\s\S]*"Unit Ke"/);
+  assert.match(source, /items\.flatMap\(\(item\) => getItemUnits\(item\)/);
 });
 
 test("kategori mounting memakai pilihan bahan dan tetap mendukung bahan lainnya", async () => {
@@ -166,4 +166,40 @@ test("kategori mounting memakai pilihan bahan dan tetap mendukung bahan lainnya"
   assert.match(source, /Besi galvanis[\s\S]*Stainless steel[\s\S]*Aluminium[\s\S]*Fiberglass/);
   assert.match(source, /Bahan lainnya/);
   assert.match(source, /item\?\.itemKind === "material" \? item\.material/);
+});
+
+test("site AWOS kategori III membatasi subtipe berdasarkan keluarga pada nama site", async () => {
+  const data = JSON.parse(await readFile(new URL("../app/data.generated.json", import.meta.url), "utf8"));
+  const kat3Options = data.siteSubtypes.filter((row) => row.siteType === "AWOS Kategori III");
+  const families = ["AllWeather", "Coastal", "Degreane", "Microstep"];
+
+  for (const family of families) {
+    assert.equal(kat3Options.filter((row) => row.subtype.includes(` ${family} `)).length, 4);
+  }
+
+  const source = await readFile(new URL("../app/InventoryApp.tsx", import.meta.url), "utf8");
+  assert.match(source, /function inferKat3Family/);
+  assert.match(source, /allSubtypeOptions\.filter\(\(row\) => row\.subtype\.includes\(` \$\{kat3Family\} `\)\)/);
+});
+
+test("azimuth runway hanya tersedia untuk TDZ dan End Point", async () => {
+  const source = await readFile(new URL("../app/InventoryApp.tsx", import.meta.url), "utf8");
+  assert.match(source, /acceptsRunwayAzimuth = \/\(\?:TDZ\|End Point\)\$\/i/);
+  assert.match(source, /id="runway-azimuth"[\s\S]*maxLength=\{2\}/);
+  assert.match(source, /runwayAzimuth: mode === "site" && acceptsRunwayAzimuth/);
+});
+
+test("jumlah produk membuat metadata terpisah untuk setiap unit", async () => {
+  const source = await readFile(new URL("../app/InventoryApp.tsx", import.meta.url), "utf8");
+  assert.match(source, /type UnitDetail =/);
+  assert.match(source, /function updateItemQuantity/);
+  assert.match(source, /getItemUnits\(item\)\.map\(\(unit, unitIndex\)/);
+  assert.match(source, />Unit \{unitIndex \+ 1\}</);
+});
+
+test("produk di luar daftar dapat ditambahkan dengan brand dan tipe", async () => {
+  const source = await readFile(new URL("../app/InventoryApp.tsx", import.meta.url), "utf8");
+  assert.match(source, /function addCustomProduct/);
+  assert.match(source, />Brand<input[\s\S]*>Tipe<input/);
+  assert.match(source, />Tambahkan produk</);
 });

@@ -13,19 +13,32 @@ type DataSet = {
   products: Product[];
 };
 
-type InstalledItem = Product & {
+type Condition = "Baik" | "Rusak ringan" | "Rusak" | "Tidak beroperasi";
+
+type UnitDetail = {
   id: string;
-  itemKind?: "product" | "material";
-  material?: string;
   serialNumber: string;
-  quantity: number;
-  condition: "Baik" | "Rusak ringan" | "Rusak" | "Tidak beroperasi";
+  condition: Condition;
   installedYear: string;
   notes: string;
 };
 
+type InstalledItem = Product & {
+  id: string;
+  itemKind?: "product" | "custom-product" | "material";
+  material?: string;
+  quantity: number;
+  units?: UnitDetail[];
+  // Kolom lama dipertahankan agar draf browser versi sebelumnya tetap terbaca.
+  serialNumber?: string;
+  condition?: Condition;
+  installedYear?: string;
+  notes?: string;
+};
+
 type Inventory = Record<string, InstalledItem[]>;
 type Drafts = Record<string, Inventory>;
+type DraftContexts = Record<string, { runwayAzimuth?: string }>;
 type SourceMode = "site" | "template";
 
 const data = rawData as DataSet;
@@ -49,6 +62,36 @@ function makeId() {
 
 function normalizeSearch(value: string) {
   return value.toLocaleLowerCase("id-ID").trim();
+}
+
+function createUnitDetail(): UnitDetail {
+  return {
+    id: makeId(),
+    serialNumber: "",
+    condition: "Baik",
+    installedYear: "",
+    notes: "",
+  };
+}
+
+function getItemUnits(item: InstalledItem): UnitDetail[] {
+  if (item.units?.length) return item.units;
+  return Array.from({ length: Math.max(1, item.quantity || 1) }, (_, index) => ({
+    id: `${item.id}-unit-${index + 1}`,
+    serialNumber: index === 0 ? item.serialNumber ?? "" : "",
+    condition: index === 0 ? item.condition ?? "Baik" : "Baik",
+    installedYear: index === 0 ? item.installedYear ?? "" : "",
+    notes: index === 0 ? item.notes ?? "" : "",
+  }));
+}
+
+function inferKat3Family(siteName: string, options: SiteSubtype[]): string {
+  const normalizedSite = normalizeSearch(siteName).replace(/[^a-z0-9]/g, "");
+  const families = options.flatMap((option) => {
+    const match = option.subtype.match(/^AWOS Kategori III (.+?) (?:TDZ|Mid|End Point|Station)$/i);
+    return match ? [match[1]] : [];
+  });
+  return families.find((family) => normalizedSite.includes(normalizeSearch(family).replace(/[^a-z0-9]/g, ""))) ?? "";
 }
 
 function csvCell(value: string | number | null | undefined) {
@@ -84,7 +127,10 @@ export default function InventoryApp() {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [productQuery, setProductQuery] = useState("");
   const [customMaterial, setCustomMaterial] = useState("");
+  const [customBrand, setCustomBrand] = useState("");
+  const [customModel, setCustomModel] = useState("");
   const [drafts, setDrafts] = useState<Drafts>({});
+  const [draftContexts, setDraftContexts] = useState<DraftContexts>({});
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
@@ -99,6 +145,7 @@ export default function InventoryApp() {
             subtype?: string;
             templateProfile?: string;
             drafts?: Drafts;
+            draftContexts?: DraftContexts;
           };
           setMode(parsed.mode ?? "site");
           setStation(parsed.station ?? "");
@@ -107,6 +154,7 @@ export default function InventoryApp() {
           setSubtype(parsed.subtype ?? "");
           setTemplateProfile(parsed.templateProfile ?? "");
           setDrafts(parsed.drafts ?? {});
+          setDraftContexts(parsed.draftContexts ?? {});
         }
       } catch {
         // Draf yang rusak diabaikan agar aplikasi tetap dapat digunakan.
@@ -121,9 +169,9 @@ export default function InventoryApp() {
     if (!hydrated) return;
     localStorage.setItem(
       STORAGE_KEY,
-      JSON.stringify({ mode, station, site, subtype, templateProfile, drafts }),
+      JSON.stringify({ mode, station, site, subtype, templateProfile, drafts, draftContexts }),
     );
-  }, [mode, station, site, subtype, templateProfile, drafts, hydrated]);
+  }, [mode, station, site, subtype, templateProfile, drafts, draftContexts, hydrated]);
 
   useEffect(() => {
     if (!activeCategory) return;
@@ -144,13 +192,19 @@ export default function InventoryApp() {
     [station],
   );
   const selectedSite = sites.find((row) => row.site === site);
-  const subtypeOptions = useMemo(
+  const allSubtypeOptions = useMemo(
     () => data.siteSubtypes.filter((row) => row.siteType === selectedSite?.siteType),
     [selectedSite],
   );
+  const kat3Family = selectedSite?.siteType === "AWOS Kategori III"
+    ? inferKat3Family(selectedSite.site, allSubtypeOptions)
+    : "";
+  const subtypeOptions = kat3Family
+    ? allSubtypeOptions.filter((row) => row.subtype.includes(` ${kat3Family} `))
+    : allSubtypeOptions;
   const subtypes = subtypeOptions.map((row) => row.subtype);
 
-  const currentSubtype = subtypes.length === 1 ? subtypes[0] : subtype;
+  const currentSubtype = subtypes.length === 1 ? subtypes[0] : subtypes.includes(subtype) ? subtype : "";
   const selectedSubtype = subtypeOptions.find((row) => row.subtype === currentSubtype);
   const profile = mode === "template" ? templateProfile : selectedSubtype?.profile ?? "";
   const categories = data.barangByJenis[profile] ?? [];
@@ -158,8 +212,13 @@ export default function InventoryApp() {
     ? `template::${profile}`
     : `site::${station}::${site}::${currentSubtype}`;
   const inventory = drafts[draftKey] ?? {};
+  const runwayAzimuth = draftContexts[draftKey]?.runwayAzimuth ?? "";
+  const acceptsRunwayAzimuth = /(?:TDZ|End Point)$/i.test(currentSubtype);
   const filledCount = categories.filter((category) => (inventory[category]?.length ?? 0) > 0).length;
-  const totalUnits = categories.reduce((sum, category) => sum + (inventory[category]?.length ?? 0), 0);
+  const totalUnits = categories.reduce(
+    (sum, category) => sum + (inventory[category] ?? []).reduce((itemSum, item) => itemSum + Math.max(1, item.quantity || 1), 0),
+    0,
+  );
   const progress = categories.length ? Math.round((filledCount / categories.length) * 100) : 0;
   const filteredCategories = categories.filter((category) =>
     normalizeSearch(category).includes(normalizeSearch(categoryQuery)),
@@ -190,11 +249,8 @@ export default function InventoryApp() {
       ...product,
       id: makeId(),
       itemKind: "product",
-      serialNumber: "",
       quantity: 1,
-      condition: "Baik",
-      installedYear: "",
-      notes: "",
+      units: [createUnitDetail()],
     };
     setInventory({
       ...inventory,
@@ -202,6 +258,13 @@ export default function InventoryApp() {
     });
     setActiveCategory(null);
     setProductQuery("");
+  }
+
+  function addCustomProduct() {
+    if (!activeCategory || !customBrand.trim() || !customModel.trim()) return;
+    addProduct({ brand: customBrand.trim(), model: customModel.trim() });
+    setCustomBrand("");
+    setCustomModel("");
   }
 
   function addMaterial(material: string) {
@@ -212,11 +275,8 @@ export default function InventoryApp() {
       id: makeId(),
       itemKind: "material",
       material: material.trim(),
-      serialNumber: "",
       quantity: 1,
-      condition: "Baik",
-      installedYear: "",
-      notes: "",
+      units: [createUnitDetail()],
     };
     setInventory({
       ...inventory,
@@ -233,6 +293,27 @@ export default function InventoryApp() {
     });
   }
 
+  function updateItemQuantity(category: string, item: InstalledItem, nextQuantity: number) {
+    const quantity = Math.max(1, nextQuantity || 1);
+    const currentUnits = getItemUnits(item);
+    const units = quantity > currentUnits.length
+      ? [...currentUnits, ...Array.from({ length: quantity - currentUnits.length }, createUnitDetail)]
+      : currentUnits.slice(0, quantity);
+    updateItem(category, item.id, { quantity, units });
+  }
+
+  function updateUnit(category: string, item: InstalledItem, unitId: string, patch: Partial<UnitDetail>) {
+    const units = getItemUnits(item).map((unit) => unit.id === unitId ? { ...unit, ...patch } : unit);
+    updateItem(category, item.id, { units });
+  }
+
+  function updateRunwayAzimuth(value: string) {
+    setDraftContexts((current) => ({
+      ...current,
+      [draftKey]: { ...current[draftKey], runwayAzimuth: value.replace(/\D/g, "").slice(0, 2) },
+    }));
+  }
+
   function removeItem(category: string, id: string) {
     setInventory({
       ...inventory,
@@ -247,6 +328,11 @@ export default function InventoryApp() {
       delete next[draftKey];
       return next;
     });
+    setDraftContexts((current) => {
+      const next = { ...current };
+      delete next[draftKey];
+      return next;
+    });
   }
 
   function exportCurrentDraft() {
@@ -257,6 +343,7 @@ export default function InventoryApp() {
       site: mode === "site" ? site : null,
       siteType: mode === "site" ? selectedSite?.siteType : null,
       subtype: mode === "site" ? currentSubtype : null,
+      runwayAzimuth: mode === "site" && acceptsRunwayAzimuth ? runwayAzimuth : null,
       profile,
       items: categories.map((category) => ({ category, products: inventory[category] ?? [] })),
     };
@@ -266,29 +353,32 @@ export default function InventoryApp() {
 
   function exportCurrentDraftCsv() {
     const headers = [
-      "Stasiun", "Site", "Tipe Site", "Subtipe Site", "Profil Barang",
-      "Kategori Barang", "Bahan Mounting", "Merk", "Tipe Produk", "Nomor Seri", "Jumlah",
+      "Stasiun", "Site", "Tipe Site", "Subtipe Site", "Azimuth Runway", "Profil Barang",
+      "Kategori Barang", "Bahan Mounting", "Merk", "Tipe Produk", "Unit Ke", "Nomor Seri", "Jumlah",
       "Kondisi", "Tahun Pasang", "Catatan",
     ];
     const rows = categories.flatMap((category) => {
-      const items: Array<InstalledItem | null> = inventory[category]?.length
-        ? inventory[category]
-        : [null];
-      return items.map((item) => [
+      const items = inventory[category] ?? [];
+      const itemUnits = items.length
+        ? items.flatMap((item) => getItemUnits(item).map((unit, index) => ({ item, unit, unitNumber: index + 1 })))
+        : [{ item: null, unit: null, unitNumber: null }];
+      return itemUnits.map(({ item, unit, unitNumber }) => [
         mode === "site" ? station : "",
         mode === "site" ? site : "",
         mode === "site" ? selectedSite?.siteType ?? "" : "",
         mode === "site" ? currentSubtype : "",
+        mode === "site" && acceptsRunwayAzimuth ? runwayAzimuth : "",
         profile,
         category,
         item?.itemKind === "material" ? item.material ?? "" : "",
         item?.itemKind === "material" ? "" : item?.brand ?? "",
         item?.itemKind === "material" ? "" : item?.model ?? "",
-        item?.serialNumber ?? "",
-        item?.quantity ?? "",
-        item?.condition ?? "",
-        item?.installedYear ?? "",
-        item?.notes ?? "",
+        unitNumber ?? "",
+        item?.itemKind === "material" ? "" : unit?.serialNumber ?? "",
+        unit ? 1 : "",
+        unit?.condition ?? "",
+        unit?.installedYear ?? "",
+        unit?.notes ?? "",
       ]);
     });
     const csv = `\uFEFF${[headers, ...rows].map((row) => row.map(csvCell).join(",")).join("\r\n")}`;
@@ -377,7 +467,23 @@ export default function InventoryApp() {
                 <option value="">{site ? "Pilih subtipe" : "Pilih site dahulu"}</option>
                 {subtypes.map((name) => <option key={name} value={name}>{name}</option>)}
               </select>
+              {kat3Family && <p className="field-hint">Pilihan dibatasi untuk AWOS Kat. 3 <strong>{kat3Family}</strong>.</p>}
               {site && !subtypes.length && <p className="warning-copy">Belum ada subtipe untuk tipe site ini.</p>}
+
+              {acceptsRunwayAzimuth && (
+                <>
+                  <label className="field-label" htmlFor="runway-azimuth">Azimuth runway</label>
+                  <input
+                    id="runway-azimuth"
+                    inputMode="numeric"
+                    maxLength={2}
+                    value={runwayAzimuth}
+                    onChange={(event) => updateRunwayAzimuth(event.target.value)}
+                    placeholder="Contoh: 01, 11, 24"
+                  />
+                  <p className="field-hint">Khusus subtipe TDZ dan End Point, maksimal dua digit.</p>
+                </>
+              )}
             </div>
           ) : (
             <div className="form-stack">
@@ -441,7 +547,7 @@ export default function InventoryApp() {
                       <div className="category-title-row">
                         <span className="category-number">{String(categories.indexOf(category) + 1).padStart(2, "0")}</span>
                         <div className="category-name"><h4>{category}</h4><p>{items.length ? `${items.length} ${mountingCategory ? "bahan mounting" : "produk terpasang"}` : mountingCategory ? "Belum memilih bahan" : "Belum memilih produk"}</p></div>
-                        <button className="add-product" onClick={() => { setActiveCategory(category); setProductQuery(""); setCustomMaterial(""); }}>
+                        <button className="add-product" onClick={() => { setActiveCategory(category); setProductQuery(""); setCustomMaterial(""); setCustomBrand(""); setCustomModel(""); }}>
                           <span aria-hidden="true">＋</span> {mountingCategory ? "Pilih bahan" : "Pilih produk"}
                         </button>
                       </div>
@@ -456,12 +562,21 @@ export default function InventoryApp() {
                             </p>
                             <button aria-label={`Hapus ${item.itemKind === "material" ? item.material : `${item.brand} ${item.model}`}`} onClick={() => removeItem(category, item.id)}>Hapus</button>
                           </div>
-                          <div className="metadata-grid">
-                            {item.itemKind !== "material" && <label>Nomor seri<input value={item.serialNumber} onChange={(event) => updateItem(category, item.id, { serialNumber: event.target.value })} placeholder="Opsional" /></label>}
-                            <label>Jumlah<input type="number" min="1" value={item.quantity} onChange={(event) => updateItem(category, item.id, { quantity: Math.max(1, Number(event.target.value) || 1) })} /></label>
-                            <label>Kondisi<select value={item.condition} onChange={(event) => updateItem(category, item.id, { condition: event.target.value as InstalledItem["condition"] })}><option>Baik</option><option>Rusak ringan</option><option>Rusak</option><option>Tidak beroperasi</option></select></label>
-                            <label>Tahun pasang<input inputMode="numeric" maxLength={4} value={item.installedYear} onChange={(event) => updateItem(category, item.id, { installedYear: event.target.value.replace(/\D/g, "").slice(0, 4) })} placeholder="YYYY" /></label>
-                            <label className="notes-field">Catatan<input value={item.notes} onChange={(event) => updateItem(category, item.id, { notes: event.target.value })} placeholder="Keterangan tambahan" /></label>
+                          <label className="quantity-field">Jumlah
+                            <input type="number" min="1" value={item.quantity} onChange={(event) => updateItemQuantity(category, item, Number(event.target.value))} />
+                          </label>
+                          <div className="unit-list">
+                            {getItemUnits(item).map((unit, unitIndex) => (
+                              <section className="unit-detail" key={unit.id}>
+                                <strong>Unit {unitIndex + 1}</strong>
+                                <div className="metadata-grid">
+                                  {item.itemKind !== "material" && <label>Nomor seri<input value={unit.serialNumber} onChange={(event) => updateUnit(category, item, unit.id, { serialNumber: event.target.value })} placeholder="Opsional" /></label>}
+                                  <label>Kondisi<select value={unit.condition} onChange={(event) => updateUnit(category, item, unit.id, { condition: event.target.value as Condition })}><option>Baik</option><option>Rusak ringan</option><option>Rusak</option><option>Tidak beroperasi</option></select></label>
+                                  <label>Tahun pasang<input inputMode="numeric" maxLength={4} value={unit.installedYear} onChange={(event) => updateUnit(category, item, unit.id, { installedYear: event.target.value.replace(/\D/g, "").slice(0, 4) })} placeholder="YYYY" /></label>
+                                  <label className="notes-field">Catatan<input value={unit.notes} onChange={(event) => updateUnit(category, item, unit.id, { notes: event.target.value })} placeholder="Keterangan tambahan" /></label>
+                                </div>
+                              </section>
+                            ))}
                           </div>
                         </div>
                       ))}
@@ -529,6 +644,14 @@ export default function InventoryApp() {
                     </button>
                   ))}
                   {!visibleProducts.length && <div className="no-product"><strong>Produk tidak ditemukan</strong><span>Coba kata lain dari merek atau tipe produk.</span></div>}
+                </div>
+                <div className="custom-product">
+                  <p><strong>Produk tidak ada di daftar?</strong><span>Tambahkan dengan template standar.</span></p>
+                  <div>
+                    <label>Brand<input value={customBrand} onChange={(event) => setCustomBrand(event.target.value)} placeholder="Nama brand" /></label>
+                    <label>Tipe<input value={customModel} onChange={(event) => setCustomModel(event.target.value)} placeholder="Tipe / model produk" onKeyDown={(event) => { if (event.key === "Enter") addCustomProduct(); }} /></label>
+                    <button disabled={!customBrand.trim() || !customModel.trim()} onClick={addCustomProduct}>Tambahkan produk</button>
+                  </div>
                 </div>
               </>
             )}
