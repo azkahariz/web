@@ -97,6 +97,7 @@ test("autosave memakai debounce, session tab, dan touch berbasis aktivitas", asy
   ]);
   assert.match(hook, /get_submission_state/);
   assert.match(hook, /open_submission/);
+  assert.match(hook, /retryAcquireEdit/);
   assert.match(hook, /startEditing/);
   assert.match(hook, /5_000/);
   assert.match(hook, /18_000/);
@@ -110,19 +111,19 @@ test("browse mode tidak acquire lock atau autosave server sebelum edit eksplisit
   const hook = await readFile(new URL("../app/hooks/useServerDraft.ts", import.meta.url), "utf8");
   assert.match(hook, /client\.rpc\("get_submission_state"/);
   assert.match(hook, /Browse changes only read state; they must not acquire or release locks/);
-  assert.match(hook, /const startEditing = useCallback/);
+  assert.match(hook, /const retryAcquireEdit = useCallback/);
   assert.match(hook, /if \(!isEditing \|\| !stationId/);
   assert.match(hook, /if \(!isEditing \|\| latestPayload\) return "read-only"/);
 });
 
 test("edit mode dimulai eksplisit dan gagal menjadi read-only saat lock milik sesi lain", async () => {
   const hook = await readFile(new URL("../app/hooks/useServerDraft.ts", import.meta.url), "utf8");
-  const startEditing = hook.match(/const startEditing = useCallback[\s\S]*?\}, \[onRemotePayload, operatorName, scope\]\);/)?.[0] ?? "";
-  assert.match(startEditing, /open_submission/);
-  assert.match(startEditing, /setIsEditing\(true\)/);
-  assert.match(startEditing, /setStatus\("editing"\)/);
-  assert.match(startEditing, /setStatus\("read-only"\)/);
-  assert.match(startEditing, /setCanTakeover\(Boolean\(row\.can_takeover\)\)/);
+  const retryAcquire = hook.match(/const retryAcquireEdit = useCallback[\s\S]*?\}, \[onRemotePayload, operatorName, scope\]\);/)?.[0] ?? "";
+  assert.match(retryAcquire, /open_submission/);
+  assert.match(retryAcquire, /setIsEditing\(true\)/);
+  assert.match(retryAcquire, /setStatus\("editing"\)/);
+  assert.match(retryAcquire, /setStatus\("read-only"\)/);
+  assert.match(retryAcquire, /setCanTakeover\(Boolean\(row\.can_takeover\)\)/);
 });
 
 test("manual save, finish edit, dan download dirty state memakai save segera", async () => {
@@ -143,6 +144,8 @@ test("selesai mengedit melepas current lock dan tidak release lock sesi lain", a
   ]);
   assert.match(hook, /const finishEditing = useCallback/);
   assert.match(hook, /await release\(\)/);
+  assert.match(hook, /if \(!released\) return "release-pending"/);
+  assert.match(hook, /if \(error \|\| !data\) return false/);
   assert.match(sql, /and submission\.locked_by_session_id = p_session_id/);
   assert.doesNotMatch(sql, /release all locks/i);
 });
@@ -157,8 +160,23 @@ test("seluruh logout memakai scope lokal dan read-only dapat mencoba acquire ula
   assert.match(logoutLib, /signOut\(\{ scope: "local" \}\)/);
   assert.match(inventory, /releaseLock: sync\.release/);
   assert.match(accountProblem, /logoutCurrentBrowser/);
-  assert.match(inventory, /sync\.status === "read-only"[\s\S]*sync\.reopen/);
-  assert.match(hook, /const reopen = useCallback\(\(\) => setRetryTick/);
+  assert.match(inventory, /sync\.status === "read-only"[\s\S]*onClick=\{startEditing\}/);
+  assert.match(hook, /const reopen = retryAcquireEdit/);
+});
+
+test("retry acquire memakai respons lock dan versi server terbaru, bukan state read-only lama", async () => {
+  const hook = await readFile(new URL("../app/hooks/useServerDraft.ts", import.meta.url), "utf8");
+  const retryAcquire = hook.match(/const retryAcquireEdit = useCallback[\s\S]*?\}, \[onRemotePayload, operatorName, scope\]\);/)?.[0] ?? "";
+  assert.match(retryAcquire, /setLatestPayload\(null\)/);
+  assert.match(retryAcquire, /generationRef\.current \+= 1/);
+  assert.match(retryAcquire, /setLockOperator\(""\)/);
+  assert.match(retryAcquire, /client\.rpc\("open_submission"/);
+  assert.match(retryAcquire, /versionRef\.current = row\.version/);
+  assert.match(retryAcquire, /if \(row\.can_edit && serverPayload\) onRemotePayload\(serverPayload\)/);
+  assert.match(retryAcquire, /if \(row\.can_edit\) \{/);
+  assert.match(retryAcquire, /setStatus\("editing"\)/);
+  assert.match(retryAcquire, /setStatus\("read-only"\)/);
+  assert.doesNotMatch(retryAcquire, /chooseInitialDraft/);
 });
 
 test("format ekspor lama tetap tersedia", async () => {

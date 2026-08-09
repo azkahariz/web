@@ -87,15 +87,16 @@ export function useServerDraft({
     if (!target || !initializedKeyRef.current) return false;
     const client = getSupabaseBrowserClient();
     if (!client) return false;
-    const { data } = await client.rpc("release_submission_lock", {
+    const { data, error } = await client.rpc("release_submission_lock", {
       p_site_id: target.siteId,
       p_site_subtype_id: target.siteSubtypeId,
       p_session_id: getTabSessionId(),
     });
+    if (error || !data) return false;
     setIsEditing(false);
     setDirty(false);
     setStatus("browsing");
-    return Boolean(data);
+    return true;
   }, [scope]);
 
   const saveNow = useCallback(async (): Promise<SaveResult> => {
@@ -257,7 +258,7 @@ export function useServerDraft({
     return () => window.clearTimeout(timer);
   }, [dirty, isEditing, saveNow, serializedPayload, siteId, siteSubtypeId, stationId]);
 
-  const startEditing = useCallback(async () => {
+  const retryAcquireEdit = useCallback(async () => {
     if (!scope) return false;
     const key = scopedDraftKey(scope.stationId, scope.siteId, scope.siteSubtypeId);
     const client = getSupabaseBrowserClient();
@@ -268,6 +269,16 @@ export function useServerDraft({
       setStatus("local-only");
       return true;
     }
+
+    // A previous read-only/conflict response is only a snapshot. Every explicit
+    // edit attempt must acquire against the current server lock state.
+    generationRef.current += 1;
+    setLatestPayload(null);
+    setCanTakeover(false);
+    setLockOperator("");
+    setLockLastActivityAt(null);
+    setIsEditing(false);
+    setDirty(false);
     setStatus("opening");
     const { data, error } = await client.rpc("open_submission", {
       p_site_id: scope.siteId,
@@ -282,8 +293,6 @@ export function useServerDraft({
     const row = firstRow(data as RpcState[]);
     if (!row) return false;
     const serverPayload = row.payload && "schemaVersion" in row.payload ? row.payload as DraftPayload : null;
-    const local = readScopedLocalDraft(key);
-    const choice = chooseInitialDraft(local, serverPayload, row.version);
     versionRef.current = row.version;
     initializedKeyRef.current = key;
     setHasServerDraft(Boolean(serverPayload));
@@ -292,14 +301,7 @@ export function useServerDraft({
     setLockLastActivityAt(row.lock_last_activity_at ?? null);
     setLastSavedAt(row.last_saved_at ?? null);
 
-    if (choice.kind === "conflict") {
-      setLatestPayload(choice.payload);
-      setIsEditing(false);
-      setDirty(false);
-      setStatus("conflict");
-      return false;
-    }
-    if (choice.payload) onRemotePayload(choice.payload);
+    if (row.can_edit && serverPayload) onRemotePayload(serverPayload);
     lastSavedFingerprintRef.current = serverPayload ? payloadFingerprint(serverPayload) : "";
     if (row.can_edit) {
       setLatestPayload(null);
@@ -313,6 +315,8 @@ export function useServerDraft({
     setStatus("read-only");
     return false;
   }, [onRemotePayload, operatorName, scope]);
+
+  const startEditing = retryAcquireEdit;
 
   const touchActivity = useCallback(() => {
     if (!scope || !isEditing || Date.now() - lastTouchRef.current < 45_000) return;
@@ -374,14 +378,12 @@ export function useServerDraft({
       const result = await saveNow();
       if (result !== "saved" && result !== "skipped") return result;
     }
-    await release();
-    setIsEditing(false);
-    setDirty(false);
-    setStatus("browsing");
+    const released = await release();
+    if (!released) return "release-pending" as const;
     return "finished" as const;
   }, [dirty, release, saveNow]);
 
-  const reopen = useCallback(() => setRetryTick((value) => value + 1), []);
+  const reopen = retryAcquireEdit;
 
   return {
     status,
@@ -395,6 +397,7 @@ export function useServerDraft({
     lastSavedAt,
     touchActivity,
     startEditing,
+    retryAcquireEdit,
     saveNow,
     finishEditing,
     takeover,

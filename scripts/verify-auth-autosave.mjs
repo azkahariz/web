@@ -178,7 +178,37 @@ try {
         ${scopes[0].site_id}, ${scopes[0].subtype_id}, ${secondSessionId}, 'Verifier B'
       )
     `;
-    assert(afterLogoutOpen[0]?.can_edit === true, "Sesi B seharusnya langsung memperoleh draf setelah logout A.");
+    assert(
+      afterLogoutOpen[0]?.can_edit === true
+        && afterLogoutOpen[0]?.version === 1
+        && afterLogoutOpen[0]?.payload?.inventory?.verifier === true,
+      "Sesi B seharusnya langsung memperoleh lock serta payload/version terbaru setelah release A.",
+    );
+
+    const releasedByB = await tx`
+      select public.release_submission_lock(
+        ${scopes[0].site_id}, ${scopes[0].subtype_id}, ${secondSessionId}
+      ) as released
+    `;
+    assert(releasedByB[0]?.released === true, "Release sesi B gagal.");
+
+    const thirdSessionId = randomUUID();
+    const openedByC = await tx`
+      select * from public.open_submission(
+        ${scopes[0].site_id}, ${scopes[0].subtype_id}, ${thirdSessionId}, 'Verifier C'
+      )
+    `;
+    assert(openedByC[0]?.can_edit === true, "Sesi C seharusnya dapat memperoleh lock yang baru dilepas B.");
+
+    const staleRetryByA = await tx`
+      select * from public.open_submission(
+        ${scopes[0].site_id}, ${scopes[0].subtype_id}, ${firstSessionId}, 'Verifier A'
+      )
+    `;
+    assert(
+      staleRetryByA[0]?.can_edit === false && staleRetryByA[0]?.lock_operator_name === 'Verifier C',
+      "Retry A harus ditolak dan menerima pemilik lock C terbaru.",
+    );
 
     await tx`reset role`;
     await tx`

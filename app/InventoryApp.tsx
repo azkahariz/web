@@ -327,7 +327,7 @@ export default function InventoryApp({ account }: { account: StationAccount }) {
       setEditFeedback("Isi Nama operator sebelum mulai mengedit.");
       return;
     }
-    const started = await sync.startEditing();
+    const started = await sync.retryAcquireEdit();
     setEditFeedback(started ? "Mode pengisian aktif." : "Data ini sedang diedit dari perangkat lain.");
   }
 
@@ -345,6 +345,7 @@ export default function InventoryApp({ account }: { account: StationAccount }) {
     persistLocalNow();
     const result = await sync.finishEditing();
     if (result === "finished") setEditFeedback("Selesai mengedit. Lock dilepas.");
+    else if (result === "release-pending") setEditFeedback("Data tersimpan, tetapi release lock belum terkonfirmasi. Lock akan kedaluwarsa dalam maksimal 5 menit.");
     else if (result === "local-only") setEditFeedback("Data lokal aman, tetapi server belum tersinkron. Lock belum dilepas.");
     else if (result === "conflict") setEditFeedback("Ada versi server yang lebih baru. Lock belum dilepas.");
     else setEditFeedback("Belum bisa selesai mengedit. Coba simpan lagi.");
@@ -559,7 +560,7 @@ export default function InventoryApp({ account }: { account: StationAccount }) {
               </div>
               {sync.status === "conflict" && <button className="secondary-button" onClick={sync.loadLatest}>Muat versi terbaru</button>}
               {sync.canTakeover && <button className="secondary-button" onClick={sync.takeover}>Ambil alih draf</button>}
-              {sync.status === "read-only" && <button className="secondary-button" onClick={sync.reopen}>Coba lagi</button>}
+              {sync.status === "read-only" && <button className="secondary-button" onClick={startEditing}>Coba lagi</button>}
             </div>
           )}
           <fieldset className="editing-surface" disabled={locationReady && !sync.canEdit} onInputCapture={sync.touchActivity} onChangeCapture={sync.touchActivity}>
