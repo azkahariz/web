@@ -22,8 +22,18 @@ type RpcState = {
   lock_last_activity_at?: string | null;
   last_saved_at?: string | null;
 };
+type SaveResult = "saved" | "skipped" | "local-only" | "conflict" | "read-only";
 
-export type DraftSyncState = "idle" | "opening" | "saved" | "saving" | "local-only" | "read-only" | "conflict";
+export type DraftSyncState =
+  | "idle"
+  | "browsing"
+  | "opening"
+  | "editing"
+  | "saved"
+  | "saving"
+  | "local-only"
+  | "read-only"
+  | "conflict";
 
 function firstRow<T>(value: T[] | T | null): T | null {
   return Array.isArray(value) ? value[0] ?? null : value;
@@ -41,8 +51,10 @@ export function useServerDraft({
   onRemotePayload: (payload: DraftPayload) => void;
 }) {
   const [status, setStatus] = useState<DraftSyncState>("idle");
-  const [canEdit, setCanEdit] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [dirty, setDirty] = useState(false);
   const [canTakeover, setCanTakeover] = useState(false);
+  const [hasServerDraft, setHasServerDraft] = useState(false);
   const [lockOperator, setLockOperator] = useState("");
   const [lockLastActivityAt, setLockLastActivityAt] = useState<string | null>(null);
   const [latestPayload, setLatestPayload] = useState<DraftPayload | null>(null);
@@ -53,10 +65,17 @@ export function useServerDraft({
   const lastSavedFingerprintRef = useRef("");
   const lastTouchRef = useRef(0);
   const generationRef = useRef(0);
+  const maxWaitStartedRef = useRef<number | null>(null);
+  const saveInFlightRef = useRef(false);
   const stationId = scope?.stationId ?? "";
   const siteId = scope?.siteId ?? "";
   const siteSubtypeId = scope?.siteSubtypeId ?? "";
   const serializedPayload = payload ? payloadFingerprint(payload) : "";
+  const canEdit = isEditing && !latestPayload;
+
+  useEffect(() => {
+    setDirty(Boolean(isEditing && serializedPayload && serializedPayload !== lastSavedFingerprintRef.current));
+  }, [isEditing, serializedPayload]);
 
   useEffect(() => {
     const retry = () => setRetryTick((value) => value + 1);
@@ -65,24 +84,91 @@ export function useServerDraft({
   }, []);
 
   const release = useCallback(async (target = scope) => {
-    if (!target || !initializedKeyRef.current) return;
+    if (!target || !initializedKeyRef.current) return false;
     const client = getSupabaseBrowserClient();
-    if (!client) return;
-    await client.rpc("release_submission_lock", {
+    if (!client) return false;
+    const { data } = await client.rpc("release_submission_lock", {
       p_site_id: target.siteId,
       p_site_subtype_id: target.siteSubtypeId,
       p_session_id: getTabSessionId(),
     });
+    setIsEditing(false);
+    setDirty(false);
+    setStatus("browsing");
+    return Boolean(data);
   }, [scope]);
+
+  const saveNow = useCallback(async (): Promise<SaveResult> => {
+    if (!scope || !payload || !serializedPayload || !initializedKeyRef.current) return "skipped";
+    const key = scopedDraftKey(scope.stationId, scope.siteId, scope.siteSubtypeId);
+    if (key !== initializedKeyRef.current) return "skipped";
+
+    writeScopedLocalDraft(key, { payload, serverVersion: versionRef.current, updatedAt: new Date().toISOString() });
+    if (!isEditing || latestPayload) return "read-only";
+    if (serializedPayload === lastSavedFingerprintRef.current) return "skipped";
+    if (saveInFlightRef.current) return "skipped";
+
+    const client = getSupabaseBrowserClient();
+    if (!client) {
+      setStatus("local-only");
+      return "local-only";
+    }
+
+    saveInFlightRef.current = true;
+    setStatus("saving");
+    try {
+      const { data, error } = await client.rpc("save_submission", {
+        p_site_id: scope.siteId,
+        p_site_subtype_id: scope.siteSubtypeId,
+        p_session_id: getTabSessionId(),
+        p_expected_version: versionRef.current,
+        p_payload: payload,
+        p_operator_name: operatorName || null,
+      });
+      if (error) {
+        setStatus("local-only");
+        return "local-only";
+      }
+
+      const row = firstRow(data as Array<{ status: string; version: number; last_saved_at: string | null }>);
+      if (!row) return "local-only";
+      if (row.status === "saved") {
+        versionRef.current = row.version;
+        lastSavedFingerprintRef.current = serializedPayload;
+        setDirty(false);
+        setLastSavedAt(row.last_saved_at);
+        writeScopedLocalDraft(key, { payload, serverVersion: row.version, updatedAt: new Date().toISOString() });
+        setStatus("saved");
+        return "saved";
+      }
+      if (row.status === "version_conflict") {
+        const latest = await client.rpc("get_submission_state", { p_site_id: scope.siteId, p_site_subtype_id: scope.siteSubtypeId });
+        const latestRow = firstRow(latest.data as RpcState[]);
+        if (latestRow?.payload && "schemaVersion" in latestRow.payload) setLatestPayload(latestRow.payload as DraftPayload);
+        versionRef.current = row.version;
+        setStatus("conflict");
+        return "conflict";
+      }
+      setIsEditing(false);
+      setDirty(false);
+      setStatus("read-only");
+      return "read-only";
+    } finally {
+      saveInFlightRef.current = false;
+    }
+  }, [isEditing, latestPayload, operatorName, payload, scope, serializedPayload]);
 
   useEffect(() => {
     const generation = ++generationRef.current;
     initializedKeyRef.current = "";
+    maxWaitStartedRef.current = null;
     queueMicrotask(() => {
       if (generation !== generationRef.current) return;
-      setCanEdit(false);
+      setIsEditing(false);
       setCanTakeover(false);
+      setHasServerDraft(false);
       setLatestPayload(null);
+      setDirty(false);
     });
     if (!stationId || !siteId || !siteSubtypeId || !serializedPayload) {
       queueMicrotask(() => {
@@ -93,13 +179,16 @@ export function useServerDraft({
 
     const key = scopedDraftKey(stationId, siteId, siteSubtypeId);
     const client = getSupabaseBrowserClient();
+    const local = readScopedLocalDraft(key);
+    if (local?.payload) onRemotePayload(local.payload);
+
     if (!client) {
       queueMicrotask(() => {
         if (generation !== generationRef.current) return;
         initializedKeyRef.current = key;
-        versionRef.current = 0;
-        setCanEdit(true);
-        setStatus("local-only");
+        versionRef.current = local?.serverVersion ?? 0;
+        lastSavedFingerprintRef.current = local?.payload ? payloadFingerprint(local.payload) : "";
+        setStatus("browsing");
       });
       return;
     }
@@ -108,32 +197,32 @@ export function useServerDraft({
       if (generation === generationRef.current) setStatus("opening");
     });
     void (async () => {
-      const { data, error } = await client.rpc("open_submission", {
+      const { data, error } = await client.rpc("get_submission_state", {
         p_site_id: siteId,
         p_site_subtype_id: siteSubtypeId,
-        p_session_id: getTabSessionId(),
-        p_operator_name: operatorName || null,
       });
       if (generation !== generationRef.current) return;
+      initializedKeyRef.current = key;
       if (error) {
-        initializedKeyRef.current = key;
-        setCanEdit(true);
-        setStatus("local-only");
+        versionRef.current = local?.serverVersion ?? 0;
+        lastSavedFingerprintRef.current = local?.payload ? payloadFingerprint(local.payload) : "";
+        setStatus("browsing");
         return;
       }
 
       const row = firstRow(data as RpcState[]);
-      if (!row) return;
-      const serverPayload = row.payload && "schemaVersion" in row.payload ? row.payload as DraftPayload : null;
-      const local = readScopedLocalDraft(key);
-      const choice = chooseInitialDraft(local, serverPayload, row.version);
-      versionRef.current = row.version;
-      initializedKeyRef.current = key;
-      setCanEdit(Boolean(row.can_edit));
-      setCanTakeover(Boolean(row.can_takeover));
-      setLockOperator(row.lock_operator_name ?? "");
-      setLockLastActivityAt(row.lock_last_activity_at ?? null);
-      setLastSavedAt(row.last_saved_at ?? null);
+      const serverPayload = row?.payload && "schemaVersion" in row.payload ? row.payload as DraftPayload : null;
+      const choice = chooseInitialDraft(local, serverPayload, row?.version ?? 0);
+      versionRef.current = row?.version ?? local?.serverVersion ?? 0;
+      setHasServerDraft(Boolean(serverPayload));
+      setLockOperator(row?.lock_operator_name ?? "");
+      setLockLastActivityAt(row?.lock_last_activity_at ?? null);
+      setLastSavedAt(row?.last_saved_at ?? null);
+      const lockIsExpired = Boolean(
+        row?.lock_last_activity_at && new Date(row.lock_last_activity_at).getTime() < Date.now() - 5 * 60_000,
+      );
+      const lockIsActive = Boolean(row?.lock_last_activity_at && !lockIsExpired);
+      setCanTakeover(lockIsExpired);
 
       if (choice.kind === "conflict") {
         setLatestPayload(choice.payload);
@@ -141,73 +230,92 @@ export function useServerDraft({
       } else {
         if (choice.payload) onRemotePayload(choice.payload);
         lastSavedFingerprintRef.current = serverPayload ? payloadFingerprint(serverPayload) : "";
-        setStatus(row.can_edit ? (choice.kind === "local" ? "local-only" : "saved") : "read-only");
+        setStatus(lockIsActive ? "read-only" : "browsing");
       }
     })();
-    return () => {
-      void client.rpc("release_submission_lock", {
-        p_site_id: siteId,
-        p_site_subtype_id: siteSubtypeId,
-        p_session_id: getTabSessionId(),
-      });
-    };
-  // A scope change intentionally opens a new server draft only once.
+  // Browse changes only read state; they must not acquire or release locks.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [retryTick, siteId, siteSubtypeId, stationId]);
 
   useEffect(() => {
-    if (!stationId || !siteId || !siteSubtypeId || !serializedPayload || !initializedKeyRef.current) return;
-    const currentPayload = JSON.parse(serializedPayload) as DraftPayload;
+    if (!isEditing || !stationId || !siteId || !siteSubtypeId || !serializedPayload || !initializedKeyRef.current) return;
     const key = scopedDraftKey(stationId, siteId, siteSubtypeId);
     if (key !== initializedKeyRef.current) return;
+    const currentPayload = JSON.parse(serializedPayload) as DraftPayload;
     writeScopedLocalDraft(key, { payload: currentPayload, serverVersion: versionRef.current, updatedAt: new Date().toISOString() });
-    if (!canEdit || latestPayload) return;
-    const fingerprint = serializedPayload;
-    if (fingerprint === lastSavedFingerprintRef.current) return;
-
-    const timer = window.setTimeout(async () => {
-      const client = getSupabaseBrowserClient();
-      if (!client) {
-        setStatus("local-only");
-        return;
-      }
-      setStatus("saving");
-      const { data, error } = await client.rpc("save_submission", {
-        p_site_id: siteId,
-        p_site_subtype_id: siteSubtypeId,
-        p_session_id: getTabSessionId(),
-        p_expected_version: versionRef.current,
-        p_payload: currentPayload,
-        p_operator_name: operatorName || null,
-      });
-      if (error) {
-        setStatus("local-only");
-        return;
-      }
-      const row = firstRow(data as Array<{ status: string; version: number; last_saved_at: string | null }>);
-      if (!row) return;
-      if (row.status === "saved") {
-        versionRef.current = row.version;
-        lastSavedFingerprintRef.current = fingerprint;
-        setLastSavedAt(row.last_saved_at);
-        writeScopedLocalDraft(key, { payload: currentPayload, serverVersion: row.version, updatedAt: new Date().toISOString() });
-        setStatus("saved");
-      } else if (row.status === "version_conflict") {
-        const latest = await client.rpc("get_submission_state", { p_site_id: siteId, p_site_subtype_id: siteSubtypeId });
-        const latestRow = firstRow(latest.data as RpcState[]);
-        if (latestRow?.payload && "schemaVersion" in latestRow.payload) setLatestPayload(latestRow.payload as DraftPayload);
-        versionRef.current = row.version;
-        setStatus("conflict");
-      } else {
-        setCanEdit(false);
-        setStatus("read-only");
-      }
-    }, 1500);
+    if (!dirty) {
+      maxWaitStartedRef.current = null;
+      return;
+    }
+    const now = Date.now();
+    if (maxWaitStartedRef.current === null) maxWaitStartedRef.current = now;
+    const waitMs = now - maxWaitStartedRef.current >= 18_000 ? 0 : 5_000;
+    const timer = window.setTimeout(() => {
+      maxWaitStartedRef.current = null;
+      void saveNow();
+    }, waitMs);
     return () => window.clearTimeout(timer);
-  }, [canEdit, latestPayload, operatorName, serializedPayload, siteId, siteSubtypeId, stationId]);
+  }, [dirty, isEditing, saveNow, serializedPayload, siteId, siteSubtypeId, stationId]);
+
+  const startEditing = useCallback(async () => {
+    if (!scope) return false;
+    const key = scopedDraftKey(scope.stationId, scope.siteId, scope.siteSubtypeId);
+    const client = getSupabaseBrowserClient();
+    if (!client) {
+      initializedKeyRef.current = key;
+      setIsEditing(true);
+      setDirty(false);
+      setStatus("local-only");
+      return true;
+    }
+    setStatus("opening");
+    const { data, error } = await client.rpc("open_submission", {
+      p_site_id: scope.siteId,
+      p_site_subtype_id: scope.siteSubtypeId,
+      p_session_id: getTabSessionId(),
+      p_operator_name: operatorName || null,
+    });
+    if (error) {
+      setStatus("local-only");
+      return false;
+    }
+    const row = firstRow(data as RpcState[]);
+    if (!row) return false;
+    const serverPayload = row.payload && "schemaVersion" in row.payload ? row.payload as DraftPayload : null;
+    const local = readScopedLocalDraft(key);
+    const choice = chooseInitialDraft(local, serverPayload, row.version);
+    versionRef.current = row.version;
+    initializedKeyRef.current = key;
+    setHasServerDraft(Boolean(serverPayload));
+    setCanTakeover(Boolean(row.can_takeover));
+    setLockOperator(row.lock_operator_name ?? operatorName);
+    setLockLastActivityAt(row.lock_last_activity_at ?? null);
+    setLastSavedAt(row.last_saved_at ?? null);
+
+    if (choice.kind === "conflict") {
+      setLatestPayload(choice.payload);
+      setIsEditing(false);
+      setDirty(false);
+      setStatus("conflict");
+      return false;
+    }
+    if (choice.payload) onRemotePayload(choice.payload);
+    lastSavedFingerprintRef.current = serverPayload ? payloadFingerprint(serverPayload) : "";
+    if (row.can_edit) {
+      setLatestPayload(null);
+      setIsEditing(true);
+      setDirty(false);
+      setStatus("editing");
+      return true;
+    }
+    setIsEditing(false);
+    setDirty(false);
+    setStatus("read-only");
+    return false;
+  }, [onRemotePayload, operatorName, scope]);
 
   const touchActivity = useCallback(() => {
-    if (!scope || !canEdit || Date.now() - lastTouchRef.current < 45_000) return;
+    if (!scope || !isEditing || Date.now() - lastTouchRef.current < 45_000) return;
     lastTouchRef.current = Date.now();
     const client = getSupabaseBrowserClient();
     if (!client) return;
@@ -219,13 +327,14 @@ export function useServerDraft({
         p_operator_name: operatorName || null,
       });
       if (data === false) {
-        setCanEdit(false);
+        setIsEditing(false);
+        setDirty(false);
         setStatus("read-only");
       } else {
         setLockLastActivityAt(new Date().toISOString());
       }
     })();
-  }, [canEdit, operatorName, scope]);
+  }, [isEditing, operatorName, scope]);
 
   const takeover = useCallback(async () => {
     if (!scope) return;
@@ -241,11 +350,12 @@ export function useServerDraft({
     if (!error && row?.acquired) {
       versionRef.current = row.version;
       if (row.payload && "schemaVersion" in row.payload) onRemotePayload(row.payload as DraftPayload);
-      setCanEdit(true);
+      setIsEditing(true);
+      setDirty(false);
       setCanTakeover(false);
       setLockOperator(row.lock_operator_name ?? operatorName);
       setLockLastActivityAt(row.lock_last_activity_at ?? null);
-      setStatus("saved");
+      setStatus("editing");
     }
   }, [onRemotePayload, operatorName, scope]);
 
@@ -254,10 +364,42 @@ export function useServerDraft({
     onRemotePayload(latestPayload);
     lastSavedFingerprintRef.current = payloadFingerprint(latestPayload);
     setLatestPayload(null);
-    setStatus(canEdit ? "saved" : "read-only");
-  }, [canEdit, latestPayload, onRemotePayload]);
+    setIsEditing(false);
+    setDirty(false);
+    setStatus("browsing");
+  }, [latestPayload, onRemotePayload]);
+
+  const finishEditing = useCallback(async () => {
+    if (dirty) {
+      const result = await saveNow();
+      if (result !== "saved" && result !== "skipped") return result;
+    }
+    await release();
+    setIsEditing(false);
+    setDirty(false);
+    setStatus("browsing");
+    return "finished" as const;
+  }, [dirty, release, saveNow]);
 
   const reopen = useCallback(() => setRetryTick((value) => value + 1), []);
 
-  return { status, canEdit, canTakeover, lockOperator, lockLastActivityAt, lastSavedAt, touchActivity, takeover, loadLatest, reopen, release };
+  return {
+    status,
+    canEdit,
+    isEditing,
+    dirty,
+    canTakeover,
+    hasServerDraft,
+    lockOperator,
+    lockLastActivityAt,
+    lastSavedAt,
+    touchActivity,
+    startEditing,
+    saveNow,
+    finishEditing,
+    takeover,
+    loadLatest,
+    reopen,
+    release,
+  };
 }

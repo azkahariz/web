@@ -95,12 +95,56 @@ test("autosave memakai debounce, session tab, dan touch berbasis aktivitas", asy
     readFile(new URL("../app/hooks/useServerDraft.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/lib/server-draft.ts", import.meta.url), "utf8"),
   ]);
-  assert.match(hook, /window\.setTimeout\(async \(\) => \{/);
-  assert.match(hook, /\}, 1500\)/);
+  assert.match(hook, /get_submission_state/);
+  assert.match(hook, /open_submission/);
+  assert.match(hook, /startEditing/);
+  assert.match(hook, /5_000/);
+  assert.match(hook, /18_000/);
   assert.match(hook, /Date\.now\(\) - lastTouchRef\.current < 45_000/);
   assert.doesNotMatch(hook, /setInterval/);
   assert.match(storage, /sessionStorage\.getItem\(TAB_SESSION_STORAGE_KEY\)/);
   assert.match(storage, /crypto\.randomUUID\(\)/);
+});
+
+test("browse mode tidak acquire lock atau autosave server sebelum edit eksplisit", async () => {
+  const hook = await readFile(new URL("../app/hooks/useServerDraft.ts", import.meta.url), "utf8");
+  assert.match(hook, /client\.rpc\("get_submission_state"/);
+  assert.match(hook, /Browse changes only read state; they must not acquire or release locks/);
+  assert.match(hook, /const startEditing = useCallback/);
+  assert.match(hook, /if \(!isEditing \|\| !stationId/);
+  assert.match(hook, /if \(!isEditing \|\| latestPayload\) return "read-only"/);
+});
+
+test("edit mode dimulai eksplisit dan gagal menjadi read-only saat lock milik sesi lain", async () => {
+  const hook = await readFile(new URL("../app/hooks/useServerDraft.ts", import.meta.url), "utf8");
+  const startEditing = hook.match(/const startEditing = useCallback[\s\S]*?\}, \[onRemotePayload, operatorName, scope\]\);/)?.[0] ?? "";
+  assert.match(startEditing, /open_submission/);
+  assert.match(startEditing, /setIsEditing\(true\)/);
+  assert.match(startEditing, /setStatus\("editing"\)/);
+  assert.match(startEditing, /setStatus\("read-only"\)/);
+  assert.match(startEditing, /setCanTakeover\(Boolean\(row\.can_takeover\)\)/);
+});
+
+test("manual save, finish edit, dan download dirty state memakai save segera", async () => {
+  const inventory = await readFile(new URL("../app/InventoryApp.tsx", import.meta.url), "utf8");
+  assert.match(inventory, /async function saveManual\(\)/);
+  assert.match(inventory, /const result = await sync\.saveNow\(\)/);
+  assert.match(inventory, /async function finishEditing\(\)/);
+  assert.match(inventory, /const result = await sync\.finishEditing\(\)/);
+  assert.match(inventory, /async function saveBeforeDownload\(\)/);
+  assert.match(inventory, /if \(!sync\.isEditing \|\| !sync\.dirty\) return true/);
+  assert.match(inventory, /await sync\.saveNow\(\)/);
+});
+
+test("selesai mengedit melepas current lock dan tidak release lock sesi lain", async () => {
+  const [hook, sql] = await Promise.all([
+    readFile(new URL("../app/hooks/useServerDraft.ts", import.meta.url), "utf8"),
+    readFile(new URL("../supabase/migrations/20260810010000_station_auth_autosave.sql", import.meta.url), "utf8"),
+  ]);
+  assert.match(hook, /const finishEditing = useCallback/);
+  assert.match(hook, /await release\(\)/);
+  assert.match(sql, /and submission\.locked_by_session_id = p_session_id/);
+  assert.doesNotMatch(sql, /release all locks/i);
 });
 
 test("seluruh logout memakai scope lokal dan read-only dapat mencoba acquire ulang", async () => {
@@ -119,8 +163,9 @@ test("seluruh logout memakai scope lokal dan read-only dapat mencoba acquire ula
 
 test("format ekspor lama tetap tersedia", async () => {
   const source = await readFile(new URL("../app/InventoryApp.tsx", import.meta.url), "utf8");
-  assert.match(source, /Unduh hasil JSON/);
-  assert.match(source, /Unduh hasil CSV/);
+  assert.match(source, /Unduh JSON/);
+  assert.match(source, /Unduh CSV/);
+  assert.match(source, /download-options/);
   assert.match(source, /SITE_METADATA_CSV_HEADERS/);
   assert.match(source, /getItemUnits\(item\)/);
 });

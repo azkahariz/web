@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CONDITION_OPTIONS, MOUNTING_MATERIALS } from "./config/form-options";
 import rawData from "./data.generated.json";
@@ -64,6 +64,9 @@ export default function InventoryApp({ account }: { account: StationAccount }) {
   const [siteMetadataDrafts, setSiteMetadataDrafts] = useState<SiteMetadataDrafts>({});
   const [operatorName, setOperatorName] = useState("");
   const [hydrated, setHydrated] = useState(false);
+  const [editFeedback, setEditFeedback] = useState("");
+  const [downloadOpen, setDownloadOpen] = useState(false);
+  const downloadRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -105,6 +108,22 @@ export default function InventoryApp({ account }: { account: StationAccount }) {
     window.addEventListener("keydown", close);
     return () => window.removeEventListener("keydown", close);
   }, [activeCategory]);
+
+  useEffect(() => {
+    if (!downloadOpen) return;
+    const closeWithKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setDownloadOpen(false);
+    };
+    const closeWithClick = (event: MouseEvent) => {
+      if (downloadRef.current && !downloadRef.current.contains(event.target as Node)) setDownloadOpen(false);
+    };
+    window.addEventListener("keydown", closeWithKey);
+    window.addEventListener("mousedown", closeWithClick);
+    return () => {
+      window.removeEventListener("keydown", closeWithKey);
+      window.removeEventListener("mousedown", closeWithClick);
+    };
+  }, [downloadOpen]);
 
   const sites = useMemo(
     () => data.stationSites.filter((row) => row.stationId === account.stationId),
@@ -150,6 +169,11 @@ export default function InventoryApp({ account }: { account: StationAccount }) {
   const progress = categories.length ? Math.round((filledCount / categories.length) * 100) : 0;
   const filteredCategories = categories.filter((category) =>
     normalizeSearch(category).includes(normalizeSearch(categoryQuery)),
+  );
+  const hasLocalDraft = Boolean(
+    Object.values(inventory).some((items) => items.length > 0)
+    || runwayAzimuth
+    || Object.values(siteMetadata).some((value) => Array.isArray(value) ? value.length > 0 : Boolean(value)),
   );
 
   const visibleProducts = useMemo(() => {
@@ -293,6 +317,54 @@ export default function InventoryApp({ account }: { account: StationAccount }) {
     : null;
   const sync = useServerDraft({ scope: draftScope, payload: serverPayload, operatorName, onRemotePayload: applyRemotePayload });
 
+  function persistLocalNow() {
+    saveLocalDraft({ mode, station, site, subtype, templateProfile, drafts, draftContexts, siteMetadataDrafts });
+  }
+
+  async function startEditing() {
+    setEditFeedback("");
+    if (!operatorName.trim()) {
+      setEditFeedback("Isi Nama operator sebelum mulai mengedit.");
+      return;
+    }
+    const started = await sync.startEditing();
+    setEditFeedback(started ? "Mode pengisian aktif." : "Data ini sedang diedit dari perangkat lain.");
+  }
+
+  async function saveManual() {
+    persistLocalNow();
+    const result = await sync.saveNow();
+    if (result === "saved") setEditFeedback("Tersimpan ke server.");
+    else if (result === "skipped") setEditFeedback("Semua perubahan sudah tersimpan.");
+    else if (result === "local-only") setEditFeedback("Tersimpan di perangkat, tetapi belum tersinkron ke server.");
+    else if (result === "conflict") setEditFeedback("Ada versi server yang lebih baru. Muat versi terbaru sebelum lanjut.");
+    else setEditFeedback("Tidak bisa menyimpan karena lock tidak aktif.");
+  }
+
+  async function finishEditing() {
+    persistLocalNow();
+    const result = await sync.finishEditing();
+    if (result === "finished") setEditFeedback("Selesai mengedit. Lock dilepas.");
+    else if (result === "local-only") setEditFeedback("Data lokal aman, tetapi server belum tersinkron. Lock belum dilepas.");
+    else if (result === "conflict") setEditFeedback("Ada versi server yang lebih baru. Lock belum dilepas.");
+    else setEditFeedback("Belum bisa selesai mengedit. Coba simpan lagi.");
+  }
+
+  async function saveBeforeDownload() {
+    persistLocalNow();
+    if (!sync.isEditing || !sync.dirty) return true;
+    const result = await sync.saveNow();
+    if (result === "local-only") {
+      setEditFeedback("Data tersimpan di perangkat, tetapi belum tersinkron ke server. Unduhan tetap memakai data terbaru di browser.");
+      return false;
+    }
+    if (result === "conflict" || result === "read-only") {
+      setEditFeedback("Unduhan memakai data terbaru di browser, tetapi server belum tersinkron.");
+      return false;
+    }
+    return true;
+  }
+
   async function logout() {
     const client = getSupabaseBrowserClient();
     if (client) {
@@ -305,7 +377,9 @@ export default function InventoryApp({ account }: { account: StationAccount }) {
     router.refresh();
   }
 
-  function exportCurrentDraft() {
+  async function exportCurrentDraft() {
+    await saveBeforeDownload();
+    setDownloadOpen(false);
     const payload = {
       exportedAt: new Date().toISOString(),
       source: mode,
@@ -322,7 +396,9 @@ export default function InventoryApp({ account }: { account: StationAccount }) {
     downloadText(filename, JSON.stringify(payload, null, 2), "application/json");
   }
 
-  function exportCurrentDraftCsv() {
+  async function exportCurrentDraftCsv() {
+    await saveBeforeDownload();
+    setDownloadOpen(false);
     const headers = [
       "Stasiun", "Site", "Tipe Site", "Subtipe Site", "Azimuth Runway", ...SITE_METADATA_CSV_HEADERS, "Profil Barang",
       "Kategori Barang", "Bahan Mounting", "Merk", "Tipe Produk", "Unit Ke", "Nomor Seri", "Jumlah",
@@ -364,7 +440,9 @@ export default function InventoryApp({ account }: { account: StationAccount }) {
   const locationReady = Boolean(station && site && currentSubtype);
   const syncLabels = {
     idle: "Pilih draf",
+    browsing: "Mode lihat",
     opening: "Memuat server",
+    editing: "Mode pengisian aktif",
     saved: "Tersimpan di server",
     saving: "Menyimpan",
     "local-only": "Tersimpan lokal",
@@ -422,14 +500,14 @@ export default function InventoryApp({ account }: { account: StationAccount }) {
               <input id="operator-name" value={operatorName} onChange={(event) => setOperatorName(event.target.value)} placeholder="Nama petugas yang mengisi" />
 
               <label className="field-label" htmlFor="site-select">Aloptama / Site</label>
-              <select id="site-select" value={site} disabled={!station} onChange={(event) => { setSite(event.target.value); setSubtype(""); }}>
+              <select id="site-select" value={site} disabled={!station || sync.isEditing} onChange={(event) => { setSite(event.target.value); setSubtype(""); setEditFeedback(""); }}>
                 <option value="">{station ? "Pilih site" : "Pilih stasiun dahulu"}</option>
                 {sites.map((row) => <option key={`${row.site}-${row.siteType}`} value={row.site}>{row.site}</option>)}
               </select>
               {selectedSite && <p className="field-hint">Tipe site: <strong>{selectedSite.siteType}</strong></p>}
 
               <label className="field-label" htmlFor="subtype-select">Subtipe site</label>
-              <select id="subtype-select" value={currentSubtype} disabled={!site || !subtypes.length} onChange={(event) => setSubtype(event.target.value)}>
+              <select id="subtype-select" value={currentSubtype} disabled={!site || !subtypes.length || sync.isEditing} onChange={(event) => { setSubtype(event.target.value); setEditFeedback(""); }}>
                 <option value="">{site ? "Pilih subtipe" : "Pilih site dahulu"}</option>
                 {subtypes.map((name) => <option key={name} value={name}>{name}</option>)}
               </select>
@@ -443,7 +521,7 @@ export default function InventoryApp({ account }: { account: StationAccount }) {
                     id="runway-azimuth"
                     inputMode="numeric"
                     maxLength={2}
-                    disabled={locationReady && !sync.canEdit}
+                    disabled={!sync.canEdit}
                     value={runwayAzimuth}
                     onChange={(event) => updateRunwayAzimuth(event.target.value)}
                     placeholder="Contoh: 01, 11, 24"
@@ -451,6 +529,16 @@ export default function InventoryApp({ account }: { account: StationAccount }) {
                   <p className="field-hint">Khusus subtipe TDZ dan End Point, maksimal dua digit.</p>
                 </>
               )}
+
+              {locationReady && (
+                <div className="edit-start-block">
+                  <button className="primary-button" disabled={sync.isEditing || sync.status === "opening"} onClick={startEditing}>
+                    {hasLocalDraft || sync.hasServerDraft ? "Edit Data" : "Mulai Pengisian"}
+                  </button>
+                  <span>{sync.isEditing ? "Mode pengisian aktif" : "Mode lihat aktif. Belum ada lock."}</span>
+                </div>
+              )}
+              {editFeedback && <p className="warning-copy">{editFeedback}</p>}
           </div>
 
           {locationReady && (
@@ -572,10 +660,38 @@ export default function InventoryApp({ account }: { account: StationAccount }) {
               <div className="bottom-actions">
                 <button className="danger-button" onClick={resetCurrentDraft}>Kosongkan draf</button>
                 <div className="save-actions">
-                  <span>Perubahan tersimpan otomatis</span>
+                  <span>
+                    {sync.isEditing
+                      ? sync.dirty
+                        ? sync.status === "saving" ? "Menyimpan..." : "Ada perubahan belum tersinkron"
+                        : savedTime ? `Tersimpan otomatis ${savedTime}` : "Semua perubahan sudah tersimpan"
+                      : "Mode lihat. Klik Edit Data untuk mengubah."}
+                  </span>
                   <div className="export-actions">
-                    <button className="secondary-button" onClick={exportCurrentDraft}>Unduh hasil JSON</button>
-                    <button className="primary-button" onClick={exportCurrentDraftCsv}>Unduh hasil CSV</button>
+                    {sync.isEditing && <button className="secondary-button" onClick={saveManual}>Simpan</button>}
+                    <div className="download-menu" ref={downloadRef}>
+                      <button
+                        className="secondary-button"
+                        aria-haspopup="menu"
+                        aria-expanded={downloadOpen}
+                        onClick={() => setDownloadOpen((open) => !open)}
+                      >
+                        Unduh
+                      </button>
+                      {downloadOpen && (
+                        <div className="download-options" role="menu">
+                          <button role="menuitem" onClick={exportCurrentDraftCsv}>
+                            <strong>Unduh CSV</strong>
+                            <span>Data untuk pengumpulan</span>
+                          </button>
+                          <button role="menuitem" onClick={exportCurrentDraft}>
+                            <strong>Unduh JSON</strong>
+                            <span>Salinan data lengkap</span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                    {sync.isEditing && <button className="primary-button" onClick={finishEditing}>Selesai Mengedit</button>}
                   </div>
                 </div>
               </div>

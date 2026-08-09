@@ -150,7 +150,8 @@ test("pencarian gabungan menemukan nilai dari merek maupun tipe", async () => {
 
 test("aplikasi menyediakan ekspor CSV lengkap dengan BOM dan metadata", async () => {
   const source = await readFile(new URL("../app/InventoryApp.tsx", import.meta.url), "utf8");
-  assert.match(source, /Unduh hasil CSV/);
+  assert.match(source, /Unduh CSV/);
+  assert.match(source, /download-options/);
   assert.match(source, /\\uFEFF/);
   assert.match(source, /"Stasiun"[\s\S]*"Azimuth Runway"[\s\S]*"Kategori Barang"[\s\S]*"Tipe Produk"[\s\S]*"Unit Ke"/);
   assert.match(source, /items\.flatMap\(\(item\) => getItemUnits\(item\)/);
