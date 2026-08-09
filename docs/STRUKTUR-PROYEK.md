@@ -15,8 +15,9 @@ web/
 |   |-- data.generated.json  Hasil otomatis dari CSV, jangan diedit
 |   `-- globals.css          Seluruh tampilan aplikasi
 |-- db/                      Tempat skema database pada tahap berikutnya
+|-- supabase/migrations/     Schema PostgreSQL master yang version-controlled
 |-- docs/                    Dokumentasi pemeliharaan
-|-- scripts/                 Pembuat data aplikasi dari CSV
+|-- scripts/                 Generator dan sinkronisasi master CSV
 |-- tests/                   Pemeriksaan perilaku penting
 `-- README.md                Pintu masuk dokumentasi
 ```
@@ -42,6 +43,18 @@ SiteMetadataForm
 
 Route internal digunakan agar browser pengguna tidak bergantung langsung pada
 aturan akses lintas domain milik layanan wilayah.
+
+Master data mempunyai alur tambahan:
+
+```text
+Spreadsheet / CSV
+  -> generate-data.ps1
+  -> data.generated.json
+  -> sync-master.mjs
+  -> Supabase transaction
+  -> sync-output/*.synced.csv
+  -> Spreadsheet
+```
 
 ## Batas tanggung jawab
 

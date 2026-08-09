@@ -14,6 +14,7 @@ harus memahami seluruh kode:
 2. [Struktur proyek](docs/STRUKTUR-PROYEK.md) - fungsi setiap folder dan file.
 3. [Checklist sebelum publikasi](docs/CHECKLIST-PUBLIKASI.md) - pemeriksaan wajib.
 4. [Rencana database](docs/RENCANA-DATABASE.md) - batas sistem saat ini dan arah berikutnya.
+5. [Master data Supabase](docs/MASTER-DATA-SUPABASE.md) - bootstrap UUID dan sync CSV.
 
 ## Menjalankan di komputer
 
@@ -55,3 +56,16 @@ tidak berubah oleh proses persiapan ini.
 Draf disimpan dalam `localStorage` browser pada perangkat yang sedang
 digunakan. Draf belum tersimpan di server, belum terhubung ke akun pengguna,
 dan belum dapat dilanjutkan dari perangkat lain.
+
+## Master data Supabase
+
+Spreadsheet/CSV tetap menjadi source of truth master. Supabase hanya menjadi
+mirror terstruktur dengan UUID; website belum membaca Supabase secara langsung.
+
+```powershell
+npm.cmd run validate:master
+npm.cmd run sync:master
+```
+
+`sync:master` adalah proses lokal tepercaya dan memerlukan `SUPABASE_DB_URL` di
+`.env.local`. Credential tersebut tidak diperlukan oleh Vercel saat ini.

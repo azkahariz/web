@@ -1,7 +1,12 @@
+param(
+  [string]$InputRoot = '',
+  [string]$GeneratedOutput = ''
+)
+
 $ErrorActionPreference = 'Stop'
 
-$sourceRoot = Split-Path -Parent $PSScriptRoot | Split-Path -Parent
-$outputPath = Join-Path (Split-Path -Parent $PSScriptRoot) 'app\data.generated.json'
+$sourceRoot = if ($InputRoot) { $InputRoot } else { Split-Path -Parent $PSScriptRoot | Split-Path -Parent }
+$outputPath = if ($GeneratedOutput) { $GeneratedOutput } else { Join-Path (Split-Path -Parent $PSScriptRoot) 'app\data.generated.json' }
 
 function Import-SourceCsv([string]$pattern) {
   $file = Get-ChildItem -LiteralPath $sourceRoot -File | Where-Object Name -Like $pattern | Select-Object -First 1
@@ -14,14 +19,39 @@ function Import-SourceCsv([string]$pattern) {
 $stationRows = Import-SourceCsv '*Nama Stasiun.csv'
 $siteSubtypeRows = Import-SourceCsv '*Jenis Site.csv'
 $barangRows = Import-SourceCsv '*Barang.csv'
+$productCategoryRows = Import-SourceCsv '*product_categories.csv'
 $productRows = Import-SourceCsv '*products.csv'
 
+function Add-OptionalText([System.Collections.Specialized.OrderedDictionary]$target, [object]$row, [string]$sourceName, [string]$targetName) {
+  $property = $row.PSObject.Properties[$sourceName]
+  if ($property -and $null -ne $property.Value) {
+    $value = $property.Value.ToString().Trim()
+    if ($value) { $target[$targetName] = $value }
+  }
+}
+
+function Add-OptionalBoolean([System.Collections.Specialized.OrderedDictionary]$target, [object]$row, [string]$sourceName, [string]$targetName) {
+  $property = $row.PSObject.Properties[$sourceName]
+  if (-not $property -or $null -eq $property.Value -or -not $property.Value.ToString().Trim()) { return }
+  $value = $property.Value.ToString().Trim().ToLowerInvariant()
+  if ($value -in @('true', '1', 'ya', 'aktif')) { $target[$targetName] = $true; return }
+  if ($value -in @('false', '0', 'tidak', 'nonaktif')) { $target[$targetName] = $false; return }
+  throw "Nilai $sourceName harus TRUE atau FALSE: $($property.Value)"
+}
+
 $stations = @($stationRows | ForEach-Object {
-  [ordered]@{
+  $entry = [ordered]@{
     station = $_.'Nama Stasiun'.Trim()
     site = $_.'Nama Site'.Trim()
     siteType = $_.'Tipe Site'.Trim()
   }
+  Add-OptionalText $entry $_ 'station_id' 'stationId'
+  Add-OptionalBoolean $entry $_ 'station_active' 'stationActive'
+  Add-OptionalText $entry $_ 'site_id' 'siteId'
+  Add-OptionalBoolean $entry $_ 'site_active' 'siteActive'
+  Add-OptionalText $entry $_ 'site_type_id' 'siteTypeId'
+  Add-OptionalBoolean $entry $_ 'site_type_active' 'siteTypeActive'
+  $entry
 })
 
 $barangByJenis = [ordered]@{}
@@ -53,11 +83,22 @@ function Resolve-BarangProfile([string]$subtype) {
 $siteSubtypes = @($siteSubtypeRows | ForEach-Object {
   $siteType = $_.'Tipe Site'.Trim()
   $subtype = $_.'Sub Tipe Site'.Trim()
-  [ordered]@{
+  $explicitProfile = if ($_.PSObject.Properties['Profil Barang']) { $_.'Profil Barang'.Trim() } else { '' }
+  $profile = if ($explicitProfile) { $explicitProfile } else { Resolve-BarangProfile $subtype }
+  if ($profile -and -not $barangByJenis.Contains($profile)) {
+    throw "Profil Barang tidak ditemukan untuk subtipe ${subtype}: $profile"
+  }
+  $entry = [ordered]@{
     siteType = $siteType
     subtype = $subtype
-    profile = Resolve-BarangProfile $subtype
+    profile = $profile
   }
+  Add-OptionalText $entry $_ 'site_type_id' 'siteTypeId'
+  Add-OptionalBoolean $entry $_ 'site_type_active' 'siteTypeActive'
+  Add-OptionalText $entry $_ 'site_subtype_id' 'subtypeId'
+  Add-OptionalBoolean $entry $_ 'site_subtype_active' 'subtypeActive'
+  Add-OptionalText $entry $_ 'item_profile_id' 'profileId'
+  $entry
 })
 
 $usedSiteTypes = @($stations.siteType | Sort-Object -Unique)
@@ -82,14 +123,56 @@ foreach ($row in $productRows) {
   $key = ($brand + [char]31 + $model).ToLowerInvariant()
   if ($seenProducts.ContainsKey($key)) { continue }
   $seenProducts[$key] = $true
-  $products.Add([ordered]@{ brand = $brand; model = $model })
+  $entry = [ordered]@{ brand = $brand; model = $model }
+  Add-OptionalText $entry $row 'product_id' 'productId'
+  Add-OptionalBoolean $entry $row 'active' 'active'
+  $products.Add($entry)
 }
+
+$profileItemMappings = @($barangRows | ForEach-Object {
+  $entry = [ordered]@{
+    profile = $_.Jenis.Trim()
+    item = $_.'Barang Terpasang'.Trim()
+  }
+  Add-OptionalText $entry $_ 'item_profile_id' 'profileId'
+  Add-OptionalBoolean $entry $_ 'item_profile_active' 'profileActive'
+  Add-OptionalText $entry $_ 'item_id' 'itemId'
+  Add-OptionalBoolean $entry $_ 'item_active' 'itemActive'
+  Add-OptionalText $entry $_ 'profile_item_id' 'mappingId'
+  Add-OptionalBoolean $entry $_ 'mapping_active' 'mappingActive'
+  $entry
+})
+
+$seenCategories = @{}
+$productCategories = [System.Collections.Generic.List[object]]::new()
+foreach ($row in $productCategoryRows) {
+  $name = $row.product_categories.Trim()
+  if (-not $name) { continue }
+  $key = $name.ToLowerInvariant()
+  if ($seenCategories.ContainsKey($key)) { continue }
+  $seenCategories[$key] = $true
+  $entry = [ordered]@{ name = $name }
+  Add-OptionalText $entry $row 'product_category_id' 'categoryId'
+  Add-OptionalBoolean $entry $row 'active' 'active'
+  $productCategories.Add($entry)
+}
+
+$hasMasterIds = [bool](
+  $barangRows[0].PSObject.Properties['item_profile_id'] -or
+  $productCategoryRows[0].PSObject.Properties['product_category_id']
+)
 
 $payload = [ordered]@{
   stationSites = $stations
   siteSubtypes = $siteSubtypes
   barangByJenis = $barangByJenis
   products = @($products | Sort-Object @{ Expression = { $_.brand } }, @{ Expression = { $_.model } })
+}
+if ($hasMasterIds) {
+  $payload['master'] = [ordered]@{
+    profileItems = $profileItemMappings
+    productCategories = @($productCategories | Sort-Object @{ Expression = { $_.name } })
+  }
 }
 
 $json = $payload | ConvertTo-Json -Depth 8

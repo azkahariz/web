@@ -54,7 +54,10 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\generate-data.
 
 Script akan membuat ulang `app/data.generated.json`, menghapus produk kosong
 dan duplikat, lalu memeriksa bahwa setiap tipe site mempunyai subtipe dan
-profil barang.
+profil barang. Kolom UUID dan status aktif tambahan akan dipertahankan.
+
+Untuk validasi dan sinkronisasi master Supabase, ikuti
+`docs/MASTER-DATA-SUPABASE.md`. Jangan mengubah UUID yang sudah dihasilkan.
 
 ## Mengubah teks atau susunan form
 

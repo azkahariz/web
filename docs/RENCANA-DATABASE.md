@@ -9,6 +9,10 @@ data browser juga dapat menghapus draf.
 Folder `db` dan paket Drizzle sudah tersedia sebagai kerangka. Database belum
 diaktifkan dan `.openai/hosting.json` masih mempunyai nilai `d1: null`.
 
+Supabase pada tahap sekarang hanya menyimpan mirror master dari Spreadsheet/CSV.
+Supabase belum menyimpan draf atau hasil pengisian pengguna. Migration master
+berada di `supabase/migrations`, terpisah dari kerangka Cloudflare D1 `db/`.
+
 ## Kapan database diperlukan
 
 Database diperlukan ketika pengguna harus:
