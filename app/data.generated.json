@@ -15,15 +15,23 @@
                              "station":  "BMKG Pusat",
                              "site":  "Water Level Pulau Sebesi",
                              "siteType":  "Water Level",
+                             "stationId":  "f34b42c3-73f6-4d14-a4ce-6ed7ddf2f9c5",
                              "stationActive":  true,
-                             "siteActive":  true
+                             "siteId":  "ab0efb7b-18e3-45c1-8eb3-5ec05595fa79",
+                             "siteActive":  true,
+                             "siteTypeId":  "dd294a72-c44e-4717-93d8-f67d7371c712",
+                             "siteTypeActive":  true
                          },
                          {
                              "station":  "BMKG Pusat",
                              "site":  "Water Level PLTU Labuan",
                              "siteType":  "Water Level",
+                             "stationId":  "f34b42c3-73f6-4d14-a4ce-6ed7ddf2f9c5",
                              "stationActive":  true,
-                             "siteActive":  true
+                             "siteId":  "3dedbb11-de83-4847-af1d-1b3edee215ee",
+                             "siteActive":  true,
+                             "siteTypeId":  "dd294a72-c44e-4717-93d8-f67d7371c712",
+                             "siteTypeActive":  true
                          },
                          {
                              "station":  "Stasiun Meteorologi Aek Godang - Padang Sidempuan",
@@ -3956,7 +3964,7 @@
                                               "Penyimpanan",
                                               "Regulator",
                                               "Sensor Tekanan Udara",
-                                              "Sensor Pasut",
+                                              "Sensor pasut",
                                               "Modem Komunikasi",
                                               "SIstem Catu Daya Tidak Terputus",
                                               "Solar Panel",
@@ -8477,7 +8485,7 @@
                                         },
                                         {
                                             "profile":  "Water Level",
-                                            "item":  "Sensor Pasut",
+                                            "item":  "Sensor pasut",
                                             "profileId":  "35ddd0e8-fedf-4729-becd-ef9baa85228e",
                                             "profileActive":  true,
                                             "itemId":  "6d2d9b61-04d5-44f0-80b0-8aab93d99ea8",

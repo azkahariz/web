@@ -57,25 +57,24 @@ function profileForSubtype(subtype, barangByJenis) {
   return "";
 }
 
-test("server merender aplikasi inventaris lokal", async () => {
+test("server merender gerbang konfigurasi autentikasi tanpa environment publik", async () => {
   const response = await render();
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
   const html = await response.text();
   assert.match(html, /Aloptama Collect/);
-  assert.match(html, /Inventarisasi Barang Terpasang/i);
-  assert.match(html, /Berdasarkan site/);
-  assert.match(html, /Coba jenis langsung/);
+  assert.match(html, /Konfigurasi Supabase belum tersedia/i);
+  assert.match(html, /NEXT_PUBLIC_SUPABASE_URL/);
   assert.doesNotMatch(html, /codex-preview|SkeletonPreview|react-loading-skeleton/i);
 });
 
 test("data hasil CSV lengkap dan Water Level memiliki 17 kategori", async () => {
   const data = JSON.parse(await readFile(new URL("../app/data.generated.json", import.meta.url), "utf8"));
   const [stationCsv, siteSubtypeCsv, barangCsv, productCsv] = await Promise.all([
-    readFile(new URL("../../List Barang Terpasang_Group By Stamet - Nama Stasiun.csv", import.meta.url), "utf8"),
-    readFile(new URL("../../List Barang Terpasang_Group By Stamet - Jenis Site.csv", import.meta.url), "utf8"),
-    readFile(new URL("../../List Barang Terpasang_Group By Stamet - Barang.csv", import.meta.url), "utf8"),
-    readFile(new URL("../../List Barang Terpasang_Group By Stamet - products.csv", import.meta.url), "utf8"),
+    readFile(new URL("../../List Barang Terpasang - Nama Stasiun.csv", import.meta.url), "utf8"),
+    readFile(new URL("../../List Barang Terpasang - Jenis Site.csv", import.meta.url), "utf8"),
+    readFile(new URL("../../List Barang Terpasang - Barang.csv", import.meta.url), "utf8"),
+    readFile(new URL("../../List Barang Terpasang - products.csv", import.meta.url), "utf8"),
   ]);
   const stationRows = parseCsv(stationCsv);
   const siteSubtypeRows = parseCsv(siteSubtypeCsv);
@@ -89,7 +88,7 @@ test("data hasil CSV lengkap dan Water Level memiliki 17 kategori", async () => 
   const expectedWaterLevel = [
     "Adaptor", "Arrester", "Boks Panel", "Data Akuisisi", "Kabel Data",
     "Mounting Sensor Pasut", "Pengolah Data", "Penyimpanan", "Regulator",
-    "Sensor Tekanan Udara", "Sensor Pasut", "Modem Komunikasi",
+    "Sensor Tekanan Udara", "Sensor pasut", "Modem Komunikasi",
     "SIstem Catu Daya Tidak Terputus", "Solar Panel", "Mounting Sensor Hujan",
     "Proteksi Petir", "Sensor Hujan",
   ];
@@ -108,8 +107,8 @@ test("data hasil CSV lengkap dan Water Level memiliki 17 kategori", async () => 
     };
   });
 
-  assert.deepEqual(data.stationSites, expectedStationSites);
-  assert.deepEqual(data.siteSubtypes, expectedSiteSubtypes);
+  assert.deepEqual(data.stationSites.map(({ station, site, siteType }) => ({ station, site, siteType })), expectedStationSites);
+  assert.deepEqual(data.siteSubtypes.map(({ siteType, subtype, profile }) => ({ siteType, subtype, profile })), expectedSiteSubtypes);
   assert.equal(
     new Set(data.stationSites.map((row) => row.station)).size,
     new Set(expectedStationSites.map((row) => row.station)).size,
@@ -130,10 +129,11 @@ test("data hasil CSV lengkap dan Water Level memiliki 17 kategori", async () => 
   assert.equal(Object.keys(barangByJenis).length, Object.keys(data.barangByJenis).length);
 });
 
-test("pemilih stasiun tidak membatasi daftar hanya pada hasil awal", async () => {
+test("stasiun dikunci dari akun dan site difilter memakai UUID stasiun", async () => {
   const source = await readFile(new URL("../app/InventoryApp.tsx", import.meta.url), "utf8");
-  assert.doesNotMatch(source, /stationSuggestions[\s\S]{0,400}\.slice\(/);
-  assert.match(source, /stationSuggestions\.length\}\s*stasiun ditemukan/);
+  assert.match(source, /value=\{station\} readOnly/);
+  assert.match(source, /row\.stationId === account\.stationId/);
+  assert.doesNotMatch(source, /setStation\(/);
   assert.match(source, /aloptama \/ site/i);
 });
 
@@ -159,7 +159,7 @@ test("kategori mounting memakai pilihan bahan dan tetap mendukung bahan lainnya"
     readFile(new URL("../app/InventoryApp.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/lib/inventory.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/config/form-options.ts", import.meta.url), "utf8"),
-    readFile(new URL("../../List Barang Terpasang_Group By Stamet - Barang.csv", import.meta.url), "utf8"),
+    readFile(new URL("../../List Barang Terpasang - Barang.csv", import.meta.url), "utf8"),
   ]);
   const mountingCategories = parseCsv(barangCsv).filter((row) => /^mounting\b/i.test(row["Barang Terpasang"]));
 

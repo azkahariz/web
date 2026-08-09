@@ -22,7 +22,9 @@ test("master source dinormalisasi sesuai kontrak CSV existing", async () => {
   assert.ok(counts.productCategories <= model.sourceRows.productCategoryRows.length);
   assert.ok(counts.products <= model.sourceRows.productRows.length);
   assert.ok(model.registries.siteSubtypes.rows.some((row) => row.name.endsWith("TDZ") && row.profile?.name === "AWOS TDZ"));
-  assert.equal(generated.master, undefined);
+  assert.ok(generated.master?.profileItems.length > 0);
+  assert.ok(generated.master?.productCategories.length > 0);
+  assert.ok(generated.stationSites.every((row) => UUID_PATTERN.test(row.stationId) && UUID_PATTERN.test(row.siteId)));
 });
 
 test("round-trip CSV menambahkan UUID konsisten tanpa menghilangkan baris", async () => {

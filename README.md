@@ -1,9 +1,9 @@
 # Aloptama Collect
 
 Website untuk Pendataan Metadata dan Inventaris Aloptama pada bidang
-Meteorologi, Klimatologi, dan Geofisika. Versi saat ini
-menyimpan draf otomatis di browser pengguna dan dapat mengekspor hasil ke CSV
-atau JSON.
+Meteorologi, Klimatologi, dan Geofisika. Aplikasi memakai akun bersama per
+stasiun, menyimpan draf di browser dan Supabase, serta dapat mengekspor hasil
+ke CSV atau JSON.
 
 ## Mulai di sini
 
@@ -15,6 +15,7 @@ harus memahami seluruh kode:
 3. [Checklist sebelum publikasi](docs/CHECKLIST-PUBLIKASI.md) - pemeriksaan wajib.
 4. [Rencana database](docs/RENCANA-DATABASE.md) - batas sistem saat ini dan arah berikutnya.
 5. [Master data Supabase](docs/MASTER-DATA-SUPABASE.md) - bootstrap UUID dan sync CSV.
+6. [Auth dan autosave Supabase](docs/AUTH-AUTOSAVE-SUPABASE.md) - akun stasiun, RLS, lock, dan pemulihan draf.
 
 ## Menjalankan di komputer
 
@@ -44,8 +45,9 @@ build native Next.js yang digunakan oleh Vercel.
 
 Repository ini siap dikenali sebagai project Next.js. Di Vercel, import
 repository GitHub, gunakan project name `aloptama-collect`, lalu biarkan
-Framework Preset dan Build Command terdeteksi otomatis. Project ini tidak
-memerlukan `vercel.json` atau environment variable untuk fungsi saat ini.
+Framework Preset dan Build Command terdeteksi otomatis. Tambahkan
+`NEXT_PUBLIC_SUPABASE_URL` dan `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` pada
+Environment Variables project.
 
 Setelah repository terhubung, setiap push ke branch produksi akan membuat
 deployment baru secara otomatis. Deployment ChatGPT Sites yang sudah aktif
@@ -53,14 +55,15 @@ tidak berubah oleh proses persiapan ini.
 
 ## Penyimpanan saat ini
 
-Draf disimpan dalam `localStorage` browser pada perangkat yang sedang
-digunakan. Draf belum tersimpan di server, belum terhubung ke akun pengguna,
-dan belum dapat dilanjutkan dari perangkat lain.
+Draf disimpan secara hybrid di `localStorage` dan tabel `submissions` Supabase.
+Jika koneksi gagal, draf lokal tetap tersedia. Lihat
+[Auth dan autosave Supabase](docs/AUTH-AUTOSAVE-SUPABASE.md) untuk aturan lock,
+konflik versi, migrasi, dan provisioning akun.
 
 ## Master data Supabase
 
-Spreadsheet/CSV tetap menjadi source of truth master. Supabase hanya menjadi
-mirror terstruktur dengan UUID; website belum membaca Supabase secara langsung.
+Spreadsheet/CSV tetap menjadi source of truth master. Supabase menyimpan mirror
+master ber-UUID, akun stasiun, dan draf inventaris.
 
 ```powershell
 npm.cmd run validate:master
@@ -68,4 +71,4 @@ npm.cmd run sync:master
 ```
 
 `sync:master` adalah proses lokal tepercaya dan memerlukan `SUPABASE_DB_URL` di
-`.env.local`. Credential tersebut tidak diperlukan oleh Vercel saat ini.
+`.env.local`. Credential database dan secret key tidak boleh ditambahkan ke Vercel.

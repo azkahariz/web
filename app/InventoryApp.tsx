@@ -1,9 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { CONDITION_OPTIONS, MOUNTING_MATERIALS } from "./config/form-options";
 import rawData from "./data.generated.json";
 import { loadLocalDraft, saveLocalDraft } from "./lib/draft-storage";
+import { OPERATOR_STORAGE_KEY, type DraftPayload } from "./lib/server-draft";
+import { getSupabaseBrowserClient } from "./lib/supabase/client";
+import { useServerDraft } from "./hooks/useServerDraft";
 import { csvCell, downloadText } from "./lib/download";
 import {
   createUnitDetail,
@@ -33,23 +37,21 @@ import type {
   UnitDetail,
 } from "./types/inventory";
 import type { SiteMetadata } from "./types/site-metadata";
+import type { StationAccount } from "./lib/auth";
 
 const data = rawData as DataSet;
 
-export default function InventoryApp() {
+export default function InventoryApp({ account }: { account: StationAccount }) {
+  const router = useRouter();
   const stations = useMemo(
     () => Array.from(new Set(data.stationSites.map((row) => row.station))).sort((a, b) => a.localeCompare(b, "id")),
     [],
   );
-  const profiles = useMemo(() => Object.keys(data.barangByJenis), []);
-
-  const [mode, setMode] = useState<SourceMode>("site");
-  const [station, setStation] = useState("");
-  const [stationQuery, setStationQuery] = useState("");
-  const [stationPickerOpen, setStationPickerOpen] = useState(false);
+  const mode = "site" as SourceMode;
+  const station = account.stationName;
   const [site, setSite] = useState("");
   const [subtype, setSubtype] = useState("");
-  const [templateProfile, setTemplateProfile] = useState("");
+  const templateProfile = "";
   const [categoryQuery, setCategoryQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [productQuery, setProductQuery] = useState("");
@@ -59,6 +61,7 @@ export default function InventoryApp() {
   const [drafts, setDrafts] = useState<Drafts>({});
   const [draftContexts, setDraftContexts] = useState<DraftContexts>({});
   const [siteMetadataDrafts, setSiteMetadataDrafts] = useState<SiteMetadataDrafts>({});
+  const [operatorName, setOperatorName] = useState("");
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
@@ -66,16 +69,15 @@ export default function InventoryApp() {
       try {
         const parsed = loadLocalDraft();
         if (parsed) {
-          setMode(parsed.mode ?? "site");
-          setStation(parsed.station ?? "");
-          setStationQuery(parsed.station ?? "");
-          setSite(parsed.site ?? "");
-          setSubtype(parsed.subtype ?? "");
-          setTemplateProfile(parsed.templateProfile ?? "");
+          if (parsed.station === station) {
+            setSite(parsed.site ?? "");
+            setSubtype(parsed.subtype ?? "");
+          }
           setDrafts(parsed.drafts ?? {});
           setDraftContexts(parsed.draftContexts ?? {});
           setSiteMetadataDrafts(parsed.siteMetadataDrafts ?? {});
         }
+        setOperatorName(localStorage.getItem(OPERATOR_STORAGE_KEY) ?? "");
       } catch {
         // Draf yang rusak diabaikan agar aplikasi tetap dapat digunakan.
       } finally {
@@ -83,12 +85,16 @@ export default function InventoryApp() {
       }
     }, 0);
     return () => window.clearTimeout(timer);
-  }, []);
+  }, [station]);
 
   useEffect(() => {
     if (!hydrated) return;
     saveLocalDraft({ mode, station, site, subtype, templateProfile, drafts, draftContexts, siteMetadataDrafts });
   }, [mode, station, site, subtype, templateProfile, drafts, draftContexts, siteMetadataDrafts, hydrated]);
+
+  useEffect(() => {
+    if (hydrated) localStorage.setItem(OPERATOR_STORAGE_KEY, operatorName);
+  }, [hydrated, operatorName]);
 
   useEffect(() => {
     if (!activeCategory) return;
@@ -99,14 +105,9 @@ export default function InventoryApp() {
     return () => window.removeEventListener("keydown", close);
   }, [activeCategory]);
 
-  const stationSuggestions = useMemo(() => {
-    const query = normalizeSearch(stationQuery);
-    return stations.filter((name) => !query || normalizeSearch(name).includes(query));
-  }, [stationQuery, stations]);
-
   const sites = useMemo(
-    () => data.stationSites.filter((row) => row.station === station),
-    [station],
+    () => data.stationSites.filter((row) => row.stationId === account.stationId),
+    [account.stationId],
   );
   const selectedSite = sites.find((row) => row.site === site);
   const allSubtypeOptions = useMemo(
@@ -128,9 +129,9 @@ export default function InventoryApp() {
   const draftKey = mode === "template"
     ? `template::${profile}`
     : `site::${station}::${site}::${currentSubtype}`;
-  const inventory = drafts[draftKey] ?? {};
+  const inventory = useMemo(() => drafts[draftKey] ?? {}, [draftKey, drafts]);
   const metadataKey = `site-metadata::${station}::${site}`;
-  const siteMetadata = siteMetadataDrafts[metadataKey] ?? EMPTY_SITE_METADATA;
+  const siteMetadata = useMemo(() => siteMetadataDrafts[metadataKey] ?? EMPTY_SITE_METADATA, [metadataKey, siteMetadataDrafts]);
   const automaticMetadata = {
     stationName: station,
     siteName: site,
@@ -156,14 +157,6 @@ export default function InventoryApp() {
       .filter((product) => !query || normalizeSearch(`${product.brand} ${product.model}`).includes(query))
       .slice(0, 60);
   }, [productQuery]);
-
-  function selectStation(name: string) {
-    setStation(name);
-    setStationQuery(name);
-    setSite("");
-    setSubtype("");
-    setStationPickerOpen(false);
-  }
 
   function setInventory(next: Inventory) {
     setDrafts((current) => ({ ...current, [draftKey]: next }));
@@ -274,6 +267,37 @@ export default function InventoryApp() {
     });
   }
 
+  const applyRemotePayload = useCallback((next: DraftPayload) => {
+    setDrafts((current) => ({ ...current, [draftKey]: next.inventory ?? {} }));
+    setDraftContexts((current) => ({ ...current, [draftKey]: { runwayAzimuth: next.runwayAzimuth ?? "" } }));
+    setSiteMetadataDrafts((current) => ({ ...current, [metadataKey]: next.siteMetadata ?? EMPTY_SITE_METADATA }));
+  }, [draftKey, metadataKey]);
+
+  const selectedSiteId = selectedSite?.siteId ?? "";
+  const selectedSubtypeId = selectedSubtype?.subtypeId ?? "";
+  const serverPayload: DraftPayload | null = hydrated && selectedSiteId && selectedSubtypeId
+    ? {
+      schemaVersion: 1,
+      stationId: account.stationId,
+      siteId: selectedSiteId,
+      siteSubtypeId: selectedSubtypeId,
+      inventory,
+      runwayAzimuth: acceptsRunwayAzimuth ? runwayAzimuth : "",
+      siteMetadata,
+    }
+    : null;
+
+  const draftScope = selectedSiteId && selectedSubtypeId
+    ? { stationId: account.stationId, siteId: selectedSiteId, siteSubtypeId: selectedSubtypeId }
+    : null;
+  const sync = useServerDraft({ scope: draftScope, payload: serverPayload, operatorName, onRemotePayload: applyRemotePayload });
+
+  async function logout() {
+    await sync.release();
+    await getSupabaseBrowserClient()?.auth.signOut();
+    router.refresh();
+  }
+
   function exportCurrentDraft() {
     const payload = {
       exportedAt: new Date().toISOString(),
@@ -330,7 +354,22 @@ export default function InventoryApp() {
     downloadText(filename, csv, "text/csv;charset=utf-8");
   }
 
-  const locationReady = mode === "template" ? Boolean(templateProfile) : Boolean(station && site && currentSubtype);
+  const locationReady = Boolean(station && site && currentSubtype);
+  const syncLabels = {
+    idle: "Pilih draf",
+    opening: "Memuat server",
+    saved: "Tersimpan di server",
+    saving: "Menyimpan",
+    "local-only": "Tersimpan lokal",
+    "read-only": "Mode baca saja",
+    conflict: "Versi server berubah",
+  } as const;
+  const savedTime = sync.lastSavedAt
+    ? new Date(sync.lastSavedAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })
+    : "";
+  const lockActivityTime = sync.lockLastActivityAt
+    ? new Date(sync.lockLastActivityAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })
+    : "";
 
   return (
     <main className="app-shell">
@@ -342,7 +381,10 @@ export default function InventoryApp() {
             <h1>Aloptama Collect</h1>
           </div>
         </div>
-        <div className="local-badge"><span /> Tersimpan di perangkat</div>
+        <div className="account-actions">
+          <div className={`local-badge status-${sync.status}`}><span /> {syncLabels[sync.status]}{sync.status === "saved" && savedTime ? ` ${savedTime}` : ""}</div>
+          <button className="logout-button" onClick={logout}>Keluar</button>
+        </div>
       </header>
 
       <section className="intro">
@@ -365,39 +407,12 @@ export default function InventoryApp() {
             <div><p className="eyebrow">LANGKAH PERTAMA</p><h3>Tentukan lokasi</h3></div>
           </div>
 
-          <div className="mode-switch" role="group" aria-label="Mode pemilihan data">
-            <button className={mode === "site" ? "active" : ""} onClick={() => setMode("site")}>Berdasarkan site</button>
-            <button className={mode === "template" ? "active" : ""} onClick={() => setMode("template")}>Coba jenis langsung</button>
-          </div>
+          <div className="form-stack account-location">
+              <label className="field-label" htmlFor="station-name">Stasiun</label>
+              <input id="station-name" value={station} readOnly />
 
-          {mode === "site" ? (
-            <div className="form-stack">
-              <label className="field-label" htmlFor="station-search">Stasiun</label>
-              <div className="combobox-wrap">
-                <input
-                  id="station-search"
-                  value={stationQuery}
-                  placeholder="Cari nama stasiun…"
-                  autoComplete="off"
-                  onFocus={() => setStationPickerOpen(true)}
-                  onChange={(event) => {
-                    setStationQuery(event.target.value);
-                    if (event.target.value !== station) {
-                      setStation(""); setSite(""); setSubtype("");
-                    }
-                    setStationPickerOpen(true);
-                  }}
-                />
-                {stationPickerOpen && (
-                  <div className="suggestions" role="listbox">
-                    <p className="suggestion-count">{stationSuggestions.length} stasiun ditemukan</p>
-                    {stationSuggestions.map((name) => (
-                      <button key={name} role="option" aria-selected={name === station} onMouseDown={() => selectStation(name)}>{name}</button>
-                    ))}
-                    {!stationSuggestions.length && <p>Tidak ada stasiun yang cocok.</p>}
-                  </div>
-                )}
-              </div>
+              <label className="field-label" htmlFor="operator-name">Nama operator</label>
+              <input id="operator-name" value={operatorName} onChange={(event) => setOperatorName(event.target.value)} placeholder="Nama petugas yang mengisi" />
 
               <label className="field-label" htmlFor="site-select">Aloptama / Site</label>
               <select id="site-select" value={site} disabled={!station} onChange={(event) => { setSite(event.target.value); setSubtype(""); }}>
@@ -421,6 +436,7 @@ export default function InventoryApp() {
                     id="runway-azimuth"
                     inputMode="numeric"
                     maxLength={2}
+                    disabled={locationReady && !sync.canEdit}
                     value={runwayAzimuth}
                     onChange={(event) => updateRunwayAzimuth(event.target.value)}
                     placeholder="Contoh: 01, 11, 24"
@@ -428,17 +444,7 @@ export default function InventoryApp() {
                   <p className="field-hint">Khusus subtipe TDZ dan End Point, maksimal dua digit.</p>
                 </>
               )}
-            </div>
-          ) : (
-            <div className="form-stack">
-              <label className="field-label" htmlFor="profile-select">Jenis pada sheet Barang</label>
-              <select id="profile-select" value={templateProfile} onChange={(event) => setTemplateProfile(event.target.value)}>
-                <option value="">Pilih jenis</option>
-                {profiles.map((name) => <option key={name} value={name}>{name}</option>)}
-              </select>
-              <p className="field-hint">Mode ini berguna untuk mencoba Water Level atau jenis lain yang belum mempunyai site.</p>
-            </div>
-          )}
+          </div>
 
           {locationReady && (
             <div className="selection-summary">
@@ -450,6 +456,17 @@ export default function InventoryApp() {
         </aside>
 
         <div className="content-column">
+          {locationReady && (sync.status === "read-only" || sync.status === "conflict") && (
+            <div className="sync-notice" role="status">
+              <div>
+                <strong>{sync.status === "conflict" ? "Ada versi server yang lebih baru" : "Draf sedang digunakan sesi lain"}</strong>
+                <span>{sync.status === "conflict" ? "Draf lokal tetap disimpan sampai Anda memuat versi terbaru." : `Operator aktif: ${sync.lockOperator || "tidak diketahui"}.${lockActivityTime ? ` Aktivitas terakhir ${lockActivityTime}.` : ""}`}</span>
+              </div>
+              {sync.status === "conflict" && <button className="secondary-button" onClick={sync.loadLatest}>Muat versi terbaru</button>}
+              {sync.canTakeover && <button className="secondary-button" onClick={sync.takeover}>Ambil alih draf</button>}
+            </div>
+          )}
+          <fieldset className="editing-surface" disabled={locationReady && !sync.canEdit} onInputCapture={sync.touchActivity} onChangeCapture={sync.touchActivity}>
           {mode === "site" && selectedSite && (
             <SiteMetadataForm
               value={siteMetadata}
@@ -557,10 +574,11 @@ export default function InventoryApp() {
             </>
           )}
           </section>
+          </fieldset>
         </div>
       </div>
 
-      {activeCategory && (
+      {activeCategory && sync.canEdit && (
         <div className="drawer-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setActiveCategory(null); }}>
           <section className="product-drawer" role="dialog" aria-modal="true" aria-labelledby="product-dialog-title">
             <div className="drawer-head">
