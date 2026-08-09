@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import rawData from "./data.generated.json";
 import AccountProblem from "./AccountProblem";
 import InventoryApp from "./InventoryApp";
@@ -26,6 +27,14 @@ export default async function Home() {
   const supabase = await createSupabaseServerClient();
   const { data: userData } = await supabase!.auth.getUser();
   if (!userData.user) return <LoginForm />;
+
+  const { data: admin } = await supabase!
+    .from("super_admins")
+    .select("id")
+    .eq("auth_user_id", userData.user.id)
+    .eq("active", true)
+    .maybeSingle();
+  if (admin) redirect("/admin");
 
   const { data: row, error } = await supabase!
     .from("station_accounts")

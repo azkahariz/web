@@ -154,7 +154,7 @@ test("aplikasi menyediakan ekspor CSV lengkap dengan BOM dan metadata", async ()
   assert.match(source, /download-options/);
   assert.match(source, /\\uFEFF/);
   assert.match(source, /"Stasiun"[\s\S]*"Azimuth Runway"[\s\S]*"Kategori Barang"[\s\S]*"Tipe Produk"[\s\S]*"Unit Ke"/);
-  assert.match(source, /items\.flatMap\(\(item\) => getItemUnits\(item\)/);
+  assert.match(source, /items\.flatMap\(\(rawItem\)[\s\S]*getItemUnits\(item\)/);
 });
 
 test("kategori mounting memakai pilihan bahan dan tetap mendukung bahan lainnya", async () => {
@@ -212,7 +212,7 @@ test("produk di luar daftar dapat ditambahkan dengan brand dan tipe", async () =
   const source = await readFile(new URL("../app/InventoryApp.tsx", import.meta.url), "utf8");
   assert.match(source, /function addCustomProduct/);
   assert.match(source, />Brand<input[\s\S]*>Tipe<input/);
-  assert.match(source, />Tambahkan produk</);
+  assert.match(source, />Usulkan produk baru</);
 });
 
 test("metadata Aloptama tersimpan per site dan memakai nilai lokasi otomatis", async () => {

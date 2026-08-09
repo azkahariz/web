@@ -9,6 +9,20 @@ function sameValue(left, right) {
   return (left ?? null) === (right ?? null);
 }
 
+export function spreadsheetProductValues(row) {
+  return {
+    brand: row.brand,
+    model: row.model,
+    active: row.active,
+    source_origin: "SPREADSHEET",
+    spreadsheet_synced: true,
+  };
+}
+
+export function shouldWarnForMissingProduct(row) {
+  return row.source_origin !== "QC" || row.spreadsheet_synced;
+}
+
 async function synchronizeRegistry(tx, registry, config, warnings) {
   const stats = blankStats();
 
@@ -74,7 +88,7 @@ async function synchronizeRegistry(tx, registry, config, warnings) {
   const finalRows = await config.select(tx);
   const sourceIds = new Set(registry.rows.map((row) => row.resolvedId));
   for (const row of finalRows) {
-    if (!sourceIds.has(row.id)) {
+    if (!sourceIds.has(row.id) && (!config.shouldWarnMissing || config.shouldWarnMissing(row))) {
       warnings.push(`${registry.label}: record ${config.describe(row)} (${row.id}) ada di Supabase tetapi hilang dari CSV sumber.`);
     }
   }
@@ -131,13 +145,14 @@ function tableConfigurations(registries) {
     },
     {
       name: "Products", registry: registries.products,
-      select: (tx) => tx`select id, brand, model, active from public.products`,
+      select: (tx) => tx`select id, brand, model, active, source_origin, spreadsheet_synced from public.products`,
       databaseKey: (row) => `${naturalText(row.brand)}\u001f${naturalText(row.model)}`,
       sourceKey: (row) => row.key,
-      values: (row) => ({ brand: row.brand, model: row.model, active: row.active }),
+      values: spreadsheetProductValues,
       insert: (tx, row) => tx`insert into public.products ${tx(row)} returning id`.then(([value]) => value),
       update: (tx, id, row) => tx`update public.products set ${tx(row)} where id = ${id}`,
       describe: (row) => `${row.brand} / ${row.model}`,
+      shouldWarnMissing: shouldWarnForMissingProduct,
     },
     {
       name: "Sites", registry: registries.sites,

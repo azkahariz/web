@@ -7,6 +7,7 @@ import { spawnSync } from "node:child_process";
 import test from "node:test";
 import { parse } from "csv-parse/sync";
 import { assignTestIds, loadMasterSource, sourceCounts, writeSyncedCsv } from "../scripts/master/source.mjs";
+import { shouldWarnForMissingProduct, spreadsheetProductValues } from "../scripts/master/database.mjs";
 
 const projectRoot = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const sourceRoot = path.dirname(projectRoot);
@@ -79,4 +80,13 @@ test("migration memakai UUID, foreign key, RLS, dan tidak menyediakan hard delet
   assert.match(migration, /references public\.stations\(id\) on delete restrict/);
   assert.match(migration, /enable row level security/);
   assert.doesNotMatch(databaseSource, /delete\s+from/i);
+});
+
+test("produk QC direkonsiliasi dengan UUID sama tanpa missing warning sementara", () => {
+  assert.equal(shouldWarnForMissingProduct({ source_origin: "QC", spreadsheet_synced: false }), false);
+  assert.equal(shouldWarnForMissingProduct({ source_origin: "SPREADSHEET", spreadsheet_synced: true }), true);
+  assert.deepEqual(
+    spreadsheetProductValues({ brand: "Brand QC", model: "Model QC", active: true }),
+    { brand: "Brand QC", model: "Model QC", active: true, source_origin: "SPREADSHEET", spreadsheet_synced: true },
+  );
 });

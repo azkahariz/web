@@ -51,13 +51,13 @@ function printSyncSummary(result) {
 
 try {
   const model = await loadMasterSource(sourceRoot);
-  generateApplicationData();
   printSourceSummary(sourceCounts(model));
 
   if (validateOnly) {
     console.log("\nValidation complete. Database was not changed.");
     process.exitCode = 0;
   } else {
+    generateApplicationData();
     const databaseUrl = process.env.SUPABASE_DB_URL;
     if (!databaseUrl) {
       throw new Error("SUPABASE_DB_URL belum tersedia. Isi di .env.local, lalu jalankan kembali npm.cmd run sync:master.");

@@ -44,11 +44,13 @@ export function useServerDraft({
   payload,
   operatorName,
   onRemotePayload,
+  adminSubmissionId,
 }: {
   scope: Scope | null;
   payload: DraftPayload | null;
   operatorName: string;
   onRemotePayload: (payload: DraftPayload) => void;
+  adminSubmissionId?: string;
 }) {
   const [status, setStatus] = useState<DraftSyncState>("idle");
   const [isEditing, setIsEditing] = useState(false);
@@ -87,17 +89,22 @@ export function useServerDraft({
     if (!target || !initializedKeyRef.current) return false;
     const client = getSupabaseBrowserClient();
     if (!client) return false;
-    const { data, error } = await client.rpc("release_submission_lock", {
-      p_site_id: target.siteId,
-      p_site_subtype_id: target.siteSubtypeId,
-      p_session_id: getTabSessionId(),
-    });
+    const { data, error } = adminSubmissionId
+      ? await client.rpc("admin_release_submission_lock", {
+        p_submission_id: adminSubmissionId,
+        p_session_id: getTabSessionId(),
+      })
+      : await client.rpc("release_submission_lock", {
+        p_site_id: target.siteId,
+        p_site_subtype_id: target.siteSubtypeId,
+        p_session_id: getTabSessionId(),
+      });
     if (error || !data) return false;
     setIsEditing(false);
     setDirty(false);
     setStatus("browsing");
     return true;
-  }, [scope]);
+  }, [adminSubmissionId, scope]);
 
   const saveNow = useCallback(async (): Promise<SaveResult> => {
     if (!scope || !payload || !serializedPayload || !initializedKeyRef.current) return "skipped";
@@ -118,14 +125,22 @@ export function useServerDraft({
     saveInFlightRef.current = true;
     setStatus("saving");
     try {
-      const { data, error } = await client.rpc("save_submission", {
-        p_site_id: scope.siteId,
-        p_site_subtype_id: scope.siteSubtypeId,
-        p_session_id: getTabSessionId(),
-        p_expected_version: versionRef.current,
-        p_payload: payload,
-        p_operator_name: operatorName || null,
-      });
+      const { data, error } = adminSubmissionId
+        ? await client.rpc("admin_save_submission", {
+          p_submission_id: adminSubmissionId,
+          p_session_id: getTabSessionId(),
+          p_expected_version: versionRef.current,
+          p_payload: payload,
+          p_operator_name: operatorName || "Super Admin",
+        })
+        : await client.rpc("save_submission", {
+          p_site_id: scope.siteId,
+          p_site_subtype_id: scope.siteSubtypeId,
+          p_session_id: getTabSessionId(),
+          p_expected_version: versionRef.current,
+          p_payload: payload,
+          p_operator_name: operatorName || null,
+        });
       if (error) {
         setStatus("local-only");
         return "local-only";
@@ -143,7 +158,9 @@ export function useServerDraft({
         return "saved";
       }
       if (row.status === "version_conflict") {
-        const latest = await client.rpc("get_submission_state", { p_site_id: scope.siteId, p_site_subtype_id: scope.siteSubtypeId });
+        const latest = adminSubmissionId
+          ? await client.rpc("admin_get_submission_state", { p_submission_id: adminSubmissionId })
+          : await client.rpc("get_submission_state", { p_site_id: scope.siteId, p_site_subtype_id: scope.siteSubtypeId });
         const latestRow = firstRow(latest.data as RpcState[]);
         if (latestRow?.payload && "schemaVersion" in latestRow.payload) setLatestPayload(latestRow.payload as DraftPayload);
         versionRef.current = row.version;
@@ -157,7 +174,7 @@ export function useServerDraft({
     } finally {
       saveInFlightRef.current = false;
     }
-  }, [isEditing, latestPayload, operatorName, payload, scope, serializedPayload]);
+  }, [adminSubmissionId, isEditing, latestPayload, operatorName, payload, scope, serializedPayload]);
 
   useEffect(() => {
     const generation = ++generationRef.current;
@@ -198,10 +215,12 @@ export function useServerDraft({
       if (generation === generationRef.current) setStatus("opening");
     });
     void (async () => {
-      const { data, error } = await client.rpc("get_submission_state", {
-        p_site_id: siteId,
-        p_site_subtype_id: siteSubtypeId,
-      });
+      const { data, error } = adminSubmissionId
+        ? await client.rpc("admin_get_submission_state", { p_submission_id: adminSubmissionId })
+        : await client.rpc("get_submission_state", {
+          p_site_id: siteId,
+          p_site_subtype_id: siteSubtypeId,
+        });
       if (generation !== generationRef.current) return;
       initializedKeyRef.current = key;
       if (error) {
@@ -236,7 +255,7 @@ export function useServerDraft({
     })();
   // Browse changes only read state; they must not acquire or release locks.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [retryTick, siteId, siteSubtypeId, stationId]);
+  }, [adminSubmissionId, retryTick, siteId, siteSubtypeId, stationId]);
 
   useEffect(() => {
     if (!isEditing || !stationId || !siteId || !siteSubtypeId || !serializedPayload || !initializedKeyRef.current) return;
@@ -280,12 +299,18 @@ export function useServerDraft({
     setIsEditing(false);
     setDirty(false);
     setStatus("opening");
-    const { data, error } = await client.rpc("open_submission", {
-      p_site_id: scope.siteId,
-      p_site_subtype_id: scope.siteSubtypeId,
-      p_session_id: getTabSessionId(),
-      p_operator_name: operatorName || null,
-    });
+    const { data, error } = adminSubmissionId
+      ? await client.rpc("admin_open_submission", {
+        p_submission_id: adminSubmissionId,
+        p_session_id: getTabSessionId(),
+        p_operator_name: operatorName || "Super Admin",
+      })
+      : await client.rpc("open_submission", {
+        p_site_id: scope.siteId,
+        p_site_subtype_id: scope.siteSubtypeId,
+        p_session_id: getTabSessionId(),
+        p_operator_name: operatorName || null,
+      });
     if (error) {
       setStatus("local-only");
       return false;
@@ -314,7 +339,7 @@ export function useServerDraft({
     setDirty(false);
     setStatus("read-only");
     return false;
-  }, [onRemotePayload, operatorName, scope]);
+  }, [adminSubmissionId, onRemotePayload, operatorName, scope]);
 
   const startEditing = retryAcquireEdit;
 
@@ -324,12 +349,18 @@ export function useServerDraft({
     const client = getSupabaseBrowserClient();
     if (!client) return;
     void (async () => {
-      const { data } = await client.rpc("touch_submission_lock", {
-        p_site_id: scope.siteId,
-        p_site_subtype_id: scope.siteSubtypeId,
-        p_session_id: getTabSessionId(),
-        p_operator_name: operatorName || null,
-      });
+      const { data } = adminSubmissionId
+        ? await client.rpc("admin_touch_submission_lock", {
+          p_submission_id: adminSubmissionId,
+          p_session_id: getTabSessionId(),
+          p_operator_name: operatorName || "Super Admin",
+        })
+        : await client.rpc("touch_submission_lock", {
+          p_site_id: scope.siteId,
+          p_site_subtype_id: scope.siteSubtypeId,
+          p_session_id: getTabSessionId(),
+          p_operator_name: operatorName || null,
+        });
       if (data === false) {
         setIsEditing(false);
         setDirty(false);
@@ -338,18 +369,24 @@ export function useServerDraft({
         setLockLastActivityAt(new Date().toISOString());
       }
     })();
-  }, [isEditing, operatorName, scope]);
+  }, [adminSubmissionId, isEditing, operatorName, scope]);
 
   const takeover = useCallback(async () => {
     if (!scope) return;
     const client = getSupabaseBrowserClient();
     if (!client) return;
-    const { data, error } = await client.rpc("takeover_submission_lock", {
-      p_site_id: scope.siteId,
-      p_site_subtype_id: scope.siteSubtypeId,
-      p_session_id: getTabSessionId(),
-      p_operator_name: operatorName || null,
-    });
+    const { data, error } = adminSubmissionId
+      ? await client.rpc("admin_force_takeover_submission", {
+        p_submission_id: adminSubmissionId,
+        p_session_id: getTabSessionId(),
+        p_operator_name: operatorName || "Super Admin",
+      })
+      : await client.rpc("takeover_submission_lock", {
+        p_site_id: scope.siteId,
+        p_site_subtype_id: scope.siteSubtypeId,
+        p_session_id: getTabSessionId(),
+        p_operator_name: operatorName || null,
+      });
     const row = firstRow(data as Array<RpcState & { acquired: boolean }>);
     if (!error && row?.acquired) {
       versionRef.current = row.version;
@@ -361,7 +398,7 @@ export function useServerDraft({
       setLockLastActivityAt(row.lock_last_activity_at ?? null);
       setStatus("editing");
     }
-  }, [onRemotePayload, operatorName, scope]);
+  }, [adminSubmissionId, onRemotePayload, operatorName, scope]);
 
   const loadLatest = useCallback(() => {
     if (!latestPayload) return;

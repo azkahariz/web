@@ -9,7 +9,9 @@ import { OPERATOR_STORAGE_KEY, type DraftPayload } from "./lib/server-draft";
 import { logoutCurrentBrowser } from "./lib/local-logout";
 import { getSupabaseBrowserClient } from "./lib/supabase/client";
 import { useServerDraft } from "./hooks/useServerDraft";
+import { useProductCatalog } from "./hooks/useProductCatalog";
 import { csvCell, downloadText } from "./lib/download";
+import { normalizeProductText, resolveInstalledProduct, suggestProducts } from "./lib/product-qc";
 import {
   createUnitDetail,
   getItemUnits,
@@ -42,7 +44,17 @@ import type { StationAccount } from "./lib/auth";
 
 const data = rawData as DataSet;
 
-export default function InventoryApp({ account }: { account: StationAccount }) {
+export default function InventoryApp({
+  account,
+  adminSubmissionId,
+  initialSite = "",
+  initialSubtype = "",
+}: {
+  account: StationAccount;
+  adminSubmissionId?: string;
+  initialSite?: string;
+  initialSubtype?: string;
+}) {
   const router = useRouter();
   const stations = useMemo(
     () => Array.from(new Set(data.stationSites.map((row) => row.station))).sort((a, b) => a.localeCompare(b, "id")),
@@ -50,8 +62,8 @@ export default function InventoryApp({ account }: { account: StationAccount }) {
   );
   const mode = "site" as SourceMode;
   const station = account.stationName;
-  const [site, setSite] = useState("");
-  const [subtype, setSubtype] = useState("");
+  const [site, setSite] = useState(initialSite);
+  const [subtype, setSubtype] = useState(initialSubtype);
   const templateProfile = "";
   const [categoryQuery, setCategoryQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
@@ -59,6 +71,7 @@ export default function InventoryApp({ account }: { account: StationAccount }) {
   const [customMaterial, setCustomMaterial] = useState("");
   const [customBrand, setCustomBrand] = useState("");
   const [customModel, setCustomModel] = useState("");
+  const [customProductNote, setCustomProductNote] = useState("");
   const [drafts, setDrafts] = useState<Drafts>({});
   const [draftContexts, setDraftContexts] = useState<DraftContexts>({});
   const [siteMetadataDrafts, setSiteMetadataDrafts] = useState<SiteMetadataDrafts>({});
@@ -67,13 +80,16 @@ export default function InventoryApp({ account }: { account: StationAccount }) {
   const [editFeedback, setEditFeedback] = useState("");
   const [downloadOpen, setDownloadOpen] = useState(false);
   const downloadRef = useRef<HTMLDivElement | null>(null);
+  const proposalInFlightRef = useRef(new Set<string>());
+  const productCatalog = useProductCatalog(account.stationId);
+  const isAdminEditor = Boolean(adminSubmissionId);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
       try {
         const parsed = loadLocalDraft();
         if (parsed) {
-          if (parsed.station === station) {
+          if (!isAdminEditor && parsed.station === station) {
             setSite(parsed.site ?? "");
             setSubtype(parsed.subtype ?? "");
           }
@@ -89,7 +105,7 @@ export default function InventoryApp({ account }: { account: StationAccount }) {
       }
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [station]);
+  }, [isAdminEditor, station]);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -178,21 +194,28 @@ export default function InventoryApp({ account }: { account: StationAccount }) {
 
   const visibleProducts = useMemo(() => {
     const query = normalizeSearch(productQuery);
-    return data.products
+    return productCatalog.products
       .filter((product) => !query || normalizeSearch(`${product.brand} ${product.model}`).includes(query))
       .slice(0, 60);
-  }, [productQuery]);
+  }, [productCatalog.products, productQuery]);
+
+  const similarProducts = useMemo(
+    () => suggestProducts(customBrand, customModel, productCatalog.products, productCatalog.aliases),
+    [customBrand, customModel, productCatalog.aliases, productCatalog.products],
+  );
 
   function setInventory(next: Inventory) {
     setDrafts((current) => ({ ...current, [draftKey]: next }));
   }
 
-  function addProduct(product: Product) {
+  function addProduct(product: Product, proposal?: { id?: string; status: InstalledItem["proposalStatus"] }) {
     if (!activeCategory) return;
     const nextItem: InstalledItem = {
       ...product,
       id: makeId(),
-      itemKind: "product",
+      itemKind: proposal ? "custom-product" : "product",
+      productProposalId: proposal?.id,
+      proposalStatus: proposal?.status,
       quantity: 1,
       units: [createUnitDetail()],
     };
@@ -204,11 +227,32 @@ export default function InventoryApp({ account }: { account: StationAccount }) {
     setProductQuery("");
   }
 
-  function addCustomProduct() {
+  async function addCustomProduct() {
     if (!activeCategory || !customBrand.trim() || !customModel.trim()) return;
-    addProduct({ brand: customBrand.trim(), model: customModel.trim() });
+    const brand = customBrand.trim();
+    const model = customModel.trim();
+    const client = getSupabaseBrowserClient();
+    let proposalId: string | undefined;
+    if (client && selectedSiteId && selectedSubtypeId) {
+      const { data: proposalRows } = await client.rpc("create_product_proposal", {
+        p_site_id: selectedSiteId,
+        p_site_subtype_id: selectedSubtypeId,
+        p_brand: brand,
+        p_model: model,
+        p_operator_name: operatorName || null,
+        p_note: customProductNote.trim() || null,
+      });
+      const proposal = Array.isArray(proposalRows) ? proposalRows[0] : proposalRows;
+      proposalId = proposal?.proposal_id;
+    }
+    addProduct({ brand, model }, { id: proposalId, status: proposalId ? "PENDING" : "PENDING_LOCAL" });
+    setEditFeedback(proposalId
+      ? "Usulan produk disimpan dan sedang menunggu pemeriksaan admin."
+      : "Produk tersimpan di draf lokal. Usulan akan dicoba kembali saat server tersedia.");
     setCustomBrand("");
     setCustomModel("");
+    setCustomProductNote("");
+    if (proposalId) void productCatalog.refresh();
   }
 
   function addMaterial(material: string) {
@@ -315,7 +359,80 @@ export default function InventoryApp({ account }: { account: StationAccount }) {
   const draftScope = selectedSiteId && selectedSubtypeId
     ? { stationId: account.stationId, siteId: selectedSiteId, siteSubtypeId: selectedSubtypeId }
     : null;
-  const sync = useServerDraft({ scope: draftScope, payload: serverPayload, operatorName, onRemotePayload: applyRemotePayload });
+  const sync = useServerDraft({
+    scope: draftScope,
+    payload: serverPayload,
+    operatorName,
+    onRemotePayload: applyRemotePayload,
+    adminSubmissionId,
+  });
+
+  useEffect(() => {
+    if (!sync.canEdit || !selectedSiteId || !selectedSubtypeId) return;
+    const pendingItems = Object.entries(inventory).flatMap(([category, items]) =>
+      items.filter((item) => item.itemKind !== "material" && !item.productId && !item.productProposalId).map((item) => ({ category, item })),
+    );
+    if (!pendingItems.length) return;
+    const client = getSupabaseBrowserClient();
+    if (!client) return;
+    void (async () => {
+      let created = false;
+      for (const { category, item } of pendingItems) {
+        if (proposalInFlightRef.current.has(item.id)) continue;
+        proposalInFlightRef.current.add(item.id);
+        const canonical = productCatalog.products.find((product) =>
+          normalizeProductText(product.brand) === normalizeProductText(item.brand)
+          && normalizeProductText(product.model) === normalizeProductText(item.model),
+        );
+        if (canonical?.productId) {
+          setDrafts((current) => ({
+            ...current,
+            [draftKey]: {
+              ...(current[draftKey] ?? {}),
+              [category]: (current[draftKey]?.[category] ?? []).map((currentItem) => currentItem.id === item.id
+                ? { ...currentItem, productId: canonical.productId, itemKind: "product", proposalStatus: undefined }
+                : currentItem),
+            },
+          }));
+          continue;
+        }
+        const { data: proposalRows } = await client.rpc("create_product_proposal", {
+          p_site_id: selectedSiteId,
+          p_site_subtype_id: selectedSubtypeId,
+          p_brand: item.brand,
+          p_model: item.model,
+          p_operator_name: operatorName || null,
+          p_note: "Konversi otomatis dari produk custom pada draf lama/lokal.",
+        });
+        const proposal = Array.isArray(proposalRows) ? proposalRows[0] : proposalRows;
+        if (proposal?.proposal_id) {
+          created = true;
+          setDrafts((current) => ({
+            ...current,
+            [draftKey]: {
+              ...(current[draftKey] ?? {}),
+              [category]: (current[draftKey]?.[category] ?? []).map((currentItem) => currentItem.id === item.id
+                ? { ...currentItem, productProposalId: proposal.proposal_id, proposalStatus: "PENDING" }
+                : currentItem),
+            },
+          }));
+        } else {
+          proposalInFlightRef.current.delete(item.id);
+        }
+      }
+      if (created) void productCatalog.refresh();
+    })();
+  }, [draftKey, inventory, operatorName, productCatalog, selectedSiteId, selectedSubtypeId, sync.canEdit]);
+
+  function productForDisplay(item: InstalledItem) {
+    return resolveInstalledProduct(item, productCatalog.proposalMap);
+  }
+
+  function productForExport(item: InstalledItem) {
+    if (item.itemKind === "material") return item;
+    const resolved = productForDisplay(item);
+    return { ...item, brand: resolved.brand, model: resolved.model };
+  }
 
   function persistLocalNow() {
     saveLocalDraft({ mode, station, site, subtype, templateProfile, drafts, draftContexts, siteMetadataDrafts });
@@ -391,7 +508,10 @@ export default function InventoryApp({ account }: { account: StationAccount }) {
       runwayAzimuth: mode === "site" && acceptsRunwayAzimuth ? runwayAzimuth : null,
       siteMetadata: mode === "site" ? { ...automaticMetadata, ...siteMetadata } : null,
       profile,
-      items: categories.map((category) => ({ category, products: inventory[category] ?? [] })),
+      items: categories.map((category) => ({
+        category,
+        products: (inventory[category] ?? []).map(productForExport),
+      })),
     };
     const filename = `inventaris-${profile.toLowerCase().replace(/[^a-z0-9]+/g, "-") || "draft"}.json`;
     downloadText(filename, JSON.stringify(payload, null, 2), "application/json");
@@ -411,7 +531,10 @@ export default function InventoryApp({ account }: { account: StationAccount }) {
     const rows = categories.flatMap((category) => {
       const items = inventory[category] ?? [];
       const itemUnits = items.length
-        ? items.flatMap((item) => getItemUnits(item).map((unit, index) => ({ item, unit, unitNumber: index + 1 })))
+        ? items.flatMap((rawItem) => {
+          const item = productForExport(rawItem);
+          return getItemUnits(item).map((unit, index) => ({ item, unit, unitNumber: index + 1 }));
+        })
         : [{ item: null, unit: null, unitNumber: null }];
       return itemUnits.map(({ item, unit, unitNumber }) => [
         mode === "site" ? station : "",
@@ -469,6 +592,7 @@ export default function InventoryApp({ account }: { account: StationAccount }) {
         </div>
         <div className="account-actions">
           <div className={`local-badge status-${sync.status}`}><span /> {syncLabels[sync.status]}{sync.status === "saved" && savedTime ? ` ${savedTime}` : ""}</div>
+          {isAdminEditor && <button className="logout-button" onClick={() => router.push("/admin")}>Dashboard Admin</button>}
           <button className="logout-button" onClick={logout}>Keluar</button>
         </div>
       </header>
@@ -482,7 +606,7 @@ export default function InventoryApp({ account }: { account: StationAccount }) {
         <div className="dataset-facts" aria-label="Ringkasan data">
           <div><strong>{stations.length}</strong><span>stasiun</span></div>
           <div><strong>{data.stationSites.length}</strong><span>aloptama / site</span></div>
-          <div><strong>{data.products.length}</strong><span>produk</span></div>
+          <div><strong>{productCatalog.products.length}</strong><span>produk</span></div>
         </div>
       </section>
 
@@ -534,7 +658,7 @@ export default function InventoryApp({ account }: { account: StationAccount }) {
               {locationReady && (
                 <div className="edit-start-block">
                   <button className="primary-button" disabled={sync.isEditing || sync.status === "opening"} onClick={startEditing}>
-                    {hasLocalDraft || sync.hasServerDraft ? "Edit Data" : "Mulai Pengisian"}
+                    {isAdminEditor ? "Edit sebagai Admin" : hasLocalDraft || sync.hasServerDraft ? "Edit Data" : "Mulai Pengisian"}
                   </button>
                   <span>{sync.isEditing ? "Mode pengisian aktif" : "Mode lihat aktif. Belum ada lock."}</span>
                 </div>
@@ -559,7 +683,13 @@ export default function InventoryApp({ account }: { account: StationAccount }) {
                 <span>{sync.status === "conflict" ? "Draf lokal tetap disimpan sampai Anda memuat versi terbaru." : `Operator aktif: ${sync.lockOperator || "tidak diketahui"}.${lockActivityTime ? ` Aktivitas terakhir ${lockActivityTime}.` : ""}`}</span>
               </div>
               {sync.status === "conflict" && <button className="secondary-button" onClick={sync.loadLatest}>Muat versi terbaru</button>}
-              {sync.canTakeover && <button className="secondary-button" onClick={sync.takeover}>Ambil alih draf</button>}
+              {(sync.canTakeover || (isAdminEditor && sync.status === "read-only")) && (
+                <button className="secondary-button" onClick={() => {
+                  if (!isAdminEditor || window.confirm("Ambil alih lock aktif sebagai Super Admin? Perubahan yang belum tersimpan pada editor lain dapat terputus.")) {
+                    void sync.takeover();
+                  }
+                }}>{isAdminEditor ? "Ambil Alih sebagai Admin" : "Ambil alih draf"}</button>
+              )}
               {sync.status === "read-only" && <button className="secondary-button" onClick={startEditing}>Coba lagi</button>}
             </div>
           )}
@@ -615,21 +745,29 @@ export default function InventoryApp({ account }: { account: StationAccount }) {
                       <div className="category-title-row">
                         <span className="category-number">{String(categories.indexOf(category) + 1).padStart(2, "0")}</span>
                         <div className="category-name"><h4>{category}</h4><p>{items.length ? `${items.length} ${mountingCategory ? "bahan mounting" : "produk terpasang"}` : mountingCategory ? "Belum memilih bahan" : "Belum memilih produk"}</p></div>
-                        <button className="add-product" onClick={() => { setActiveCategory(category); setProductQuery(""); setCustomMaterial(""); setCustomBrand(""); setCustomModel(""); }}>
+                        <button className="add-product" onClick={() => { setActiveCategory(category); setProductQuery(""); setCustomMaterial(""); setCustomBrand(""); setCustomModel(""); setCustomProductNote(""); void productCatalog.refresh(); }}>
                           <span aria-hidden="true">＋</span> {mountingCategory ? "Pilih bahan" : "Pilih produk"}
                         </button>
                       </div>
 
-                      {items.map((item) => (
-                        <div className="installed-item" key={item.id}>
+                      {items.map((item) => {
+                        const resolved = productForDisplay(item);
+                        return (
+                        <div className={`installed-item proposal-${resolved.status?.toLowerCase() ?? "none"}`} key={item.id}>
                           <div className="product-identity">
-                            <div><span>{item.itemKind === "material" ? "BM" : item.brand.slice(0, 2).toUpperCase()}</span></div>
+                            <div><span>{item.itemKind === "material" ? "BM" : resolved.brand.slice(0, 2).toUpperCase()}</span></div>
                             <p>
-                              <strong>{item.itemKind === "material" ? "Bahan mounting" : item.brand}</strong>
-                              <span>{item.itemKind === "material" ? item.material : item.model}</span>
+                              <strong>{item.itemKind === "material" ? "Bahan mounting" : resolved.brand}</strong>
+                              <span>{item.itemKind === "material" ? item.material : resolved.model}</span>
                             </p>
                             <button aria-label={`Hapus ${item.itemKind === "material" ? item.material : `${item.brand} ${item.model}`}`} onClick={() => removeItem(category, item.id)}>Hapus</button>
                           </div>
+                          {resolved.status === "PENDING" && <p className="proposal-message">Produk ini sedang menunggu pemeriksaan admin.</p>}
+                          {resolved.status === "PENDING_LOCAL" && <p className="proposal-message">Usulan masih tersimpan lokal dan akan dikirim saat server tersedia.</p>}
+                          {(resolved.status === "APPROVED" || resolved.status === "MERGED") && (resolved.brand !== item.brand || resolved.model !== item.model) && (
+                            <p className="proposal-message is-resolved">Produk telah disesuaikan admin dari {item.brand} - {item.model}.</p>
+                          )}
+                          {resolved.status === "REJECTED" && <p className="proposal-message is-rejected">Usulan produk ditolak. Silakan pilih produk lain atau perbaiki usulan.{resolved.reviewNote ? ` Catatan: ${resolved.reviewNote}` : ""}</p>}
                           <label className="quantity-field">Jumlah
                             <input type="number" min="1" value={item.quantity} onChange={(event) => updateItemQuantity(category, item, Number(event.target.value))} />
                           </label>
@@ -651,7 +789,8 @@ export default function InventoryApp({ account }: { account: StationAccount }) {
                             ))}
                           </div>
                         </div>
-                      ))}
+                        );
+                      })}
                     </article>
                   );
                 })}
@@ -748,11 +887,22 @@ export default function InventoryApp({ account }: { account: StationAccount }) {
                   {!visibleProducts.length && <div className="no-product"><strong>Produk tidak ditemukan</strong><span>Coba kata lain dari merek atau tipe produk.</span></div>}
                 </div>
                 <div className="custom-product">
-                  <p><strong>Produk tidak ada di daftar?</strong><span>Tambahkan dengan template standar.</span></p>
+                  <p><strong>Produk tidak ditemukan?</strong><span>Usulkan produk baru untuk diperiksa admin.</span></p>
+                  {similarProducts.length > 0 && (
+                    <div className="similar-products">
+                      <strong>Apakah yang Anda maksud salah satu produk berikut?</strong>
+                      {similarProducts.map((product) => (
+                        <button key={product.productId ?? `${product.brand}:${product.model}`} onClick={() => addProduct(product)}>
+                          {product.brand} — {product.model}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                   <div>
                     <label>Brand<input value={customBrand} onChange={(event) => setCustomBrand(event.target.value)} placeholder="Nama brand" /></label>
-                    <label>Tipe<input value={customModel} onChange={(event) => setCustomModel(event.target.value)} placeholder="Tipe / model produk" onKeyDown={(event) => { if (event.key === "Enter") addCustomProduct(); }} /></label>
-                    <button disabled={!customBrand.trim() || !customModel.trim()} onClick={addCustomProduct}>Tambahkan produk</button>
+                    <label>Tipe<input value={customModel} onChange={(event) => setCustomModel(event.target.value)} placeholder="Tipe / model produk" /></label>
+                    <label>Catatan<input value={customProductNote} onChange={(event) => setCustomProductNote(event.target.value)} placeholder="Opsional" /></label>
+                    <button disabled={!customBrand.trim() || !customModel.trim()} onClick={() => void addCustomProduct()}>Usulkan produk baru</button>
                   </div>
                 </div>
               </>

@@ -21,7 +21,27 @@ export type SiteSubtype = {
   subtypeActive?: boolean;
   profileId?: string;
 };
-export type Product = { brand: string; model: string; productId?: string; active?: boolean };
+export type Product = {
+  brand: string;
+  model: string;
+  productId?: string;
+  active?: boolean;
+  sourceOrigin?: "SPREADSHEET" | "QC";
+  spreadsheetSynced?: boolean;
+};
+
+export type ProductProposalStatus = "PENDING" | "APPROVED" | "MERGED" | "REJECTED" | "PENDING_LOCAL";
+
+export type ProductProposal = {
+  id: string;
+  proposedBrand: string;
+  proposedModel: string;
+  status: Exclude<ProductProposalStatus, "PENDING_LOCAL">;
+  resolvedProductId?: string;
+  resolvedBrand?: string;
+  resolvedModel?: string;
+  reviewNote?: string;
+};
 
 export type MasterDataReferences = {
   profileItems: Array<{
@@ -58,6 +78,8 @@ export type UnitDetail = {
 export type InstalledItem = Product & {
   id: string;
   itemKind?: "product" | "custom-product" | "material";
+  productProposalId?: string;
+  proposalStatus?: ProductProposalStatus;
   material?: string;
   quantity: number;
   units?: UnitDetail[];

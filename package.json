@@ -12,13 +12,16 @@
     "dev:sites": "vinext dev",
     "build:sites": "vinext build",
     "start:sites": "vinext start",
-    "test": "npm run build:sites && node --experimental-strip-types --test tests/rendered-html.test.mjs tests/master-sync.test.mjs tests/auth-autosave.test.mjs",
+    "test": "npm run build:sites && node --experimental-strip-types --test tests/rendered-html.test.mjs tests/master-sync.test.mjs tests/auth-autosave.test.mjs tests/admin-qc.test.mjs",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "check": "npm run lint && npm run test && npm run build",
     "validate:master": "node scripts/sync-master.mjs --validate-only",
     "sync:master": "node scripts/sync-master.mjs",
     "provision:station-accounts": "node --env-file-if-exists=.env.local scripts/provision-station-accounts.mjs",
+    "provision:super-admin": "node --env-file-if-exists=.env.local scripts/provision-super-admin.mjs",
     "verify:auth-autosave": "node --env-file-if-exists=.env.local scripts/verify-auth-autosave.mjs",
+    "verify:admin-qc": "node --env-file-if-exists=.env.local scripts/verify-admin-qc.mjs",
+    "verify:admin-api": "node --env-file-if-exists=.env.local scripts/verify-admin-api.mjs",
     "db:generate": "drizzle-kit generate"
   },
   "dependencies": {
