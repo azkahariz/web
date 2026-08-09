@@ -1384,6 +1384,161 @@
                              "station":  "Stasiun Meteorologi Zainuddin Abdul Madjid - Lombok Tengah",
                              "site":  "AWS Mandalika Turn 10th",
                              "siteType":  "AWS Rekayasa"
+                         },
+                         {
+                             "station":  "Stasiun Klimatologi Kelas I Sumatera Utara",
+                             "site":  "AAWS Batubara",
+                             "siteType":  "AAWS"
+                         },
+                         {
+                             "station":  "Stasiun Klimatologi Kelas I Sumatera Utara",
+                             "site":  "AAWS Deli Serdang",
+                             "siteType":  "AAWS"
+                         },
+                         {
+                             "station":  "Stasiun Klimatologi Kelas I Sumatera Utara",
+                             "site":  "AAWS Hinai Langkat",
+                             "siteType":  "AAWS"
+                         },
+                         {
+                             "station":  "Stasiun Klimatologi Kelas I Sumatera Utara",
+                             "site":  "AAWS Sei Rejo",
+                             "siteType":  "AAWS"
+                         },
+                         {
+                             "station":  "Stasiun Klimatologi Kelas I Sumatera Utara",
+                             "site":  "ARG Arse",
+                             "siteType":  "ARG"
+                         },
+                         {
+                             "station":  "Stasiun Klimatologi Kelas I Sumatera Utara",
+                             "site":  "ARG Bahorok",
+                             "siteType":  "ARG"
+                         },
+                         {
+                             "station":  "Stasiun Klimatologi Kelas I Sumatera Utara",
+                             "site":  "ARG Gurgur Balige",
+                             "siteType":  "ARG"
+                         },
+                         {
+                             "station":  "Stasiun Klimatologi Kelas I Sumatera Utara",
+                             "site":  "ARG Harian",
+                             "siteType":  "ARG"
+                         },
+                         {
+                             "station":  "Stasiun Klimatologi Kelas I Sumatera Utara",
+                             "site":  "ARG Kota Pinang",
+                             "siteType":  "ARG"
+                         },
+                         {
+                             "station":  "Stasiun Klimatologi Kelas I Sumatera Utara",
+                             "site":  "ARG Kualuh Selatan",
+                             "siteType":  "ARG"
+                         },
+                         {
+                             "station":  "Stasiun Klimatologi Kelas I Sumatera Utara",
+                             "site":  "ARG Lubuk Barumun",
+                             "siteType":  "ARG"
+                         },
+                         {
+                             "station":  "Stasiun Klimatologi Kelas I Sumatera Utara",
+                             "site":  "ARG Merek",
+                             "siteType":  "ARG"
+                         },
+                         {
+                             "station":  "Stasiun Klimatologi Kelas I Sumatera Utara",
+                             "site":  "ARG Mompang",
+                             "siteType":  "ARG"
+                         },
+                         {
+                             "station":  "Stasiun Klimatologi Kelas I Sumatera Utara",
+                             "site":  "ARG Pakkat",
+                             "siteType":  "ARG"
+                         },
+                         {
+                             "station":  "Stasiun Klimatologi Kelas I Sumatera Utara",
+                             "site":  "ARG Patiluban",
+                             "siteType":  "ARG"
+                         },
+                         {
+                             "station":  "Stasiun Klimatologi Kelas I Sumatera Utara",
+                             "site":  "ARG PDAM Sunggal",
+                             "siteType":  "ARG"
+                         },
+                         {
+                             "station":  "Stasiun Klimatologi Kelas I Sumatera Utara",
+                             "site":  "ARG Raya",
+                             "siteType":  "ARG"
+                         },
+                         {
+                             "station":  "Stasiun Klimatologi Kelas I Sumatera Utara",
+                             "site":  "ARG Salak",
+                             "siteType":  "ARG"
+                         },
+                         {
+                             "station":  "Stasiun Klimatologi Kelas I Sumatera Utara",
+                             "site":  "ARG Sidikalang",
+                             "siteType":  "ARG"
+                         },
+                         {
+                             "station":  "Stasiun Klimatologi Kelas I Sumatera Utara",
+                             "site":  "ARG Simanindo",
+                             "siteType":  "ARG"
+                         },
+                         {
+                             "station":  "Stasiun Klimatologi Kelas I Sumatera Utara",
+                             "site":  "ARG Sinabung",
+                             "siteType":  "ARG"
+                         },
+                         {
+                             "station":  "Stasiun Klimatologi Kelas I Sumatera Utara",
+                             "site":  "ARG Sipispis",
+                             "siteType":  "ARG"
+                         },
+                         {
+                             "station":  "Stasiun Klimatologi Kelas I Sumatera Utara",
+                             "site":  "ARG Sipoholon",
+                             "siteType":  "ARG"
+                         },
+                         {
+                             "station":  "Stasiun Klimatologi Kelas I Sumatera Utara",
+                             "site":  "ARG Tapanuli",
+                             "siteType":  "ARG"
+                         },
+                         {
+                             "station":  "Stasiun Klimatologi Kelas I Sumatera Utara",
+                             "site":  "ARG Teluk Dalam",
+                             "siteType":  "ARG"
+                         },
+                         {
+                             "station":  "Stasiun Klimatologi Kelas I Sumatera Utara",
+                             "site":  "ARG Tiga Binanga",
+                             "siteType":  "ARG"
+                         },
+                         {
+                             "station":  "Stasiun Klimatologi Kelas I Sumatera Utara",
+                             "site":  "AWS Dolok Sanggul",
+                             "siteType":  "AWS"
+                         },
+                         {
+                             "station":  "Stasiun Klimatologi Kelas I Sumatera Utara",
+                             "site":  "AWS Jawa Maraja Bah Jambi",
+                             "siteType":  "AWS"
+                         },
+                         {
+                             "station":  "Stasiun Klimatologi Kelas I Sumatera Utara",
+                             "site":  "AWS Kebun Sosa",
+                             "siteType":  "AWS"
+                         },
+                         {
+                             "station":  "Stasiun Klimatologi Kelas I Sumatera Utara",
+                             "site":  "AWS Parapat",
+                             "siteType":  "AWS"
+                         },
+                         {
+                             "station":  "Stasiun Klimatologi Kelas I Sumatera Utara",
+                             "site":  "AWS Staklim Deli Serdang",
+                             "siteType":  "AWS"
                          }
                      ],
     "siteSubtypes":  [
@@ -1516,6 +1671,21 @@
                              "siteType":  "Radar Gematronik",
                              "subtype":  "Radar Gematronik",
                              "profile":  ""
+                         },
+                         {
+                             "siteType":  "AAWS",
+                             "subtype":  "AAWS",
+                             "profile":  "AAWS"
+                         },
+                         {
+                             "siteType":  "AWS",
+                             "subtype":  "AWS",
+                             "profile":  "AWS"
+                         },
+                         {
+                             "siteType":  "ARG",
+                             "subtype":  "ARG",
+                             "profile":  "ARG"
                          }
                      ],
     "barangByJenis":  {
@@ -1750,7 +1920,100 @@
                                               "Mounting Sensor Hujan",
                                               "Proteksi Petir",
                                               "Sensor Hujan"
-                                          ]
+                                          ],
+                          "AAWS":  [
+                                       "Data Akuisisi",
+                                       "Sensor Suhu Udara",
+                                       "Sensor Kelembaban Udara",
+                                       "Sensor Tekanan Udara",
+                                       "Sensor Arah Angin",
+                                       "Sensor Kecepatan Angin",
+                                       "Sensor Hujan",
+                                       "Sensor Radiasi Matahari",
+                                       "Baterai",
+                                       "Regulator",
+                                       "Solar Panel",
+                                       "Kabel Data",
+                                       "Modem Komunikasi",
+                                       "Display",
+                                       "Pengolah Data",
+                                       "Tiang 10 Meter",
+                                       "Mounting Sensor Arah dan Kecepatan Angin",
+                                       "Mounting Sensor Suhu dan Kelembaban Udara",
+                                       "Mounting Sensor Hujan",
+                                       "Mounting Sensor Radiasi Matahari",
+                                       "Proteksi Petir",
+                                       "Pagar Pengaman",
+                                       "Boks Panel",
+                                       "Kabel Listrik",
+                                       "Sekring Pengaman",
+                                       "Terminal Blok",
+                                       "Radio",
+                                       "Mounting Solar Panel",
+                                       "Sangkar Sensor Suhu dan Kelembaban Udara",
+                                       "Sensor Kecepatan Angin 2m",
+                                       "Arrester",
+                                       "Antena",
+                                       "Sensor PAR",
+                                       "Sling Kabel"
+                                   ],
+                          "AWS":  [
+                                      "Data Akuisisi",
+                                      "Sensor Suhu Udara",
+                                      "Sensor Kelembaban Udara",
+                                      "Sensor Tekanan Udara",
+                                      "Sensor Arah Angin",
+                                      "Sensor Kecepatan Angin",
+                                      "Sensor Hujan",
+                                      "Sensor Radiasi Matahari",
+                                      "Baterai",
+                                      "Regulator",
+                                      "Solar Panel",
+                                      "Kabel Data",
+                                      "Modem Komunikasi",
+                                      "Display",
+                                      "Pengolah Data",
+                                      "Tiang 10 Meter",
+                                      "Mounting Sensor Arah dan Kecepatan Angin",
+                                      "Mounting Sensor Suhu dan Kelembaban Udara",
+                                      "Mounting Sensor Hujan",
+                                      "Mounting Sensor Radiasi Matahari",
+                                      "Proteksi Petir",
+                                      "Pagar Pengaman",
+                                      "Boks Panel",
+                                      "Kabel Listrik",
+                                      "Sekring Pengaman",
+                                      "Terminal Blok",
+                                      "Arrester",
+                                      "Radio",
+                                      "Antena",
+                                      "Mounting Solar Panel",
+                                      "Sangkar Sensor Suhu dan Kelembaban Udara",
+                                      "Sling Kabel"
+                                  ],
+                          "ARG":  [
+                                      "Data Akuisisi",
+                                      "Sensor Hujan",
+                                      "Baterai",
+                                      "Regulator",
+                                      "Solar Panel",
+                                      "Kabel Data",
+                                      "Modem Komunikasi",
+                                      "Display",
+                                      "Pengolah Data",
+                                      "Tiang 1.5 meter",
+                                      "Tiang Solar Panel",
+                                      "Proteksi Petir",
+                                      "Pagar Pengaman",
+                                      "Boks Panel",
+                                      "Kabel Listrik",
+                                      "Sekring Pengaman",
+                                      "Terminal Blok",
+                                      "Radio",
+                                      "Arrester",
+                                      "Antena",
+                                      "Mounting Solar Panel"
+                                  ]
                       },
     "products":  [
                      {
