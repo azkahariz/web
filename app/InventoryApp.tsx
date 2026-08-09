@@ -336,10 +336,10 @@ export default function InventoryApp() {
     <main className="app-shell">
       <header className="topbar">
         <div className="brand-lockup">
-          <div className="brand-mark" aria-hidden="true">IR</div>
+          <div className="brand-mark" aria-hidden="true">AC</div>
           <div>
-            <p className="eyebrow">PENDATAAN LOKAL</p>
-            <h1>IRM Collect</h1>
+            <p className="eyebrow">METEOROLOGI • KLIMATOLOGI • GEOFISIKA</p>
+            <h1>Aloptama Collect</h1>
           </div>
         </div>
         <div className="local-badge"><span /> Tersimpan di perangkat</div>

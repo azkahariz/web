@@ -55,6 +55,15 @@ aturan akses lintas domain milik layanan wilayah.
 | `app/*.tsx` | Tampilan dan interaksi pengguna |
 | `tests` | Kontrak perilaku yang tidak boleh rusak |
 
+## Jalur build
+
+- `npm.cmd run build` membuat build native Next.js untuk Vercel.
+- `npm.cmd run build:sites` mempertahankan build Vinext/Cloudflare untuk
+  ChatGPT Sites selama masa migrasi.
+- `db/index.ts`, `examples/d1`, dan `worker` dikecualikan dari pemeriksaan
+  TypeScript Next.js karena hanya menggunakan binding Cloudflare yang belum
+  menjadi bagian runtime aplikasi.
+
 ## Aturan pemeliharaan
 
 1. Data yang sering berubah ditempatkan di `config` atau CSV, bukan ditulis

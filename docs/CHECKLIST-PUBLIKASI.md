@@ -20,6 +20,8 @@
 ## Pemeriksaan versi
 
 - [ ] Perubahan sudah disimpan dalam commit Git.
-- [ ] Versi website dibuat dari commit tersebut.
+- [ ] Commit sudah dikirim ke branch produksi GitHub.
+- [ ] Deployment Vercel dari commit tersebut berstatus Ready.
 - [ ] URL publik dibuka setelah publikasi selesai.
 - [ ] Perubahan utama diperiksa sekali lagi pada URL publik.
+- [ ] Deployment ChatGPT Sites lama tidak dihapus sebelum versi Vercel stabil.

@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "IRM Collect",
-  description: "Pendataan lokal barang terpasang per stasiun dan site.",
+  title: "Aloptama Collect",
+  description: "Pendataan Metadata dan Inventaris Aloptama",
   icons: { icon: "/favicon.svg", shortcut: "/favicon.svg" },
 };
 

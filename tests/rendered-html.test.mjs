@@ -62,8 +62,8 @@ test("server merender aplikasi inventaris lokal", async () => {
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
   const html = await response.text();
-  assert.match(html, /IRM Collect/);
-  assert.match(html, /Inventaris Barang Terpasang/i);
+  assert.match(html, /Aloptama Collect/);
+  assert.match(html, /Inventarisasi Barang Terpasang/i);
   assert.match(html, /Berdasarkan site/);
   assert.match(html, /Coba jenis langsung/);
   assert.doesNotMatch(html, /codex-preview|SkeletonPreview|react-loading-skeleton/i);

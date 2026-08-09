@@ -1,4 +1,4 @@
-# Panduan Perubahan IRM Collect
+# Panduan Perubahan Aloptama Collect
 
 Panduan ini dimulai dari perubahan yang paling aman. Kerjakan satu jenis
 perubahan dalam satu waktu agar kesalahan mudah ditemukan.
@@ -110,11 +110,12 @@ git commit -m "jelaskan perubahan secara singkat"
 Jangan memasukkan `node_modules`, `dist`, file rahasia, atau hasil ekspor data
 pengguna ke Git.
 
-## Publikasi
+## Publikasi ke Vercel
 
-Website saat ini menggunakan Sites. Publikasi dilakukan dari versi Git yang
-sudah lolos `npm.cmd run check`. Pastikan versi yang dipublikasikan menunjuk ke
-commit terbaru dan jangan mengubah website publik sebelum pemeriksaan selesai.
+Jalankan `npm.cmd run check`, tinjau `git status`, lalu commit dan push perubahan
+ke branch produksi. Vercel akan membuat deployment baru secara otomatis setelah
+repository GitHub dihubungkan. Build default adalah native Next.js.
 
-Jika nanti website dipindahkan ke layanan yang terhubung langsung dengan Git,
-bagian ini perlu diperbarui dengan langkah publikasi layanan tersebut.
+Deployment ChatGPT Sites lama masih dapat diperiksa dengan
+`npm.cmd run build:sites`. Jangan hapus konfigurasi Sites sebelum migrasi
+Vercel selesai dan website baru sudah diverifikasi.

@@ -1,17 +1,20 @@
 {
-  "name": "site-creator-vinext-starter",
+  "name": "aloptama-collect",
   "version": "0.1.0",
   "private": true,
   "engines": {
     "node": ">=22.13.0"
   },
   "scripts": {
-    "dev": "vinext dev",
-    "build": "vinext build",
-    "start": "vinext start",
-    "test": "npm run build && node --test tests/rendered-html.test.mjs",
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "dev:sites": "vinext dev",
+    "build:sites": "vinext build",
+    "start:sites": "vinext start",
+    "test": "npm run build:sites && node --test tests/rendered-html.test.mjs",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
-    "check": "npm run lint && npm run test",
+    "check": "npm run lint && npm run test && npm run build",
     "db:generate": "drizzle-kit generate"
   },
   "dependencies": {

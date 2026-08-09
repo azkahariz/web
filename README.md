@@ -1,6 +1,7 @@
-# IRM Collect
+# Aloptama Collect
 
-Website pendataan metadata Aloptama dan barang terpasang. Versi saat ini
+Website untuk Pendataan Metadata dan Inventaris Aloptama pada bidang
+Meteorologi, Klimatologi, dan Geofisika. Versi saat ini
 menyimpan draf otomatis di browser pengguna dan dapat mengekspor hasil ke CSV
 atau JSON.
 
@@ -34,6 +35,20 @@ npm.cmd run check
 ```
 
 Perubahan baru boleh dipublikasikan jika pemeriksaan selesai tanpa error.
+
+Perintah tersebut memeriksa build ChatGPT Sites yang masih dipertahankan dan
+build native Next.js yang digunakan oleh Vercel.
+
+## Deployment Vercel
+
+Repository ini siap dikenali sebagai project Next.js. Di Vercel, import
+repository GitHub, gunakan project name `aloptama-collect`, lalu biarkan
+Framework Preset dan Build Command terdeteksi otomatis. Project ini tidak
+memerlukan `vercel.json` atau environment variable untuk fungsi saat ini.
+
+Setelah repository terhubung, setiap push ke branch produksi akan membuat
+deployment baru secara otomatis. Deployment ChatGPT Sites yang sudah aktif
+tidak berubah oleh proses persiapan ini.
 
 ## Penyimpanan saat ini
 
