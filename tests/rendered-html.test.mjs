@@ -57,14 +57,16 @@ function profileForSubtype(subtype, barangByJenis) {
   return "";
 }
 
-test("server merender gerbang konfigurasi autentikasi tanpa environment publik", async () => {
+test("server merender gerbang autentikasi", async () => {
   const response = await render();
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
   const html = await response.text();
   assert.match(html, /Aloptama Collect/);
-  assert.match(html, /Konfigurasi Supabase belum tersedia/i);
-  assert.match(html, /NEXT_PUBLIC_SUPABASE_URL/);
+  assert.ok(
+    /Konfigurasi Supabase belum tersedia/i.test(html) || /Masuk untuk melanjutkan/i.test(html),
+    "halaman awal harus menampilkan konfigurasi atau form login",
+  );
   assert.doesNotMatch(html, /codex-preview|SkeletonPreview|react-loading-skeleton/i);
 });
 

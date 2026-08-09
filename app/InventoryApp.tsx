@@ -6,6 +6,7 @@ import { CONDITION_OPTIONS, MOUNTING_MATERIALS } from "./config/form-options";
 import rawData from "./data.generated.json";
 import { loadLocalDraft, saveLocalDraft } from "./lib/draft-storage";
 import { OPERATOR_STORAGE_KEY, type DraftPayload } from "./lib/server-draft";
+import { logoutCurrentBrowser } from "./lib/local-logout";
 import { getSupabaseBrowserClient } from "./lib/supabase/client";
 import { useServerDraft } from "./hooks/useServerDraft";
 import { csvCell, downloadText } from "./lib/download";
@@ -293,8 +294,14 @@ export default function InventoryApp({ account }: { account: StationAccount }) {
   const sync = useServerDraft({ scope: draftScope, payload: serverPayload, operatorName, onRemotePayload: applyRemotePayload });
 
   async function logout() {
-    await sync.release();
-    await getSupabaseBrowserClient()?.auth.signOut();
+    const client = getSupabaseBrowserClient();
+    if (client) {
+      await logoutCurrentBrowser({
+        releaseLock: sync.release,
+        signOut: (options) => client.auth.signOut(options),
+      });
+    }
+    router.replace("/");
     router.refresh();
   }
 
@@ -464,6 +471,7 @@ export default function InventoryApp({ account }: { account: StationAccount }) {
               </div>
               {sync.status === "conflict" && <button className="secondary-button" onClick={sync.loadLatest}>Muat versi terbaru</button>}
               {sync.canTakeover && <button className="secondary-button" onClick={sync.takeover}>Ambil alih draf</button>}
+              {sync.status === "read-only" && <button className="secondary-button" onClick={sync.reopen}>Coba lagi</button>}
             </div>
           )}
           <fieldset className="editing-surface" disabled={locationReady && !sync.canEdit} onInputCapture={sync.touchActivity} onChangeCapture={sync.touchActivity}>

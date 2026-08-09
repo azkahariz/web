@@ -7,6 +7,7 @@ import {
   scopedDraftKey,
   writeScopedLocalDraft,
 } from "../app/lib/server-draft.ts";
+import { logoutCurrentBrowser } from "../app/lib/local-logout.ts";
 
 function payload(stationId = "station-a", siteId = "site-a", subtypeId = "subtype-a", inventory = {}) {
   return {
@@ -41,6 +42,41 @@ test("draf lokal dipakai saat server kosong dan tidak menang diam-diam saat tert
   assert.equal(chooseInitialDraft(local, serverPayload, 2).kind, "conflict");
 });
 
+test("logout hanya mengakhiri session browser saat ini setelah mencoba release lock", async () => {
+  const sessionA = { authenticated: true };
+  const sessionB = { authenticated: true };
+  const calls = [];
+  await logoutCurrentBrowser({
+    releaseLock: async () => { calls.push("release-a"); },
+    signOut: async (options) => {
+      calls.push(`signout-${options.scope}`);
+      if (options.scope === "local") sessionA.authenticated = false;
+    },
+  });
+  assert.deepEqual(calls, ["release-a", "signout-local"]);
+  assert.equal(sessionA.authenticated, false);
+  assert.equal(sessionB.authenticated, true);
+});
+
+test("logout tetap selesai saat release lock gagal", async () => {
+  let signedOut = false;
+  await logoutCurrentBrowser({
+    releaseLock: async () => { throw new Error("offline"); },
+    signOut: async ({ scope }) => { signedOut = scope === "local"; },
+  });
+  assert.equal(signedOut, true);
+});
+
+test("logout tidak menunggu release lock yang macet", async () => {
+  let signedOut = false;
+  await logoutCurrentBrowser({
+    releaseLock: () => new Promise(() => {}),
+    signOut: async ({ scope }) => { signedOut = scope === "local"; },
+    releaseTimeoutMs: 1,
+  });
+  assert.equal(signedOut, true);
+});
+
 test("migration membatasi stasiun dan menerapkan lock serta optimistic version", async () => {
   const sql = await readFile(new URL("../supabase/migrations/20260810010000_station_auth_autosave.sql", import.meta.url), "utf8");
   assert.match(sql, /site\.station_id = v_station_id/);
@@ -67,6 +103,20 @@ test("autosave memakai debounce, session tab, dan touch berbasis aktivitas", asy
   assert.match(storage, /crypto\.randomUUID\(\)/);
 });
 
+test("seluruh logout memakai scope lokal dan read-only dapat mencoba acquire ulang", async () => {
+  const [inventory, accountProblem, logoutLib, hook] = await Promise.all([
+    readFile(new URL("../app/InventoryApp.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/AccountProblem.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/lib/local-logout.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/hooks/useServerDraft.ts", import.meta.url), "utf8"),
+  ]);
+  assert.match(logoutLib, /signOut\(\{ scope: "local" \}\)/);
+  assert.match(inventory, /releaseLock: sync\.release/);
+  assert.match(accountProblem, /logoutCurrentBrowser/);
+  assert.match(inventory, /sync\.status === "read-only"[\s\S]*sync\.reopen/);
+  assert.match(hook, /const reopen = useCallback\(\(\) => setRetryTick/);
+});
+
 test("format ekspor lama tetap tersedia", async () => {
   const source = await readFile(new URL("../app/InventoryApp.tsx", import.meta.url), "utf8");
   assert.match(source, /Unduh hasil JSON/);
@@ -74,4 +124,3 @@ test("format ekspor lama tetap tersedia", async () => {
   assert.match(source, /SITE_METADATA_CSV_HEADERS/);
   assert.match(source, /getItemUnits\(item\)/);
 });
-

@@ -1,12 +1,15 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { logoutCurrentBrowser } from "./lib/local-logout";
 import { getSupabaseBrowserClient } from "./lib/supabase/client";
 
 export default function AccountProblem({ message }: { message: string }) {
   const router = useRouter();
   async function logout() {
-    await getSupabaseBrowserClient()?.auth.signOut();
+    const client = getSupabaseBrowserClient();
+    if (client) await logoutCurrentBrowser({ signOut: (options) => client.auth.signOut(options) });
+    router.replace("/");
     router.refresh();
   }
   return (
@@ -17,4 +20,3 @@ export default function AccountProblem({ message }: { message: string }) {
     </section></main>
   );
 }
-

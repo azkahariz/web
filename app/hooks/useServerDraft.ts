@@ -257,5 +257,7 @@ export function useServerDraft({
     setStatus(canEdit ? "saved" : "read-only");
   }, [canEdit, latestPayload, onRemotePayload]);
 
-  return { status, canEdit, canTakeover, lockOperator, lockLastActivityAt, lastSavedAt, touchActivity, takeover, loadLatest, release };
+  const reopen = useCallback(() => setRetryTick((value) => value + 1), []);
+
+  return { status, canEdit, canTakeover, lockOperator, lockLastActivityAt, lastSavedAt, touchActivity, takeover, loadLatest, reopen, release };
 }
