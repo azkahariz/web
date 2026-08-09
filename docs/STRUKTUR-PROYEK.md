@@ -1,89 +1,74 @@
 # Struktur Proyek
 
-## Peta singkat
-
 ```text
 web/
 |-- app/
-|   |-- api/                 Penghubung ke layanan eksternal
-|   |-- config/              Daftar pilihan yang mudah diubah
-|   |-- hooks/               Logika React yang dapat dipakai ulang
-|   |-- lib/                 Fungsi pengolahan data
-|   |-- types/               Bentuk atau struktur data
-|   |-- InventoryApp.tsx     Alur utama inventaris
-|   |-- SiteMetadataForm.tsx Form metadata Aloptama
-|   |-- data.generated.json  Hasil otomatis dari CSV, jangan diedit
-|   `-- globals.css          Seluruh tampilan aplikasi
-|-- db/                      Tempat skema database pada tahap berikutnya
-|-- supabase/migrations/     Schema PostgreSQL master yang version-controlled
-|-- docs/                    Dokumentasi pemeliharaan
-|-- scripts/                 Generator dan sinkronisasi master CSV
-|-- tests/                   Pemeriksaan perilaku penting
-`-- README.md                Pintu masuk dokumentasi
+|   |-- admin/                 Dashboard dan editor Super Admin
+|   |-- api/admin/             Operasi Auth Admin server-only
+|   |-- config/                Pilihan form
+|   |-- hooks/                 Autosave, katalog produk, wilayah
+|   |-- lib/                   Auth, QC, storage, export, Supabase
+|   |-- types/                 Bentuk data TypeScript
+|   |-- InventoryApp.tsx       Form station dan editor admin
+|   `-- data.generated.json    Hasil CSV, jangan diedit
+|-- docs/                      Panduan manusia
+|-- scripts/master/            Parser dan sync Spreadsheet/CSV
+|-- scripts/provision-*.mjs    Provisioning akun
+|-- scripts/verify-*.mjs       Verification database nyata
+|-- supabase/migrations/       Schema, RLS, RPC version-controlled
+|-- tests/                     Kontrak otomatis
+`-- README.md                  Landing page repository
 ```
 
-## Aliran data saat ini
+## Lapisan sistem
+
+Frontend:
+`InventoryApp`, `SiteMetadataForm`, `AdminDashboard`, dan `globals.css`.
+
+Auth:
+Supabase SSR client, browser client, `proxy.ts`, `station_accounts`, dan
+`super_admins`.
+
+Master data:
+Spreadsheet/CSV, `generate-data.ps1`, `data.generated.json`, `sync-master.mjs`,
+serta table master Supabase.
+
+Operational data:
+`submissions.payload` JSONB, localStorage, version, dan soft lock.
+
+Admin:
+route `/admin`, admin RPC, API akun server-only, dan `admin_audit_log`.
+
+Product QC:
+`product_proposals`, `product_aliases`, overlay active `products`, similarity
+deterministic, dan export rekonsiliasi Spreadsheet.
+
+Deployment:
+Next.js dibuild dan dihost Vercel. Supabase adalah layanan terpisah untuk Auth
+dan database.
+
+## Aliran data
 
 ```text
-CSV sumber
-  -> scripts/generate-data.ps1
-  -> app/data.generated.json
-  -> InventoryApp
-  -> localStorage browser
-  -> ekspor CSV atau JSON
+CSV -> generated fallback -----------+
+                                      +-> katalog produk UI
+Supabase active products + aliases --+
+
+InventoryApp -> localStorage
+             -> submissions JSONB/version/lock
+             -> CSV/JSON existing
 ```
 
-Data wilayah mempunyai alur terpisah:
+## Jika ingin mengubah...
 
-```text
-SiteMetadataForm
-  -> /api/regions
-  -> wilayah.id
-```
+- Form inventaris: `app/InventoryApp.tsx` dan types terkait.
+- Pilihan form: `app/config/form-options.ts`.
+- Master: Spreadsheet/CSV dan `scripts/master/`.
+- Auth: `app/lib/auth.ts`, Supabase helpers, login, dan migration baru.
+- Autosave/lock: `app/hooks/useServerDraft.ts` dan RPC submission.
+- Admin UI: `app/admin/`; permission tetap harus ada di migration/RPC.
+- Product QC: `app/lib/product-qc.ts`, `useProductCatalog`, admin QC, dan RPC.
+- Export: pertahankan header/format di `InventoryApp` dan update tes.
 
-Route internal digunakan agar browser pengguna tidak bergantung langsung pada
-aturan akses lintas domain milik layanan wilayah.
-
-Master data mempunyai alur tambahan:
-
-```text
-Spreadsheet / CSV
-  -> generate-data.ps1
-  -> data.generated.json
-  -> sync-master.mjs
-  -> Supabase transaction
-  -> sync-output/*.synced.csv
-  -> Spreadsheet
-```
-
-## Batas tanggung jawab
-
-| Lokasi | Tanggung jawab |
-| --- | --- |
-| `app/config` | Nilai pilihan yang tampil pada form |
-| `app/types` | Nama kolom dan bentuk data |
-| `app/lib` | Pengolahan, ekspor, dan penyimpanan lokal |
-| `app/hooks` | Pengambilan data yang terkait dengan tampilan React |
-| `app/api` | Komunikasi server dengan layanan luar |
-| `app/*.tsx` | Tampilan dan interaksi pengguna |
-| `tests` | Kontrak perilaku yang tidak boleh rusak |
-
-## Jalur build
-
-- `npm.cmd run build` membuat build native Next.js untuk Vercel.
-- `npm.cmd run build:sites` mempertahankan build Vinext/Cloudflare untuk
-  ChatGPT Sites selama masa migrasi.
-- `db/index.ts`, `examples/d1`, dan `worker` dikecualikan dari pemeriksaan
-  TypeScript Next.js karena hanya menggunakan binding Cloudflare yang belum
-  menjadi bagian runtime aplikasi.
-
-## Aturan pemeliharaan
-
-1. Data yang sering berubah ditempatkan di `config` atau CSV, bukan ditulis
-   berulang di komponen.
-2. Satu nama data didefinisikan sekali di `types`.
-3. Fungsi pengolahan yang tidak menampilkan elemen layar ditempatkan di `lib`.
-4. File otomatis tidak diedit secara manual.
-5. Perubahan perilaku harus disertai perubahan tes.
-6. Jangan mencampurkan perapian kode dengan perubahan fitur besar dalam satu
-   commit.
+Jangan mencampur refactor luas dengan perubahan perilaku. Setiap perubahan
+schema dibuat sebagai migration baru.

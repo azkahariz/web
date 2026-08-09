@@ -1,27 +1,45 @@
-# Checklist Sebelum Publikasi
+# Checklist Publikasi
 
-## Pemeriksaan otomatis
+## Database dan test
 
-- [ ] Jalankan `npm.cmd run check`.
-- [ ] Tidak ada pesan error dari lint, test, atau build.
-- [ ] `git status` hanya menampilkan file yang memang ingin diubah.
+- [ ] Migration baru sudah di-review dan applied ke project Supabase yang benar.
+- [ ] `npm.cmd run check` PASS.
+- [ ] `npm.cmd run verify:auth-autosave` PASS dan fixture rollback.
+- [ ] `npm.cmd run verify:admin-qc` PASS dan fixture rollback.
+- [ ] `npm.cmd run verify:admin-api` PASS dan fixture dibersihkan.
+- [ ] Station isolation, version conflict, lock lima menit, dan local logout PASS.
+- [ ] Approve, merge, bulk merge, reject, alias, audit, dan reconciliation PASS.
+- [ ] CSV/JSON existing tidak berubah format.
 
-## Pemeriksaan form
+## Environment Vercel
 
-- [ ] Stasiun, site, dan subtipe dapat dipilih.
-- [ ] AWOS Kategori III hanya menampilkan keluarga subtipe yang sesuai.
-- [ ] Azimuth hanya muncul untuk TDZ dan End Point.
-- [ ] Jumlah lebih dari satu membuat isian per unit.
-- [ ] Produk dan bahan mounting lain dapat ditambahkan.
-- [ ] Provinsi sampai desa/kelurahan dapat dipilih atau diisi manual.
-- [ ] Draf tetap ada setelah halaman dimuat ulang pada browser yang sama.
-- [ ] CSV dan JSON dapat diunduh.
+- [ ] `NEXT_PUBLIC_SUPABASE_URL` tersedia untuk Preview dan Production.
+- [ ] `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` tersedia.
+- [ ] `SUPABASE_SECRET_KEY` tersedia server-side dan bukan `NEXT_PUBLIC_`.
+- [ ] `SUPABASE_DB_URL` tidak ditambahkan ke Vercel tanpa kebutuhan khusus.
 
-## Pemeriksaan versi
+## Smoke Preview
 
-- [ ] Perubahan sudah disimpan dalam commit Git.
-- [ ] Commit sudah dikirim ke branch produksi GitHub.
-- [ ] Deployment Vercel dari commit tersebut berstatus Ready.
-- [ ] URL publik dibuka setelah publikasi selesai.
-- [ ] Perubahan utama diperiksa sekali lagi pada URL publik.
-- [ ] Deployment ChatGPT Sites lama tidak dihapus sebelum versi Vercel stabil.
+Station User:
+
+- [ ] Login, browse, edit, save, finish, logout lokal.
+- [ ] Read-only dan Coba lagi memperoleh lock terbaru.
+- [ ] Proposal produk, suggestion, status Pending, dan export.
+
+Super Admin:
+
+- [ ] Login diarahkan ke `/admin`.
+- [ ] Seluruh tab dashboard usable desktop/mobile.
+- [ ] Buka submission tanpa auto-lock; edit/force takeover memakai confirmation.
+- [ ] Force release, account action, QC, export Spreadsheet, dan audit bekerja.
+- [ ] Password sementara hanya tampil setelah aksi berhasil.
+
+## Git dan Production
+
+- [ ] `git status` hanya berisi file yang dimaksud.
+- [ ] Tidak ada `.env.local`, `private-output`, credential, log, atau archive.
+- [ ] Commit feature branch sudah push dan Vercel Preview berstatus Ready.
+- [ ] Preview diuji manual.
+- [ ] Pull request/merge ke `main` dilakukan setelah persetujuan.
+- [ ] Deployment Production berstatus Ready.
+- [ ] Production smoke test dan pengecekan audit selesai.

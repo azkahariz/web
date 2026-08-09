@@ -39,12 +39,13 @@ dengan huruf kapital.
 
 ## Mengubah stasiun, site, subtipe, barang, atau produk
 
-Data sumber berada di empat file CSV pada folder `Z:\collect-irm-data`:
+Data sumber berada di lima file CSV pada folder `Z:\collect-irm-data`:
 
 - `List Barang Terpasang_Group By Stamet - Nama Stasiun.csv`;
 - `List Barang Terpasang_Group By Stamet - Jenis Site.csv`;
 - `List Barang Terpasang_Group By Stamet - Barang.csv`;
 - `List Barang Terpasang_Group By Stamet - products.csv`.
+- `List Barang Terpasang_Group By Stamet - product_categories.csv`.
 
 Setelah CSV diperbarui, jalankan:
 
@@ -119,6 +120,13 @@ Jalankan `npm.cmd run check`, tinjau `git status`, lalu commit dan push perubaha
 ke branch produksi. Vercel akan membuat deployment baru secara otomatis setelah
 repository GitHub dihubungkan. Build default adalah native Next.js.
 
-Deployment ChatGPT Sites lama masih dapat diperiksa dengan
-`npm.cmd run build:sites`. Jangan hapus konfigurasi Sites sebelum migrasi
-Vercel selesai dan website baru sudah diverifikasi.
+Build Production adalah native Next.js di Vercel. Push feature branch terlebih
+dahulu untuk membuat Preview, lakukan smoke test, lalu merge ke `main` setelah
+disetujui. Ikuti `docs/CHECKLIST-PUBLIKASI.md`.
+
+## Mengubah Admin atau Product QC
+
+Permission admin tidak boleh hanya berupa tombol. Perubahan harus ditegakkan
+oleh RLS/RPC dalam migration baru. Product hasil QC tidak langsung menggantikan
+Spreadsheet: export UUID yang sama, masukkan ke sheet products, lalu jalankan
+`validate:master` dan `sync:master`.

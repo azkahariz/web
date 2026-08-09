@@ -1,132 +1,77 @@
 # Master Data Supabase
 
-## Peran setiap sumber
+## Sumber utama
+
+Google Spreadsheet/CSV adalah **source of truth**, yaitu acuan akhir master.
+`app/data.generated.json` adalah fallback aplikasi, sedangkan Supabase menyimpan
+mirror ber-UUID dan overlay produk hasil QC.
 
 ```text
-Google Spreadsheet / CSV  = source of truth master
-app/data.generated.json   = data aplikasi hasil generator
-Supabase                  = mirror master terstruktur dengan UUID
+Spreadsheet -> CSV -> generate-data.ps1 -> data.generated.json
+                         +-> sync:master -> Supabase -> .synced.csv
 ```
 
-Master tetap diedit di Spreadsheet. Jangan mengedit nama master rutin melalui
-Supabase Dashboard. Website saat ini tetap membaca `app/data.generated.json`
-dan tidak membutuhkan koneksi Supabase saat render.
+Jangan edit `data.generated.json` atau UUID secara manual.
 
-## Kontrak data faktual
+## Kontrak faktual
 
-- `Nama Stasiun.csv` menghubungkan stasiun, site, dan tipe site. Site unik di
-  dalam stasiun, bukan berdasarkan nama site secara global.
-- `Jenis Site.csv` menghubungkan tipe site dengan subtipe. Profil AWOS Kategori
-  III diturunkan dari suffix TDZ, Mid, End Point, atau Station.
-- `Barang.csv` adalah mapping banyak-ke-banyak antara profil (`Jenis`) dan
-  barang (`Barang Terpasang`).
-- `product_categories.csv` adalah daftar kategori mandiri.
-- `products.csv` hanya mempunyai natural key `Merk + Tipe`. Tidak ada kolom
-  sumber yang menghubungkan produk dengan product category.
+- Nama Stasiun menghubungkan stasiun, site, dan tipe site.
+- Jenis Site menghubungkan tipe site, subtipe, dan profil barang.
+- Barang adalah mapping profil ke barang.
+- product_categories adalah daftar mandiri.
+- products hanya memiliki `Merk + Tipe`; tidak ada relasi faktual ke category.
 
-## Kolom CSV setelah sync
-
-`Nama Stasiun`:
-
-```text
-station_id, Nama Stasiun, station_active,
-site_id, Nama Site, site_active,
-site_type_id, Tipe Site, site_type_active
-```
-
-`Jenis Site`:
-
-```text
-site_type_id, Tipe Site, site_type_active,
-site_subtype_id, Sub Tipe Site, site_subtype_active,
-item_profile_id, Profil Barang
-```
-
-`Barang`:
-
-```text
-item_profile_id, Jenis, item_profile_active,
-item_id, Barang Terpasang, item_active,
-profile_item_id, mapping_active
-```
-
-`product_categories`:
-
-```text
-product_category_id, product_categories, active
-```
-
-`products`:
+Kolom products final:
 
 ```text
 product_id, Merk, Tipe, active
 ```
 
-Kolom aktif dipisahkan per entitas. `mapping_active` hanya mengatur hubungan
-profil-barang, bukan menonaktifkan profil atau barangnya.
-Jika satu entitas muncul berulang di beberapa baris atau sheet, UUID dan status
-aktifnya harus sama pada semua kemunculan; validator akan menolak konflik.
+## Aturan UUID
 
-## Persiapan pertama
+- **Tambah:** UUID kosong; Supabase membuat atau memulihkan UUID berdasarkan
+  natural key.
+- **Edit:** pertahankan UUID yang sama; sync melakukan UPDATE.
+- **Nonaktif:** set `active=false`; jangan delete row.
+- **Aktifkan kembali:** set `active=true` dengan UUID lama.
+- **Hilang dari CSV:** record tidak dihapus; sync memberi warning.
 
-1. Dari Supabase Dashboard, buka **Connect** dan ambil connection string Direct.
-   Jika jaringan tidak mendukung IPv6, gunakan **Session pooler** port 5432.
-2. Buat `.env.local` berdasarkan `.env.example`, lalu isi `SUPABASE_DB_URL`.
-   File ini diabaikan Git dan tidak boleh dibagikan.
-3. Hubungkan CLI dan jalankan migration:
+## Workflow rutin
 
-```powershell
-npx.cmd supabase login
-npx.cmd supabase link --project-ref PROJECT_REF
-npx.cmd supabase db push
+1. Export lima sheet CSV ke folder `Z:\collect-irm-data`.
+2. Jalankan `npm.cmd run validate:master`.
+3. Jalankan `npm.cmd run sync:master`.
+4. Import file `sync-output/*.synced.csv` kembali ke Spreadsheet.
+5. Commit CSV/source yang memang menjadi bagian repository sesuai kebijakan tim.
+
+Satu sync berjalan dalam transaction dan tidak mempunyai hard delete.
+
+## Pengecualian sementara: Product QC
+
+Produk hasil **Approve Baru** dibuat dulu di Supabase agar langsung tersedia:
+
+```text
+source_origin=QC
+spreadsheet_synced=false
 ```
 
-4. Validasi sumber tanpa mengubah database:
+Admin mengunduh `products-qc-pending-spreadsheet.csv`, memasukkannya ke sheet
+products dengan `product_id` yang sama, lalu menjalankan sync. Sync mengenali
+UUID tersebut, melakukan UPDATE, dan mengubahnya menjadi:
 
-```powershell
-npm.cmd run validate:master
+```text
+source_origin=SPREADSHEET
+spreadsheet_synced=true
 ```
 
-5. Jalankan bootstrap:
+Produk QC yang belum masuk Spreadsheet tidak memunculkan missing warning.
+Koreksi canonical admin juga ditandai `spreadsheet_synced=false` agar tidak
+menjadi divergence diam-diam.
 
-```powershell
-npm.cmd run sync:master
-```
-
-Hasil berada di `sync-output/` dengan akhiran `.synced.csv`. Import setiap file
-itu kembali ke sheet yang sesuai agar UUID menjadi bagian source berikutnya.
-
-## Sync rutin
-
-1. Export ulang lima sheet sebagai CSV ke `Z:\collect-irm-data`.
-2. Pastikan UUID lama tetap ada dan tidak diedit manual.
-3. Jalankan `npm.cmd run validate:master`.
-4. Jalankan `npm.cmd run sync:master`.
-5. Import kembali file dari `sync-output/` ke Spreadsheet.
-
-Perintah sync juga menjalankan `generate-data.ps1`, sehingga data aplikasi tetap
-diperbarui dari sumber yang sama.
-
-## Aturan perubahan
-
-- **Tambah:** biarkan UUID kosong. Sync memeriksa natural key sebelum insert.
-- **Edit nama:** pertahankan UUID. Record dengan UUID tersebut akan di-update.
-- **Nonaktifkan:** ubah kolom aktif entitas yang tepat menjadi `FALSE`.
-- **Reactivate:** ubah kembali menjadi `TRUE`.
-- **Record hilang:** database tidak dihapus dan tidak dinonaktifkan otomatis;
-  sync hanya mengeluarkan warning.
-- **UUID hilang:** natural key digunakan untuk memulihkan UUID existing agar
-  sync ulang tidak membuat duplikat.
-
-Seluruh perubahan satu kali sync berjalan dalam satu transaction. Jika terjadi
-error, transaction dibatalkan. Script tidak mempunyai operasi hard delete.
+Alias variasi penulisan tetap di Supabase dan tidak perlu masuk Spreadsheet.
 
 ## Keamanan
 
-Migration mengaktifkan RLS dan mencabut akses `anon` serta `authenticated`.
-Sync menggunakan koneksi PostgreSQL tepercaya dari komputer lokal. Jangan
-menamai credential dengan awalan `NEXT_PUBLIC_` dan jangan menambahkannya ke
-Vercel pada tahap master ini.
-
-Folder Cloudflare D1 `db/` dan `drizzle/` tetap dipertahankan untuk kompatibilitas
-Sites lama, tetapi bukan schema Supabase.
+`SUPABASE_DB_URL` hanya untuk komputer pengelola. Browser tidak memakai koneksi
+database langsung atau secret. Master table tidak boleh diedit rutin melalui
+Supabase Dashboard.

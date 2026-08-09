@@ -1,50 +1,29 @@
-# Rencana Database
+# Status Database
 
-## Kondisi saat ini
+Dokumen ini dahulu berisi rencana sebelum database aktif. Implementasi tersebut
+sekarang sudah berjalan di Supabase.
 
-Draf berada di `localStorage`. Cara ini cepat dan dapat digunakan tanpa login,
-tetapi datanya hanya tersedia pada satu browser dan satu perangkat. Menghapus
-data browser juga dapat menghapus draf.
+## Yang sudah aktif
 
-Folder `db` dan paket Drizzle sudah tersedia sebagai kerangka. Database belum
-diaktifkan dan `.openai/hosting.json` masih mempunyai nilai `d1: null`.
+- master data ber-UUID dari Spreadsheet/CSV;
+- Supabase Auth SSR;
+- akun per stasiun dan RLS antarstasiun;
+- submission JSONB dengan autosave localStorage + server;
+- Browse/Edit Mode, soft lock lima menit, takeover, dan version conflict;
+- Super Admin terpisah, dashboard, account management, force lock, dan audit;
+- product proposal, aliases, approve, merge, bulk merge, reject;
+- katalog live Supabase dengan generated fallback;
+- rekonsiliasi produk QC kembali ke Spreadsheet.
 
-Supabase pada tahap sekarang hanya menyimpan mirror master dari Spreadsheet/CSV.
-Supabase belum menyimpan draf atau hasil pengisian pengguna. Migration master
-berada di `supabase/migrations`, terpisah dari kerangka Cloudflare D1 `db/`.
+## Batas desain saat ini
 
-## Kapan database diperlukan
+Payload submission tetap JSONB agar draft lama kompatibel. Metadata site,
+inventory, dan unit belum dipecah menjadi banyak table relational. Perubahan ini
+tidak diperlukan selama kebutuhan query operasional masih dipenuhi dashboard
+dan export.
 
-Database diperlukan ketika pengguna harus:
+Spreadsheet tetap source of truth master. Supabase menjadi sumber operasional
+untuk login, submission, lock, QC, dan audit. Tidak ada hard delete master.
 
-- menyimpan sebagian pengisian dengan aman;
-- melanjutkan dari perangkat lain;
-- melihat daftar draf miliknya;
-- mengirim hasil untuk diperiksa;
-- bekerja bersama pengguna lain; atau
-- melihat riwayat perubahan.
-
-## Urutan implementasi yang disarankan
-
-1. Selesaikan rancangan website dan alur pengguna.
-2. Tentukan sistem akun serta peran pengguna dan admin.
-3. Tetapkan struktur data site, metadata, inventaris, unit, dan riwayat.
-4. Tambahkan database beserta migrasi.
-5. Tambahkan autosave server tanpa langsung menghapus penyimpanan lokal.
-6. Uji pemulihan draf dan perpindahan perangkat.
-7. Setelah stabil, gunakan database sebagai sumber utama.
-
-## Entitas awal
-
-| Entitas | Isi utama |
-| --- | --- |
-| `users` | Identitas dan peran pengguna |
-| `sites` | Stasiun, Aloptama, tipe, dan subtipe |
-| `submissions` | Draf pengisian dan statusnya |
-| `site_metadata` | Metadata satu site pada pengisian |
-| `inventory_items` | Produk atau bahan per kategori |
-| `inventory_units` | Nomor seri, kondisi, tahun, dan catatan per unit |
-| `submission_history` | Waktu dan pengguna yang mengubah data |
-
-Rancangan tabel final harus dibuat setelah alur website baru disepakati agar
-database tidak mengikuti struktur tampilan yang masih berubah.
+Lihat [MULAI-DI-SINI.md](MULAI-DI-SINI.md) dan
+[STRUKTUR-PROYEK.md](STRUKTUR-PROYEK.md) untuk arsitektur saat ini.
