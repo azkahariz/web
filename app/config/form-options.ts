@@ -24,6 +24,31 @@ export const MOUNTING_MATERIALS = [
 
 export const MAINTENANCE_BUDGET_OPTIONS = ["3347", "3352"] as const;
 
+export const FIELD_DOMAIN_SITE_TYPES = {
+  Meteorologi: [
+    "AWOS Kategori III",
+    "AWOS Kategori II",
+    "AWOS Kategori I",
+    "Digitalisasi Taman Alat Meteorologi",
+    "AWS Rekayasa",
+    "AWS Maritim",
+    "Water Level",
+    "Radar EEC",
+    "Radar Baron",
+    "Radar Vaisala",
+    "Radar Gematronik",
+  ],
+  Klimatologi: [
+    "AAWS",
+    "AWS",
+    "ARG",
+    "ASRS",
+    "Soil Moisture",
+    "Iklim Mikro",
+    "Digitalisasi Taman Alat Klimatologi",
+  ],
+} as const;
+
 export const OWNERSHIP_STATUS_OPTIONS = [
   "BMKG",
   "Sewa",

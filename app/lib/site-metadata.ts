@@ -1,3 +1,4 @@
+import { FIELD_DOMAIN_SITE_TYPES } from "../config/form-options";
 import type { AutomaticMetadata, SiteMetadata } from "../types/site-metadata";
 
 export const EMPTY_SITE_METADATA: SiteMetadata = {
@@ -124,4 +125,14 @@ export function siteMetadataCsvValues(value: SiteMetadata, automatic: AutomaticM
 
 export function normalizeCoordinate(coordinate: string) {
   return coordinate.replace(",", ".").replace(/[^0-9.-]/g, "");
+}
+
+export function resolveFieldDomain(equipmentType: string): AutomaticMetadata["fieldDomain"] {
+  if ((FIELD_DOMAIN_SITE_TYPES.Meteorologi as readonly string[]).includes(equipmentType)) {
+    return "Meteorologi";
+  }
+  if ((FIELD_DOMAIN_SITE_TYPES.Klimatologi as readonly string[]).includes(equipmentType)) {
+    return "Klimatologi";
+  }
+  return "";
 }

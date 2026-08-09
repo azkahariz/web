@@ -213,21 +213,26 @@ test("produk di luar daftar dapat ditambahkan dengan brand dan tipe", async () =
 });
 
 test("metadata Aloptama tersimpan per site dan memakai nilai lokasi otomatis", async () => {
-  const [source, metadataSource, storageSource] = await Promise.all([
+  const [source, metadataSource, metadataLib, formOptions, storageSource] = await Promise.all([
     readFile(new URL("../app/InventoryApp.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/SiteMetadataForm.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/lib/site-metadata.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/config/form-options.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/lib/draft-storage.ts", import.meta.url), "utf8"),
   ]);
 
   assert.match(source, /site-metadata::\$\{station\}::\$\{site\}/);
   assert.match(source, /stationName: station/);
   assert.match(source, /equipmentType: selectedSite\?\.siteType/);
-  assert.match(source, /fieldDomain: "Meteorology"/);
+  assert.match(source, /fieldDomain: resolveFieldDomain\(selectedSite\?\.siteType \?\? ""\)/);
   assert.match(source, /uptManager: station/);
   assert.match(source, /saveLocalDraft\([\s\S]*siteMetadataDrafts/);
   assert.match(storageSource, /localStorage\.setItem/);
   assert.match(metadataSource, /Nama Stasiun<input value=\{automatic\.stationName\} readOnly/);
   assert.match(metadataSource, /Equipment Type<input value=\{automatic\.equipmentType\} readOnly/);
+  assert.match(metadataLib, /function resolveFieldDomain/);
+  assert.match(formOptions, /FIELD_DOMAIN_SITE_TYPES[\s\S]*Meteorologi:[\s\S]*AWOS Kategori III[\s\S]*Radar Gematronik/);
+  assert.match(formOptions, /Klimatologi:[\s\S]*AAWS[\s\S]*Digitalisasi Taman Alat Klimatologi/);
 });
 
 test("form metadata menyediakan seluruh pilihan operasional dan komunikasi", async () => {

@@ -16,6 +16,7 @@ import {
 import {
   EMPTY_SITE_METADATA,
   SITE_METADATA_CSV_HEADERS,
+  resolveFieldDomain,
   siteMetadataCsvValues,
 } from "./lib/site-metadata";
 import SiteMetadataForm from "./SiteMetadataForm";
@@ -134,7 +135,7 @@ export default function InventoryApp() {
     stationName: station,
     siteName: site,
     equipmentType: selectedSite?.siteType ?? "",
-    fieldDomain: "Meteorology" as const,
+    fieldDomain: resolveFieldDomain(selectedSite?.siteType ?? ""),
     uptManager: station,
   };
   const runwayAzimuth = draftContexts[draftKey]?.runwayAzimuth ?? "";
