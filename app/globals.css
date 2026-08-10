@@ -94,8 +94,21 @@ button { color: inherit; }
 .auth-panel form { margin-top: 28px; display: flex; flex-direction: column; gap: 16px; }
 .auth-panel form h2 { margin: 5px 0 3px; font: 500 29px/1.15 Georgia, serif; }
 .auth-panel form label { color: #35544d; font-size: 11px; font-weight: 800; }
+.auth-password-field > label { display: block; }
 .auth-panel form input { margin-top: 7px; font-weight: 400; }
 .auth-panel form button { margin-top: 4px; }
+.password-input-wrap, .credential-password-row { position: relative; display: block; }
+.password-input-wrap input, .credential-password-row input { padding-right: 50px; }
+.password-visibility-button {
+  width: 40px; height: 40px; min-height: 40px; margin: 0; padding: 9px;
+  position: absolute; right: 3px; top: 50%; transform: translateY(-50%);
+  display: grid; place-items: center; border: 0; border-radius: 7px;
+  background: transparent; color: var(--green-deep); cursor: pointer;
+}
+.password-visibility-button:hover { background: var(--green-soft); }
+.password-visibility-button:focus-visible { outline: 2px solid var(--green); outline-offset: 1px; }
+.password-visibility-button svg { width: 20px; height: 20px; }
+.auth-panel form .password-visibility-button { margin: 3px 0 0; }
 .auth-error, .floating-auth-error { margin: 0; color: var(--red); font-size: 11px; line-height: 1.5; }
 .floating-auth-error { position: fixed; left: 50%; bottom: 18px; width: min(430px, calc(100% - 36px)); transform: translateX(-50%); padding: 11px 14px; border: 1px solid #e0c8c4; border-radius: 8px; background: #fff; text-align: center; }
 .config-panel h1 { margin: 0; font: 500 28px/1.2 Georgia, serif; }
@@ -278,11 +291,7 @@ select:disabled { color: #9aa39f; background: #f2f2ee; cursor: not-allowed; }
 .admin-content { min-width: 0; padding: 32px clamp(18px, 4vw, 50px) 60px; }
 .admin-heading { display: flex; align-items: center; justify-content: space-between; gap: 18px; }
 .admin-heading h2 { margin: 5px 0 0; font: 500 31px/1.15 Georgia, serif; }
-.admin-message, .credential-result { margin: 18px 0 0; padding: 12px 14px; border: 1px solid #d9c99f; border-radius: 7px; background: #fff8e8; color: #72551f; font-size: 11px; line-height: 1.5; }
-.credential-result { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; border-color: #b9d2c8; background: #eff8f4; color: var(--green-deep); }
-.credential-result strong { width: 100%; }
-.credential-result code { padding: 6px 8px; background: white; border: 1px solid #c9d9d2; border-radius: 5px; }
-.credential-result button { border: 0; background: transparent; color: var(--green); font-weight: 800; cursor: pointer; }
+.admin-message { margin: 18px 0 0; padding: 12px 14px; border: 1px solid #d9c99f; border-radius: 7px; background: #fff8e8; color: #72551f; font-size: 11px; line-height: 1.5; }
 .admin-stats { margin-top: 24px; display: grid; grid-template-columns: repeat(3, minmax(150px, 1fr)); gap: 10px; }
 .admin-stats div { min-height: 96px; padding: 18px; border: 1px solid var(--line); border-radius: 8px; background: white; }
 .admin-stats strong, .admin-stats span { display: block; }
@@ -303,6 +312,12 @@ select:disabled { color: #9aa39f; background: #f2f2ee; cursor: not-allowed; }
 .admin-table-wrap td code { max-width: 300px; display: block; overflow-wrap: anywhere; font-size: 9px; }
 .admin-table-wrap details summary { color: var(--green); cursor: pointer; font-weight: 800; }
 .admin-table-wrap pre { width: min(520px, 70vw); max-height: 280px; overflow: auto; white-space: pre-wrap; font-size: 9px; }
+.accounts-view .admin-search { width: min(680px, 100%); }
+.accounts-table table { min-width: 760px; font-size: 12px; }
+.accounts-table th, .accounts-table td { padding: 15px 16px; }
+.accounts-table th { font-size: 10px; }
+.accounts-table .table-actions { gap: 9px; }
+.accounts-table .table-actions button, .accounts-table td > button { min-height: 36px; padding: 8px 11px; font-size: 10px; }
 .table-actions { display: flex; gap: 6px; flex-wrap: wrap; }
 .table-actions button, .admin-table-wrap td > button, .table-action { min-height: 31px; padding: 6px 9px; border: 1px solid #bdd0c8; border-radius: 6px; background: white; color: var(--green-deep); font-size: 9px; font-weight: 800; cursor: pointer; text-decoration: none; white-space: nowrap; }
 .table-actions .danger-inline, .danger-inline { border-color: #e0c8c4; color: var(--red); }
@@ -320,6 +335,21 @@ select:disabled { color: #9aa39f; background: #f2f2ee; cursor: not-allowed; }
 .admin-subheading strong, .admin-subheading span { display: block; }
 .admin-subheading strong { font-size: 13px; }
 .admin-subheading span { margin-top: 5px; color: var(--muted); font-size: 10px; }
+.credential-dialog-backdrop {
+  position: fixed; inset: 0; z-index: 100; padding: 20px;
+  display: grid; place-items: center; background: rgba(17, 36, 32, .55);
+}
+.credential-dialog { width: min(520px, 100%); padding: 24px; border: 1px solid var(--line); border-radius: 8px; background: white; box-shadow: 0 24px 70px rgba(17, 36, 32, .24); }
+.credential-dialog-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; }
+.credential-dialog-heading h2 { margin: 5px 0 0; font: 500 25px/1.2 Georgia, serif; }
+.credential-dialog-heading > button { min-height: 34px; padding: 6px 9px; border: 0; background: transparent; color: var(--muted); font-size: 10px; font-weight: 800; cursor: pointer; }
+.credential-warning { margin: 18px 0; padding: 11px 12px; border-left: 3px solid var(--yellow); background: #fff8e8; color: #72551f; font-size: 11px; line-height: 1.55; }
+.credential-dialog dl { margin: 0; }
+.credential-dialog dl > div { padding: 12px 0; border-bottom: 1px solid var(--line); }
+.credential-dialog dt { color: var(--muted); font-size: 9px; font-weight: 900; text-transform: uppercase; }
+.credential-dialog dd { margin: 6px 0 0; font-size: 13px; font-weight: 700; }
+.credential-password-row input { margin: 0; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-weight: 600; }
+.credential-dialog-actions { margin-top: 20px; display: flex; justify-content: flex-end; gap: 8px; }
 
 @media (max-width: 900px) {
   .intro { grid-template-columns: 1fr; }
@@ -396,5 +426,7 @@ select:disabled { color: #9aa39f; background: #f2f2ee; cursor: not-allowed; }
   .admin-stats { grid-template-columns: 1fr 1fr; }
   .qc-toolbar { align-items: stretch; flex-direction: column; }
   .bulk-merge { grid-template-columns: 1fr; }
+  .credential-dialog { padding: 20px; }
+  .credential-dialog-actions { flex-direction: column; }
   .proposal-message { margin-left: 0; }
 }

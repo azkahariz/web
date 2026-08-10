@@ -10,7 +10,7 @@ import { logoutCurrentBrowser } from "./lib/local-logout";
 import { getSupabaseBrowserClient } from "./lib/supabase/client";
 import { useServerDraft } from "./hooks/useServerDraft";
 import { useProductCatalog } from "./hooks/useProductCatalog";
-import { csvCell, downloadText } from "./lib/download";
+import { buildAloptamaFilename, csvCell, downloadText } from "./lib/download";
 import { normalizeProductText, resolveInstalledProduct, suggestProducts } from "./lib/product-qc";
 import {
   createUnitDetail,
@@ -513,7 +513,7 @@ export default function InventoryApp({
         products: (inventory[category] ?? []).map(productForExport),
       })),
     };
-    const filename = `inventaris-${profile.toLowerCase().replace(/[^a-z0-9]+/g, "-") || "draft"}.json`;
+    const filename = buildAloptamaFilename(station, site, currentSubtype, "json");
     downloadText(filename, JSON.stringify(payload, null, 2), "application/json");
   }
 
@@ -557,7 +557,7 @@ export default function InventoryApp({
       ]);
     });
     const csv = `\uFEFF${[headers, ...rows].map((row) => row.map(csvCell).join(",")).join("\r\n")}`;
-    const filename = `inventaris-${profile.toLowerCase().replace(/[^a-z0-9]+/g, "-") || "draft"}.csv`;
+    const filename = buildAloptamaFilename(station, site, currentSubtype, "csv");
     downloadText(filename, csv, "text/csv;charset=utf-8");
   }
 
@@ -618,11 +618,11 @@ export default function InventoryApp({
           </div>
 
           <div className="form-stack account-location">
-              <label className="field-label" htmlFor="station-name">Stasiun</label>
-              <input id="station-name" value={station} readOnly />
+              <label className="field-label" htmlFor="aloptama-station-display">Stasiun</label>
+              <input id="aloptama-station-display" autoComplete="off" value={station} readOnly />
 
-              <label className="field-label" htmlFor="operator-name">Nama operator</label>
-              <input id="operator-name" value={operatorName} onChange={(event) => setOperatorName(event.target.value)} placeholder="Nama petugas yang mengisi" />
+              <label className="field-label" htmlFor="aloptama-entry-operator">Nama operator</label>
+              <input id="aloptama-entry-operator" autoComplete="off" value={operatorName} onChange={(event) => setOperatorName(event.target.value)} placeholder="Nama petugas yang mengisi" />
 
               <label className="field-label" htmlFor="site-select">Aloptama / Site</label>
               <select id="site-select" value={site} disabled={!station || sync.isEditing} onChange={(event) => { setSite(event.target.value); setSubtype(""); setEditFeedback(""); }}>
@@ -644,6 +644,7 @@ export default function InventoryApp({
                   <label className="field-label" htmlFor="runway-azimuth">Azimuth runway</label>
                   <input
                     id="runway-azimuth"
+                    autoComplete="off"
                     inputMode="numeric"
                     maxLength={2}
                     disabled={!sync.canEdit}
@@ -731,7 +732,7 @@ export default function InventoryApp({
               <div className="inventory-tools">
                 <label className="category-search">
                   <span aria-hidden="true">⌕</span>
-                  <input value={categoryQuery} onChange={(event) => setCategoryQuery(event.target.value)} placeholder="Cari kategori barang…" />
+                  <input autoComplete="off" value={categoryQuery} onChange={(event) => setCategoryQuery(event.target.value)} placeholder="Cari kategori barang…" />
                 </label>
                 <span>{totalUnits} unit dipilih</span>
               </div>
@@ -769,21 +770,21 @@ export default function InventoryApp({
                           )}
                           {resolved.status === "REJECTED" && <p className="proposal-message is-rejected">Usulan produk ditolak. Silakan pilih produk lain atau perbaiki usulan.{resolved.reviewNote ? ` Catatan: ${resolved.reviewNote}` : ""}</p>}
                           <label className="quantity-field">Jumlah
-                            <input type="number" min="1" value={item.quantity} onChange={(event) => updateItemQuantity(category, item, Number(event.target.value))} />
+                            <input autoComplete="off" type="number" min="1" value={item.quantity} onChange={(event) => updateItemQuantity(category, item, Number(event.target.value))} />
                           </label>
                           <div className="unit-list">
                             {getItemUnits(item).map((unit, unitIndex) => (
                               <section className="unit-detail" key={unit.id}>
                                 <strong>Unit {unitIndex + 1}</strong>
                                 <div className="metadata-grid">
-                                  {item.itemKind !== "material" && <label>Nomor seri<input value={unit.serialNumber} onChange={(event) => updateUnit(category, item, unit.id, { serialNumber: event.target.value })} placeholder="Opsional" /></label>}
+                                  {item.itemKind !== "material" && <label>Nomor seri<input autoComplete="off" value={unit.serialNumber} onChange={(event) => updateUnit(category, item, unit.id, { serialNumber: event.target.value })} placeholder="Opsional" /></label>}
                                   <label>Kondisi
                                     <select value={unit.condition} onChange={(event) => updateUnit(category, item, unit.id, { condition: event.target.value as Condition })}>
                                       {CONDITION_OPTIONS.map((condition) => <option key={condition}>{condition}</option>)}
                                     </select>
                                   </label>
-                                  <label>Tahun pasang<input inputMode="numeric" maxLength={4} value={unit.installedYear} onChange={(event) => updateUnit(category, item, unit.id, { installedYear: event.target.value.replace(/\D/g, "").slice(0, 4) })} placeholder="YYYY" /></label>
-                                  <label className="notes-field">Catatan<input value={unit.notes} onChange={(event) => updateUnit(category, item, unit.id, { notes: event.target.value })} placeholder="Keterangan tambahan" /></label>
+                                  <label>Tahun pasang<input autoComplete="off" inputMode="numeric" maxLength={4} value={unit.installedYear} onChange={(event) => updateUnit(category, item, unit.id, { installedYear: event.target.value.replace(/\D/g, "").slice(0, 4) })} placeholder="YYYY" /></label>
+                                  <label className="notes-field">Catatan<input autoComplete="off" value={unit.notes} onChange={(event) => updateUnit(category, item, unit.id, { notes: event.target.value })} placeholder="Keterangan tambahan" /></label>
                                 </div>
                               </section>
                             ))}
@@ -864,7 +865,7 @@ export default function InventoryApp({
                 <div className="custom-material">
                   <label htmlFor="custom-material">Bahan lainnya</label>
                   <div>
-                    <input id="custom-material" autoFocus value={customMaterial} onChange={(event) => setCustomMaterial(event.target.value)} placeholder="Contoh: baja ringan" onKeyDown={(event) => { if (event.key === "Enter") addMaterial(customMaterial); }} />
+                    <input id="custom-material" autoComplete="off" autoFocus value={customMaterial} onChange={(event) => setCustomMaterial(event.target.value)} placeholder="Contoh: baja ringan" onKeyDown={(event) => { if (event.key === "Enter") addMaterial(customMaterial); }} />
                     <button disabled={!customMaterial.trim()} onClick={() => addMaterial(customMaterial)}>Tambahkan</button>
                   </div>
                 </div>
@@ -873,7 +874,7 @@ export default function InventoryApp({
               <>
                 <label className="product-search">
                   <span aria-hidden="true">⌕</span>
-                  <input autoFocus value={productQuery} onChange={(event) => setProductQuery(event.target.value)} placeholder="Cari merek atau tipe produk…" />
+                  <input autoComplete="off" autoFocus value={productQuery} onChange={(event) => setProductQuery(event.target.value)} placeholder="Cari merek atau tipe produk…" />
                 </label>
                 <p className="search-caption">Mencari pada seluruh kolom <strong>Merk</strong> dan <strong>Tipe</strong> · menampilkan maksimal 60 hasil</p>
                 <div className="product-results">
@@ -899,9 +900,9 @@ export default function InventoryApp({
                     </div>
                   )}
                   <div>
-                    <label>Brand<input value={customBrand} onChange={(event) => setCustomBrand(event.target.value)} placeholder="Nama brand" /></label>
-                    <label>Tipe<input value={customModel} onChange={(event) => setCustomModel(event.target.value)} placeholder="Tipe / model produk" /></label>
-                    <label>Catatan<input value={customProductNote} onChange={(event) => setCustomProductNote(event.target.value)} placeholder="Opsional" /></label>
+                    <label>Brand<input autoComplete="off" value={customBrand} onChange={(event) => setCustomBrand(event.target.value)} placeholder="Nama brand" /></label>
+                    <label>Tipe<input autoComplete="off" value={customModel} onChange={(event) => setCustomModel(event.target.value)} placeholder="Tipe / model produk" /></label>
+                    <label>Catatan<input autoComplete="off" value={customProductNote} onChange={(event) => setCustomProductNote(event.target.value)} placeholder="Opsional" /></label>
                     <button disabled={!customBrand.trim() || !customModel.trim()} onClick={() => void addCustomProduct()}>Usulkan produk baru</button>
                   </div>
                 </div>

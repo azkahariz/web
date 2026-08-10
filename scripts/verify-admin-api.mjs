@@ -51,6 +51,8 @@ try {
     body: JSON.stringify({ action: "reset-password", accountId }),
   });
   if (denied.status !== 403) throw new Error(`Station User seharusnya mendapat 403, bukan ${denied.status}.`);
+  const deniedBody = await denied.json();
+  if (deniedBody.temporaryPassword) throw new Error("Response Station User tidak boleh memuat password sementara.");
 
   const adminLogin = await publicAdmin.auth.signInWithPassword({
     email: `${adminUsername}@stations.aloptama.internal`, password: adminPassword,
@@ -63,10 +65,28 @@ try {
   });
   const resetBody = await reset.json();
   if (!reset.ok || !resetBody.temporaryPassword) throw new Error(resetBody.error || "Admin reset password gagal.");
+  if (resetBody.username !== stationUsername) throw new Error("Response reset tidak memuat username akun yang benar.");
   const relogin = await publicStation.auth.signInWithPassword({
     email: `${stationUsername}@stations.aloptama.internal`, password: resetBody.temporaryPassword,
   });
   if (relogin.error) throw new Error("Password baru tidak dapat digunakan.");
+
+  const { data: auditRows, error: auditError } = await service.from("admin_audit_log")
+    .select("action, metadata").eq("target_id", accountId);
+  if (auditError) throw auditError;
+  const resetAudit = auditRows.find((row) => row.action === "RESET_STATION_PASSWORD");
+  if (!resetAudit) throw new Error("Audit reset password tidak ditemukan.");
+  const auditText = JSON.stringify(resetAudit.metadata ?? {});
+  if (/password/i.test(auditText) || auditText.includes(resetBody.temporaryPassword)) {
+    throw new Error("Password tidak boleh masuk audit metadata.");
+  }
+
+  const { data: storedAccount, error: storedAccountError } = await service.from("station_accounts")
+    .select("*").eq("id", accountId).single();
+  if (storedAccountError) throw storedAccountError;
+  if (Object.keys(storedAccount).some((key) => /password/i.test(key))) {
+    throw new Error("station_accounts tidak boleh mempunyai kolom password plaintext.");
+  }
 } finally {
   if (accountId) {
     await service.from("admin_audit_log").delete().eq("target_id", accountId);

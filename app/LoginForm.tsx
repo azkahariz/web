@@ -4,11 +4,13 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { stationEmailForUsername } from "./lib/auth";
 import { getSupabaseBrowserClient } from "./lib/supabase/client";
+import EyeIcon from "./components/EyeIcon";
 
 export default function LoginForm() {
   const router = useRouter();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [passwordVisible, setPasswordVisible] = useState(false);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -37,7 +39,21 @@ export default function LoginForm() {
         <form onSubmit={submit}>
           <div><p className="kicker">AKUN STASIUN</p><h2>Masuk untuk melanjutkan</h2></div>
           <label>Username<input required autoComplete="username" value={username} onChange={(event) => setUsername(event.target.value)} /></label>
-          <label>Password<input required type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} /></label>
+          <div className="auth-password-field">
+            <label htmlFor="login-password">Password</label>
+            <span className="password-input-wrap">
+              <input id="login-password" required type={passwordVisible ? "text" : "password"} autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} />
+              <button
+                className="password-visibility-button"
+                type="button"
+                aria-label={passwordVisible ? "Sembunyikan password" : "Tampilkan password"}
+                aria-pressed={passwordVisible}
+                onClick={() => setPasswordVisible((current) => !current)}
+              >
+                <EyeIcon hidden={passwordVisible} />
+              </button>
+            </span>
+          </div>
           {error && <p className="auth-error" role="alert">{error}</p>}
           <button className="primary-button" disabled={submitting}>{submitting ? "Memeriksa..." : "Masuk"}</button>
         </form>

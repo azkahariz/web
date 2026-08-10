@@ -45,7 +45,7 @@ export async function POST(request: Request) {
   }
 
   if (body.action === "reset-password" && body.accountId) {
-    const { data: account } = await serviceClient.from("station_accounts").select("auth_user_id").eq("id", body.accountId).single();
+    const { data: account } = await serviceClient.from("station_accounts").select("auth_user_id, username").eq("id", body.accountId).single();
     if (!account) return NextResponse.json({ error: "Akun tidak ditemukan." }, { status: 404 });
     const temporaryPassword = password();
     const { error } = await serviceClient.auth.admin.updateUserById(account.auth_user_id, { password: temporaryPassword });
@@ -57,7 +57,7 @@ export async function POST(request: Request) {
       target_id: body.accountId,
       metadata: {},
     });
-    return NextResponse.json({ ok: true, temporaryPassword });
+    return NextResponse.json({ ok: true, username: account.username, temporaryPassword });
   }
 
   if (body.action === "provision" && body.stationId) {

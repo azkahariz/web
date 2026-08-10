@@ -15,6 +15,11 @@ Dashboard mempunyai enam bagian:
 - **QC Produk**: approve, merge, bulk merge, reject, dan export Spreadsheet.
 - **Audit Admin**: catatan tindakan admin yang berisiko.
 
+Pada **Stasiun & Pengisian**, kotak pencarian mencari nama stasiun, nama site,
+tipe site, dan subtipe. Jumlah site adalah jumlah site unik milik stasiun, bukan
+jumlah submission. Pada **Akun Stasiun**, pencarian hanya memakai nama stasiun
+dan username.
+
 ## Submission dan lock
 
 Membuka daftar submission tidak mengambil lock. Tekan **Buka / edit**, lalu
@@ -31,10 +36,16 @@ dikonfirmasi dan dicatat di audit.
 - **Provision akun** membuat Auth user dan row `station_accounts` bila belum ada.
 - **Nonaktifkan** membuat akun tidak dapat memperoleh scope stasiun atau RPC.
 - **Aktifkan** mengembalikan akses.
-- **Reset Password** membuat password sementara yang kuat.
+- **Reset Password** membuat password sementara yang kuat. Password lama tidak
+  dapat dilihat karena Supabase Auth tidak menyimpan password dalam bentuk yang
+  dapat dibaca kembali.
 
-Password sementara hanya tampil setelah operasi berhasil. Salin dan kirim
-secara manual kepada stasiun. Password tidak disimpan di database atau audit.
+Setelah reset berhasil, dialog menampilkan username dan password baru. Gunakan
+ikon mata untuk menampilkan password, lalu tekan **Salin Password**. Simpan atau
+kirim password saat dialog masih terbuka. Setelah dialog ditutup atau halaman
+dimuat ulang, password tidak dapat ditampilkan lagi dan harus direset kembali
+bila diperlukan. Password tidak disimpan di database, audit, atau penyimpanan
+browser.
 
 ## QC Produk
 

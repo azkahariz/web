@@ -3,13 +3,22 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import EyeIcon from "../components/EyeIcon";
+import {
+  accountMatchesAdminSearch,
+  adminSearchPlaceholder,
+  countDistinctStationSites,
+  siteDisplayName,
+  stationMatchesAdminSearch,
+} from "../lib/admin-view";
 import { csvCell, downloadText } from "../lib/download";
 import { logoutCurrentBrowser } from "../lib/local-logout";
 import { getSupabaseBrowserClient } from "../lib/supabase/client";
 
 type Station = { id: string; name: string; active: boolean };
-type Site = { id: string; station_id: string; name: string; active: boolean };
-type Subtype = { id: string; name: string };
+type Site = { id: string; station_id: string; site_type_id: string; name: string; active: boolean };
+type SiteType = { id: string; name: string };
+type Subtype = { id: string; site_type_id: string; name: string };
 type Submission = {
   id: string; station_id: string; site_id: string; site_subtype_id: string;
   version: number; payload: Record<string, unknown>; operator_name: string | null;
@@ -47,6 +56,7 @@ export default function AdminDashboard({ username }: { username: string }) {
   const [tab, setTab] = useState<Tab>("summary");
   const [stations, setStations] = useState<Station[]>([]);
   const [sites, setSites] = useState<Site[]>([]);
+  const [siteTypes, setSiteTypes] = useState<SiteType[]>([]);
   const [subtypes, setSubtypes] = useState<Subtype[]>([]);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -58,7 +68,8 @@ export default function AdminDashboard({ username }: { username: string }) {
   const [selectedProposals, setSelectedProposals] = useState<string[]>([]);
   const [mergeProductId, setMergeProductId] = useState("");
   const [message, setMessage] = useState("");
-  const [credential, setCredential] = useState<{ username: string; password: string } | null>(null);
+  const [credential, setCredential] = useState<{ username: string; password: string; title: string } | null>(null);
+  const [credentialVisible, setCredentialVisible] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadedAt, setLoadedAt] = useState(0);
 
@@ -66,21 +77,23 @@ export default function AdminDashboard({ username }: { username: string }) {
     const client = getSupabaseBrowserClient();
     if (!client) return;
     setLoading(true);
-    const [stationRows, siteRows, subtypeRows, submissionRows, accountRows, productRows, proposalRows, auditRows] = await Promise.all([
+    const [stationRows, siteRows, siteTypeRows, subtypeRows, submissionRows, accountRows, productRows, proposalRows, auditRows] = await Promise.all([
       client.from("stations").select("id, name, active").order("name"),
-      client.from("sites").select("id, station_id, name, active").order("name"),
-      client.from("site_subtypes").select("id, name").order("name"),
+      client.from("sites").select("id, station_id, site_type_id, name, active").order("name"),
+      client.from("site_types").select("id, name").order("name"),
+      client.from("site_subtypes").select("id, site_type_id, name").order("name"),
       client.from("submissions").select("id, station_id, site_id, site_subtype_id, version, payload, operator_name, locked_by_session_id, lock_operator_name, lock_last_activity_at, last_saved_at").order("updated_at", { ascending: false }),
       client.from("station_accounts").select("id, station_id, username, active, updated_at").order("username"),
       client.from("products").select("id, brand, model, active, source_origin, spreadsheet_synced").order("brand"),
       client.from("product_proposals").select("id, station_id, submission_id, operator_name, proposed_brand, proposed_model, normalized_brand, normalized_model, status, resolved_product_id, review_note, created_at").order("created_at", { ascending: false }),
       client.from("admin_audit_log").select("id, action, target_type, target_id, metadata, created_at").order("created_at", { ascending: false }).limit(250),
     ]);
-    const error = [stationRows, siteRows, subtypeRows, submissionRows, accountRows, productRows, proposalRows, auditRows].find((result) => result.error)?.error;
+    const error = [stationRows, siteRows, siteTypeRows, subtypeRows, submissionRows, accountRows, productRows, proposalRows, auditRows].find((result) => result.error)?.error;
     if (error) setMessage(`Gagal memuat dashboard: ${error.message}`);
     else {
       setStations((stationRows.data ?? []) as Station[]);
       setSites((siteRows.data ?? []) as Site[]);
+      setSiteTypes((siteTypeRows.data ?? []) as SiteType[]);
       setSubtypes((subtypeRows.data ?? []) as Subtype[]);
       setSubmissions((submissionRows.data ?? []) as Submission[]);
       setAccounts((accountRows.data ?? []) as Account[]);
@@ -97,6 +110,18 @@ export default function AdminDashboard({ username }: { username: string }) {
     return () => window.clearTimeout(timer);
   }, [refresh]);
 
+  useEffect(() => {
+    if (!credential) return;
+    function closeOnEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setCredentialVisible(false);
+        setCredential(null);
+      }
+    }
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [credential]);
+
   const stationMap = useMemo(() => new Map(stations.map((station) => [station.id, station])), [stations]);
   const siteMap = useMemo(() => new Map(sites.map((site) => [site.id, site])), [sites]);
   const subtypeMap = useMemo(() => new Map(subtypes.map((subtype) => [subtype.id, subtype])), [subtypes]);
@@ -106,13 +131,13 @@ export default function AdminDashboard({ username }: { username: string }) {
     && new Date(submission.lock_last_activity_at).getTime() >= loadedAt - 5 * 60_000);
   const pendingSpreadsheet = products.filter((product) => !product.spreadsheet_synced);
   const query = search.trim().toLocaleLowerCase("id-ID");
-  const filteredStations = stations.filter((station) => !query || station.name.toLocaleLowerCase("id-ID").includes(query));
-  const filteredAccounts = accounts.filter((account) => {
-    const station = stationMap.get(account.station_id)?.name ?? "";
-    return !query || `${station} ${account.username}`.toLocaleLowerCase("id-ID").includes(query);
-  });
+  const filteredStations = stations.filter((station) => stationMatchesAdminSearch(station, query, sites, siteTypes, subtypes));
+  const filteredAccounts = accounts.filter((account) => accountMatchesAdminSearch(account, query, stationMap));
+  const filteredUnprovisionedStations = stations.filter((station) => !accountByStation.has(station.id)
+    && (!query || station.name.toLocaleLowerCase("id-ID").includes(query)));
   const filteredProposals = proposals.filter((proposal) => proposal.status === qcStatus && (!query
     || `${proposal.proposed_brand} ${proposal.proposed_model} ${stationMap.get(proposal.station_id)?.name ?? ""}`.toLocaleLowerCase("id-ID").includes(query)));
+  const searchTab = tab === "stations" || tab === "accounts" || tab === "qc" ? tab : null;
 
   async function rpc(name: string, args: Record<string, unknown>) {
     const client = getSupabaseBrowserClient();
@@ -177,14 +202,26 @@ export default function AdminDashboard({ username }: { username: string }) {
     if (!window.confirm(confirmation)) return;
     setMessage("");
     setCredential(null);
+    setCredentialVisible(false);
     const response = await fetch("/api/admin/accounts", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
     const result = await response.json() as { error?: string; username?: string; temporaryPassword?: string };
     if (!response.ok) setMessage(result.error ?? "Aksi akun gagal.");
     else {
-      if (result.temporaryPassword) setCredential({ username: result.username ?? "", password: result.temporaryPassword });
+      if (result.temporaryPassword) {
+        setCredential({
+          username: result.username ?? "",
+          password: result.temporaryPassword,
+          title: body.action === "reset-password" ? "Password berhasil direset" : "Akun dan password berhasil dibuat",
+        });
+      }
       setMessage("Aksi akun berhasil.");
       await refresh();
     }
+  }
+
+  function closeCredentialDialog() {
+    setCredentialVisible(false);
+    setCredential(null);
   }
 
   function exportProducts() {
@@ -207,18 +244,17 @@ export default function AdminDashboard({ username }: { username: string }) {
       </header>
       <div className="admin-layout">
         <nav className="admin-nav" aria-label="Menu admin">
-          {tabs.map((item) => <button key={item.id} className={tab === item.id ? "active" : ""} onClick={() => setTab(item.id)}>{item.label}</button>)}
+          {tabs.map((item) => <button key={item.id} className={tab === item.id ? "active" : ""} onClick={() => { setTab(item.id); setSearch(""); }}>{item.label}</button>)}
         </nav>
-        <section className="admin-content">
+        <section className={`admin-content${tab === "accounts" ? " accounts-view" : ""}`}>
           <div className="admin-heading"><div><p className="kicker">PENGELOLAAN APLIKASI</p><h2>{tabs.find((item) => item.id === tab)?.label}</h2></div><button className="secondary-button" onClick={() => void refresh()}>Muat ulang</button></div>
           {message && <p className="admin-message" role="status">{message}</p>}
-          {credential && <div className="credential-result"><strong>Password sementara hanya ditampilkan sekarang</strong><span>Username: {credential.username || "sesuai akun"}</span><code>{credential.password}</code><button onClick={() => void navigator.clipboard.writeText(credential.password)}>Salin password</button></div>}
           {loading && <p className="loading-copy">Memuat data admin...</p>}
 
           {!loading && tab === "summary" && <div className="admin-stats">
             <div><strong>{stations.filter((row) => row.active).length}</strong><span>Stasiun aktif</span></div>
             <div><strong>{accounts.filter((row) => row.active).length}</strong><span>Akun aktif</span></div>
-            <div><strong>{sites.length}</strong><span>Site</span></div>
+            <div><strong>{new Set(sites.map((site) => site.id)).size}</strong><span>Site</span></div>
             <div><strong>{submissions.length}</strong><span>Submission</span></div>
             <div><strong>{activeLocks.length}</strong><span>Lock aktif</span></div>
             <div><strong>{proposals.filter((row) => row.status === "PENDING").length}</strong><span>QC Pending</span></div>
@@ -227,22 +263,23 @@ export default function AdminDashboard({ username }: { username: string }) {
             <div><strong>{proposals.filter((row) => row.status === "REJECTED").length}</strong><span>Rejected</span></div>
           </div>}
 
-          {!loading && (tab === "stations" || tab === "accounts" || tab === "qc") && <label className="admin-search">Cari<input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Ketik nama, username, brand, atau tipe" /></label>}
+          {!loading && searchTab && <label className="admin-search">Cari<input autoComplete="off" value={search} onChange={(event) => setSearch(event.target.value)} placeholder={adminSearchPlaceholder(searchTab)} /></label>}
 
           {!loading && tab === "stations" && <div className="admin-list">
             {filteredStations.map((station) => {
-              const stationSites = sites.filter((site) => site.station_id === station.id);
               const stationSubmissions = submissions.filter((submission) => submission.station_id === station.id);
-              return <details key={station.id}><summary><strong>{station.name}</strong><span>{stationSites.length} site, {stationSubmissions.length} submission</span></summary><div className="admin-table-wrap"><table><thead><tr><th>Site</th><th>Subtipe</th><th>Versi</th><th>Terakhir simpan</th><th>Payload</th><th>Aksi</th></tr></thead><tbody>
-                {stationSubmissions.map((submission) => <tr key={submission.id}><td>{siteMap.get(submission.site_id)?.name ?? submission.site_id}</td><td>{subtypeMap.get(submission.site_subtype_id)?.name ?? submission.site_subtype_id}</td><td>{submission.version}</td><td>{submission.last_saved_at ? new Date(submission.last_saved_at).toLocaleString("id-ID") : "Belum"}</td><td><details><summary>Lihat JSON</summary><pre>{JSON.stringify(submission.payload, null, 2)}</pre></details></td><td><Link className="table-action" href={`/admin/submissions/${submission.id}`}>Buka / edit</Link></td></tr>)}
+              const siteCount = countDistinctStationSites(station.id, sites);
+              return <details key={station.id}><summary><strong>{station.name}</strong><span>{siteCount} site, {stationSubmissions.length} submission</span></summary><div className="admin-table-wrap"><table><thead><tr><th>Site</th><th>Subtipe</th><th>Versi</th><th>Terakhir simpan</th><th>Payload</th><th>Aksi</th></tr></thead><tbody>
+                {stationSubmissions.map((submission) => <tr key={submission.id}><td>{siteDisplayName(submission.site_id, siteMap)}</td><td>{subtypeMap.get(submission.site_subtype_id)?.name ?? "Subtipe tidak ditemukan"}</td><td>{submission.version}</td><td>{submission.last_saved_at ? new Date(submission.last_saved_at).toLocaleString("id-ID") : "Belum"}</td><td><details><summary>Lihat JSON</summary><pre>{JSON.stringify(submission.payload, null, 2)}</pre></details></td><td><Link className="table-action" href={`/admin/submissions/${submission.id}`}>Buka / edit</Link></td></tr>)}
                 {!stationSubmissions.length && <tr><td colSpan={6}>Belum ada submission.</td></tr>}
               </tbody></table></div></details>;
             })}
           </div>}
 
-          {!loading && tab === "accounts" && <div className="admin-table-wrap"><table><thead><tr><th>Stasiun</th><th>Username</th><th>Status</th><th>Aksi</th></tr></thead><tbody>
-            {filteredAccounts.map((account) => <tr key={account.id}><td>{stationMap.get(account.station_id)?.name}</td><td>{account.username}</td><td><span className={`status-pill ${account.active ? "active" : "inactive"}`}>{account.active ? "Aktif" : "Nonaktif"}</span></td><td className="table-actions"><button onClick={() => void accountAction({ action: "set-active", accountId: account.id, active: !account.active }, `${account.active ? "Nonaktifkan" : "Aktifkan"} akun ${account.username}?`)}>{account.active ? "Nonaktifkan" : "Aktifkan"}</button><button onClick={() => void accountAction({ action: "reset-password", accountId: account.id }, `Reset password ${account.username}? Password lama langsung tidak berlaku.`)}>Reset Password</button></td></tr>)}
-            {stations.filter((station) => !accountByStation.has(station.id)).map((station) => <tr key={station.id}><td>{station.name}</td><td>-</td><td><span className="status-pill pending">Belum ada akun</span></td><td><button onClick={() => void accountAction({ action: "provision", stationId: station.id }, `Buat akun baru untuk ${station.name}?`)}>Provision akun</button></td></tr>)}
+          {!loading && tab === "accounts" && <div className="admin-table-wrap accounts-table"><table><thead><tr><th>Stasiun</th><th>Username</th><th>Status</th><th>Aksi</th></tr></thead><tbody>
+            {filteredAccounts.map((account) => <tr key={account.id}><td>{stationMap.get(account.station_id)?.name ?? "Stasiun tidak ditemukan"}</td><td>{account.username}</td><td><span className={`status-pill ${account.active ? "active" : "inactive"}`}>{account.active ? "Aktif" : "Nonaktif"}</span></td><td className="table-actions"><button onClick={() => void accountAction({ action: "set-active", accountId: account.id, active: !account.active }, `${account.active ? "Nonaktifkan" : "Aktifkan"} akun ${account.username}?`)}>{account.active ? "Nonaktifkan" : "Aktifkan"}</button><button onClick={() => void accountAction({ action: "reset-password", accountId: account.id }, `Reset password ${account.username}? Password lama langsung tidak berlaku.`)}>Reset Password</button></td></tr>)}
+            {filteredUnprovisionedStations.map((station) => <tr key={station.id}><td>{station.name}</td><td>-</td><td><span className="status-pill pending">Belum ada akun</span></td><td><button onClick={() => void accountAction({ action: "provision", stationId: station.id }, `Buat akun baru untuk ${station.name}?`)}>Provision akun</button></td></tr>)}
+            {!filteredAccounts.length && !filteredUnprovisionedStations.length && <tr><td colSpan={4}>Akun atau stasiun tidak ditemukan.</td></tr>}
           </tbody></table></div>}
 
           {!loading && tab === "locks" && <div className="admin-table-wrap"><table><thead><tr><th>Stasiun</th><th>Site / Subtipe</th><th>Operator</th><th>Session</th><th>Durasi</th><th>Aksi</th></tr></thead><tbody>
@@ -267,6 +304,36 @@ export default function AdminDashboard({ username }: { username: string }) {
           {!loading && tab === "audit" && <div className="admin-table-wrap"><table><thead><tr><th>Waktu</th><th>Aksi</th><th>Target</th><th>Metadata</th></tr></thead><tbody>{audits.map((audit) => <tr key={audit.id}><td>{new Date(audit.created_at).toLocaleString("id-ID")}</td><td><span className="status-pill">{audit.action}</span></td><td>{audit.target_type}<small>{audit.target_id?.slice(0, 8) ?? "-"}</small></td><td><code>{JSON.stringify(audit.metadata)}</code></td></tr>)}</tbody></table></div>}
         </section>
       </div>
+      {credential && (
+        <div className="credential-dialog-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) closeCredentialDialog(); }}>
+          <section className="credential-dialog" role="dialog" aria-modal="true" aria-labelledby="credential-dialog-title">
+            <div className="credential-dialog-heading">
+              <div><p className="eyebrow">CREDENTIAL SEMENTARA</p><h2 id="credential-dialog-title">{credential.title}</h2></div>
+              <button type="button" aria-label="Tutup dialog password" onClick={closeCredentialDialog}>Tutup</button>
+            </div>
+            <p className="credential-warning">Simpan atau kirim password ini sekarang. Setelah dialog ditutup, password tidak dapat ditampilkan kembali.</p>
+            <dl>
+              <div><dt>Username</dt><dd>{credential.username || "Sesuai akun stasiun"}</dd></div>
+              <div><dt>Password baru</dt><dd className="credential-password-row">
+                <input aria-label="Password baru" autoComplete="off" readOnly type={credentialVisible ? "text" : "password"} value={credential.password} />
+                <button
+                  className="password-visibility-button"
+                  type="button"
+                  aria-label={credentialVisible ? "Sembunyikan password" : "Tampilkan password"}
+                  aria-pressed={credentialVisible}
+                  onClick={() => setCredentialVisible((current) => !current)}
+                >
+                  <EyeIcon hidden={credentialVisible} />
+                </button>
+              </dd></div>
+            </dl>
+            <div className="credential-dialog-actions">
+              <button className="secondary-button" type="button" onClick={() => void navigator.clipboard.writeText(credential.password)}>Salin Password</button>
+              <button className="primary-button" type="button" onClick={closeCredentialDialog}>Tutup</button>
+            </div>
+          </section>
+        </div>
+      )}
     </main>
   );
 }

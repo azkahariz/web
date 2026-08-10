@@ -14,6 +14,25 @@ password.
 **Penyebab umum:** `station_accounts.active=false`.
 **Yang harus dilakukan:** Super Admin membuka Akun Stasiun lalu mengaktifkan akun.
 
+## Password lama tidak dapat dilihat Admin
+
+**Gejala:** Super Admin hanya menemukan tombol Reset Password, bukan Lihat
+Password.
+**Penyebab umum:** Ini memang desain keamanan Supabase Auth. Password existing
+tidak dapat dibaca kembali.
+**Yang harus dilakukan:** Reset password, lalu simpan atau kirim password baru
+saat dialog masih terbuka. Setelah dialog ditutup, lakukan reset lagi jika
+credential belum sempat disimpan.
+
+## Browser menawarkan Simpan alamat
+
+**Gejala:** Browser tetap menawarkan autofill atau menyimpan alamat pada form
+metadata.
+**Penyebab umum:** Aplikasi sudah menandai field non-login dengan autocomplete
+off, tetapi beberapa browser dapat mengabaikan petunjuk tersebut.
+**Yang harus dilakukan:** Tolak penawaran browser. Data aplikasi tetap tersimpan
+normal dan login autofill tetap dapat digunakan.
+
 ## Lock tidak lepas
 
 **Gejala:** User lain tetap read-only setelah editor selesai.
@@ -51,6 +70,10 @@ dimuat. localStorage adalah cadangan, bukan satu-satunya penyimpanan.
 **Penyebab umum:** Memilih draft yang salah atau perubahan format tanpa tes.
 **Yang harus dilakukan:** Periksa site/subtipe dan jalankan `npm.cmd run check`.
 Jangan menambah kolom QC ke CSV inventaris existing.
+
+Nama file normal adalah `nama-stasiun-nama-site_nama-subtipe.csv`. Jika pilihan
+lokasi belum lengkap, aplikasi memakai `aloptama-data.csv` agar filename tidak
+berisi `undefined` atau `null`.
 
 ## Sync master warning atau UUID hilang
 

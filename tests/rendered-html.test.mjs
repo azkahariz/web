@@ -231,8 +231,8 @@ test("metadata Aloptama tersimpan per site dan memakai nilai lokasi otomatis", a
   assert.match(source, /uptManager: station/);
   assert.match(source, /saveLocalDraft\([\s\S]*siteMetadataDrafts/);
   assert.match(storageSource, /localStorage\.setItem/);
-  assert.match(metadataSource, /Nama Stasiun<input value=\{automatic\.stationName\} readOnly/);
-  assert.match(metadataSource, /Equipment Type<input value=\{automatic\.equipmentType\} readOnly/);
+  assert.match(metadataSource, /Nama Stasiun<input[^>]*value=\{automatic\.stationName\}[^>]*readOnly/);
+  assert.match(metadataSource, /Equipment Type<input[^>]*value=\{automatic\.equipmentType\}[^>]*readOnly/);
   assert.match(metadataLib, /function resolveFieldDomain/);
   assert.match(formOptions, /FIELD_DOMAIN_SITE_TYPES[\s\S]*Meteorologi:[\s\S]*AWOS Kategori III[\s\S]*Radar Gematronik/);
   assert.match(formOptions, /Klimatologi:[\s\S]*AAWS[\s\S]*Digitalisasi Taman Alat Klimatologi/);

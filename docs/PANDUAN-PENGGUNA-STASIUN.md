@@ -3,6 +3,8 @@
 Panduan ini ditulis untuk petugas yang tidak perlu memahami pemrograman.
 
 1. Buka website dan masuk memakai **Username** serta **Password** stasiun.
+   Tekan ikon mata pada kolom Password untuk menampilkan atau menyembunyikan
+   password yang sedang diketik.
 2. Nama stasiun terisi otomatis dan tidak dapat diganti.
 3. Pilih **Site**, lalu pilih **Subtipe Site**.
 4. Aplikasi mulai dalam **Mode lihat**. Pada tahap ini belum ada lock.
@@ -16,7 +18,10 @@ Panduan ini ditulis untuk petugas yang tidak perlu memahami pemrograman.
     setelah perubahan terakhir. Penyimpanan maksimum ditunda sekitar 18 detik.
 11. Tekan **Simpan** untuk mengirim perubahan saat itu juga.
 12. Menu **Unduh** menyediakan CSV dan JSON. Jika ada perubahan, aplikasi
-    mencoba menyimpannya terlebih dahulu.
+    mencoba menyimpannya terlebih dahulu. Nama file mengikuti pilihan terbaru:
+    `nama-stasiun-nama-site_nama-subtipe.csv`, misalnya
+    `stasiun-meteorologi-soekarno-hatta-awos-runway-07l_awos-end-point.csv`.
+    JSON memakai pola nama yang sama dengan akhiran `.json`.
 13. Setelah selesai, tekan **Selesai Mengedit**. Aplikasi melakukan final save
     lalu melepas lock.
 
