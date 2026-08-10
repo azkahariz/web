@@ -71,7 +71,7 @@ dimuat. localStorage adalah cadangan, bukan satu-satunya penyimpanan.
 **Yang harus dilakukan:** Periksa site/subtipe dan jalankan `npm.cmd run check`.
 Jangan menambah kolom QC ke CSV inventaris existing.
 
-Nama file normal adalah `nama-stasiun-nama-site_nama-subtipe.csv`. Jika pilihan
+Nama file normal adalah `nama-stasiun_nama-site_nama-subtipe.csv`. Jika pilihan
 lokasi belum lengkap, aplikasi memakai `aloptama-data.csv` agar filename tidak
 berisi `undefined` atau `null`.
 

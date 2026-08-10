@@ -24,7 +24,7 @@ export function buildAloptamaFilename(
   const sitePart = sanitizeFilenamePart(site);
   const subtypePart = sanitizeFilenamePart(subtype);
   if (!stationPart || !sitePart || !subtypePart) return `aloptama-data.${extension}`;
-  return `${stationPart}-${sitePart}_${subtypePart}.${extension}`;
+  return `${stationPart}_${sitePart}_${subtypePart}.${extension}`;
 }
 
 export function downloadText(filename: string, content: string, type: string) {

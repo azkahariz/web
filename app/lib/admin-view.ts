@@ -9,7 +9,42 @@ function searchable(value: string | null | undefined) {
 }
 
 export function countDistinctStationSites(stationId: string, sites: Array<Pick<AdminSite, "id" | "station_id">>) {
-  return new Set(sites.filter((site) => site.station_id === stationId).map((site) => site.id)).size;
+  return distinctStationSites(stationId, sites).length;
+}
+
+export function distinctStationSites<T extends Pick<AdminSite, "id" | "station_id">>(stationId: string, sites: T[]) {
+  const uniqueSites = new Map<string, T>();
+  for (const site of sites) {
+    if (site.station_id === stationId && !uniqueSites.has(site.id)) uniqueSites.set(site.id, site);
+  }
+  return [...uniqueSites.values()];
+}
+
+export function buildStationSiteRows<
+  TSite extends Pick<AdminSite, "id" | "station_id">,
+  TSubmission extends { id: string; station_id: string; site_id: string },
+>(stationId: string, sites: TSite[], submissions: TSubmission[]) {
+  const stationSubmissions = submissions.filter((submission) => submission.station_id === stationId);
+  const rows: Array<{
+    stationSite: TSite;
+    submission: TSubmission | null;
+    firstSiteRow: boolean;
+    siteRowSpan: number;
+  }> = [];
+  for (const stationSite of distinctStationSites(stationId, sites)) {
+    const siteSubmissions = stationSubmissions.filter((submission) => submission.site_id === stationSite.id);
+    if (!siteSubmissions.length) {
+      rows.push({ stationSite, submission: null, firstSiteRow: true, siteRowSpan: 1 });
+      continue;
+    }
+    siteSubmissions.forEach((submission, index) => rows.push({
+      stationSite,
+      submission,
+      firstSiteRow: index === 0,
+      siteRowSpan: siteSubmissions.length,
+    }));
+  }
+  return rows;
 }
 
 export function stationMatchesAdminSearch(

@@ -19,8 +19,8 @@ Panduan ini ditulis untuk petugas yang tidak perlu memahami pemrograman.
 11. Tekan **Simpan** untuk mengirim perubahan saat itu juga.
 12. Menu **Unduh** menyediakan CSV dan JSON. Jika ada perubahan, aplikasi
     mencoba menyimpannya terlebih dahulu. Nama file mengikuti pilihan terbaru:
-    `nama-stasiun-nama-site_nama-subtipe.csv`, misalnya
-    `stasiun-meteorologi-soekarno-hatta-awos-runway-07l_awos-end-point.csv`.
+    `nama-stasiun_nama-site_nama-subtipe.csv`, misalnya
+    `stasiun-meteorologi-soekarno-hatta_awos-runway-07l_awos-end-point.csv`.
     JSON memakai pola nama yang sama dengan akhiran `.json`.
 13. Setelah selesai, tekan **Selesai Mengedit**. Aplikasi melakukan final save
     lalu melepas lock.

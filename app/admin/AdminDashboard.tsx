@@ -7,8 +7,8 @@ import EyeIcon from "../components/EyeIcon";
 import {
   accountMatchesAdminSearch,
   adminSearchPlaceholder,
+  buildStationSiteRows,
   countDistinctStationSites,
-  siteDisplayName,
   stationMatchesAdminSearch,
 } from "../lib/admin-view";
 import { csvCell, downloadText } from "../lib/download";
@@ -124,6 +124,7 @@ export default function AdminDashboard({ username }: { username: string }) {
 
   const stationMap = useMemo(() => new Map(stations.map((station) => [station.id, station])), [stations]);
   const siteMap = useMemo(() => new Map(sites.map((site) => [site.id, site])), [sites]);
+  const siteTypeMap = useMemo(() => new Map(siteTypes.map((siteType) => [siteType.id, siteType])), [siteTypes]);
   const subtypeMap = useMemo(() => new Map(subtypes.map((subtype) => [subtype.id, subtype])), [subtypes]);
   const accountByStation = useMemo(() => new Map(accounts.map((account) => [account.station_id, account])), [accounts]);
   const productMap = useMemo(() => new Map(products.map((product) => [product.id, product])), [products]);
@@ -269,9 +270,22 @@ export default function AdminDashboard({ username }: { username: string }) {
             {filteredStations.map((station) => {
               const stationSubmissions = submissions.filter((submission) => submission.station_id === station.id);
               const siteCount = countDistinctStationSites(station.id, sites);
+              const stationSiteRows = buildStationSiteRows(station.id, sites, submissions);
               return <details key={station.id}><summary><strong>{station.name}</strong><span>{siteCount} site, {stationSubmissions.length} submission</span></summary><div className="admin-table-wrap"><table><thead><tr><th>Site</th><th>Subtipe</th><th>Versi</th><th>Terakhir simpan</th><th>Payload</th><th>Aksi</th></tr></thead><tbody>
-                {stationSubmissions.map((submission) => <tr key={submission.id}><td>{siteDisplayName(submission.site_id, siteMap)}</td><td>{subtypeMap.get(submission.site_subtype_id)?.name ?? "Subtipe tidak ditemukan"}</td><td>{submission.version}</td><td>{submission.last_saved_at ? new Date(submission.last_saved_at).toLocaleString("id-ID") : "Belum"}</td><td><details><summary>Lihat JSON</summary><pre>{JSON.stringify(submission.payload, null, 2)}</pre></details></td><td><Link className="table-action" href={`/admin/submissions/${submission.id}`}>Buka / edit</Link></td></tr>)}
-                {!stationSubmissions.length && <tr><td colSpan={6}>Belum ada submission.</td></tr>}
+                {stationSiteRows.map(({ stationSite, submission, firstSiteRow, siteRowSpan }) => <tr key={submission?.id ?? `site-${stationSite.id}`}>
+                  {firstSiteRow && <td rowSpan={siteRowSpan}><strong>{stationSite.name}</strong><small>{siteTypeMap.get(stationSite.site_type_id)?.name ?? "Tipe site tidak ditemukan"}</small></td>}
+                  {submission ? <>
+                    <td>{subtypeMap.get(submission.site_subtype_id)?.name ?? "Subtipe tidak ditemukan"}</td>
+                    <td>{submission.version}</td>
+                    <td>{submission.last_saved_at ? new Date(submission.last_saved_at).toLocaleString("id-ID") : "Belum"}</td>
+                    <td><details><summary>Lihat JSON</summary><pre>{JSON.stringify(submission.payload, null, 2)}</pre></details></td>
+                    <td><Link className="table-action" href={`/admin/submissions/${submission.id}`}>Buka / edit</Link></td>
+                  </> : <>
+                    <td><span className="status-pill pending">Belum ada submission</span></td>
+                    <td>-</td><td>-</td><td>-</td><td>-</td>
+                  </>}
+                </tr>)}
+                {!stationSiteRows.length && <tr><td colSpan={6}>Belum ada site.</td></tr>}
               </tbody></table></div></details>;
             })}
           </div>}

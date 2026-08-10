@@ -4,7 +4,9 @@ import test from "node:test";
 import {
   accountMatchesAdminSearch,
   adminSearchPlaceholder,
+  buildStationSiteRows,
   countDistinctStationSites,
+  distinctStationSites,
   siteDisplayName,
   stationMatchesAdminSearch,
 } from "../app/lib/admin-view.ts";
@@ -18,7 +20,7 @@ test("filename export memakai station-site_subtype terbaru dan aman", () => {
       "AWOS End Point",
       "csv",
     ),
-    "stasiun-meteorologi-soekarno-hatta-awos-runway-07l_awos-end-point.csv",
+    "stasiun-meteorologi-soekarno-hatta_awos-runway-07l_awos-end-point.csv",
   );
   assert.equal(sanitizeFilenamePart('  Stasiun /\\:*?"<>| A---__B  '), "stasiun-a-_b");
   assert.equal(buildAloptamaFilename("Stasiun A", "", "End Point", "csv"), "aloptama-data.csv");
@@ -42,6 +44,15 @@ test("count site admin tetap distinct ketika row terduplikasi", () => {
   assert.equal(subtypes.length, 6);
   assert.equal(submissions.length, 12);
   assert.equal(countDistinctStationSites("station-1", sites), 3);
+  assert.deepEqual(distinctStationSites("station-1", sites).map((site) => site.id), ["site-1", "site-2", "site-3"]);
+
+  const rows = buildStationSiteRows("station-1", sites, [
+    { id: "submission-1", station_id: "station-1", site_id: "site-1" },
+    { id: "submission-2", station_id: "station-1", site_id: "site-1" },
+    { id: "submission-3", station_id: "station-1", site_id: "site-2" },
+  ]);
+  assert.equal(rows.filter((row) => row.firstSiteRow).length, 3);
+  assert.equal(rows.find((row) => row.stationSite.id === "site-3")?.submission, null);
 });
 
 test("search Stasiun dan Pengisian mencakup stasiun, site, tipe, dan subtipe", () => {
@@ -102,7 +113,9 @@ test("temporary password hanya berada di response sukses dan state dialog", asyn
   assert.match(dashboard, /setCredential\(null\)/);
   assert.match(dashboard, /type=\{credentialVisible \? "text" : "password"\}/);
   assert.match(dashboard, /Setelah dialog ditutup, password tidak dapat ditampilkan kembali/);
-  assert.match(dashboard, /siteDisplayName\(submission\.site_id, siteMap\)/);
+  assert.match(dashboard, /buildStationSiteRows\(station\.id, sites, submissions\)/);
+  assert.match(dashboard, /<strong>\{stationSite\.name\}<\/strong>/);
+  assert.match(dashboard, /Belum ada submission/);
   assert.doesNotMatch(dashboard, /\?\? submission\.site_id/);
   assert.doesNotMatch(dashboard, /localStorage|sessionStorage/);
 });
