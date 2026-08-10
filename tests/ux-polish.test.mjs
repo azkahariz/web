@@ -8,6 +8,7 @@ import {
   countDistinctStationSites,
   distinctStationSites,
   filterStationFillingRows,
+  loadAllAdminRows,
   siteDisplayName,
   stationMatchesAdminSearch,
 } from "../app/lib/admin-view.ts";
@@ -62,6 +63,40 @@ test("view pengisian berawal dari tiga site master walau tanpa submission", () =
   assert.equal(view.siteCount, 3);
   assert.equal(view.submissionCount, 0);
   assert.deepEqual([...new Set(view.rows.map((row) => row.site.name))], ["AWOS Bandara X", "AAWS Donggala", "Water Level X"]);
+});
+
+test("loader Admin mengambil seluruh page sites melewati batas 1000 row", async () => {
+  const source = Array.from({ length: 2025 }, (_, index) => ({ id: `site-${index}` }));
+  const requestedRanges = [];
+  const result = await loadAllAdminRows(async (from, to) => {
+    requestedRanges.push([from, to]);
+    return { data: source.slice(from, to + 1), error: null };
+  });
+  assert.equal(result.error, null);
+  assert.equal(result.data?.length, 2025);
+  assert.deepEqual(requestedRanges, [[0, 999], [1000, 1999], [2000, 2999]]);
+});
+
+test("25 site master tetap tampil saat empat site belum terpetakan", () => {
+  const sites = Array.from({ length: 25 }, (_, index) => ({
+    id: `site-${index + 1}`,
+    station_id: "station-x",
+    site_type_id: index < 21 ? "mapped-type" : `missing-type-${index}`,
+    name: `Site ${index + 1}`,
+  }));
+  const view = buildStationFillingView(
+    "station-x",
+    sites,
+    [{ id: "mapped-type", name: "Tipe Terpetakan" }],
+    [{ id: "mapped-subtype", site_type_id: "mapped-type", name: "Subtipe Terpetakan" }],
+    [],
+  );
+  assert.equal(view.siteCount, 25);
+  assert.equal(view.submissionCount, 0);
+  assert.deepEqual(new Set(view.rows.map((row) => row.site.name)), new Set(sites.map((site) => site.name)));
+  const unmappedRows = view.rows.filter((row) => row.siteType === null);
+  assert.equal(unmappedRows.length, 4);
+  assert.ok(unmappedRows.every((row) => row.subtype === null && row.submission === null));
 });
 
 test("satu submission tidak mengurangi count tiga site master", () => {
@@ -164,7 +199,10 @@ test("temporary password hanya berada di response sukses dan state dialog", asyn
   assert.match(dashboard, /Setelah dialog ditutup, password tidak dapat ditampilkan kembali/);
   assert.match(dashboard, /buildStationFillingView\(station\.id, sites, siteTypes, subtypes, submissions\)/);
   assert.match(dashboard, /<th>Site<\/th><th>Tipe Site<\/th><th>Subtipe<\/th><th>Status<\/th>/);
-  assert.match(dashboard, /<td>\{subtype\?\.name \?\? "Subtipe master tidak tersedia"\}<\/td>/);
+  assert.match(dashboard, /loadAllAdminRows\(\(from, to\) => client\.from\("sites"\)/);
+  assert.match(dashboard, /\.order\("name"\)\s*\.order\("id"\)\s*\.range\(from, to\)/);
+  assert.match(dashboard, /<td>\{siteType\?\.name \?\? "Belum terpetakan"\}<\/td>/);
+  assert.match(dashboard, /<td>\{subtype\?\.name \?\? "Belum terpetakan"\}<\/td>/);
   assert.match(dashboard, /<td><span className=\{`status-pill \$\{submission \? "active" : "pending"\}`\}>\{submission \? "Sudah ada data" : "Belum ada submission"\}<\/span><\/td>/);
   assert.doesNotMatch(dashboard, /buildStationSiteRows/);
   assert.doesNotMatch(dashboard, /\?\? submission\.site_id/);

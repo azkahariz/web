@@ -9,6 +9,7 @@ import {
   adminSearchPlaceholder,
   buildStationFillingView,
   filterStationFillingRows,
+  loadAllAdminRows,
 } from "../lib/admin-view";
 import { csvCell, downloadText } from "../lib/download";
 import { logoutCurrentBrowser } from "../lib/local-logout";
@@ -78,7 +79,11 @@ export default function AdminDashboard({ username }: { username: string }) {
     setLoading(true);
     const [stationRows, siteRows, siteTypeRows, subtypeRows, submissionRows, accountRows, productRows, proposalRows, auditRows] = await Promise.all([
       client.from("stations").select("id, name, active").order("name"),
-      client.from("sites").select("id, station_id, site_type_id, name, active").order("name"),
+      loadAllAdminRows((from, to) => client.from("sites")
+        .select("id, station_id, site_type_id, name, active")
+        .order("name")
+        .order("id")
+        .range(from, to)),
       client.from("site_types").select("id, name").order("name"),
       client.from("site_subtypes").select("id, site_type_id, name").order("name"),
       client.from("submissions").select("id, station_id, site_id, site_subtype_id, version, payload, operator_name, locked_by_session_id, lock_operator_name, lock_last_activity_at, last_saved_at, updated_at").order("updated_at", { ascending: false }),
@@ -280,8 +285,8 @@ export default function AdminDashboard({ username }: { username: string }) {
               <div className="admin-table-wrap station-filling-table"><table><thead><tr><th>Site</th><th>Tipe Site</th><th>Subtipe</th><th>Status</th><th>Versi</th><th>Terakhir Simpan</th><th>Aksi</th></tr></thead><tbody>
                 {visibleRows.map(({ site, siteType, subtype, submission }) => <tr key={`${site.id}:${subtype?.id ?? "no-subtype"}`}>
                   <td><strong>{site.name}</strong></td>
-                  <td>{siteType?.name ?? "Tipe site tidak ditemukan"}</td>
-                  <td>{subtype?.name ?? "Subtipe master tidak tersedia"}</td>
+                  <td>{siteType?.name ?? "Belum terpetakan"}</td>
+                  <td>{subtype?.name ?? "Belum terpetakan"}</td>
                   <td><span className={`status-pill ${submission ? "active" : "pending"}`}>{submission ? "Sudah ada data" : "Belum ada submission"}</span></td>
                   <td>{submission?.version ?? "-"}</td>
                   <td>{submission ? new Date(submission.last_saved_at ?? submission.updated_at).toLocaleString("id-ID") : "-"}</td>

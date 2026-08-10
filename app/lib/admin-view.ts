@@ -5,6 +5,22 @@ export type AdminSubtype = { id: string; site_type_id: string; name: string };
 export type AdminAccount = { station_id: string; username: string };
 export type AdminSubmission = { id: string; station_id: string; site_id: string; site_subtype_id: string };
 
+export const ADMIN_PAGE_SIZE = 1000;
+
+export async function loadAllAdminRows<T, TError>(
+  loadPage: (from: number, to: number) => Promise<{ data: T[] | null; error: TError | null }>,
+  pageSize = ADMIN_PAGE_SIZE,
+) {
+  const rows: T[] = [];
+  for (let from = 0; ; from += pageSize) {
+    const result = await loadPage(from, from + pageSize - 1);
+    if (result.error) return { data: null, error: result.error };
+    const page = result.data ?? [];
+    rows.push(...page);
+    if (page.length < pageSize) return { data: rows, error: null };
+  }
+}
+
 function searchable(value: string | null | undefined) {
   return String(value ?? "").trim().toLocaleLowerCase("id-ID");
 }
@@ -45,7 +61,9 @@ export function buildStationFillingView<
 
   for (const site of stationSites) {
     const siteType = siteTypeById.get(site.site_type_id) ?? null;
-    const validSubtypes = subtypes.filter((subtype) => subtype.site_type_id === site.site_type_id);
+    const validSubtypes = siteType
+      ? subtypes.filter((subtype) => subtype.site_type_id === site.site_type_id)
+      : [];
     if (!validSubtypes.length) {
       rows.push({ site, siteType, subtype: null, submission: null });
       continue;
