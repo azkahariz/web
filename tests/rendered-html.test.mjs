@@ -90,7 +90,7 @@ test("data hasil CSV lengkap dan Water Level memiliki 17 kategori", async () => 
   const expectedWaterLevel = [
     "Adaptor", "Arrester", "Boks Panel", "Data Akuisisi", "Kabel Data",
     "Mounting Sensor Pasut", "Pengolah Data", "Penyimpanan", "Regulator",
-    "Sensor Tekanan Udara", "Sensor pasut", "Modem Komunikasi",
+    "Sensor Tekanan Udara", "Sensor Pasut", "Modem Komunikasi",
     "SIstem Catu Daya Tidak Terputus", "Solar Panel", "Mounting Sensor Hujan",
     "Proteksi Petir", "Sensor Hujan",
   ];
