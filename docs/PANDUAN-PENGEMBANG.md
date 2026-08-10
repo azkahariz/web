@@ -116,8 +116,15 @@ Provision Super Admin idempotent: rerun tidak mengubah password existing.
 - `app/hooks/useServerDraft.ts`: browse/edit, autosave, lock, dan version.
 - `app/hooks/useProductCatalog.ts`: generated fallback + katalog live Supabase.
 - `app/lib/product-qc.ts`: normalisasi, similarity, dan resolusi export.
+- `app/lib/site-subtypes.ts`: satu-satunya business rule subtype per Site,
+  termasuk family AWOS Kategori III.
+- `app/lib/inventory-export.ts`: serializer CSV/JSON bersama untuk Station dan
+  Admin; jangan membuat schema export khusus Admin.
+- `app/lib/admin-export.ts`: query batch read-only dan pembuatan ZIP Admin.
+- `app/lib/admin-export-plan.ts`: scope Station/Site/Subtipe serta filename.
 - `app/admin/`: dashboard dan editor Super Admin.
-- `app/api/admin/`: tindakan Auth Admin yang membutuhkan server secret.
+- `app/api/admin/`: tindakan Admin server-only. Endpoint `submissions/ensure`
+  hanya dipanggil oleh aksi Edit eksplisit, bukan Buka atau Unduh.
 - `supabase/migrations/`: schema, RLS, dan RPC.
 - `scripts/master/`: validasi dan sync Spreadsheet/CSV.
 - `tests/`: kontrak yang tidak boleh rusak.
@@ -131,3 +138,25 @@ Provision Super Admin idempotent: rerun tidak mengubah password existing.
 - Jangan mengubah timeout lock lima menit atau format CSV/JSON tanpa keputusan
   produk yang eksplisit.
 - Jangan menjalankan sync master sebelum validasi CSV lulus.
+
+## Mapping subtype dan export
+
+Seluruh consumer wajib memakai `getAllowedSiteSubtypes()`. Untuk AWOS Kategori
+III, nama Site menentukan salah satu family AllWeather, Coastal, Degreane, atau
+Microstep. Variant unknown menghasilkan daftar kosong agar masalah master tampak,
+bukan fallback ke 16 subtype.
+
+CSV Station, single Admin, dan bulk Admin semuanya memakai
+`buildInventoryCsv()`. Data tanpa submission menggunakan
+`createDefaultDraftPayload()` dan tidak ditulis ke database. ZIP dibuat di
+browser dengan dynamic import `fflate`, sehingga bundle Station tidak memuat ZIP
+library pada jalur normal.
+
+Query bulk mengambil submission dan proposal per stasiun, lalu melakukan mapping
+lokal dengan `site_id + site_subtype_id`; jangan membuat request per file. Semua
+query yang dapat melebihi batas PostgREST 1.000 row harus memakai
+`loadAllAdminRows()`, stable ordering, dan `.range()`.
+
+Lifecycle harus tetap terpisah: Browse/Buka/Unduh adalah read-only dan tidak
+menyentuh lock. Hanya Edit yang boleh membuat submission, acquire/touch/release
+lock, autosave, atau menaikkan version.

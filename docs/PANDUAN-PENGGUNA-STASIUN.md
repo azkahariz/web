@@ -7,8 +7,10 @@ Panduan ini ditulis untuk petugas yang tidak perlu memahami pemrograman.
    password yang sedang diketik.
 2. Nama stasiun terisi otomatis dan tidak dapat diganti.
 3. Pilih **Site**, lalu pilih **Subtipe Site**.
-4. Aplikasi mulai dalam **Mode lihat**. Pada tahap ini belum ada lock.
-5. Isi **Nama petugas**, lalu tekan **Mulai Pengisian** atau **Edit Data**.
+4. Aplikasi mulai dalam **Mode lihat**. Anda dapat melihat dan mengunduh CSV/JSON
+   tanpa mengambil lock dan tanpa masuk ke mode pengisian.
+5. Isi **Nama petugas**, lalu tekan **Mulai Pengisian** atau **Edit Data** hanya
+   jika ingin mengubah data.
 6. Jika berhasil, status berubah menjadi **Mode pengisian aktif**.
 7. Isi metadata lokasi pada bagian Metadata Aloptama.
 8. Buka kategori barang, tekan **Pilih produk**, lalu pilih produk terpasang.
@@ -17,13 +19,21 @@ Panduan ini ditulis untuk petugas yang tidak perlu memahami pemrograman.
 10. Perubahan disimpan di browser dan dikirim ke server sekitar lima detik
     setelah perubahan terakhir. Penyimpanan maksimum ditunda sekitar 18 detik.
 11. Tekan **Simpan** untuk mengirim perubahan saat itu juga.
-12. Menu **Unduh** menyediakan CSV dan JSON. Jika ada perubahan, aplikasi
-    mencoba menyimpannya terlebih dahulu. Nama file mengikuti pilihan terbaru:
+12. Menu **Unduh** menyediakan CSV dan JSON, termasuk saat masih dalam Mode
+    lihat. Jika sedang mengedit dan ada perubahan, aplikasi menyimpan draf lokal
+    lalu mencoba sinkron ke server sebelum mengunduh. Jika server gagal, file
+    tetap dibuat dari data terbaru di browser dan muncul peringatan bahwa server
+    belum sinkron. Nama file mengikuti pilihan terbaru:
     `nama-stasiun_nama-site_nama-subtipe.csv`, misalnya
     `stasiun-meteorologi-soekarno-hatta_awos-runway-07l_awos-end-point.csv`.
     JSON memakai pola nama yang sama dengan akhiran `.json`.
 13. Setelah selesai, tekan **Selesai Mengedit**. Aplikasi melakukan final save
     lalu melepas lock.
+
+Status **Tersimpan di server** berarti data sudah terkirim. Status **Tersimpan
+lokal** berarti data aman pada browser ini, tetapi belum tersedia dari perangkat
+lain. Mengunduh saat Mode lihat tidak membuat submission, tidak menaikkan versi,
+dan tidak mengubah lock.
 
 ## Jika data sedang diedit orang lain
 

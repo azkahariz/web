@@ -45,12 +45,14 @@ export function useServerDraft({
   operatorName,
   onRemotePayload,
   adminSubmissionId,
+  adminMode = false,
 }: {
   scope: Scope | null;
   payload: DraftPayload | null;
   operatorName: string;
   onRemotePayload: (payload: DraftPayload) => void;
   adminSubmissionId?: string;
+  adminMode?: boolean;
 }) {
   const [status, setStatus] = useState<DraftSyncState>("idle");
   const [isEditing, setIsEditing] = useState(false);
@@ -197,8 +199,19 @@ export function useServerDraft({
 
     const key = scopedDraftKey(stationId, siteId, siteSubtypeId);
     const client = getSupabaseBrowserClient();
-    const local = readScopedLocalDraft(key);
+    const local = adminMode ? null : readScopedLocalDraft(key);
     if (local?.payload) onRemotePayload(local.payload);
+
+    if (adminMode && !adminSubmissionId) {
+      queueMicrotask(() => {
+        if (generation !== generationRef.current) return;
+        initializedKeyRef.current = key;
+        versionRef.current = 0;
+        lastSavedFingerprintRef.current = "";
+        setStatus("browsing");
+      });
+      return;
+    }
 
     if (!client) {
       queueMicrotask(() => {
@@ -255,7 +268,7 @@ export function useServerDraft({
     })();
   // Browse changes only read state; they must not acquire or release locks.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [adminSubmissionId, retryTick, siteId, siteSubtypeId, stationId]);
+  }, [adminMode, adminSubmissionId, retryTick, siteId, siteSubtypeId, stationId]);
 
   useEffect(() => {
     if (!isEditing || !stationId || !siteId || !siteSubtypeId || !serializedPayload || !initializedKeyRef.current) return;
@@ -279,6 +292,7 @@ export function useServerDraft({
 
   const retryAcquireEdit = useCallback(async () => {
     if (!scope) return false;
+    if (adminMode && !adminSubmissionId) return false;
     const key = scopedDraftKey(scope.stationId, scope.siteId, scope.siteSubtypeId);
     const client = getSupabaseBrowserClient();
     if (!client) {
@@ -339,7 +353,7 @@ export function useServerDraft({
     setDirty(false);
     setStatus("read-only");
     return false;
-  }, [adminSubmissionId, onRemotePayload, operatorName, scope]);
+  }, [adminMode, adminSubmissionId, onRemotePayload, operatorName, scope]);
 
   const startEditing = retryAcquireEdit;
 

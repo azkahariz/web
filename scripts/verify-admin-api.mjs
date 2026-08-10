@@ -25,6 +25,10 @@ const initialPassword = `Initial-${randomUUID()}aA7!`;
 let stationId;
 let accountId;
 let authUserId;
+let siteTypeId;
+let siteSubtypeId;
+let siteId;
+let submissionId;
 
 try {
   const { data: station, error: stationError } = await service.from("stations").insert({ name: stationName }).select("id").single();
@@ -58,6 +62,53 @@ try {
     email: `${adminUsername}@stations.aloptama.internal`, password: adminPassword,
   });
   if (adminLogin.error) throw adminLogin.error;
+
+  const { data: siteType, error: siteTypeError } = await service.from("site_types")
+    .insert({ name: `VERIFY TYPE ${suffix}` }).select("id").single();
+  if (siteTypeError) throw siteTypeError;
+  siteTypeId = siteType.id;
+  const [{ data: site, error: siteError }, { data: siteSubtype, error: siteSubtypeError }] = await Promise.all([
+    service.from("sites").insert({ station_id: stationId, site_type_id: siteTypeId, name: `VERIFY SITE ${suffix}` }).select("id").single(),
+    service.from("site_subtypes").insert({ site_type_id: siteTypeId, name: `VERIFY SUBTYPE ${suffix}` }).select("id").single(),
+  ]);
+  if (siteError) throw siteError;
+  if (siteSubtypeError) throw siteSubtypeError;
+  siteId = site.id;
+  siteSubtypeId = siteSubtype.id;
+
+  const editBody = {
+    stationId,
+    siteId,
+    siteSubtypeId,
+    sessionId: randomUUID(),
+    operatorName: adminUsername,
+  };
+  const beforeEdit = await service.from("submissions").select("id", { count: "exact", head: true })
+    .eq("station_id", stationId).eq("site_id", siteId).eq("site_subtype_id", siteSubtypeId);
+  if (beforeEdit.count !== 0) throw new Error("Fixture Edit harus dimulai tanpa submission.");
+  const deniedEdit = await fetch(`${baseUrl}/api/admin/submissions/ensure`, {
+    method: "POST",
+    headers: { "content-type": "application/json", authorization: `Bearer ${stationLogin.data.session.access_token}` },
+    body: JSON.stringify(editBody),
+  });
+  if (deniedEdit.status !== 403) throw new Error(`Station User seharusnya ditolak dari Admin Edit, bukan ${deniedEdit.status}.`);
+  const adminEdit = await fetch(`${baseUrl}/api/admin/submissions/ensure`, {
+    method: "POST",
+    headers: { "content-type": "application/json", authorization: `Bearer ${adminLogin.data.session.access_token}` },
+    body: JSON.stringify(editBody),
+  });
+  const adminEditBody = await adminEdit.json();
+  if (!adminEdit.ok || !adminEditBody.submissionId || !adminEditBody.canEdit) {
+    throw new Error(adminEditBody.error || "Admin Edit tanpa submission gagal memperoleh lock.");
+  }
+  submissionId = adminEditBody.submissionId;
+  const { data: openedSubmission, error: openedError } = await service.from("submissions")
+    .select("locked_by_session_id, version").eq("id", submissionId).single();
+  if (openedError) throw openedError;
+  if (openedSubmission.locked_by_session_id !== editBody.sessionId || openedSubmission.version !== 0) {
+    throw new Error("Admin Edit tidak mempertahankan session lock/version awal yang benar.");
+  }
+
   const reset = await fetch(`${baseUrl}/api/admin/accounts`, {
     method: "POST",
     headers: { "content-type": "application/json", authorization: `Bearer ${adminLogin.data.session.access_token}` },
@@ -88,6 +139,10 @@ try {
     throw new Error("station_accounts tidak boleh mempunyai kolom password plaintext.");
   }
 } finally {
+  if (submissionId) await service.from("submissions").delete().eq("id", submissionId);
+  if (siteId) await service.from("sites").delete().eq("id", siteId);
+  if (siteSubtypeId) await service.from("site_subtypes").delete().eq("id", siteSubtypeId);
+  if (siteTypeId) await service.from("site_types").delete().eq("id", siteTypeId);
   if (accountId) {
     await service.from("admin_audit_log").delete().eq("target_id", accountId);
     await service.from("station_accounts").delete().eq("id", accountId);
@@ -96,4 +151,4 @@ try {
   if (stationId) await service.from("stations").delete().eq("id", stationId);
 }
 
-console.log("Verifikasi API admin lulus; Station User ditolak, reset password admin berhasil, dan fixture dibersihkan.");
+console.log("Verifikasi API admin lulus; Station User ditolak, Admin Edit memperoleh lock, reset password berhasil, dan fixture dibersihkan.");

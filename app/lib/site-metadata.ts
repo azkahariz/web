@@ -1,5 +1,5 @@
-import { FIELD_DOMAIN_SITE_TYPES } from "../config/form-options";
-import type { AutomaticMetadata, SiteMetadata } from "../types/site-metadata";
+import { FIELD_DOMAIN_SITE_TYPES } from "../config/form-options.ts";
+import type { AutomaticMetadata, SiteMetadata } from "../types/site-metadata.ts";
 
 export const EMPTY_SITE_METADATA: SiteMetadata = {
   maintenanceBudgetSource: "",

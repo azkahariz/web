@@ -149,17 +149,21 @@ test("pencarian gabungan menemukan nilai dari merek maupun tipe", async () => {
 });
 
 test("aplikasi menyediakan ekspor CSV lengkap dengan BOM dan metadata", async () => {
-  const source = await readFile(new URL("../app/InventoryApp.tsx", import.meta.url), "utf8");
+  const [source, exportSource] = await Promise.all([
+    readFile(new URL("../app/InventoryApp.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/lib/inventory-export.ts", import.meta.url), "utf8"),
+  ]);
   assert.match(source, /Unduh CSV/);
   assert.match(source, /download-options/);
-  assert.match(source, /\\uFEFF/);
-  assert.match(source, /"Stasiun"[\s\S]*"Azimuth Runway"[\s\S]*"Kategori Barang"[\s\S]*"Tipe Produk"[\s\S]*"Unit Ke"/);
-  assert.match(source, /items\.flatMap\(\(rawItem\)[\s\S]*getItemUnits\(item\)/);
+  assert.match(exportSource, /\\uFEFF/);
+  assert.match(exportSource, /"Stasiun"[\s\S]*"Azimuth Runway"[\s\S]*"Kategori Barang"[\s\S]*"Tipe Produk"[\s\S]*"Unit Ke"/);
+  assert.match(exportSource, /items\.flatMap\(\(rawItem\)[\s\S]*getItemUnits\(item\)/);
 });
 
 test("kategori mounting memakai pilihan bahan dan tetap mendukung bahan lainnya", async () => {
-  const [source, inventoryLib, formOptions, barangCsv] = await Promise.all([
+  const [source, exportSource, inventoryLib, formOptions, barangCsv] = await Promise.all([
     readFile(new URL("../app/InventoryApp.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/lib/inventory-export.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/lib/inventory.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/config/form-options.ts", import.meta.url), "utf8"),
     readFile(new URL("../../List Barang Terpasang - Barang.csv", import.meta.url), "utf8"),
@@ -170,7 +174,7 @@ test("kategori mounting memakai pilihan bahan dan tetap mendukung bahan lainnya"
   assert.match(inventoryLib, /function isMountingCategory[\s\S]*\^mounting\\b/i);
   assert.match(formOptions, /Besi galvanis[\s\S]*Stainless steel[\s\S]*Aluminium[\s\S]*Fiberglass/);
   assert.match(source, /Bahan lainnya/);
-  assert.match(source, /item\?\.itemKind === "material" \? item\.material/);
+  assert.match(exportSource, /item\?\.itemKind === "material" \? item\.material/);
 });
 
 test("site AWOS kategori III membatasi subtipe berdasarkan keluarga pada nama site", async () => {
@@ -182,19 +186,19 @@ test("site AWOS kategori III membatasi subtipe berdasarkan keluarga pada nama si
     assert.equal(kat3Options.filter((row) => row.subtype.includes(` ${family} `)).length, 4);
   }
 
-  const [source, inventoryLib] = await Promise.all([
+  const [source, subtypeLib] = await Promise.all([
     readFile(new URL("../app/InventoryApp.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../app/lib/inventory.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/lib/site-subtypes.ts", import.meta.url), "utf8"),
   ]);
-  assert.match(inventoryLib, /function inferKat3Family/);
-  assert.match(source, /allSubtypeOptions\.filter\(\(row\) => row\.subtype\.includes\(` \$\{kat3Family\} `\)\)/);
+  assert.match(subtypeLib, /function getAllowedSiteSubtypes/);
+  assert.match(source, /getAllowedSiteSubtypes\(\{/);
 });
 
 test("azimuth runway hanya tersedia untuk TDZ dan End Point", async () => {
   const source = await readFile(new URL("../app/InventoryApp.tsx", import.meta.url), "utf8");
   assert.match(source, /acceptsRunwayAzimuth = \/\(\?:TDZ\|End Point\)\$\/i/);
   assert.match(source, /id="runway-azimuth"[\s\S]*maxLength=\{2\}/);
-  assert.match(source, /runwayAzimuth: mode === "site" && acceptsRunwayAzimuth/);
+  assert.match(source, /runwayAzimuth: acceptsRunwayAzimuth \? runwayAzimuth : ""/);
 });
 
 test("jumlah produk membuat metadata terpisah untuk setiap unit", async () => {
@@ -263,14 +267,16 @@ test("form metadata menyediakan seluruh pilihan operasional dan komunikasi", asy
 });
 
 test("metadata Aloptama ikut dalam ekspor JSON dan CSV", async () => {
-  const [source, metadataSource] = await Promise.all([
+  const [source, metadataSource, exportSource] = await Promise.all([
     readFile(new URL("../app/InventoryApp.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/lib/site-metadata.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/lib/inventory-export.ts", import.meta.url), "utf8"),
   ]);
 
-  assert.match(source, /siteMetadata: mode === "site"/);
-  assert.match(source, /\.\.\.SITE_METADATA_CSV_HEADERS/);
-  assert.match(source, /\.\.\.siteMetadataCells/);
+  assert.match(source, /buildInventoryJson/);
+  assert.match(exportSource, /siteMetadata: \{ \.\.\.automaticMetadata/);
+  assert.match(exportSource, /\.\.\.SITE_METADATA_CSV_HEADERS/);
+  assert.match(exportSource, /\.\.\.metadataCells/);
   assert.match(metadataSource, /export const SITE_METADATA_CSV_HEADERS/);
   assert.match(metadataSource, /value\.transportMethods\.join\("; "\)/);
 });

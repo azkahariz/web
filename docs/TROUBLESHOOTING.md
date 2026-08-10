@@ -75,6 +75,46 @@ Nama file normal adalah `nama-stasiun_nama-site_nama-subtipe.csv`. Jika pilihan
 lokasi belum lengkap, aplikasi memakai `aloptama-data.csv` agar filename tidak
 berisi `undefined` atau `null`.
 
+## Subtipe AWOS Kategori III salah
+
+**Gejala:** Site Coastal melihat subtype AllWeather, atau Site AWOS unknown
+melihat seluruh subtype.
+**Penyebab umum:** Consumer tidak memakai shared mapping atau nama variant Site
+tidak memuat All Weather, Coastal, Degreane, atau Microstep.
+**Yang harus dilakukan:** Periksa `getAllowedSiteSubtypes()` dan nama master Site.
+Variant unknown harus tampil **Belum terpetakan**.
+
+## Jumlah Site atau data lebih dari 1.000 terpotong
+
+**Gejala:** Count Admin lebih kecil dari tabel `sites`, atau ZIP tidak lengkap.
+**Penyebab umum:** Query global Supabase hanya mengambil page pertama.
+**Yang harus dilakukan:** Gunakan pagination `.range()` dengan stable ordering.
+Jalankan regression pagination dan bandingkan distinct `sites.id` dengan database.
+
+## CSV atau ZIP gagal/tidak lengkap
+
+**Gejala:** Bulk Download gagal, jumlah CSV kurang, atau file bertabrakan.
+**Penyebab umum:** Master subtype belum terpetakan, query bulk terpotong, atau
+browser kehabisan resource.
+**Yang harus dilakukan:** Coba satu Site, periksa pesan **Belum terpetakan**, dan
+jalankan `npm.cmd run check`. Nama yang sama setelah sanitization mendapat suffix
+angka otomatis.
+
+## Site belum mempunyai submission
+
+**Gejala:** Status **Belum ada submission** tetapi Buka/Unduh tersedia.
+**Penyebab umum:** Ini perilaku normal. Master menentukan row, bukan submission.
+**Yang harus dilakukan:** Buka untuk melihat form default, Unduh untuk CSV
+default, atau pilih Edit sebagai Admin jika memang akan mulai mengisi. Buka dan
+Unduh tidak menambah submission count.
+
+## Perbedaan Browse dan Edit
+
+**Gejala:** Form tidak dapat diubah tetapi CSV/JSON dapat diunduh.
+**Penyebab umum:** Aplikasi sedang dalam Mode lihat.
+**Yang harus dilakukan:** Ini normal. Browse dan download tidak membutuhkan
+lock. Tekan Edit Data/Edit sebagai Admin hanya saat ingin mengubah data.
+
 ## Sync master warning atau UUID hilang
 
 **Gejala:** Record Supabase disebut hilang dari CSV, atau validator menolak UUID.

@@ -2,8 +2,12 @@ import { notFound, redirect } from "next/navigation";
 import InventoryApp from "../../../InventoryApp";
 import { createSupabaseServerClient } from "../../../lib/supabase/server";
 
-export default async function AdminSubmissionPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function AdminSubmissionPage({ params, searchParams }: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ edit?: string }>;
+}) {
   const { id } = await params;
+  const { edit } = await searchParams;
   const supabase = await createSupabaseServerClient();
   if (!supabase) redirect("/");
   const { data: userData } = await supabase.auth.getUser();
@@ -32,6 +36,8 @@ export default async function AdminSubmissionPage({ params }: { params: Promise<
   return <InventoryApp
     account={{ id: admin.id, stationId: submission.station_id, stationName: station.name, username: admin.username }}
     adminSubmissionId={submission.id}
+    adminMode
+    startInEditMode={edit === "1"}
     initialSite={site.name}
     initialSubtype={subtype.name}
   />;

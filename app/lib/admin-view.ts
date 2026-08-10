@@ -1,3 +1,5 @@
+import { getAllowedSiteSubtypes } from "./site-subtypes.ts";
+
 export type AdminStation = { id: string; name: string };
 export type AdminSite = { id: string; station_id: string; site_type_id: string; name: string };
 export type AdminSiteType = { id: string; name: string };
@@ -8,7 +10,7 @@ export type AdminSubmission = { id: string; station_id: string; site_id: string;
 export const ADMIN_PAGE_SIZE = 1000;
 
 export async function loadAllAdminRows<T, TError>(
-  loadPage: (from: number, to: number) => Promise<{ data: T[] | null; error: TError | null }>,
+  loadPage: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: TError | null }>,
   pageSize = ADMIN_PAGE_SIZE,
 ) {
   const rows: T[] = [];
@@ -61,9 +63,15 @@ export function buildStationFillingView<
 
   for (const site of stationSites) {
     const siteType = siteTypeById.get(site.site_type_id) ?? null;
-    const validSubtypes = siteType
+    const siteTypeSubtypes = siteType
       ? subtypes.filter((subtype) => subtype.site_type_id === site.site_type_id)
       : [];
+    const validSubtypes = siteType ? getAllowedSiteSubtypes({
+      siteName: site.name,
+      siteTypeName: siteType.name,
+      siteSubtypes: siteTypeSubtypes,
+      getSubtypeName: (subtype) => subtype.name,
+    }) : [];
     if (!validSubtypes.length) {
       rows.push({ site, siteType, subtype: null, submission: null });
       continue;

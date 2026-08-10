@@ -5,27 +5,26 @@ import { useRouter } from "next/navigation";
 import { CONDITION_OPTIONS, MOUNTING_MATERIALS } from "./config/form-options";
 import rawData from "./data.generated.json";
 import { loadLocalDraft, saveLocalDraft } from "./lib/draft-storage";
-import { OPERATOR_STORAGE_KEY, type DraftPayload } from "./lib/server-draft";
+import { getTabSessionId, OPERATOR_STORAGE_KEY, type DraftPayload } from "./lib/server-draft";
 import { logoutCurrentBrowser } from "./lib/local-logout";
 import { getSupabaseBrowserClient } from "./lib/supabase/client";
 import { useServerDraft } from "./hooks/useServerDraft";
 import { useProductCatalog } from "./hooks/useProductCatalog";
-import { buildAloptamaFilename, csvCell, downloadText } from "./lib/download";
+import { buildAloptamaFilename, downloadText } from "./lib/download";
+import { buildInventoryCsv, buildInventoryJson } from "./lib/inventory-export";
 import { normalizeProductText, resolveInstalledProduct, suggestProducts } from "./lib/product-qc";
 import {
   createUnitDetail,
   getItemUnits,
-  inferKat3Family,
   isMountingCategory,
   makeId,
   normalizeSearch,
 } from "./lib/inventory";
 import {
   EMPTY_SITE_METADATA,
-  SITE_METADATA_CSV_HEADERS,
   resolveFieldDomain,
-  siteMetadataCsvValues,
 } from "./lib/site-metadata";
+import { AWOS_KAT3_SITE_TYPE, getAllowedSiteSubtypes, getAwosKat3Family } from "./lib/site-subtypes";
 import SiteMetadataForm from "./SiteMetadataForm";
 import type {
   Condition,
@@ -47,11 +46,15 @@ const data = rawData as DataSet;
 export default function InventoryApp({
   account,
   adminSubmissionId,
+  adminMode = false,
+  startInEditMode = false,
   initialSite = "",
   initialSubtype = "",
 }: {
   account: StationAccount;
   adminSubmissionId?: string;
+  adminMode?: boolean;
+  startInEditMode?: boolean;
   initialSite?: string;
   initialSubtype?: string;
 }) {
@@ -80,16 +83,17 @@ export default function InventoryApp({
   const [editFeedback, setEditFeedback] = useState("");
   const [downloadOpen, setDownloadOpen] = useState(false);
   const downloadRef = useRef<HTMLDivElement | null>(null);
+  const autoEditStartedRef = useRef(false);
   const proposalInFlightRef = useRef(new Set<string>());
   const productCatalog = useProductCatalog(account.stationId);
-  const isAdminEditor = Boolean(adminSubmissionId);
+  const isAdminEditor = adminMode || Boolean(adminSubmissionId);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
       try {
         const parsed = loadLocalDraft();
-        if (parsed) {
-          if (!isAdminEditor && parsed.station === station) {
+        if (parsed && !isAdminEditor) {
+          if (parsed.station === station) {
             setSite(parsed.site ?? "");
             setSubtype(parsed.subtype ?? "");
           }
@@ -97,7 +101,7 @@ export default function InventoryApp({
           setDraftContexts(parsed.draftContexts ?? {});
           setSiteMetadataDrafts(parsed.siteMetadataDrafts ?? {});
         }
-        setOperatorName(localStorage.getItem(OPERATOR_STORAGE_KEY) ?? "");
+        setOperatorName(isAdminEditor ? account.username : localStorage.getItem(OPERATOR_STORAGE_KEY) ?? "");
       } catch {
         // Draf yang rusak diabaikan agar aplikasi tetap dapat digunakan.
       } finally {
@@ -105,16 +109,16 @@ export default function InventoryApp({
       }
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [isAdminEditor, station]);
+  }, [account.username, isAdminEditor, station]);
 
   useEffect(() => {
-    if (!hydrated) return;
+    if (!hydrated || isAdminEditor) return;
     saveLocalDraft({ mode, station, site, subtype, templateProfile, drafts, draftContexts, siteMetadataDrafts });
-  }, [mode, station, site, subtype, templateProfile, drafts, draftContexts, siteMetadataDrafts, hydrated]);
+  }, [mode, station, site, subtype, templateProfile, drafts, draftContexts, siteMetadataDrafts, hydrated, isAdminEditor]);
 
   useEffect(() => {
-    if (hydrated) localStorage.setItem(OPERATOR_STORAGE_KEY, operatorName);
-  }, [hydrated, operatorName]);
+    if (hydrated && !isAdminEditor) localStorage.setItem(OPERATOR_STORAGE_KEY, operatorName);
+  }, [hydrated, isAdminEditor, operatorName]);
 
   useEffect(() => {
     if (!activeCategory) return;
@@ -150,12 +154,15 @@ export default function InventoryApp({
     () => data.siteSubtypes.filter((row) => row.siteType === selectedSite?.siteType),
     [selectedSite],
   );
-  const kat3Family = selectedSite?.siteType === "AWOS Kategori III"
-    ? inferKat3Family(selectedSite.site, allSubtypeOptions)
-    : "";
-  const subtypeOptions = kat3Family
-    ? allSubtypeOptions.filter((row) => row.subtype.includes(` ${kat3Family} `))
-    : allSubtypeOptions;
+  const kat3Family = selectedSite?.siteType === AWOS_KAT3_SITE_TYPE
+    ? getAwosKat3Family(selectedSite.site)
+    : null;
+  const subtypeOptions = selectedSite ? getAllowedSiteSubtypes({
+    siteName: selectedSite.site,
+    siteTypeName: selectedSite.siteType,
+    siteSubtypes: allSubtypeOptions,
+    getSubtypeName: (row) => row.subtype,
+  }) : [];
   const subtypes = subtypeOptions.map((row) => row.subtype);
 
   const currentSubtype = subtypes.length === 1 ? subtypes[0] : subtypes.includes(subtype) ? subtype : "";
@@ -365,7 +372,17 @@ export default function InventoryApp({
     operatorName,
     onRemotePayload: applyRemotePayload,
     adminSubmissionId,
+    adminMode: isAdminEditor,
   });
+
+  useEffect(() => {
+    if (!startInEditMode || !adminSubmissionId || !hydrated || autoEditStartedRef.current
+      || sync.status === "idle" || sync.status === "opening") return;
+    autoEditStartedRef.current = true;
+    void sync.retryAcquireEdit().then((started) => {
+      setEditFeedback(started ? "Mode pengisian Admin aktif." : "Data ini sedang diedit dari perangkat lain.");
+    });
+  }, [adminSubmissionId, hydrated, startInEditMode, sync]);
 
   useEffect(() => {
     if (!sync.canEdit || !selectedSiteId || !selectedSubtypeId) return;
@@ -440,7 +457,27 @@ export default function InventoryApp({
 
   async function startEditing() {
     setEditFeedback("");
-    if (!operatorName.trim()) {
+    if (isAdminEditor && !adminSubmissionId && selectedSiteId && selectedSubtypeId) {
+      const response = await fetch("/api/admin/submissions/ensure", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          stationId: account.stationId,
+          siteId: selectedSiteId,
+          siteSubtypeId: selectedSubtypeId,
+          sessionId: getTabSessionId(),
+          operatorName: operatorName || account.username,
+        }),
+      });
+      const result = await response.json() as { submissionId?: string; error?: string };
+      if (!response.ok || !result.submissionId) {
+        setEditFeedback(result.error || "Tidak dapat memulai Edit sebagai Admin.");
+        return;
+      }
+      router.replace(`/admin/submissions/${result.submissionId}?edit=1`);
+      return;
+    }
+    if (!isAdminEditor && !operatorName.trim()) {
       setEditFeedback("Isi Nama operator sebelum mulai mengedit.");
       return;
     }
@@ -469,8 +506,8 @@ export default function InventoryApp({
   }
 
   async function saveBeforeDownload() {
-    persistLocalNow();
     if (!sync.isEditing || !sync.dirty) return true;
+    persistLocalNow();
     const result = await sync.saveNow();
     if (result === "local-only") {
       setEditFeedback("Data tersimpan di perangkat, tetapi belum tersinkron ke server. Unduhan tetap memakai data terbaru di browser.");
@@ -498,21 +535,17 @@ export default function InventoryApp({
   async function exportCurrentDraft() {
     await saveBeforeDownload();
     setDownloadOpen(false);
-    const payload = {
-      exportedAt: new Date().toISOString(),
-      source: mode,
-      station: mode === "site" ? station : null,
-      site: mode === "site" ? site : null,
-      siteType: mode === "site" ? selectedSite?.siteType : null,
-      subtype: mode === "site" ? currentSubtype : null,
-      runwayAzimuth: mode === "site" && acceptsRunwayAzimuth ? runwayAzimuth : null,
-      siteMetadata: mode === "site" ? { ...automaticMetadata, ...siteMetadata } : null,
+    if (!serverPayload || !selectedSite) return;
+    const payload = buildInventoryJson({
+      stationName: station,
+      siteName: site,
+      siteTypeName: selectedSite.siteType,
+      subtypeName: currentSubtype,
       profile,
-      items: categories.map((category) => ({
-        category,
-        products: (inventory[category] ?? []).map(productForExport),
-      })),
-    };
+      categories,
+      payload: serverPayload,
+      resolveItem: productForExport,
+    });
     const filename = buildAloptamaFilename(station, site, currentSubtype, "json");
     downloadText(filename, JSON.stringify(payload, null, 2), "application/json");
   }
@@ -520,43 +553,17 @@ export default function InventoryApp({
   async function exportCurrentDraftCsv() {
     await saveBeforeDownload();
     setDownloadOpen(false);
-    const headers = [
-      "Stasiun", "Site", "Tipe Site", "Subtipe Site", "Azimuth Runway", ...SITE_METADATA_CSV_HEADERS, "Profil Barang",
-      "Kategori Barang", "Bahan Mounting", "Merk", "Tipe Produk", "Unit Ke", "Nomor Seri", "Jumlah",
-      "Kondisi", "Tahun Pasang", "Catatan",
-    ];
-    const siteMetadataCells = mode === "site"
-      ? siteMetadataCsvValues(siteMetadata, automaticMetadata)
-      : SITE_METADATA_CSV_HEADERS.map(() => "");
-    const rows = categories.flatMap((category) => {
-      const items = inventory[category] ?? [];
-      const itemUnits = items.length
-        ? items.flatMap((rawItem) => {
-          const item = productForExport(rawItem);
-          return getItemUnits(item).map((unit, index) => ({ item, unit, unitNumber: index + 1 }));
-        })
-        : [{ item: null, unit: null, unitNumber: null }];
-      return itemUnits.map(({ item, unit, unitNumber }) => [
-        mode === "site" ? station : "",
-        mode === "site" ? site : "",
-        mode === "site" ? selectedSite?.siteType ?? "" : "",
-        mode === "site" ? currentSubtype : "",
-        mode === "site" && acceptsRunwayAzimuth ? runwayAzimuth : "",
-        ...siteMetadataCells,
-        profile,
-        category,
-        item?.itemKind === "material" ? item.material ?? "" : "",
-        item?.itemKind === "material" ? "" : item?.brand ?? "",
-        item?.itemKind === "material" ? "" : item?.model ?? "",
-        unitNumber ?? "",
-        item?.itemKind === "material" ? "" : unit?.serialNumber ?? "",
-        unit ? 1 : "",
-        unit?.condition ?? "",
-        unit?.installedYear ?? "",
-        unit?.notes ?? "",
-      ]);
+    if (!serverPayload || !selectedSite) return;
+    const csv = buildInventoryCsv({
+      stationName: station,
+      siteName: site,
+      siteTypeName: selectedSite.siteType,
+      subtypeName: currentSubtype,
+      profile,
+      categories,
+      payload: serverPayload,
+      resolveItem: productForExport,
     });
-    const csv = `\uFEFF${[headers, ...rows].map((row) => row.map(csvCell).join(",")).join("\r\n")}`;
     const filename = buildAloptamaFilename(station, site, currentSubtype, "csv");
     downloadText(filename, csv, "text/csv;charset=utf-8");
   }
@@ -579,6 +586,32 @@ export default function InventoryApp({
   const lockActivityTime = sync.lockLastActivityAt
     ? new Date(sync.lockLastActivityAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })
     : "";
+
+  function renderDownloadMenu() {
+    return <div className="download-menu" ref={downloadRef}>
+      <button
+        className="secondary-button"
+        disabled={sync.status === "opening"}
+        aria-haspopup="menu"
+        aria-expanded={downloadOpen}
+        onClick={() => setDownloadOpen((open) => !open)}
+      >
+        Unduh
+      </button>
+      {downloadOpen && (
+        <div className="download-options" role="menu">
+          <button role="menuitem" onClick={exportCurrentDraftCsv}>
+            <strong>Unduh CSV</strong>
+            <span>Data untuk pengumpulan</span>
+          </button>
+          <button role="menuitem" onClick={exportCurrentDraft}>
+            <strong>Unduh JSON</strong>
+            <span>Salinan data lengkap</span>
+          </button>
+        </div>
+      )}
+    </div>;
+  }
 
   return (
     <main className="app-shell">
@@ -637,7 +670,8 @@ export default function InventoryApp({
                 {subtypes.map((name) => <option key={name} value={name}>{name}</option>)}
               </select>
               {kat3Family && <p className="field-hint">Pilihan dibatasi untuk AWOS Kat. 3 <strong>{kat3Family}</strong>.</p>}
-              {site && !subtypes.length && <p className="warning-copy">Belum ada subtipe untuk tipe site ini.</p>}
+              {selectedSite?.siteType === AWOS_KAT3_SITE_TYPE && !kat3Family && <p className="warning-copy">Variant AWOS Kategori III belum terpetakan. Hubungi pengelola master data.</p>}
+              {site && !subtypes.length && selectedSite?.siteType !== AWOS_KAT3_SITE_TYPE && <p className="warning-copy">Belum ada subtipe untuk tipe site ini.</p>}
 
               {acceptsRunwayAzimuth && (
                 <>
@@ -661,6 +695,7 @@ export default function InventoryApp({
                   <button className="primary-button" disabled={sync.isEditing || sync.status === "opening"} onClick={startEditing}>
                     {isAdminEditor ? "Edit sebagai Admin" : hasLocalDraft || sync.hasServerDraft ? "Edit Data" : "Mulai Pengisian"}
                   </button>
+                  {!sync.isEditing && renderDownloadMenu()}
                   <span>{sync.isEditing ? "Mode pengisian aktif" : "Mode lihat aktif. Belum ada lock."}</span>
                 </div>
               )}
@@ -810,28 +845,7 @@ export default function InventoryApp({
                   </span>
                   <div className="export-actions">
                     {sync.isEditing && <button className="secondary-button" onClick={saveManual}>Simpan</button>}
-                    <div className="download-menu" ref={downloadRef}>
-                      <button
-                        className="secondary-button"
-                        aria-haspopup="menu"
-                        aria-expanded={downloadOpen}
-                        onClick={() => setDownloadOpen((open) => !open)}
-                      >
-                        Unduh
-                      </button>
-                      {downloadOpen && (
-                        <div className="download-options" role="menu">
-                          <button role="menuitem" onClick={exportCurrentDraftCsv}>
-                            <strong>Unduh CSV</strong>
-                            <span>Data untuk pengumpulan</span>
-                          </button>
-                          <button role="menuitem" onClick={exportCurrentDraft}>
-                            <strong>Unduh JSON</strong>
-                            <span>Salinan data lengkap</span>
-                          </button>
-                        </div>
-                      )}
-                    </div>
+                    {sync.isEditing && renderDownloadMenu()}
                     {sync.isEditing && <button className="primary-button" onClick={finishEditing}>Selesai Mengedit</button>}
                   </div>
                 </div>

@@ -3,7 +3,9 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import AdminBulkExport from "./AdminBulkExport";
 import EyeIcon from "../components/EyeIcon";
+import { downloadAdminInventory } from "../lib/admin-export";
 import {
   accountMatchesAdminSearch,
   adminSearchPlaceholder,
@@ -13,6 +15,7 @@ import {
 } from "../lib/admin-view";
 import { csvCell, downloadText } from "../lib/download";
 import { logoutCurrentBrowser } from "../lib/local-logout";
+import { getTabSessionId } from "../lib/server-draft";
 import { getSupabaseBrowserClient } from "../lib/supabase/client";
 
 type Station = { id: string; name: string; active: boolean };
@@ -86,7 +89,11 @@ export default function AdminDashboard({ username }: { username: string }) {
         .range(from, to)),
       client.from("site_types").select("id, name").order("name"),
       client.from("site_subtypes").select("id, site_type_id, name").order("name"),
-      client.from("submissions").select("id, station_id, site_id, site_subtype_id, version, payload, operator_name, locked_by_session_id, lock_operator_name, lock_last_activity_at, last_saved_at, updated_at").order("updated_at", { ascending: false }),
+      loadAllAdminRows((from, to) => client.from("submissions")
+        .select("id, station_id, site_id, site_subtype_id, version, payload, operator_name, locked_by_session_id, lock_operator_name, lock_last_activity_at, last_saved_at, updated_at")
+        .order("updated_at", { ascending: false })
+        .order("id")
+        .range(from, to)),
       client.from("station_accounts").select("id, station_id, username, active, updated_at").order("username"),
       client.from("products").select("id, brand, model, active, source_origin, spreadsheet_synced").order("brand"),
       client.from("product_proposals").select("id, station_id, submission_id, operator_name, proposed_brand, proposed_model, normalized_brand, normalized_model, status, resolved_product_id, review_note, created_at").order("created_at", { ascending: false }),
@@ -243,6 +250,46 @@ export default function AdminDashboard({ username }: { username: string }) {
     downloadText("products-qc-pending-spreadsheet.csv", `\uFEFF${rows.map((row) => row.map((value) => csvCell(String(value))).join(",")).join("\r\n")}`, "text/csv;charset=utf-8");
   }
 
+  async function downloadRow(station: Station, site: Site, subtype: Subtype) {
+    const client = getSupabaseBrowserClient();
+    if (!client) return;
+    setMessage("Menyiapkan CSV terbaru...");
+    try {
+      const result = await downloadAdminInventory({
+        client,
+        station,
+        sites,
+        siteTypes,
+        subtypes,
+        scope: { stationId: station.id, siteId: site.id, siteSubtypeId: subtype.id },
+      });
+      setMessage(`${result.filename} berhasil diunduh tanpa mengubah lock atau submission.`);
+    } catch (error) {
+      setMessage(error instanceof Error ? `Unduh gagal: ${error.message}` : "Unduh gagal.");
+    }
+  }
+
+  async function editRow(station: Station, site: Site, subtype: Subtype) {
+    setMessage("Membuka lifecycle Edit sebagai Admin...");
+    const response = await fetch("/api/admin/submissions/ensure", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        stationId: station.id,
+        siteId: site.id,
+        siteSubtypeId: subtype.id,
+        sessionId: getTabSessionId(),
+        operatorName: username,
+      }),
+    });
+    const result = await response.json() as { submissionId?: string; error?: string };
+    if (!response.ok || !result.submissionId) {
+      setMessage(result.error || "Edit sebagai Admin gagal dimulai.");
+      return;
+    }
+    router.push(`/admin/submissions/${result.submissionId}?edit=1`);
+  }
+
   async function logout() {
     const client = getSupabaseBrowserClient();
     if (client) await logoutCurrentBrowser({ signOut: (options) => client.auth.signOut(options) });
@@ -277,7 +324,12 @@ export default function AdminDashboard({ username }: { username: string }) {
             <div><strong>{proposals.filter((row) => row.status === "REJECTED").length}</strong><span>Rejected</span></div>
           </div>}
 
-          {!loading && searchTab && <label className="admin-search">Cari<input autoComplete="off" value={search} onChange={(event) => setSearch(event.target.value)} placeholder={adminSearchPlaceholder(searchTab)} /></label>}
+          {!loading && searchTab && tab !== "stations" && <label className="admin-search">Cari<input autoComplete="off" value={search} onChange={(event) => setSearch(event.target.value)} placeholder={adminSearchPlaceholder(searchTab)} /></label>}
+
+          {!loading && tab === "stations" && <div className="station-filling-toolbar">
+            <label className="admin-search">Cari<input autoComplete="off" value={search} onChange={(event) => setSearch(event.target.value)} placeholder={adminSearchPlaceholder("stations")} /></label>
+            <AdminBulkExport stations={stations} sites={sites} siteTypes={siteTypes} subtypes={subtypes} onMessage={setMessage} />
+          </div>}
 
           {!loading && tab === "stations" && <div className="admin-list">
             {filteredStationFillingViews.map(({ station, view, visibleRows }) => <details key={station.id}>
@@ -290,7 +342,14 @@ export default function AdminDashboard({ username }: { username: string }) {
                   <td><span className={`status-pill ${submission ? "active" : "pending"}`}>{submission ? "Sudah ada data" : "Belum ada submission"}</span></td>
                   <td>{submission?.version ?? "-"}</td>
                   <td>{submission ? new Date(submission.last_saved_at ?? submission.updated_at).toLocaleString("id-ID") : "-"}</td>
-                  <td>{submission ? <Link className="table-action" href={`/admin/submissions/${submission.id}`}>Buka / edit</Link> : "-"}</td>
+                  <td>{subtype ? <details className="row-action-menu">
+                    <summary>Aksi</summary>
+                    <div>
+                      <Link href={submission ? `/admin/submissions/${submission.id}` : `/admin/inventory?siteId=${site.id}&subtypeId=${subtype.id}`}>Buka</Link>
+                      <button onClick={() => void downloadRow(station, site, subtype)}>Unduh CSV</button>
+                      <button onClick={() => void editRow(station, site, subtype)}>Edit sebagai Admin</button>
+                    </div>
+                  </details> : "-"}</td>
                 </tr>)}
                 {!visibleRows.length && <tr><td colSpan={7}>Belum ada site atau subtipe yang cocok.</td></tr>}
               </tbody></table></div>

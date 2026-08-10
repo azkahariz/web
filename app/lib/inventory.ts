@@ -1,4 +1,4 @@
-import type { InstalledItem, SiteSubtype, UnitDetail } from "../types/inventory";
+import type { InstalledItem, UnitDetail } from "../types/inventory";
 
 export function isMountingCategory(category: string | null): boolean {
   return Boolean(category && /^mounting\b/i.test(category));
@@ -31,13 +31,4 @@ export function getItemUnits(item: InstalledItem): UnitDetail[] {
     installedYear: index === 0 ? item.installedYear ?? "" : "",
     notes: index === 0 ? item.notes ?? "" : "",
   }));
-}
-
-export function inferKat3Family(siteName: string, options: SiteSubtype[]): string {
-  const normalizedSite = normalizeSearch(siteName).replace(/[^a-z0-9]/g, "");
-  const families = options.flatMap((option) => {
-    const match = option.subtype.match(/^AWOS Kategori III (.+?) (?:TDZ|Mid|End Point|Station)$/i);
-    return match ? [match[1]] : [];
-  });
-  return families.find((family) => normalizedSite.includes(normalizeSearch(family).replace(/[^a-z0-9]/g, ""))) ?? "";
 }

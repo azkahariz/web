@@ -180,10 +180,13 @@ test("retry acquire memakai respons lock dan versi server terbaru, bukan state r
 });
 
 test("format ekspor lama tetap tersedia", async () => {
-  const source = await readFile(new URL("../app/InventoryApp.tsx", import.meta.url), "utf8");
+  const [source, exportSource] = await Promise.all([
+    readFile(new URL("../app/InventoryApp.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/lib/inventory-export.ts", import.meta.url), "utf8"),
+  ]);
   assert.match(source, /Unduh JSON/);
   assert.match(source, /Unduh CSV/);
   assert.match(source, /download-options/);
-  assert.match(source, /SITE_METADATA_CSV_HEADERS/);
-  assert.match(source, /getItemUnits\(item\)/);
+  assert.match(exportSource, /SITE_METADATA_CSV_HEADERS/);
+  assert.match(exportSource, /getItemUnits\(item\)/);
 });

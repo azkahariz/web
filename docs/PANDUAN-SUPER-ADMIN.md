@@ -23,11 +23,38 @@ menunjukkan apakah submission untuk kombinasi tersebut sudah tersedia. Angka
 site pada header tetap total master meskipun isi tabel sedang difilter. Pada
 **Akun Stasiun**, pencarian hanya memakai nama stasiun dan username.
 
+Menu **Aksi** tersedia untuk kombinasi Site/Subtipe yang valid, termasuk yang
+belum pernah mempunyai submission:
+
+- **Buka** menampilkan snapshot server atau form default secara read-only. Tidak
+  ada lock, submission baru, atau write database.
+- **Unduh CSV** membaca snapshot terbaru atau membuat CSV default. Tidak ada lock
+  atau write database.
+- **Edit sebagai Admin** baru memulai lifecycle submission dan memperoleh lock.
+
+AWOS Kategori III hanya menampilkan empat subtipe yang sesuai variant Site:
+AllWeather, Coastal, Degreane, atau Microstep. Variant yang tidak dikenali
+ditampilkan sebagai **Belum terpetakan**, bukan diberi seluruh subtipe AWOS.
+
+## Bulk Download
+
+Tekan **Bulk Download**, lalu pilih Stasiun terlebih dahulu. Pilihan Site hanya
+berasal dari stasiun tersebut, dan pilihan Subtipe mengikuti mapping Site.
+
+- Stasiun + Semua Site menghasilkan `nama-stasiun.zip`.
+- Site tertentu + Semua Subtipe menghasilkan `nama-stasiun_nama-site.zip`.
+- Satu Subtipe menghasilkan CSV langsung.
+
+ZIP berisi satu CSV untuk setiap kombinasi Site/Subtipe valid. Kombinasi yang
+belum mempunyai submission tetap disertakan sebagai CSV default dengan field
+kosong. Bulk Download tidak dipengaruhi kotak pencarian tabel dan tidak membuat
+submission baru.
+
 ## Submission dan lock
 
-Membuka daftar submission tidak mengambil lock. Tekan **Buka / edit**, lalu
-**Edit sebagai Admin** untuk mencoba lock biasa. Jika masih dikunci petugas,
-informasi operator ditampilkan.
+**Buka** dan **Unduh** tidak mengambil lock. **Edit sebagai Admin** mencoba lock
+biasa. Jika masih dikunci petugas, snapshot tersimpan tetap dapat dilihat dan
+informasi operator serta aktivitas terakhir ditampilkan.
 
 **Ambil Alih sebagai Admin** adalah tindakan paksa. Konfirmasi terlebih dahulu,
 karena editor lama dapat kehilangan hak menyimpan. Force takeover bersifat

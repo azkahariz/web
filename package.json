@@ -12,7 +12,7 @@
     "dev:sites": "vinext dev",
     "build:sites": "vinext build",
     "start:sites": "vinext start",
-    "test": "npm run build:sites && node --experimental-strip-types --test tests/rendered-html.test.mjs tests/master-sync.test.mjs tests/auth-autosave.test.mjs tests/admin-qc.test.mjs tests/ux-polish.test.mjs",
+    "test": "npm run build:sites && node --experimental-strip-types --test tests/rendered-html.test.mjs tests/master-sync.test.mjs tests/auth-autosave.test.mjs tests/admin-qc.test.mjs tests/ux-polish.test.mjs tests/admin-export.test.mjs",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "check": "npm run lint && npm run test && npm run build",
     "validate:master": "node scripts/sync-master.mjs --validate-only",
@@ -28,6 +28,7 @@
     "@supabase/ssr": "^0.12.4",
     "@supabase/supabase-js": "^2.112.2",
     "drizzle-orm": "0.45.2",
+    "fflate": "^0.8.3",
     "next": "16.2.6",
     "react": "19.2.6",
     "react-dom": "19.2.6"

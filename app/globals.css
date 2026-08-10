@@ -299,6 +299,8 @@ select:disabled { color: #9aa39f; background: #f2f2ee; cursor: not-allowed; }
 .admin-stats span { margin-top: 10px; color: var(--muted); font-size: 10px; font-weight: 800; text-transform: uppercase; }
 .admin-search { width: min(500px, 100%); margin-top: 22px; display: block; color: var(--muted); font-size: 10px; font-weight: 800; }
 .admin-search input { margin-top: 6px; }
+.station-filling-toolbar { margin-top: 22px; display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
+.station-filling-toolbar .admin-search { margin-top: 0; }
 .admin-list { margin-top: 18px; display: flex; flex-direction: column; gap: 8px; }
 .admin-list > details { border: 1px solid var(--line); border-radius: 8px; background: white; overflow: hidden; }
 .admin-list > details > summary { padding: 15px; display: flex; justify-content: space-between; gap: 12px; cursor: pointer; }
@@ -322,6 +324,10 @@ select:disabled { color: #9aa39f; background: #f2f2ee; cursor: not-allowed; }
 .station-filling-table th:nth-child(6) { width: 13%; }
 .station-filling-table th:nth-child(7) { width: 8%; }
 .station-filling-table td:first-child strong { display: block; line-height: 1.4; }
+.row-action-menu > summary { width: fit-content; min-height: 31px; padding: 7px 9px; border: 1px solid #bdd0c8; border-radius: 6px; list-style: none; background: white; white-space: nowrap; }
+.row-action-menu > summary::-webkit-details-marker { display: none; }
+.row-action-menu > div { width: 150px; padding-top: 6px; display: flex; flex-direction: column; gap: 4px; }
+.row-action-menu a, .row-action-menu button { width: 100%; padding: 7px 8px; border: 0; border-radius: 4px; background: #f7f8f5; color: var(--green-deep); font-size: 9px; font-weight: 800; text-align: left; text-decoration: none; cursor: pointer; }
 .accounts-view .admin-search { width: min(680px, 100%); }
 .accounts-table table { min-width: 760px; font-size: 12px; }
 .accounts-table th, .accounts-table td { padding: 15px 16px; }
@@ -360,6 +366,9 @@ select:disabled { color: #9aa39f; background: #f2f2ee; cursor: not-allowed; }
 .credential-dialog dd { margin: 6px 0 0; font-size: 13px; font-weight: 700; }
 .credential-password-row input { margin: 0; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-weight: 600; }
 .credential-dialog-actions { margin-top: 20px; display: flex; justify-content: flex-end; gap: 8px; }
+.bulk-export-dialog .form-stack { margin-top: 20px; }
+.bulk-export-dialog label { color: var(--muted); font-size: 10px; font-weight: 800; }
+.bulk-export-dialog select { margin-top: 6px; }
 
 @media (max-width: 900px) {
   .intro { grid-template-columns: 1fr; }
@@ -435,6 +444,7 @@ select:disabled { color: #9aa39f; background: #f2f2ee; cursor: not-allowed; }
   .admin-heading .secondary-button { width: auto; }
   .admin-stats { grid-template-columns: 1fr 1fr; }
   .qc-toolbar { align-items: stretch; flex-direction: column; }
+  .station-filling-toolbar { align-items: stretch; flex-direction: column; }
   .bulk-merge { grid-template-columns: 1fr; }
   .credential-dialog { padding: 20px; }
   .credential-dialog-actions { flex-direction: column; }

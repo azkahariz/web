@@ -51,8 +51,9 @@ test("admin route memvalidasi role sebelum memakai secret dan secret tidak masuk
 });
 
 test("station product proposal dan admin QC tetap mempertahankan format export lama", async () => {
-  const [inventory, typeSource, databaseSync] = await Promise.all([
+  const [inventory, exportSource, typeSource, databaseSync] = await Promise.all([
     readFile(new URL("../app/InventoryApp.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/lib/inventory-export.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/types/inventory.ts", import.meta.url), "utf8"),
     readFile(new URL("../scripts/master/database.mjs", import.meta.url), "utf8"),
   ]);
@@ -60,7 +61,7 @@ test("station product proposal dan admin QC tetap mempertahankan format export l
   assert.match(typeSource, /itemKind\?: "product" \| "custom-product" \| "material"/);
   assert.match(inventory, /create_product_proposal/);
   assert.match(inventory, /resolveInstalledProduct/);
-  assert.match(inventory, /"Stasiun"[\s\S]*"Merk"[\s\S]*"Tipe Produk"/);
+  assert.match(exportSource, /"Stasiun"[\s\S]*"Merk"[\s\S]*"Tipe Produk"/);
   assert.match(databaseSync, /function spreadsheetProductValues/);
   assert.match(databaseSync, /function shouldWarnForMissingProduct/);
 });

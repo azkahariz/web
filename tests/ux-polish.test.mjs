@@ -106,7 +106,11 @@ test("satu submission tidak mengurangi count tiga site master", () => {
 });
 
 test("satu site dengan empat subtipe menjadi empat row tetapi tetap satu site", () => {
-  const view = buildStationFillingView("station-1", stationSites.slice(0, 1), stationSiteTypes, stationSubtypes, []);
+  const view = buildStationFillingView("station-1", [
+    { id: "site-multi", station_id: "station-1", site_type_id: "type-multi", name: "Site Multi" },
+  ], [{ id: "type-multi", name: "Tipe Multi" }], ["TDZ", "Mid Point", "End Point", "Station"].map((name, index) => ({
+    id: `multi-${index}`, site_type_id: "type-multi", name,
+  })), []);
   assert.equal(view.siteCount, 1);
   assert.equal(view.rows.length, 4);
   assert.deepEqual(view.rows.map((row) => row.subtype?.name), ["TDZ", "Mid Point", "End Point", "Station"]);
@@ -139,9 +143,9 @@ test("fixture generated BMKG Pusat mempunyai tiga site master", async () => {
 test("search Stasiun dan Pengisian mencakup stasiun, site, tipe, dan subtipe", () => {
   const station = { id: "station-1", name: "Stasiun Meteorologi Halim" };
   const sites = [{ id: "site-1", station_id: station.id, site_type_id: "type-1", name: "AWOS Runway 24" }];
-  const siteTypes = [{ id: "type-1", name: "AWOS Kategori III" }];
+  const siteTypes = [{ id: "type-1", name: "AWOS Kategori II" }];
   const subtypes = [{ id: "subtype-1", site_type_id: "type-1", name: "AWOS End Point" }];
-  for (const query of ["Halim", "Runway 24", "Kategori III", "End Point"]) {
+  for (const query of ["Halim", "Runway 24", "Kategori II", "End Point"]) {
     assert.equal(stationMatchesAdminSearch(station, query, sites, siteTypes, subtypes), true);
   }
   assert.equal(stationMatchesAdminSearch(station, "Campbell", sites, siteTypes, subtypes), false);
