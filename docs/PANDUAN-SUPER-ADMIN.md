@@ -33,7 +33,7 @@ belum pernah mempunyai submission:
 - **Edit sebagai Admin** baru memulai lifecycle submission dan memperoleh lock.
 
 AWOS Kategori III hanya menampilkan empat subtipe yang sesuai variant Site:
-AllWeather, Coastal, Degreane, atau Microstep. Variant yang tidak dikenali
+AllWeather, Coastal, Degreane, Microstep, atau Vaisala. Variant yang tidak dikenali
 ditampilkan sebagai **Belum terpetakan**, bukan diberi seluruh subtipe AWOS.
 
 ## Bulk Download

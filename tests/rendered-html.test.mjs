@@ -180,7 +180,7 @@ test("kategori mounting memakai pilihan bahan dan tetap mendukung bahan lainnya"
 test("site AWOS kategori III membatasi subtipe berdasarkan keluarga pada nama site", async () => {
   const data = JSON.parse(await readFile(new URL("../app/data.generated.json", import.meta.url), "utf8"));
   const kat3Options = data.siteSubtypes.filter((row) => row.siteType === "AWOS Kategori III");
-  const families = ["AllWeather", "Coastal", "Degreane", "Microstep"];
+  const families = ["AllWeather", "Coastal", "Degreane", "Microstep", "Vaisala"];
 
   for (const family of families) {
     assert.equal(kat3Options.filter((row) => row.subtype.includes(` ${family} `)).length, 4);

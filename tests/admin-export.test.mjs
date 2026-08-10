@@ -31,6 +31,12 @@ const familyNames = {
     "AWOS Kategori III Microstep Station",
     "AWOS Kategori III Microstep TDZ",
   ],
+  Vaisala: [
+    "AWOS Kategori III Vaisala End Point",
+    "AWOS Kategori III Vaisala Mid",
+    "AWOS Kategori III Vaisala Station",
+    "AWOS Kategori III Vaisala TDZ",
+  ],
 };
 const allAwosSubtypes = Object.values(familyNames).flat().map((name, index) => ({ id: `awos-${index}`, name }));
 
@@ -49,7 +55,7 @@ for (const [family, expected] of Object.entries(familyNames)) {
 
 test("AWOS Kategori III unknown tidak fallback ke seluruh subtype", () => {
   assert.deepEqual(getAllowedSiteSubtypes({
-    siteName: "AWOS Vaisala Kat. 3 Sorong",
+    siteName: "AWOS Unknown Kat. 3 Test",
     siteTypeName: "AWOS Kategori III",
     siteSubtypes: allAwosSubtypes,
     getSubtypeName: (subtype) => subtype.name,

@@ -1,6 +1,6 @@
 export const AWOS_KAT3_SITE_TYPE = "AWOS Kategori III";
 
-export const AWOS_KAT3_FAMILIES = ["AllWeather", "Coastal", "Degreane", "Microstep"] as const;
+export const AWOS_KAT3_FAMILIES = ["AllWeather", "Coastal", "Degreane", "Microstep", "Vaisala"] as const;
 export type AwosKat3Family = (typeof AWOS_KAT3_FAMILIES)[number];
 
 const AWOS_KAT3_SUFFIXES = ["End Point", "Mid", "Station", "TDZ"] as const;

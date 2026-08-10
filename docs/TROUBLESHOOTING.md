@@ -80,7 +80,7 @@ berisi `undefined` atau `null`.
 **Gejala:** Site Coastal melihat subtype AllWeather, atau Site AWOS unknown
 melihat seluruh subtype.
 **Penyebab umum:** Consumer tidak memakai shared mapping atau nama variant Site
-tidak memuat All Weather, Coastal, Degreane, atau Microstep.
+tidak memuat All Weather, Coastal, Degreane, Microstep, atau Vaisala.
 **Yang harus dilakukan:** Periksa `getAllowedSiteSubtypes()` dan nama master Site.
 Variant unknown harus tampil **Belum terpetakan**.
 

@@ -142,9 +142,9 @@ Provision Super Admin idempotent: rerun tidak mengubah password existing.
 ## Mapping subtype dan export
 
 Seluruh consumer wajib memakai `getAllowedSiteSubtypes()`. Untuk AWOS Kategori
-III, nama Site menentukan salah satu family AllWeather, Coastal, Degreane, atau
-Microstep. Variant unknown menghasilkan daftar kosong agar masalah master tampak,
-bukan fallback ke 16 subtype.
+III, nama Site menentukan salah satu family AllWeather, Coastal, Degreane,
+Microstep, atau Vaisala. Variant unknown menghasilkan daftar kosong agar masalah
+master tampak, bukan fallback ke seluruh subtype AWOS.
 
 CSV Station, single Admin, dan bulk Admin semuanya memakai
 `buildInventoryCsv()`. Data tanpa submission menggunakan
