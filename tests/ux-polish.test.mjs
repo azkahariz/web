@@ -4,9 +4,10 @@ import test from "node:test";
 import {
   accountMatchesAdminSearch,
   adminSearchPlaceholder,
-  buildStationSiteRows,
+  buildStationFillingView,
   countDistinctStationSites,
   distinctStationSites,
+  filterStationFillingRows,
   siteDisplayName,
   stationMatchesAdminSearch,
 } from "../app/lib/admin-view.ts";
@@ -31,39 +32,87 @@ test("filename export memakai station-site_subtype terbaru dan aman", () => {
   assert.equal(csv, '\uFEFF"Stasiun","Site"\r\n"A","B"');
 });
 
-test("count site admin tetap distinct ketika row terduplikasi", () => {
-  const sites = [
-    { id: "site-1", station_id: "station-1" },
-    { id: "site-1", station_id: "station-1" },
-    { id: "site-2", station_id: "station-1" },
-    { id: "site-3", station_id: "station-1" },
-    { id: "site-4", station_id: "station-2" },
-  ];
-  const subtypes = Array.from({ length: 6 }, (_, index) => ({ id: `subtype-${index}`, site_id: `site-${index % 3 + 1}` }));
-  const submissions = Array.from({ length: 12 }, (_, index) => ({ id: `submission-${index}`, site_id: `site-${index % 3 + 1}` }));
-  assert.equal(subtypes.length, 6);
-  assert.equal(submissions.length, 12);
-  assert.equal(countDistinctStationSites("station-1", sites), 3);
-  assert.deepEqual(distinctStationSites("station-1", sites).map((site) => site.id), ["site-1", "site-2", "site-3"]);
+const stationSites = [
+  { id: "site-1", station_id: "station-1", site_type_id: "type-awos", name: "AWOS Bandara X" },
+  { id: "site-2", station_id: "station-1", site_type_id: "type-aaws", name: "AAWS Donggala" },
+  { id: "site-3", station_id: "station-1", site_type_id: "type-water", name: "Water Level X" },
+];
+const stationSiteTypes = [
+  { id: "type-awos", name: "AWOS Kategori III" },
+  { id: "type-aaws", name: "AAWS" },
+  { id: "type-water", name: "Water Level" },
+];
+const stationSubtypes = [
+  { id: "awos-tdz", site_type_id: "type-awos", name: "TDZ" },
+  { id: "awos-mid", site_type_id: "type-awos", name: "Mid Point" },
+  { id: "awos-end", site_type_id: "type-awos", name: "End Point" },
+  { id: "awos-station", site_type_id: "type-awos", name: "Station" },
+  { id: "aaws", site_type_id: "type-aaws", name: "AAWS" },
+  { id: "water", site_type_id: "type-water", name: "Water Level" },
+];
+const submission = (id, siteId, subtypeId) => ({
+  id,
+  station_id: "station-1",
+  site_id: siteId,
+  site_subtype_id: subtypeId,
+});
 
-  const rows = buildStationSiteRows("station-1", sites, [
-    { id: "submission-1", station_id: "station-1", site_id: "site-1" },
-    { id: "submission-2", station_id: "station-1", site_id: "site-1" },
-    { id: "submission-3", station_id: "station-1", site_id: "site-2" },
-  ]);
-  assert.equal(rows.filter((row) => row.firstSiteRow).length, 3);
-  assert.equal(rows.find((row) => row.stationSite.id === "site-3")?.submission, null);
+test("view pengisian berawal dari tiga site master walau tanpa submission", () => {
+  const view = buildStationFillingView("station-1", stationSites, stationSiteTypes, stationSubtypes, []);
+  assert.equal(view.siteCount, 3);
+  assert.equal(view.submissionCount, 0);
+  assert.deepEqual([...new Set(view.rows.map((row) => row.site.name))], ["AWOS Bandara X", "AAWS Donggala", "Water Level X"]);
+});
+
+test("satu submission tidak mengurangi count tiga site master", () => {
+  const view = buildStationFillingView("station-1", stationSites, stationSiteTypes, stationSubtypes, [submission("sub-1", "site-1", "awos-mid")]);
+  assert.equal(view.siteCount, 3);
+  assert.equal(view.submissionCount, 1);
+});
+
+test("satu site dengan empat subtipe menjadi empat row tetapi tetap satu site", () => {
+  const view = buildStationFillingView("station-1", stationSites.slice(0, 1), stationSiteTypes, stationSubtypes, []);
+  assert.equal(view.siteCount, 1);
+  assert.equal(view.rows.length, 4);
+  assert.deepEqual(view.rows.map((row) => row.subtype?.name), ["TDZ", "Mid Point", "End Point", "Station"]);
+});
+
+test("site tanpa submission tetap membawa nama site, tipe, dan subtipe master", () => {
+  const view = buildStationFillingView("station-1", stationSites, stationSiteTypes, stationSubtypes, []);
+  const row = view.rows.find((candidate) => candidate.site.id === "site-2");
+  assert.equal(row?.site.name, "AAWS Donggala");
+  assert.equal(row?.siteType?.name, "AAWS");
+  assert.equal(row?.subtype?.name, "AAWS");
+  assert.equal(row?.submission, null);
+});
+
+test("beberapa submission pada satu site tidak menduplikasi site count", () => {
+  const submissions = [submission("sub-1", "site-1", "awos-tdz"), submission("sub-2", "site-1", "awos-mid")];
+  const view = buildStationFillingView("station-1", [...stationSites, stationSites[0]], stationSiteTypes, stationSubtypes, submissions);
+  assert.equal(countDistinctStationSites("station-1", [...stationSites, stationSites[0]]), 3);
+  assert.equal(distinctStationSites("station-1", [...stationSites, stationSites[0]]).length, 3);
+  assert.equal(view.siteCount, 3);
+  assert.equal(view.submissionCount, 2);
+});
+
+test("fixture generated BMKG Pusat mempunyai tiga site master", async () => {
+  const generated = JSON.parse(await readFile(new URL("../app/data.generated.json", import.meta.url), "utf8"));
+  const bmkgPusat = generated.stationSites.filter((row) => row.station === "BMKG Pusat");
+  assert.equal(new Set(bmkgPusat.map((row) => row.siteId)).size, 3);
 });
 
 test("search Stasiun dan Pengisian mencakup stasiun, site, tipe, dan subtipe", () => {
   const station = { id: "station-1", name: "Stasiun Meteorologi Halim" };
   const sites = [{ id: "site-1", station_id: station.id, site_type_id: "type-1", name: "AWOS Runway 24" }];
   const siteTypes = [{ id: "type-1", name: "AWOS Kategori III" }];
-  const subtypes = [{ site_type_id: "type-1", name: "AWOS End Point" }];
+  const subtypes = [{ id: "subtype-1", site_type_id: "type-1", name: "AWOS End Point" }];
   for (const query of ["Halim", "Runway 24", "Kategori III", "End Point"]) {
     assert.equal(stationMatchesAdminSearch(station, query, sites, siteTypes, subtypes), true);
   }
   assert.equal(stationMatchesAdminSearch(station, "Campbell", sites, siteTypes, subtypes), false);
+  const view = buildStationFillingView(station.id, sites, siteTypes, subtypes, []);
+  assert.equal(filterStationFillingRows(station.name, view.rows, "End Point").length, 1);
+  assert.equal(filterStationFillingRows(station.name, view.rows, "Campbell").length, 0);
   assert.equal(adminSearchPlaceholder("stations"), "Cari stasiun, nama alat, tipe, atau subtipe alat...");
 });
 
@@ -113,9 +162,11 @@ test("temporary password hanya berada di response sukses dan state dialog", asyn
   assert.match(dashboard, /setCredential\(null\)/);
   assert.match(dashboard, /type=\{credentialVisible \? "text" : "password"\}/);
   assert.match(dashboard, /Setelah dialog ditutup, password tidak dapat ditampilkan kembali/);
-  assert.match(dashboard, /buildStationSiteRows\(station\.id, sites, submissions\)/);
-  assert.match(dashboard, /<strong>\{stationSite\.name\}<\/strong>/);
-  assert.match(dashboard, /Belum ada submission/);
+  assert.match(dashboard, /buildStationFillingView\(station\.id, sites, siteTypes, subtypes, submissions\)/);
+  assert.match(dashboard, /<th>Site<\/th><th>Tipe Site<\/th><th>Subtipe<\/th><th>Status<\/th>/);
+  assert.match(dashboard, /<td>\{subtype\?\.name \?\? "Subtipe master tidak tersedia"\}<\/td>/);
+  assert.match(dashboard, /<td><span className=\{`status-pill \$\{submission \? "active" : "pending"\}`\}>\{submission \? "Sudah ada data" : "Belum ada submission"\}<\/span><\/td>/);
+  assert.doesNotMatch(dashboard, /buildStationSiteRows/);
   assert.doesNotMatch(dashboard, /\?\? submission\.site_id/);
   assert.doesNotMatch(dashboard, /localStorage|sessionStorage/);
 });

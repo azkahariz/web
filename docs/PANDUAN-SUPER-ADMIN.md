@@ -18,8 +18,10 @@ Dashboard mempunyai enam bagian:
 Pada **Stasiun & Pengisian**, kotak pencarian mencari nama stasiun, nama site,
 tipe site, dan subtipe. Jumlah site adalah jumlah site unik milik stasiun, bukan
 jumlah submission. Semua nama site tetap ditampilkan walaupun belum mempunyai
-submission. Pada **Akun Stasiun**, pencarian hanya memakai nama stasiun dan
-username.
+submission. Setiap site ditampilkan per subtipe valid dari master; kolom status
+menunjukkan apakah submission untuk kombinasi tersebut sudah tersedia. Angka
+site pada header tetap total master meskipun isi tabel sedang difilter. Pada
+**Akun Stasiun**, pencarian hanya memakai nama stasiun dan username.
 
 ## Submission dan lock
 

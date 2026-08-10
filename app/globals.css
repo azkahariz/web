@@ -312,6 +312,16 @@ select:disabled { color: #9aa39f; background: #f2f2ee; cursor: not-allowed; }
 .admin-table-wrap td code { max-width: 300px; display: block; overflow-wrap: anywhere; font-size: 9px; }
 .admin-table-wrap details summary { color: var(--green); cursor: pointer; font-weight: 800; }
 .admin-table-wrap pre { width: min(520px, 70vw); max-height: 280px; overflow: auto; white-space: pre-wrap; font-size: 9px; }
+.station-filling-table table { min-width: 980px; table-layout: fixed; }
+.station-filling-table th, .station-filling-table td { white-space: normal; overflow-wrap: anywhere; }
+.station-filling-table th:nth-child(1) { width: 23%; }
+.station-filling-table th:nth-child(2) { width: 16%; }
+.station-filling-table th:nth-child(3) { width: 19%; }
+.station-filling-table th:nth-child(4) { width: 14%; }
+.station-filling-table th:nth-child(5) { width: 7%; }
+.station-filling-table th:nth-child(6) { width: 13%; }
+.station-filling-table th:nth-child(7) { width: 8%; }
+.station-filling-table td:first-child strong { display: block; line-height: 1.4; }
 .accounts-view .admin-search { width: min(680px, 100%); }
 .accounts-table table { min-width: 760px; font-size: 12px; }
 .accounts-table th, .accounts-table td { padding: 15px 16px; }

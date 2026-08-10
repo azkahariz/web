@@ -1,8 +1,9 @@
 export type AdminStation = { id: string; name: string };
 export type AdminSite = { id: string; station_id: string; site_type_id: string; name: string };
 export type AdminSiteType = { id: string; name: string };
-export type AdminSubtype = { site_type_id: string; name: string };
+export type AdminSubtype = { id: string; site_type_id: string; name: string };
 export type AdminAccount = { station_id: string; username: string };
+export type AdminSubmission = { id: string; station_id: string; site_id: string; site_subtype_id: string };
 
 function searchable(value: string | null | undefined) {
   return String(value ?? "").trim().toLocaleLowerCase("id-ID");
@@ -20,31 +21,57 @@ export function distinctStationSites<T extends Pick<AdminSite, "id" | "station_i
   return [...uniqueSites.values()];
 }
 
-export function buildStationSiteRows<
-  TSite extends Pick<AdminSite, "id" | "station_id">,
-  TSubmission extends { id: string; station_id: string; site_id: string },
->(stationId: string, sites: TSite[], submissions: TSubmission[]) {
+export function buildStationFillingView<
+  TSite extends AdminSite,
+  TSiteType extends AdminSiteType,
+  TSubtype extends AdminSubtype,
+  TSubmission extends AdminSubmission,
+>(
+  stationId: string,
+  sites: TSite[],
+  siteTypes: TSiteType[],
+  subtypes: TSubtype[],
+  submissions: TSubmission[],
+) {
+  const stationSites = distinctStationSites(stationId, sites);
   const stationSubmissions = submissions.filter((submission) => submission.station_id === stationId);
+  const siteTypeById = new Map(siteTypes.map((siteType) => [siteType.id, siteType]));
   const rows: Array<{
-    stationSite: TSite;
+    site: TSite;
+    siteType: TSiteType | null;
+    subtype: TSubtype | null;
     submission: TSubmission | null;
-    firstSiteRow: boolean;
-    siteRowSpan: number;
   }> = [];
-  for (const stationSite of distinctStationSites(stationId, sites)) {
-    const siteSubmissions = stationSubmissions.filter((submission) => submission.site_id === stationSite.id);
-    if (!siteSubmissions.length) {
-      rows.push({ stationSite, submission: null, firstSiteRow: true, siteRowSpan: 1 });
+
+  for (const site of stationSites) {
+    const siteType = siteTypeById.get(site.site_type_id) ?? null;
+    const validSubtypes = subtypes.filter((subtype) => subtype.site_type_id === site.site_type_id);
+    if (!validSubtypes.length) {
+      rows.push({ site, siteType, subtype: null, submission: null });
       continue;
     }
-    siteSubmissions.forEach((submission, index) => rows.push({
-      stationSite,
-      submission,
-      firstSiteRow: index === 0,
-      siteRowSpan: siteSubmissions.length,
-    }));
+    for (const subtype of validSubtypes) {
+      const submission = stationSubmissions.find((candidate) => (
+        candidate.site_id === site.id && candidate.site_subtype_id === subtype.id
+      )) ?? null;
+      rows.push({ site, siteType, subtype, submission });
+    }
   }
-  return rows;
+
+  return {
+    siteCount: stationSites.length,
+    submissionCount: stationSubmissions.length,
+    rows,
+  };
+}
+
+export function filterStationFillingRows<
+  TRow extends { site: { name: string }; siteType: { name: string } | null; subtype: { name: string } | null },
+>(stationName: string, rows: TRow[], query: string) {
+  const normalizedQuery = searchable(query);
+  if (!normalizedQuery || searchable(stationName).includes(normalizedQuery)) return rows;
+  return rows.filter((row) => [row.site.name, row.siteType?.name, row.subtype?.name]
+    .some((value) => searchable(value).includes(normalizedQuery)));
 }
 
 export function stationMatchesAdminSearch(

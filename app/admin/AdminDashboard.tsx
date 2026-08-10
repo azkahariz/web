@@ -7,9 +7,8 @@ import EyeIcon from "../components/EyeIcon";
 import {
   accountMatchesAdminSearch,
   adminSearchPlaceholder,
-  buildStationSiteRows,
-  countDistinctStationSites,
-  stationMatchesAdminSearch,
+  buildStationFillingView,
+  filterStationFillingRows,
 } from "../lib/admin-view";
 import { csvCell, downloadText } from "../lib/download";
 import { logoutCurrentBrowser } from "../lib/local-logout";
@@ -23,7 +22,7 @@ type Submission = {
   id: string; station_id: string; site_id: string; site_subtype_id: string;
   version: number; payload: Record<string, unknown>; operator_name: string | null;
   locked_by_session_id: string | null; lock_operator_name: string | null;
-  lock_last_activity_at: string | null; last_saved_at: string | null;
+  lock_last_activity_at: string | null; last_saved_at: string | null; updated_at: string;
 };
 type Account = { id: string; station_id: string; username: string; active: boolean; updated_at: string };
 type Product = { id: string; brand: string; model: string; active: boolean; source_origin: string; spreadsheet_synced: boolean };
@@ -82,7 +81,7 @@ export default function AdminDashboard({ username }: { username: string }) {
       client.from("sites").select("id, station_id, site_type_id, name, active").order("name"),
       client.from("site_types").select("id, name").order("name"),
       client.from("site_subtypes").select("id, site_type_id, name").order("name"),
-      client.from("submissions").select("id, station_id, site_id, site_subtype_id, version, payload, operator_name, locked_by_session_id, lock_operator_name, lock_last_activity_at, last_saved_at").order("updated_at", { ascending: false }),
+      client.from("submissions").select("id, station_id, site_id, site_subtype_id, version, payload, operator_name, locked_by_session_id, lock_operator_name, lock_last_activity_at, last_saved_at, updated_at").order("updated_at", { ascending: false }),
       client.from("station_accounts").select("id, station_id, username, active, updated_at").order("username"),
       client.from("products").select("id, brand, model, active, source_origin, spreadsheet_synced").order("brand"),
       client.from("product_proposals").select("id, station_id, submission_id, operator_name, proposed_brand, proposed_model, normalized_brand, normalized_model, status, resolved_product_id, review_note, created_at").order("created_at", { ascending: false }),
@@ -124,7 +123,6 @@ export default function AdminDashboard({ username }: { username: string }) {
 
   const stationMap = useMemo(() => new Map(stations.map((station) => [station.id, station])), [stations]);
   const siteMap = useMemo(() => new Map(sites.map((site) => [site.id, site])), [sites]);
-  const siteTypeMap = useMemo(() => new Map(siteTypes.map((siteType) => [siteType.id, siteType])), [siteTypes]);
   const subtypeMap = useMemo(() => new Map(subtypes.map((subtype) => [subtype.id, subtype])), [subtypes]);
   const accountByStation = useMemo(() => new Map(accounts.map((account) => [account.station_id, account])), [accounts]);
   const productMap = useMemo(() => new Map(products.map((product) => [product.id, product])), [products]);
@@ -132,7 +130,17 @@ export default function AdminDashboard({ username }: { username: string }) {
     && new Date(submission.lock_last_activity_at).getTime() >= loadedAt - 5 * 60_000);
   const pendingSpreadsheet = products.filter((product) => !product.spreadsheet_synced);
   const query = search.trim().toLocaleLowerCase("id-ID");
-  const filteredStations = stations.filter((station) => stationMatchesAdminSearch(station, query, sites, siteTypes, subtypes));
+  const stationFillingViews = useMemo(() => stations.map((station) => ({
+    station,
+    view: buildStationFillingView(station.id, sites, siteTypes, subtypes, submissions),
+  })), [sites, siteTypes, stations, submissions, subtypes]);
+  const filteredStationFillingViews = stationFillingViews.map(({ station, view }) => ({
+    station,
+    view,
+    visibleRows: filterStationFillingRows(station.name, view.rows, query),
+  })).filter(({ station, visibleRows }) => !query
+    || station.name.toLocaleLowerCase("id-ID").includes(query)
+    || visibleRows.length > 0);
   const filteredAccounts = accounts.filter((account) => accountMatchesAdminSearch(account, query, stationMap));
   const filteredUnprovisionedStations = stations.filter((station) => !accountByStation.has(station.id)
     && (!query || station.name.toLocaleLowerCase("id-ID").includes(query)));
@@ -267,27 +275,21 @@ export default function AdminDashboard({ username }: { username: string }) {
           {!loading && searchTab && <label className="admin-search">Cari<input autoComplete="off" value={search} onChange={(event) => setSearch(event.target.value)} placeholder={adminSearchPlaceholder(searchTab)} /></label>}
 
           {!loading && tab === "stations" && <div className="admin-list">
-            {filteredStations.map((station) => {
-              const stationSubmissions = submissions.filter((submission) => submission.station_id === station.id);
-              const siteCount = countDistinctStationSites(station.id, sites);
-              const stationSiteRows = buildStationSiteRows(station.id, sites, submissions);
-              return <details key={station.id}><summary><strong>{station.name}</strong><span>{siteCount} site, {stationSubmissions.length} submission</span></summary><div className="admin-table-wrap"><table><thead><tr><th>Site</th><th>Subtipe</th><th>Versi</th><th>Terakhir simpan</th><th>Payload</th><th>Aksi</th></tr></thead><tbody>
-                {stationSiteRows.map(({ stationSite, submission, firstSiteRow, siteRowSpan }) => <tr key={submission?.id ?? `site-${stationSite.id}`}>
-                  {firstSiteRow && <td rowSpan={siteRowSpan}><strong>{stationSite.name}</strong><small>{siteTypeMap.get(stationSite.site_type_id)?.name ?? "Tipe site tidak ditemukan"}</small></td>}
-                  {submission ? <>
-                    <td>{subtypeMap.get(submission.site_subtype_id)?.name ?? "Subtipe tidak ditemukan"}</td>
-                    <td>{submission.version}</td>
-                    <td>{submission.last_saved_at ? new Date(submission.last_saved_at).toLocaleString("id-ID") : "Belum"}</td>
-                    <td><details><summary>Lihat JSON</summary><pre>{JSON.stringify(submission.payload, null, 2)}</pre></details></td>
-                    <td><Link className="table-action" href={`/admin/submissions/${submission.id}`}>Buka / edit</Link></td>
-                  </> : <>
-                    <td><span className="status-pill pending">Belum ada submission</span></td>
-                    <td>-</td><td>-</td><td>-</td><td>-</td>
-                  </>}
+            {filteredStationFillingViews.map(({ station, view, visibleRows }) => <details key={station.id}>
+              <summary><strong>{station.name}</strong><span>{view.siteCount} site {"\u2022"} {view.submissionCount} submission</span></summary>
+              <div className="admin-table-wrap station-filling-table"><table><thead><tr><th>Site</th><th>Tipe Site</th><th>Subtipe</th><th>Status</th><th>Versi</th><th>Terakhir Simpan</th><th>Aksi</th></tr></thead><tbody>
+                {visibleRows.map(({ site, siteType, subtype, submission }) => <tr key={`${site.id}:${subtype?.id ?? "no-subtype"}`}>
+                  <td><strong>{site.name}</strong></td>
+                  <td>{siteType?.name ?? "Tipe site tidak ditemukan"}</td>
+                  <td>{subtype?.name ?? "Subtipe master tidak tersedia"}</td>
+                  <td><span className={`status-pill ${submission ? "active" : "pending"}`}>{submission ? "Sudah ada data" : "Belum ada submission"}</span></td>
+                  <td>{submission?.version ?? "-"}</td>
+                  <td>{submission ? new Date(submission.last_saved_at ?? submission.updated_at).toLocaleString("id-ID") : "-"}</td>
+                  <td>{submission ? <Link className="table-action" href={`/admin/submissions/${submission.id}`}>Buka / edit</Link> : "-"}</td>
                 </tr>)}
-                {!stationSiteRows.length && <tr><td colSpan={6}>Belum ada site.</td></tr>}
-              </tbody></table></div></details>;
-            })}
+                {!visibleRows.length && <tr><td colSpan={7}>Belum ada site atau subtipe yang cocok.</td></tr>}
+              </tbody></table></div>
+            </details>)}
           </div>}
 
           {!loading && tab === "accounts" && <div className="admin-table-wrap accounts-table"><table><thead><tr><th>Stasiun</th><th>Username</th><th>Status</th><th>Aksi</th></tr></thead><tbody>
