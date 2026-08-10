@@ -16157,6 +16157,46 @@
                              "profileId":  "add8966d-83fe-48bd-a8b9-1fd0301bf861"
                          },
                          {
+                             "siteType":  "AWOS Kategori III",
+                             "subtype":  "AWOS Kategori III Vaisala TDZ",
+                             "profile":  "AWOS TDZ",
+                             "siteTypeId":  "20e3dd30-2334-4155-9986-77efdc04b145",
+                             "siteTypeActive":  true,
+                             "subtypeId":  "281a0164-5af8-4a65-a4cb-c756903ff7c2",
+                             "subtypeActive":  true,
+                             "profileId":  "397f8b69-3636-432a-b846-0198558a3cc6"
+                         },
+                         {
+                             "siteType":  "AWOS Kategori III",
+                             "subtype":  "AWOS Kategori III Vaisala Mid",
+                             "profile":  "AWOS Mid",
+                             "siteTypeId":  "20e3dd30-2334-4155-9986-77efdc04b145",
+                             "siteTypeActive":  true,
+                             "subtypeId":  "a6c1b955-9421-4ec1-aec2-58cbd85818e3",
+                             "subtypeActive":  true,
+                             "profileId":  "cbffb7c8-5b30-450d-a45b-6b45537b2158"
+                         },
+                         {
+                             "siteType":  "AWOS Kategori III",
+                             "subtype":  "AWOS Kategori III Vaisala End Point",
+                             "profile":  "AWOS End Point",
+                             "siteTypeId":  "20e3dd30-2334-4155-9986-77efdc04b145",
+                             "siteTypeActive":  true,
+                             "subtypeId":  "ce949b63-5487-4188-bcfb-c86f6267875e",
+                             "subtypeActive":  true,
+                             "profileId":  "679e0500-941f-4683-a6a5-134542cac907"
+                         },
+                         {
+                             "siteType":  "AWOS Kategori III",
+                             "subtype":  "AWOS Kategori III Vaisala Station",
+                             "profile":  "AWOS Station",
+                             "siteTypeId":  "20e3dd30-2334-4155-9986-77efdc04b145",
+                             "siteTypeActive":  true,
+                             "subtypeId":  "580ea54d-5391-4116-bc3f-28082b35584c",
+                             "subtypeActive":  true,
+                             "profileId":  "add8966d-83fe-48bd-a8b9-1fd0301bf861"
+                         },
+                         {
                              "siteType":  "AWOS Kategori II",
                              "subtype":  "AWOS Kategori II",
                              "profile":  "AWOS Kategori II",
@@ -16227,7 +16267,7 @@
                          },
                          {
                              "siteType":  "Radar Baron",
-                             "subtype":  "Radar Baron",
+                             "subtype":  "Radar Baron Site",
                              "profile":  "",
                              "siteTypeId":  "0003b2c8-aaf7-4bd5-94ff-14590daca62d",
                              "siteTypeActive":  true,
@@ -16236,7 +16276,7 @@
                          },
                          {
                              "siteType":  "Radar Vaisala",
-                             "subtype":  "Radar Vaisala",
+                             "subtype":  "Radar Vaisala Site",
                              "profile":  "",
                              "siteTypeId":  "caac1afe-de6f-4bc3-ac40-39953e833567",
                              "siteTypeActive":  true,
@@ -16245,7 +16285,7 @@
                          },
                          {
                              "siteType":  "Radar Gematronik",
-                             "subtype":  "Radar Gematronik",
+                             "subtype":  "Radar Gematronik Site",
                              "profile":  "",
                              "siteTypeId":  "446bc7cf-c808-438b-b236-af16675a399e",
                              "siteTypeActive":  true,
