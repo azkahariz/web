@@ -75,6 +75,7 @@ export function useServerDraft({
   const siteId = scope?.siteId ?? "";
   const siteSubtypeId = scope?.siteSubtypeId ?? "";
   const serializedPayload = payload ? payloadFingerprint(payload) : "";
+  const payloadReady = Boolean(serializedPayload);
   const canEdit = isEditing && !latestPayload;
 
   useEffect(() => {
@@ -190,7 +191,7 @@ export function useServerDraft({
       setLatestPayload(null);
       setDirty(false);
     });
-    if (!stationId || !siteId || !siteSubtypeId || !serializedPayload) {
+    if (!stationId || !siteId || !siteSubtypeId || !payloadReady) {
       queueMicrotask(() => {
         if (generation === generationRef.current) setStatus("idle");
       });
@@ -268,7 +269,7 @@ export function useServerDraft({
     })();
   // Browse changes only read state; they must not acquire or release locks.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [adminMode, adminSubmissionId, retryTick, siteId, siteSubtypeId, stationId]);
+  }, [adminMode, adminSubmissionId, payloadReady, retryTick, siteId, siteSubtypeId, stationId]);
 
   useEffect(() => {
     if (!isEditing || !stationId || !siteId || !siteSubtypeId || !serializedPayload || !initializedKeyRef.current) return;

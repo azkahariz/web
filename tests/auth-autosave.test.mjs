@@ -179,6 +179,30 @@ test("retry acquire memakai respons lock dan versi server terbaru, bukan state r
   assert.doesNotMatch(retryAcquire, /chooseInitialDraft/);
 });
 
+test("navigasi client-side dari Submission menghydrate payload server pada render awal siap", async () => {
+  const [hook, inventory, monitor, dashboard] = await Promise.all([
+    readFile(new URL("../app/hooks/useServerDraft.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/InventoryApp.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/admin/AdminSubmissionMonitor.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/admin/AdminDashboard.tsx", import.meta.url), "utf8"),
+  ]);
+  assert.match(monitor, /href=\{`\/admin\/submissions\/\$\{row\.id\}`\}>Buka Lengkap/);
+  assert.match(dashboard, /router\.push\(`\/admin\/submissions\/\$\{result\.submissionId\}\?edit=1`\)/);
+  assert.doesNotMatch(monitor, /window\.location|location\.reload/);
+  assert.doesNotMatch(dashboard, /window\.location|location\.reload/);
+
+  assert.match(hook, /const payloadReady = Boolean\(serializedPayload\)/);
+  assert.match(hook, /if \(!stationId \|\| !siteId \|\| !siteSubtypeId \|\| !payloadReady\)/);
+  assert.match(hook, /\[adminMode, adminSubmissionId, payloadReady, retryTick, siteId, siteSubtypeId, stationId\]/);
+  assert.match(hook, /client\.rpc\("admin_get_submission_state", \{ p_submission_id: adminSubmissionId \}\)/);
+  assert.match(hook, /if \(choice\.payload\) onRemotePayload\(choice\.payload\)/);
+
+  assert.match(inventory, /setSite\(initialSite\)/);
+  assert.match(inventory, /setSubtype\(initialSubtype\)/);
+  assert.match(inventory, /autoEditStartedRef\.current = false/);
+  assert.match(inventory, /\[adminSubmissionId, initialSite, initialSubtype, isAdminEditor\]/);
+});
+
 test("format ekspor lama tetap tersedia", async () => {
   const [source, exportSource] = await Promise.all([
     readFile(new URL("../app/InventoryApp.tsx", import.meta.url), "utf8"),
