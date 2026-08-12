@@ -61,6 +61,15 @@ Gunakan helper bersama, bukan aturan baru dalam beberapa komponen. Contohnya,
 subtipe AWOS selalu melalui `getAllowedSiteSubtypes()` dan export Station/Admin
 selalu memakai `buildInventoryCsv()`.
 
+## Feedback async
+
+Gunakan `app/components/AsyncButton.tsx` untuk aksi async yang dapat dipicu user.
+Berikan `loading` dan `loadingText` yang menjelaskan proses; komponen akan
+menonaktifkan tombol dan menambahkan spinner. Untuk pemuatan tabel atau detail,
+pertahankan data/layout yang ada lalu tampilkan teks inline seperti `Memuat...`.
+Jangan memakai delay buatan, progress palsu, atau loader global untuk request
+kecil. Pastikan setiap operasi mengembalikan UI ke kondisi normal pada `finally`.
+
 ## Test dan verification
 
 ```powershell

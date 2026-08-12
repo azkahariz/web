@@ -87,9 +87,15 @@ test("list ringan, lazy detail cache, search/filter, dan archive dijaga oleh con
   assert.match(route, /is_super_admin/);
   assert.match(route, /status: 403/);
   assert.doesNotMatch(route, /SUPABASE_SECRET_KEY|createSupabaseAdminClient/);
-  assert.match(monitor, /if \(detailCache\[id\]\) return/);
+  assert.match(monitor, /if \(!detailCache\[id\]\) await loadDetail\(id\)/);
   assert.match(monitor, /\/api\/admin\/submissions\?id=/);
   assert.match(monitor, /setDetailCache\(\{\}\)/);
+  assert.match(monitor, /Memuat detail submission/);
+  assert.match(monitor, /Coba lagi/);
+  assert.match(monitor, /Mengarsipkan\.\.\./);
+  assert.match(monitor, /loadingText="Membuka mode edit\.\.\."/);
+  assert.match(dashboard, /runAction\(/);
+  assert.match(dashboard, /loadingText="Melepas lock\.\.\."/);
   assert.match(monitor, /pageSize: 50|SUBMISSION_PAGE_SIZE/);
   assert.doesNotMatch(monitor, /setInterval|Realtime|channel\(/);
   assert.match(monitor, /href=\{`\/admin\/submissions\/\$\{row\.id\}`\}>Buka Lengkap/);

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
+import AsyncButton from "../components/AsyncButton";
 import {
   SUBMISSION_PAGE_SIZE,
   type SubmissionArchiveFilter,
@@ -62,6 +63,8 @@ export default function AdminSubmissionMonitor({
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [detailLoadingId, setDetailLoadingId] = useState<string | null>(null);
   const [detailCache, setDetailCache] = useState<Record<string, SubmissionDetail>>({});
+  const [detailErrors, setDetailErrors] = useState<Record<string, string>>({});
+  const [actionId, setActionId] = useState<string | null>(null);
 
   const pageCount = Math.max(1, Math.ceil(totalCount / SUBMISSION_PAGE_SIZE));
 
@@ -93,24 +96,34 @@ export default function AdminSubmissionMonitor({
 
   const visibleDetail = useMemo(() => expandedId ? detailCache[expandedId] : undefined, [detailCache, expandedId]);
 
-  async function toggleDetail(id: string) {
-    if (expandedId === id) {
-      setExpandedId(null);
-      return;
-    }
-    setExpandedId(id);
-    if (detailCache[id]) return;
+  async function loadDetail(id: string) {
     setDetailLoadingId(id);
+    setDetailErrors((current) => {
+      const next = { ...current };
+      delete next[id];
+      return next;
+    });
     try {
       const response = await fetch(`/api/admin/submissions?id=${encodeURIComponent(id)}`, { cache: "no-store" });
       const result = await response.json() as { detail?: SubmissionDetail; error?: string };
       if (!response.ok || !result.detail) throw new Error(result.error || "Detail submission gagal dimuat.");
       setDetailCache((current) => ({ ...current, [id]: result.detail! }));
     } catch (error) {
-      onMessage(error instanceof Error ? error.message : "Detail submission gagal dimuat.");
+      const message = error instanceof Error ? error.message : "Detail submission gagal dimuat.";
+      setDetailErrors((current) => ({ ...current, [id]: message }));
+      onMessage(message);
     } finally {
       setDetailLoadingId(null);
     }
+  }
+
+  async function toggleDetail(id: string) {
+    if (expandedId === id) {
+      setExpandedId(null);
+      return;
+    }
+    setExpandedId(id);
+    if (!detailCache[id]) await loadDetail(id);
   }
 
   async function reload() {
@@ -128,24 +141,33 @@ export default function AdminSubmissionMonitor({
       if (!window.confirm("Submission ini akan dihapus dari pengisian aktif, tetapi datanya tetap disimpan dan dapat dipulihkan.")) return;
       reason = window.prompt("Alasan arsip (opsional, maksimal 500 karakter)", "")?.trim() ?? "";
     }
-    const response = await fetch("/api/admin/submissions", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ action: restoring ? "restore" : "archive", submissionId: row.id, reason }),
-    });
-    const result = await response.json() as { ok?: boolean; error?: string };
-    if (!response.ok) {
-      onMessage(result.error || "Aksi submission gagal.");
-      return;
+    const actionKey = `archive:${row.id}`;
+    if (actionId) return;
+    setActionId(actionKey);
+    try {
+      const response = await fetch("/api/admin/submissions", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action: restoring ? "restore" : "archive", submissionId: row.id, reason }),
+      });
+      const result = await response.json() as { ok?: boolean; error?: string };
+      if (!response.ok) {
+        onMessage(result.error || "Aksi submission gagal.");
+        return;
+      }
+      setDetailCache((current) => {
+        const next = { ...current };
+        delete next[row.id];
+        return next;
+      });
+      setExpandedId(null);
+      onMessage(restoring ? "Submission berhasil dipulihkan." : "Submission berhasil diarsipkan.");
+      await Promise.all([loadList(), onChanged()]);
+    } catch {
+      onMessage("Aksi submission gagal diproses. Coba lagi.");
+    } finally {
+      setActionId(null);
     }
-    setDetailCache((current) => {
-      const next = { ...current };
-      delete next[row.id];
-      return next;
-    });
-    setExpandedId(null);
-    onMessage(restoring ? "Submission berhasil dipulihkan." : "Submission berhasil diarsipkan.");
-    await Promise.all([loadList(), onChanged()]);
   }
 
   function resetPage<T>(setter: (value: T) => void, value: T) {
@@ -181,7 +203,7 @@ export default function AdminSubmissionMonitor({
       <span>{totalCount} submission</span>
     </div>
 
-    <div className="admin-table-wrap submission-table"><table><thead><tr><th>Stasiun</th><th>Site</th><th>Tipe Site</th><th>Subtipe</th><th>Progres</th><th>Versi</th><th>Operator</th><th>Terakhir Diperbarui</th><th>Detail</th></tr></thead><tbody>
+    <div className={`admin-table-wrap submission-table${loading ? " is-loading" : ""}`} aria-busy={loading}><table><thead><tr><th>Stasiun</th><th>Site</th><th>Tipe Site</th><th>Subtipe</th><th>Progres</th><th>Versi</th><th>Operator</th><th>Terakhir Diperbarui</th><th>Detail</th></tr></thead><tbody>
       {rows.map((row) => <Fragment key={row.id}>
         <tr className={expandedId === row.id ? "is-expanded" : ""}>
           <td>{row.station_name}</td><td><strong>{row.site_name}</strong></td><td>{row.site_type_name}</td><td>{row.subtype_name}</td>
@@ -190,7 +212,8 @@ export default function AdminSubmissionMonitor({
           <td><button className="detail-toggle" type="button" aria-expanded={expandedId === row.id} aria-label={`${expandedId === row.id ? "Tutup" : "Buka"} detail ${row.site_name}`} onClick={() => void toggleDetail(row.id)}>{expandedId === row.id ? "\u25B2" : "\u25BC"}</button></td>
         </tr>
         {expandedId === row.id && <tr className="submission-detail-row"><td colSpan={9}>
-          {detailLoadingId === row.id && <p>Memuat payload submission ini...</p>}
+          {detailLoadingId === row.id && <p className="submission-loading-copy"><span className="loading-spinner" aria-hidden="true" />Memuat detail submission...</p>}
+          {detailErrors[row.id] && <p className="submission-detail-error">{detailErrors[row.id]}<AsyncButton type="button" onClick={() => void loadDetail(row.id)} loading={detailLoadingId === row.id} loadingText="Memuat...">Coba lagi</AsyncButton></p>}
           {visibleDetail && <div className="submission-inline-detail">
             <div className="submission-detail-summary"><div><strong>Progress Barang</strong><span>{visibleDetail.filled_count} dari {visibleDetail.total_count} kategori terisi</span></div><strong>{visibleDetail.progress_percent}%</strong></div>
             <div className="submission-item-list">{visibleDetail.expected_items.map((item) => <span className={item.filled ? "filled" : "empty"} key={item.name}>{item.filled ? "\u2713" : "\u25CB"} {item.name}</span>)}</div>
@@ -198,15 +221,15 @@ export default function AdminSubmissionMonitor({
             <dl className="submission-info"><div><dt>Operator</dt><dd>{visibleDetail.operator_name || "-"}</dd></div><div><dt>Versi</dt><dd>v{visibleDetail.version}</dd></div><div><dt>Terakhir diperbarui</dt><dd>{formatUpdated(visibleDetail)}</dd></div><div><dt>QC Pending</dt><dd>{visibleDetail.qc_pending_count}</dd></div>{visibleDetail.archive_reason && <div><dt>Alasan arsip</dt><dd>{visibleDetail.archive_reason}</dd></div>}</dl>
             <div className="table-actions submission-detail-actions">
               <Link className="table-action" href={`/admin/submissions/${row.id}`}>Buka Lengkap</Link>
-              <button onClick={() => void onDownload(row)}>Unduh CSV</button>
-              {!row.archived_at && <button onClick={() => void onEdit(row)}>Edit sebagai Admin</button>}
-              <button className={row.archived_at ? "" : "danger-inline"} onClick={() => void changeArchive(row)}>{row.archived_at ? "Pulihkan Submission" : "Arsipkan Submission"}</button>
+              <AsyncButton loading={actionId === `download:${row.id}`} loadingText="Menyiapkan..." onClick={async () => { if (actionId) return; setActionId(`download:${row.id}`); try { await onDownload(row); } finally { setActionId(null); } }}>Unduh CSV</AsyncButton>
+              {!row.archived_at && <AsyncButton loading={actionId === `edit:${row.id}`} loadingText="Membuka mode edit..." onClick={async () => { if (actionId) return; setActionId(`edit:${row.id}`); try { await onEdit(row); } finally { setActionId(null); } }}>Edit sebagai Admin</AsyncButton>}
+              <AsyncButton className={row.archived_at ? "" : "danger-inline"} loading={actionId === `archive:${row.id}`} loadingText={row.archived_at ? "Memulihkan..." : "Mengarsipkan..."} onClick={() => void changeArchive(row)}>{row.archived_at ? "Pulihkan Submission" : "Arsipkan Submission"}</AsyncButton>
             </div>
           </div>}
         </td></tr>}
       </Fragment>)}
       {!loading && !rows.length && <tr><td colSpan={9}>{archive === "ACTIVE" ? "Belum ada submission aktif yang cocok." : "Belum ada submission diarsipkan yang cocok."}</td></tr>}
-      {loading && <tr><td colSpan={9}>Memuat submission...</td></tr>}
+      {loading && !rows.length && <tr><td colSpan={9}><span className="loading-spinner" aria-hidden="true" />Memuat submission...</td></tr>}
     </tbody></table></div>
 
     <div className="submission-pagination" aria-label="Pagination submission">

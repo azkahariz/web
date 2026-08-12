@@ -185,9 +185,22 @@ test("login toggle password accessible dan form non-login menolak address autofi
   assert.match(login, /Tampilkan password/);
   assert.match(login, /Sembunyikan password/);
   assert.match(login, /onClick=\{\(\) => setPasswordVisible\(\(current\) => !current\)\}/);
+  assert.match(login, /loadingText="Memverifikasi\.\.\."/);
+  assert.match(login, /disabled=\{submitting\}/);
+  assert.match(login, /Login berhasil\. Membuka dashboard\.\.\./);
+  assert.match(login, /Username atau password tidak sesuai\./);
+  assert.doesNotMatch(login, /setTimeout\(/);
   assert.match(metadata, /Alamat Detail<textarea autoComplete="off"/);
   assert.match(metadata, /No HP Penjaga<input autoComplete="off"/);
   assert.match(inventory, /id="aloptama-entry-operator" autoComplete="off"/);
+});
+
+test("shared async button memberi spinner, label proses, dan disabled state", async () => {
+  const button = await readFile(new URL("../app/components/AsyncButton.tsx", import.meta.url), "utf8");
+  assert.match(button, /loadingText/);
+  assert.match(button, /disabled=\{disabled \|\| loading\}/);
+  assert.match(button, /aria-busy=\{loading \|\| undefined\}/);
+  assert.match(button, /className="loading-spinner"/);
 });
 
 test("temporary password hanya berada di response sukses dan state dialog", async () => {

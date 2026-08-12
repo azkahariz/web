@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import AdminBulkExport from "./AdminBulkExport";
 import AdminSubmissionMonitor from "./AdminSubmissionMonitor";
+import AsyncButton from "../components/AsyncButton";
 import EyeIcon from "../components/EyeIcon";
 import { downloadAdminInventory } from "../lib/admin-export";
 import {
@@ -79,12 +80,14 @@ export default function AdminDashboard({ username }: { username: string }) {
   const [credentialVisible, setCredentialVisible] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadedAt, setLoadedAt] = useState(0);
+  const [activeAction, setActiveAction] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
     const client = getSupabaseBrowserClient();
     if (!client) return;
     setLoading(true);
-    const [stationRows, siteRows, siteTypeRows, subtypeRows, submissionRows, accountRows, productRows, proposalRows, auditRows] = await Promise.all([
+    try {
+      const [stationRows, siteRows, siteTypeRows, subtypeRows, submissionRows, accountRows, productRows, proposalRows, auditRows] = await Promise.all([
       client.from("stations").select("id, name, active").order("name"),
       loadAllAdminRows((from, to) => client.from("sites")
         .select("id, station_id, site_type_id, name, active")
@@ -103,22 +106,26 @@ export default function AdminDashboard({ username }: { username: string }) {
       client.from("products").select("id, brand, model, active, source_origin, spreadsheet_synced").order("brand"),
       client.from("product_proposals").select("id, station_id, submission_id, operator_name, proposed_brand, proposed_model, normalized_brand, normalized_model, status, resolved_product_id, review_note, created_at").order("created_at", { ascending: false }),
       client.from("admin_audit_log").select("id, action, target_type, target_id, metadata, created_at").order("created_at", { ascending: false }).limit(250),
-    ]);
-    const error = [stationRows, siteRows, siteTypeRows, subtypeRows, submissionRows, accountRows, productRows, proposalRows, auditRows].find((result) => result.error)?.error;
-    if (error) setMessage(`Gagal memuat dashboard: ${error.message}`);
-    else {
-      setStations((stationRows.data ?? []) as Station[]);
-      setSites((siteRows.data ?? []) as Site[]);
-      setSiteTypes((siteTypeRows.data ?? []) as SiteType[]);
-      setSubtypes((subtypeRows.data ?? []) as Subtype[]);
-      setSubmissions((submissionRows.data ?? []) as Submission[]);
-      setAccounts((accountRows.data ?? []) as Account[]);
-      setProducts((productRows.data ?? []) as Product[]);
-      setProposals((proposalRows.data ?? []) as Proposal[]);
-      setAudits((auditRows.data ?? []) as Audit[]);
+      ]);
+      const error = [stationRows, siteRows, siteTypeRows, subtypeRows, submissionRows, accountRows, productRows, proposalRows, auditRows].find((result) => result.error)?.error;
+      if (error) setMessage(`Gagal memuat dashboard: ${error.message}`);
+      else {
+        setStations((stationRows.data ?? []) as Station[]);
+        setSites((siteRows.data ?? []) as Site[]);
+        setSiteTypes((siteTypeRows.data ?? []) as SiteType[]);
+        setSubtypes((subtypeRows.data ?? []) as Subtype[]);
+        setSubmissions((submissionRows.data ?? []) as Submission[]);
+        setAccounts((accountRows.data ?? []) as Account[]);
+        setProducts((productRows.data ?? []) as Product[]);
+        setProposals((proposalRows.data ?? []) as Proposal[]);
+        setAudits((auditRows.data ?? []) as Audit[]);
+      }
+    } catch {
+      setMessage("Gagal memuat dashboard. Periksa koneksi lalu muat ulang.");
+    } finally {
+      setLoadedAt(Date.now());
+      setLoading(false);
     }
-    setLoadedAt(Date.now());
-    setLoading(false);
   }, []);
 
   useEffect(() => {
@@ -164,6 +171,16 @@ export default function AdminDashboard({ username }: { username: string }) {
   const filteredProposals = proposals.filter((proposal) => proposal.status === qcStatus && (!query
     || `${proposal.proposed_brand} ${proposal.proposed_model} ${stationMap.get(proposal.station_id)?.name ?? ""}`.toLocaleLowerCase("id-ID").includes(query)));
   const searchTab = (tab === "stations" && fillingMode === "master") || tab === "accounts" || tab === "qc" ? tab : null;
+
+  async function runAction(key: string, action: () => Promise<void>) {
+    if (activeAction) return;
+    setActiveAction(key);
+    try {
+      await action();
+    } finally {
+      setActiveAction(null);
+    }
+  }
 
   async function rpc(name: string, args: Record<string, unknown>) {
     const client = getSupabaseBrowserClient();
@@ -346,7 +363,7 @@ export default function AdminDashboard({ username }: { username: string }) {
           {tabs.map((item) => <button key={item.id} className={tab === item.id ? "active" : ""} onClick={() => navigate(item.id)}>{item.label}</button>)}
         </nav>
         <section className={`admin-content${tab === "accounts" ? " accounts-view" : ""}`}>
-          <div className="admin-heading"><div><p className="kicker">PENGELOLAAN APLIKASI</p><h2>{tabs.find((item) => item.id === tab)?.label}</h2></div>{!(tab === "stations" && fillingMode === "submissions") && <button className="secondary-button" onClick={() => void refresh()}>Muat ulang</button>}</div>
+          <div className="admin-heading"><div><p className="kicker">PENGELOLAAN APLIKASI</p><h2>{tabs.find((item) => item.id === tab)?.label}</h2></div>{!(tab === "stations" && fillingMode === "submissions") && <AsyncButton className="secondary-button" type="button" loading={loading} loadingText="Memuat..." onClick={() => void refresh()}>Muat ulang</AsyncButton>}</div>
           {message && <p className="admin-message" role="status">{message}</p>}
           {loading && <p className="loading-copy">Memuat data admin...</p>}
 
@@ -389,8 +406,8 @@ export default function AdminDashboard({ username }: { username: string }) {
                     <summary>Aksi</summary>
                     <div>
                       <Link href={submission ? `/admin/submissions/${submission.id}` : `/admin/inventory?siteId=${site.id}&subtypeId=${subtype.id}`}>Buka</Link>
-                      <button onClick={() => void downloadRow(station, site, subtype)}>Unduh CSV</button>
-                      <button onClick={() => void editRow(station, site, subtype)}>Edit sebagai Admin</button>
+                      <AsyncButton loading={activeAction === `download:${site.id}:${subtype.id}`} loadingText="Menyiapkan..." onClick={() => void runAction(`download:${site.id}:${subtype.id}`, () => downloadRow(station, site, subtype))}>Unduh CSV</AsyncButton>
+                      <AsyncButton loading={activeAction === `edit:${site.id}:${subtype.id}`} loadingText="Membuka..." onClick={() => void runAction(`edit:${site.id}:${subtype.id}`, () => editRow(station, site, subtype))}>Edit sebagai Admin</AsyncButton>
                     </div>
                   </details> : "-"}</td>
                 </tr>)}
@@ -409,26 +426,26 @@ export default function AdminDashboard({ username }: { username: string }) {
           />}
 
           {!loading && tab === "accounts" && <div className="admin-table-wrap accounts-table"><table><thead><tr><th>Stasiun</th><th>Username</th><th>Status</th><th>Aksi</th></tr></thead><tbody>
-            {filteredAccounts.map((account) => <tr key={account.id}><td>{stationMap.get(account.station_id)?.name ?? "Stasiun tidak ditemukan"}</td><td>{account.username}</td><td><span className={`status-pill ${account.active ? "active" : "inactive"}`}>{account.active ? "Aktif" : "Nonaktif"}</span></td><td className="table-actions"><button onClick={() => void accountAction({ action: "set-active", accountId: account.id, active: !account.active }, `${account.active ? "Nonaktifkan" : "Aktifkan"} akun ${account.username}?`)}>{account.active ? "Nonaktifkan" : "Aktifkan"}</button><button onClick={() => void accountAction({ action: "reset-password", accountId: account.id }, `Reset password ${account.username}? Password lama langsung tidak berlaku.`)}>Reset Password</button></td></tr>)}
-            {filteredUnprovisionedStations.map((station) => <tr key={station.id}><td>{station.name}</td><td>-</td><td><span className="status-pill pending">Belum ada akun</span></td><td><button onClick={() => void accountAction({ action: "provision", stationId: station.id }, `Buat akun baru untuk ${station.name}?`)}>Provision akun</button></td></tr>)}
+            {filteredAccounts.map((account) => <tr key={account.id}><td>{stationMap.get(account.station_id)?.name ?? "Stasiun tidak ditemukan"}</td><td>{account.username}</td><td><span className={`status-pill ${account.active ? "active" : "inactive"}`}>{account.active ? "Aktif" : "Nonaktif"}</span></td><td className="table-actions"><AsyncButton loading={activeAction === `account:${account.id}:active`} loadingText={account.active ? "Menonaktifkan..." : "Mengaktifkan..."} onClick={() => void runAction(`account:${account.id}:active`, () => accountAction({ action: "set-active", accountId: account.id, active: !account.active }, `${account.active ? "Nonaktifkan" : "Aktifkan"} akun ${account.username}?`))}>{account.active ? "Nonaktifkan" : "Aktifkan"}</AsyncButton><AsyncButton loading={activeAction === `account:${account.id}:reset`} loadingText="Mereset..." onClick={() => void runAction(`account:${account.id}:reset`, () => accountAction({ action: "reset-password", accountId: account.id }, `Reset password ${account.username}? Password lama langsung tidak berlaku.`))}>Reset Password</AsyncButton></td></tr>)}
+            {filteredUnprovisionedStations.map((station) => <tr key={station.id}><td>{station.name}</td><td>-</td><td><span className="status-pill pending">Belum ada akun</span></td><td><AsyncButton loading={activeAction === `account:${station.id}:provision`} loadingText="Membuat akun..." onClick={() => void runAction(`account:${station.id}:provision`, () => accountAction({ action: "provision", stationId: station.id }, `Buat akun baru untuk ${station.name}?`))}>Provision akun</AsyncButton></td></tr>)}
             {!filteredAccounts.length && !filteredUnprovisionedStations.length && <tr><td colSpan={4}>Akun atau stasiun tidak ditemukan.</td></tr>}
           </tbody></table></div>}
 
           {!loading && tab === "locks" && <div className="admin-table-wrap"><table><thead><tr><th>Stasiun</th><th>Site / Subtipe</th><th>Operator</th><th>Session</th><th>Durasi</th><th>Aksi</th></tr></thead><tbody>
-            {activeLocks.map((lock) => <tr key={lock.id}><td>{stationMap.get(lock.station_id)?.name}</td><td>{siteMap.get(lock.site_id)?.name}<small>{subtypeMap.get(lock.site_subtype_id)?.name}</small></td><td>{lock.lock_operator_name || "Tidak diketahui"}</td><td><code>{lock.locked_by_session_id?.slice(0, 8)}</code></td><td>{ageLabel(lock.lock_last_activity_at, loadedAt)}</td><td><button className="danger-inline" onClick={() => void forceRelease(lock.id)}>Paksa Lepas Lock</button></td></tr>)}
+            {activeLocks.map((lock) => <tr key={lock.id}><td>{stationMap.get(lock.station_id)?.name}</td><td>{siteMap.get(lock.site_id)?.name}<small>{subtypeMap.get(lock.site_subtype_id)?.name}</small></td><td>{lock.lock_operator_name || "Tidak diketahui"}</td><td><code>{lock.locked_by_session_id?.slice(0, 8)}</code></td><td>{ageLabel(lock.lock_last_activity_at, loadedAt)}</td><td><AsyncButton className="danger-inline" loading={activeAction === `lock:${lock.id}`} loadingText="Melepas lock..." onClick={() => void runAction(`lock:${lock.id}`, () => forceRelease(lock.id))}>Paksa Lepas Lock</AsyncButton></td></tr>)}
             {!activeLocks.length && <tr><td colSpan={6}>Tidak ada lock aktif.</td></tr>}
           </tbody></table></div>}
 
           {!loading && tab === "qc" && <>
             <div className="qc-toolbar"><div className="status-tabs">{(["PENDING", "APPROVED", "MERGED", "REJECTED"] as const).map((status) => <button key={status} className={qcStatus === status ? "active" : ""} onClick={() => { setQcStatus(status); setSelectedProposals([]); }}>{status} ({proposals.filter((row) => row.status === status).length})</button>)}</div><button className="secondary-button" disabled={!pendingSpreadsheet.length} onClick={exportProducts}>Unduh Produk Baru untuk Spreadsheet ({pendingSpreadsheet.length})</button></div>
-            {qcStatus === "PENDING" && <div className="bulk-merge"><select value={mergeProductId} onChange={(event) => setMergeProductId(event.target.value)}><option value="">Pilih produk existing tujuan merge</option>{products.filter((product) => product.active).map((product) => <option key={product.id} value={product.id}>{product.brand} - {product.model}</option>)}</select><button className="primary-button" disabled={!selectedProposals.length || !mergeProductId} onClick={() => void merge(selectedProposals)}>Gabungkan Semua ({selectedProposals.length})</button></div>}
+            {qcStatus === "PENDING" && <div className="bulk-merge"><select value={mergeProductId} onChange={(event) => setMergeProductId(event.target.value)}><option value="">Pilih produk existing tujuan merge</option>{products.filter((product) => product.active).map((product) => <option key={product.id} value={product.id}>{product.brand} - {product.model}</option>)}</select><AsyncButton className="primary-button" disabled={!selectedProposals.length || !mergeProductId} loading={activeAction === "qc:merge"} loadingText={`Memproses ${selectedProposals.length} item...`} onClick={() => void runAction("qc:merge", () => merge(selectedProposals))}>Gabungkan Semua ({selectedProposals.length})</AsyncButton></div>}
             <div className="admin-table-wrap"><table><thead><tr>{qcStatus === "PENDING" && <th>Pilih</th>}<th>Usulan Brand / Tipe</th><th>Stasiun / Operator</th><th>Tanggal</th><th>Hasil QC</th><th>Aksi</th></tr></thead><tbody>
               {filteredProposals.map((proposal) => <tr key={proposal.id}>{qcStatus === "PENDING" && <td><input type="checkbox" checked={selectedProposals.includes(proposal.id)} onChange={(event) => setSelectedProposals((current) => event.target.checked ? [...current, proposal.id] : current.filter((id) => id !== proposal.id))} /></td>}<td><strong>{proposal.proposed_brand}</strong><small>{proposal.proposed_model}</small></td><td>{stationMap.get(proposal.station_id)?.name}<small>{proposal.operator_name || "-"}</small></td><td>{new Date(proposal.created_at).toLocaleDateString("id-ID")}</td><td>{proposal.resolved_product_id ? `${productMap.get(proposal.resolved_product_id)?.brand ?? ""} - ${productMap.get(proposal.resolved_product_id)?.model ?? ""}` : proposal.review_note || "-"}</td><td className="table-actions">{proposal.status === "PENDING" && <><button onClick={() => void approve(proposal)}>Approve Baru</button><button onClick={() => { setSelectedProposals([proposal.id]); setMessage("Pilih produk tujuan pada kotak merge."); }}>Merge</button><button className="danger-inline" onClick={() => void reject(proposal)}>Tolak</button></>}</td></tr>)}
               {!filteredProposals.length && <tr><td colSpan={qcStatus === "PENDING" ? 6 : 5}>Tidak ada proposal pada status ini.</td></tr>}
             </tbody></table></div>
             <div className="admin-subheading"><div><strong>Perubahan master yang perlu masuk Spreadsheet</strong><span>Produk QC baru atau koreksi canonical yang belum direkonsiliasi.</span></div></div>
             <div className="admin-table-wrap"><table><thead><tr><th>Product ID</th><th>Brand</th><th>Tipe</th><th>Sumber</th><th>Aksi</th></tr></thead><tbody>
-              {pendingSpreadsheet.map((product) => <tr key={product.id}><td><code>{product.id}</code></td><td>{product.brand}</td><td>{product.model}</td><td>{product.source_origin}</td><td><button onClick={() => void editCanonical(product)}>Koreksi canonical</button></td></tr>)}
+              {pendingSpreadsheet.map((product) => <tr key={product.id}><td><code>{product.id}</code></td><td>{product.brand}</td><td>{product.model}</td><td>{product.source_origin}</td><td><AsyncButton loading={activeAction === `qc:canonical:${product.id}`} loadingText="Menyimpan..." onClick={() => void runAction(`qc:canonical:${product.id}`, () => editCanonical(product))}>Koreksi canonical</AsyncButton></td></tr>)}
               {!pendingSpreadsheet.length && <tr><td colSpan={5}>Semua produk sudah sinkron dengan Spreadsheet.</td></tr>}
             </tbody></table></div>
           </>}
