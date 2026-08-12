@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import AdminBulkExport from "./AdminBulkExport";
 import AdminSubmissionMonitor from "./AdminSubmissionMonitor";
@@ -43,6 +43,17 @@ type Audit = { id: string; action: string; target_type: string; target_id: strin
 type Tab = "summary" | "stations" | "accounts" | "locks" | "qc" | "audit";
 type FillingMode = "master" | "submissions";
 
+type StationFillingView = {
+  siteCount: number;
+  submissionCount: number;
+  rows: Array<{
+    site: Site;
+    siteType: SiteType | null;
+    subtype: Subtype | null;
+    submission: Submission | null;
+  }>;
+};
+
 const tabs: Array<{ id: Tab; label: string }> = [
   { id: "summary", label: "Ringkasan" },
   { id: "stations", label: "Stasiun & Pengisian" },
@@ -58,11 +69,58 @@ function ageLabel(value: string | null, now: number) {
   return minutes < 1 ? "kurang dari 1 menit" : `${minutes} menit`;
 }
 
+const StationFillingCard = memo(function StationFillingCard({
+  station,
+  view,
+  visibleRows,
+  expanded,
+  busyAction,
+  onToggle,
+  onDownload,
+}: {
+  station: Station;
+  view: StationFillingView;
+  visibleRows: StationFillingView["rows"];
+  expanded: boolean;
+  busyAction: string | null;
+  onToggle: (open: boolean) => void;
+  onDownload: (station: Station, site: Site, subtype: Subtype) => void;
+}) {
+  return <details open={expanded} onToggle={(event) => onToggle(event.currentTarget.open)}>
+    <summary><strong>{station.name}</strong><span>{view.siteCount} site {"\u2022"} {view.submissionCount} submission</span></summary>
+    {expanded && <div className="admin-table-wrap station-filling-table"><table><thead><tr><th>Site</th><th>Tipe Site</th><th>Subtipe</th><th>Status</th><th>Versi</th><th>Terakhir Simpan</th><th>Aksi</th></tr></thead><tbody>
+      {visibleRows.map(({ site, siteType, subtype, submission }) => <tr key={`${site.id}:${subtype?.id ?? "no-subtype"}`}>
+        <td><strong>{site.name}</strong></td>
+        <td>{siteType?.name ?? "Belum terpetakan"}</td>
+        <td>{subtype?.name ?? "Belum terpetakan"}</td>
+        <td><span className={`status-pill ${submission ? "active" : "pending"}`}>{submission ? "Sudah ada data" : "Belum ada submission"}</span></td>
+        <td>{submission?.version ?? "-"}</td>
+        <td>{submission ? new Date(submission.last_saved_at ?? submission.updated_at).toLocaleString("id-ID") : "-"}</td>
+        <td>{subtype ? <details className="row-action-menu">
+          <summary>Aksi</summary>
+          <div>
+            <Link href={submission ? `/admin/submissions/${submission.id}` : `/admin/inventory?siteId=${site.id}&subtypeId=${subtype.id}`} target="_blank" rel="noopener noreferrer">Buka</Link>
+            <AsyncButton loading={busyAction === `download:${site.id}:${subtype.id}`} loadingText="Menyiapkan..." onClick={() => onDownload(station, site, subtype)}>Unduh</AsyncButton>
+          </div>
+        </details> : "-"}</td>
+      </tr>)}
+      {!visibleRows.length && <tr><td colSpan={7}>Belum ada site atau subtipe yang cocok.</td></tr>}
+    </tbody></table></div>}
+  </details>;
+}, (previous, next) => (
+  previous.station === next.station
+  && previous.view === next.view
+  && previous.visibleRows === next.visibleRows
+  && previous.expanded === next.expanded
+  && previous.busyAction === next.busyAction
+));
+
 export default function AdminDashboard({ username }: { username: string }) {
   const router = useRouter();
   const feedback = useAppFeedback();
   const [tab, setTab] = useState<Tab>("summary");
   const [fillingMode, setFillingMode] = useState<FillingMode>("master");
+  const [expandedStationId, setExpandedStationId] = useState<string | null>(null);
   const [submissionMonitorMounted, setSubmissionMonitorMounted] = useState(false);
   const [stations, setStations] = useState<Station[]>([]);
   const [sites, setSites] = useState<Site[]>([]);
@@ -160,13 +218,13 @@ export default function AdminDashboard({ username }: { username: string }) {
     station,
     view: buildStationFillingView(station.id, sites, siteTypes, subtypes, submissions),
   })), [sites, siteTypes, stations, submissions, subtypes]);
-  const filteredStationFillingViews = stationFillingViews.map(({ station, view }) => ({
+  const filteredStationFillingViews = useMemo(() => stationFillingViews.map(({ station, view }) => ({
     station,
     view,
     visibleRows: filterStationFillingRows(station.name, view.rows, query),
   })).filter(({ station, visibleRows }) => !query
     || station.name.toLocaleLowerCase("id-ID").includes(query)
-    || visibleRows.length > 0);
+    || visibleRows.length > 0), [query, stationFillingViews]);
   const filteredAccounts = accounts.filter((account) => accountMatchesAdminSearch(account, query, stationMap));
   const filteredUnprovisionedStations = stations.filter((station) => !accountByStation.has(station.id)
     && (!query || station.name.toLocaleLowerCase("id-ID").includes(query)));
@@ -388,27 +446,16 @@ export default function AdminDashboard({ username }: { username: string }) {
           </div>}
 
           {!loading && tab === "stations" && fillingMode === "master" && <div className="admin-list">
-            {filteredStationFillingViews.map(({ station, view, visibleRows }) => <details key={station.id}>
-              <summary><strong>{station.name}</strong><span>{view.siteCount} site {"\u2022"} {view.submissionCount} submission</span></summary>
-              <div className="admin-table-wrap station-filling-table"><table><thead><tr><th>Site</th><th>Tipe Site</th><th>Subtipe</th><th>Status</th><th>Versi</th><th>Terakhir Simpan</th><th>Aksi</th></tr></thead><tbody>
-                {visibleRows.map(({ site, siteType, subtype, submission }) => <tr key={`${site.id}:${subtype?.id ?? "no-subtype"}`}>
-                  <td><strong>{site.name}</strong></td>
-                  <td>{siteType?.name ?? "Belum terpetakan"}</td>
-                  <td>{subtype?.name ?? "Belum terpetakan"}</td>
-                  <td><span className={`status-pill ${submission ? "active" : "pending"}`}>{submission ? "Sudah ada data" : "Belum ada submission"}</span></td>
-                  <td>{submission?.version ?? "-"}</td>
-                  <td>{submission ? new Date(submission.last_saved_at ?? submission.updated_at).toLocaleString("id-ID") : "-"}</td>
-                  <td>{subtype ? <details className="row-action-menu">
-                    <summary>Aksi</summary>
-                    <div>
-                      <Link href={submission ? `/admin/submissions/${submission.id}` : `/admin/inventory?siteId=${site.id}&subtypeId=${subtype.id}`} target="_blank" rel="noopener noreferrer">Buka</Link>
-                      <AsyncButton loading={activeAction === `download:${site.id}:${subtype.id}`} loadingText="Menyiapkan..." onClick={() => void runAction(`download:${site.id}:${subtype.id}`, () => downloadRow(station, site, subtype))}>Unduh</AsyncButton>
-                    </div>
-                  </details> : "-"}</td>
-                </tr>)}
-                {!visibleRows.length && <tr><td colSpan={7}>Belum ada site atau subtipe yang cocok.</td></tr>}
-              </tbody></table></div>
-            </details>)}
+            {filteredStationFillingViews.map(({ station, view, visibleRows }) => <StationFillingCard
+              key={station.id}
+              station={station}
+              view={view}
+              visibleRows={visibleRows}
+              expanded={expandedStationId === station.id}
+              busyAction={activeAction?.startsWith(`download:${station.id}:`) ? activeAction : null}
+              onToggle={(open) => setExpandedStationId(open ? station.id : null)}
+              onDownload={(selectedStation, site, subtype) => void runAction(`download:${site.id}:${subtype.id}`, () => downloadRow(selectedStation, site, subtype))}
+            />)}
           </div>}
 
           {submissionMonitorMounted && <div hidden={tab !== "stations" || fillingMode !== "submissions"}>

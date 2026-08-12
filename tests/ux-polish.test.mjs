@@ -243,3 +243,13 @@ test("temporary password hanya berada di response sukses dan state dialog", asyn
   assert.doesNotMatch(dashboard, /\?\? submission\.site_id/);
   assert.doesNotMatch(dashboard, /localStorage|sessionStorage/);
 });
+
+test("Master Pengisian merender detail station secara lazy dan memoized", async () => {
+  const dashboard = await readFile(new URL("../app/admin/AdminDashboard.tsx", import.meta.url), "utf8");
+  assert.match(dashboard, /const StationFillingCard = memo\(/);
+  assert.match(dashboard, /expandedStationId/);
+  assert.match(dashboard, /\{expanded && <div className="admin-table-wrap station-filling-table">/);
+  assert.match(dashboard, /previous\.view === next\.view/);
+  assert.match(dashboard, /busyAction === next\.busyAction/);
+  assert.match(dashboard, /filteredStationFillingViews = useMemo/);
+});
