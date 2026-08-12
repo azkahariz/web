@@ -6,6 +6,9 @@ Aloptama Collect mencatat metadata lokasi dan perangkat yang terpasang pada
 setiap Site Aloptama BMKG. Pengisian dapat dilakukan bertahap, disimpan,
 dibuka kembali, dan diunduh sebagai CSV atau JSON.
 
+Akses resmi: https://aloptama-collect.vercel.app. ChatGPT Sites sudah tidak
+digunakan sebagai tempat pengisian maupun deployment.
+
 ## Siapa yang memakai?
 
 - **Station User** adalah petugas UPT. Akun ini otomatis terikat ke satu

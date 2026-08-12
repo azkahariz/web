@@ -14,6 +14,16 @@ npm.cmd run check
 
 Node.js minimal 22.13 diperlukan. Local URL biasanya `http://localhost:3000`.
 
+## Hosting dan deployment
+
+- Development: `http://localhost:3000` melalui `npm.cmd run dev`.
+- Preview: Vercel Preview Deployment dari feature branch.
+- Production resmi: https://aloptama-collect.vercel.app
+
+Flow resmi adalah feature branch -> GitHub -> Vercel Preview -> test dan smoke
+test -> merge `main` -> Vercel Production. ChatGPT Sites sudah tidak digunakan
+untuk deployment production.
+
 ## Environment
 
 Salin format dari `.env.example` ke `.env.local`; jangan commit nilainya.
@@ -59,7 +69,9 @@ npm.cmd run verify:admin-qc
 npm.cmd run verify:admin-api
 ```
 
-`check` menjalankan lint, test, build Vinext, dan build Next.js. Script
+`check` menjalankan lint, test, legacy Sites compatibility build, dan build
+Next.js. `build:legacy-sites` bukan perintah deployment; build tersebut hanya
+dipertahankan agar regression test rendering lama tetap terjaga. Script
 verification database hanya dijalankan bila area terkait berubah.
 `verify:admin-api` memerlukan server lokal dan credential Super Admin lokal.
 
@@ -79,9 +91,9 @@ mengambil kembali password existing.
 
 ## Migration dan deploy
 
-Buat migration baru; jangan edit migration yang sudah applied. Uji Preview
-Vercel dari branch fitur, lakukan smoke test, lalu merge ke `main` setelah
-review. Production mengikuti branch yang dikonfigurasi Vercel.
+Buat migration baru; jangan edit migration yang sudah applied. Uji Vercel
+Preview dari branch fitur, lakukan smoke test, lalu merge ke `main` setelah
+review. Production resmi adalah https://aloptama-collect.vercel.app.
 
 Jangan ubah timeout lock lima menit, lifecycle Browse/Edit, format CSV/JSON,
 RLS, atau pagination data besar tanpa audit consumer dan regression test.

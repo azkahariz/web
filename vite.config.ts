@@ -3,6 +3,9 @@ import { defineConfig } from "vite";
 import hostingConfig from "./.openai/hosting.json";
 import { sites } from "./build/sites-vite-plugin";
 
+// Legacy ChatGPT Sites compatibility build used only by npm test. Production
+// runtime and deployment are Next.js on Vercel.
+
 const SITE_CREATOR_PLACEHOLDER_DATABASE_ID =
   "00000000-0000-4000-8000-000000000000";
 

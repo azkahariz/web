@@ -3,6 +3,8 @@
 Terakhir diperbarui: 12 Agustus 2026. Baca [Mulai di Sini](MULAI-DI-SINI.md)
 untuk istilah dasar.
 
+Akses resmi aplikasi: https://aloptama-collect.vercel.app
+
 ## Yang perlu dilakukan
 
 1. Buka aplikasi, isi **Username** dan **Password**, lalu tekan **Masuk**.

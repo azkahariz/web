@@ -2,6 +2,9 @@
 
 Terakhir diperbarui: 12 Agustus 2026. Aplikasi telah menyimpan data nyata.
 
+Production resmi: https://aloptama-collect.vercel.app. Deployment hanya melalui
+Vercel; ChatGPT Sites adalah legacy dan bukan target deployment aktif.
+
 ## Sebelum edit
 
 1. Pastikan branch dan folder project benar, lalu periksa `git status`.
@@ -44,8 +47,10 @@ menambah input tampilan tanpa memastikan payload, export, dan test yang relevan.
 1. Jalankan `npm.cmd run check`.
 2. Jalankan verification yang relevan bila Auth, lock, QC, Admin, atau database
    berubah.
-3. Push branch untuk Vercel Preview dan lakukan smoke test manual.
-4. Review diff dan secret, lalu merge ke `main` setelah disetujui.
+3. Push feature branch ke GitHub untuk membuat Vercel Preview, lalu lakukan
+   smoke test manual.
+4. Review diff dan secret, lalu merge ke `main` setelah disetujui agar Vercel
+   menjalankan deployment Production.
 
 ## Setelah production
 

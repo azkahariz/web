@@ -15,6 +15,7 @@ export default function StationGuidePage() {
       <article className="guide-content">
         <p className="kicker">PANDUAN RINGKAS</p>
         <h2>Isi data dengan aman, satu site dan subtipe pada satu waktu.</h2>
+        <p className="guide-more">Akses resmi: <a href="https://aloptama-collect.vercel.app">https://aloptama-collect.vercel.app</a>.</p>
         <section>
           <h3>Urutan pengisian</h3>
           <ol>

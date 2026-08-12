@@ -14,7 +14,8 @@ async function exists(path: string): Promise<boolean> {
   }
 }
 
-// Packages Sites metadata and migrations after Vite finishes compiling.
+// Legacy ChatGPT Sites compatibility packaging for the rendering regression test.
+// Vercel/Next.js is the only production deployment path.
 export function sites(): Plugin {
   let root = process.cwd();
 

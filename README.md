@@ -6,6 +6,9 @@ Admin mengelola akun, submission, lock, dan QC produk.
 
 Production: https://aloptama-collect.vercel.app
 
+Hosting resmi: **Vercel**. ChatGPT Sites pernah dipakai pada tahap awal
+pengembangan, tetapi sudah dihentikan dan bukan target deployment repository.
+
 Status dokumentasi: **Production / Pilot**. Aplikasi telah digunakan untuk
 data nyata. Jangan mengubah data, UUID, schema, atau secret tanpa prosedur
 yang benar.

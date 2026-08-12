@@ -264,6 +264,27 @@ test("panduan ringkas tersedia untuk Station User dan Super Admin", async () => 
   assert.match(adminGuide, /super_admins/);
 });
 
+test("Vercel adalah deployment resmi dan Sites hanya compatibility legacy", async () => {
+  const [packageText, readme, developerGuide, productionSop, legacyWorker] = await Promise.all([
+    readFile(new URL("../package.json", import.meta.url), "utf8"),
+    readFile(new URL("../README.md", import.meta.url), "utf8"),
+    readFile(new URL("../docs/PANDUAN-PENGEMBANG.md", import.meta.url), "utf8"),
+    readFile(new URL("../docs/SOP-PERUBAHAN-PRODUCTION.md", import.meta.url), "utf8"),
+    readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(packageText, /"dev": "next dev"/);
+  assert.match(packageText, /"build": "next build"/);
+  assert.match(packageText, /"start": "next start"/);
+  assert.match(packageText, /"build:legacy-sites": "vinext build"/);
+  assert.doesNotMatch(packageText, /"(?:dev|build|start):sites"/);
+  for (const source of [readme, developerGuide, productionSop]) {
+    assert.match(source, /https:\/\/aloptama-collect\.vercel\.app/);
+  }
+  assert.match(developerGuide, /ChatGPT Sites sudah tidak digunakan/);
+  assert.match(legacyWorker, /Legacy Cloudflare Worker entry point/);
+});
+
 test("form metadata menyediakan seluruh pilihan operasional dan komunikasi", async () => {
   const [source, formOptions] = await Promise.all([
     readFile(new URL("../app/SiteMetadataForm.tsx", import.meta.url), "utf8"),
