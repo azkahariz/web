@@ -73,6 +73,17 @@ jika perlu.
 
 - Site count salah atau data lebih dari 1.000 tampak terpotong: audit query yang
   harus menggunakan `loadAllAdminRows()` dan master Site, bukan submission saja.
+- Submission tidak muncul di tab aktif: periksa filter **Aktif/Diarsipkan**.
+  Submission arsip sengaja tidak masuk count dan Master Pengisian menampilkannya
+  sebagai "Belum ada submission"; pulihkan sebelum melakukan Edit sebagai Admin.
+- Progress "Belum terpetakan": periksa relasi Subtipe ke `item_profiles` serta
+  `profile_items` aktif. Jangan memperbaikinya dengan memasukkan metadata ke
+  denominator.
+- Detail gagal tetapi list tampil: list dan detail adalah request terpisah.
+  Periksa RPC `admin_get_submission_detail`, session Super Admin, dan jaringan;
+  klik Muat ulang untuk menghapus cache detail halaman.
+- List terasa berat atau egress naik: pastikan `admin_list_submissions` tetap 50
+  row per halaman dan response list tidak mempunyai field `payload`.
 - Supabase environment salah: periksa hanya nama variable dan availability,
   jangan menampilkan nilainya.
 - Vercel build gagal: lihat log build, jalankan `npm.cmd run check` lokal, lalu

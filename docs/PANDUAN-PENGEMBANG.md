@@ -47,6 +47,7 @@ variable `NEXT_PUBLIC_*`.
 | Autosave, lock, version | `app/hooks/useServerDraft.ts`, `app/lib/server-draft.ts` |
 | Logout lokal | `app/lib/local-logout.ts` |
 | Admin | `app/admin/AdminDashboard.tsx`, `app/api/admin/` |
+| Monitoring submission | `app/admin/AdminSubmissionMonitor.tsx`, `app/lib/submission-monitoring.ts` |
 | QC produk | `app/lib/product-qc.ts`, `app/hooks/useProductCatalog.ts` |
 | AWOS mapping | `app/lib/site-subtypes.ts` |
 | Field/Domain | `app/config/form-options.ts`, `app/lib/site-metadata.ts` |
@@ -66,6 +67,7 @@ selalu memakai `buildInventoryCsv()`.
 npm.cmd run check
 npm.cmd run verify:auth-autosave
 npm.cmd run verify:admin-qc
+npm.cmd run verify:admin-submissions
 npm.cmd run verify:admin-api
 ```
 
@@ -96,5 +98,30 @@ review. Production resmi adalah https://aloptama-collect.vercel.app.
 
 Jangan ubah timeout lock lima menit, lifecycle Browse/Edit, format CSV/JSON,
 RLS, atau pagination data besar tanpa audit consumer dan regression test.
+
+## Kontrak monitoring submission
+
+`admin_list_submissions` adalah source list Super Admin. RPC ini melakukan join
+master, search/filter, progress, sort, dan pagination di database, lalu hanya
+mengembalikan metadata ringkas. Jangan menambahkan `payload` ke projection list.
+Ukuran halaman default 50 dan query tidak boleh diganti dengan load-all lalu
+slice di browser.
+
+`admin_get_submission_detail` baru dipanggil saat satu row dibuka. Komponen
+menyimpan detail dalam state selama halaman aktif; Muat ulang mengosongkan cache.
+Tidak ada Realtime atau polling periodik.
+
+Progress memakai `profile_items` aktif untuk profil Subtipe sebagai denominator.
+Kategori terisi jika array `payload.inventory[nama_item]` mempunyai minimal satu
+produk dengan Brand dan Tipe, atau material dengan nama bahan. Metadata Aloptama
+dan field unit opsional sengaja tidak dibaca. Helper TypeScript dan fungsi SQL
+harus tetap mempunyai contract yang sama.
+
+Archive memakai `archived_at`, `archived_by`, dan `archive_reason`. List dan
+count aktif wajib mengecualikan arsip. Restore hanya membersihkan field archive;
+UUID, payload, dan version tidak diubah. Semua perubahan archive/restore melalui
+RPC Super Admin dan audit hanya menyimpan identitas relasi serta alasan, bukan
+payload. RPC archive menolak lock yang masih aktif dan hanya membersihkan lock
+yang sudah kedaluwarsa.
 
 ← [Arsitektur dan Alur Data](ARSITEKTUR-DAN-ALUR-DATA.md) | → [Master Data](MASTER-DATA.md)

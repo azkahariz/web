@@ -15,6 +15,14 @@ sebelum menjalankan tindakan yang mengubah data.
 
 ## Stasiun dan Pengisian
 
+Halaman ini mempunyai dua tab:
+
+- **Master Pengisian** menjawab apa yang seharusnya tersedia. Semua Stasiun,
+  Site, dan Subtipe valid tetap tampil walaupun belum mempunyai submission.
+- **Submission** menjawab apa yang sudah mulai dikerjakan. Tabel ini hanya
+  memuat submission aktif atau arsip sesuai filter, sebanyak 50 baris per
+  halaman.
+
 Jumlah Site adalah jumlah Site unik dari master, bukan jumlah submission. Nama
 Site tetap tampil meskipun belum ada submission. Setiap Site ditampilkan untuk
 subtipe validnya; status menunjukkan apakah kombinasi itu sudah diisi.
@@ -28,6 +36,32 @@ Pencarian bagian ini mencari stasiun, Site, tipe Site, dan subtipe. AWOS Kategor
 III dibatasi ke empat subtipe family yang sesuai Site: AllWeather, Coastal,
 Degreane, Microstep, atau Vaisala. Variant belum terpetakan tidak diberi semua
 subtipe secara otomatis.
+
+### Monitoring submission
+
+Cari berdasarkan Stasiun, Site, Subtipe, atau operator. Filter tersedia untuk
+Stasiun, Tipe Site, status progress, waktu pembaruan, serta Aktif/Diarsipkan.
+Urutan awal menampilkan data terbaru.
+
+Progress hanya menghitung kategori barang yang terikat pada profil Subtipe.
+Kategori dianggap terisi bila mempunyai minimal satu produk dengan Brand dan
+Tipe, atau satu bahan mounting dengan nama bahan. Metadata Aloptama, koordinat,
+runway, dan field unit opsional tidak masuk perhitungan. Status **Lengkap** hanya
+berarti semua kategori expected mempunyai data menurut aturan aplikasi, bukan
+jaminan bahwa isinya sudah benar secara substantif.
+
+Klik panah detail untuk memuat satu payload dan melihat kategori terisi/kosong,
+operator, versi, waktu simpan, dan jumlah QC Pending. Membuka tab tidak mengunduh
+seluruh payload. **Buka Lengkap** tetap read-only; **Edit sebagai Admin** memakai
+lock, autosave, dan version check existing; **Unduh CSV** memakai snapshot terbaru.
+
+**Arsipkan Submission** mengeluarkan submission dari pengisian aktif tanpa
+menghapus UUID, payload, atau version. Kombinasi tersebut kembali berstatus
+"Belum ada submission" pada Master Pengisian. Gunakan filter **Diarsipkan** dan
+**Pulihkan Submission** bila data perlu dikembalikan. Archive dan restore
+tercatat di Audit Admin; submission arsip harus dipulihkan sebelum diedit.
+Archive ditolak bila masih ada lock editor aktif agar perubahan yang belum
+tersimpan tidak terputus; tunggu editor selesai atau tangani lock terlebih dahulu.
 
 ## Bulk Download
 

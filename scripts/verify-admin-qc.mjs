@@ -3,7 +3,8 @@ import { randomUUID } from "node:crypto";
 
 const databaseUrl = process.env.SUPABASE_DB_URL?.trim();
 if (!databaseUrl) throw new Error("SUPABASE_DB_URL wajib tersedia.");
-const sql = postgres(databaseUrl, { ssl: "require", max: 1, connect_timeout: 15, idle_timeout: 5 });
+const isLocal = /localhost|127\.0\.0\.1/.test(databaseUrl);
+const sql = postgres(databaseUrl, { ssl: isLocal ? false : "require", max: 1, connect_timeout: 15, idle_timeout: 5 });
 const rollbackMarker = `ROLLBACK_ADMIN_QC_${randomUUID()}`;
 
 function assert(value, message) {

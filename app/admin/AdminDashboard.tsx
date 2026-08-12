@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import AdminBulkExport from "./AdminBulkExport";
+import AdminSubmissionMonitor from "./AdminSubmissionMonitor";
 import EyeIcon from "../components/EyeIcon";
 import { downloadAdminInventory } from "../lib/admin-export";
 import {
@@ -16,6 +17,7 @@ import {
 import { csvCell, downloadText } from "../lib/download";
 import { logoutCurrentBrowser } from "../lib/local-logout";
 import { getTabSessionId } from "../lib/server-draft";
+import type { SubmissionSummary } from "../lib/submission-monitoring";
 import { getSupabaseBrowserClient } from "../lib/supabase/client";
 
 type Station = { id: string; name: string; active: boolean };
@@ -24,7 +26,7 @@ type SiteType = { id: string; name: string };
 type Subtype = { id: string; site_type_id: string; name: string };
 type Submission = {
   id: string; station_id: string; site_id: string; site_subtype_id: string;
-  version: number; payload: Record<string, unknown>; operator_name: string | null;
+  version: number; operator_name: string | null;
   locked_by_session_id: string | null; lock_operator_name: string | null;
   lock_last_activity_at: string | null; last_saved_at: string | null; updated_at: string;
 };
@@ -38,6 +40,7 @@ type Proposal = {
 };
 type Audit = { id: string; action: string; target_type: string; target_id: string | null; metadata: Record<string, unknown>; created_at: string };
 type Tab = "summary" | "stations" | "accounts" | "locks" | "qc" | "audit";
+type FillingMode = "master" | "submissions";
 
 const tabs: Array<{ id: Tab; label: string }> = [
   { id: "summary", label: "Ringkasan" },
@@ -57,6 +60,7 @@ function ageLabel(value: string | null, now: number) {
 export default function AdminDashboard({ username }: { username: string }) {
   const router = useRouter();
   const [tab, setTab] = useState<Tab>("summary");
+  const [fillingMode, setFillingMode] = useState<FillingMode>("master");
   const [stations, setStations] = useState<Station[]>([]);
   const [sites, setSites] = useState<Site[]>([]);
   const [siteTypes, setSiteTypes] = useState<SiteType[]>([]);
@@ -90,7 +94,8 @@ export default function AdminDashboard({ username }: { username: string }) {
       client.from("site_types").select("id, name").order("name"),
       client.from("site_subtypes").select("id, site_type_id, name").order("name"),
       loadAllAdminRows((from, to) => client.from("submissions")
-        .select("id, station_id, site_id, site_subtype_id, version, payload, operator_name, locked_by_session_id, lock_operator_name, lock_last_activity_at, last_saved_at, updated_at")
+        .select("id, station_id, site_id, site_subtype_id, version, operator_name, locked_by_session_id, lock_operator_name, lock_last_activity_at, last_saved_at, updated_at")
+        .is("archived_at", null)
         .order("updated_at", { ascending: false })
         .order("id")
         .range(from, to)),
@@ -158,7 +163,7 @@ export default function AdminDashboard({ username }: { username: string }) {
     && (!query || station.name.toLocaleLowerCase("id-ID").includes(query)));
   const filteredProposals = proposals.filter((proposal) => proposal.status === qcStatus && (!query
     || `${proposal.proposed_brand} ${proposal.proposed_model} ${stationMap.get(proposal.station_id)?.name ?? ""}`.toLocaleLowerCase("id-ID").includes(query)));
-  const searchTab = tab === "stations" || tab === "accounts" || tab === "qc" ? tab : null;
+  const searchTab = (tab === "stations" && fillingMode === "master") || tab === "accounts" || tab === "qc" ? tab : null;
 
   async function rpc(name: string, args: Record<string, unknown>) {
     const client = getSupabaseBrowserClient();
@@ -250,7 +255,7 @@ export default function AdminDashboard({ username }: { username: string }) {
     downloadText("products-qc-pending-spreadsheet.csv", `\uFEFF${rows.map((row) => row.map((value) => csvCell(String(value))).join(",")).join("\r\n")}`, "text/csv;charset=utf-8");
   }
 
-  async function downloadRow(station: Station, site: Site, subtype: Subtype) {
+  async function downloadRow(station: Station, site: Site, subtype: Subtype, submissionId?: string) {
     const client = getSupabaseBrowserClient();
     if (!client) return;
     setMessage("Menyiapkan CSV terbaru...");
@@ -262,6 +267,7 @@ export default function AdminDashboard({ username }: { username: string }) {
         siteTypes,
         subtypes,
         scope: { stationId: station.id, siteId: site.id, siteSubtypeId: subtype.id },
+        submissionId,
       });
       setMessage(`${result.filename} berhasil diunduh tanpa mengubah lock atau submission.`);
     } catch (error) {
@@ -290,6 +296,38 @@ export default function AdminDashboard({ username }: { username: string }) {
     router.push(`/admin/submissions/${result.submissionId}?edit=1`);
   }
 
+  async function downloadSubmission(row: SubmissionSummary) {
+    const station = stationMap.get(row.station_id);
+    const site = siteMap.get(row.site_id);
+    const subtype = subtypeMap.get(row.site_subtype_id);
+    if (!station || !site || !subtype) {
+      setMessage("Relasi master untuk submission ini tidak ditemukan.");
+      return;
+    }
+    await downloadRow(station, site, subtype, row.id);
+  }
+
+  async function editSubmission(row: SubmissionSummary) {
+    const station = stationMap.get(row.station_id);
+    const site = siteMap.get(row.site_id);
+    const subtype = subtypeMap.get(row.site_subtype_id);
+    if (!station || !site || !subtype) {
+      setMessage("Relasi master untuk submission ini tidak ditemukan.");
+      return;
+    }
+    await editRow(station, site, subtype);
+  }
+
+  function navigate(nextTab: Tab, options?: { fillingMode?: FillingMode; qcStatus?: Proposal["status"] }) {
+    setTab(nextTab);
+    setSearch("");
+    if (options?.fillingMode) setFillingMode(options.fillingMode);
+    if (options?.qcStatus) {
+      setQcStatus(options.qcStatus);
+      setSelectedProposals([]);
+    }
+  }
+
   async function logout() {
     const client = getSupabaseBrowserClient();
     if (client) await logoutCurrentBrowser({ signOut: (options) => client.auth.signOut(options) });
@@ -305,33 +343,38 @@ export default function AdminDashboard({ username }: { username: string }) {
       </header>
       <div className="admin-layout">
         <nav className="admin-nav" aria-label="Menu admin">
-          {tabs.map((item) => <button key={item.id} className={tab === item.id ? "active" : ""} onClick={() => { setTab(item.id); setSearch(""); }}>{item.label}</button>)}
+          {tabs.map((item) => <button key={item.id} className={tab === item.id ? "active" : ""} onClick={() => navigate(item.id)}>{item.label}</button>)}
         </nav>
         <section className={`admin-content${tab === "accounts" ? " accounts-view" : ""}`}>
-          <div className="admin-heading"><div><p className="kicker">PENGELOLAAN APLIKASI</p><h2>{tabs.find((item) => item.id === tab)?.label}</h2></div><button className="secondary-button" onClick={() => void refresh()}>Muat ulang</button></div>
+          <div className="admin-heading"><div><p className="kicker">PENGELOLAAN APLIKASI</p><h2>{tabs.find((item) => item.id === tab)?.label}</h2></div>{!(tab === "stations" && fillingMode === "submissions") && <button className="secondary-button" onClick={() => void refresh()}>Muat ulang</button>}</div>
           {message && <p className="admin-message" role="status">{message}</p>}
           {loading && <p className="loading-copy">Memuat data admin...</p>}
 
           {!loading && tab === "summary" && <div className="admin-stats">
-            <div><strong>{stations.filter((row) => row.active).length}</strong><span>Stasiun aktif</span></div>
-            <div><strong>{accounts.filter((row) => row.active).length}</strong><span>Akun aktif</span></div>
-            <div><strong>{new Set(sites.map((site) => site.id)).size}</strong><span>Site</span></div>
-            <div><strong>{submissions.length}</strong><span>Submission</span></div>
-            <div><strong>{activeLocks.length}</strong><span>Lock aktif</span></div>
-            <div><strong>{proposals.filter((row) => row.status === "PENDING").length}</strong><span>QC Pending</span></div>
-            <div><strong>{proposals.filter((row) => row.status === "APPROVED").length}</strong><span>Approved</span></div>
-            <div><strong>{proposals.filter((row) => row.status === "MERGED").length}</strong><span>Merged</span></div>
-            <div><strong>{proposals.filter((row) => row.status === "REJECTED").length}</strong><span>Rejected</span></div>
+            <button onClick={() => navigate("stations", { fillingMode: "master" })}><strong>{stations.filter((row) => row.active).length}</strong><span>Stasiun aktif</span></button>
+            <button onClick={() => navigate("accounts")}><strong>{accounts.filter((row) => row.active).length}</strong><span>Akun aktif</span></button>
+            <button onClick={() => navigate("stations", { fillingMode: "master" })}><strong>{new Set(sites.map((site) => site.id)).size}</strong><span>Site</span></button>
+            <button onClick={() => navigate("stations", { fillingMode: "submissions" })}><strong>{submissions.length}</strong><span>Submission</span></button>
+            <button onClick={() => navigate("locks")}><strong>{activeLocks.length}</strong><span>Lock aktif</span></button>
+            <button onClick={() => navigate("qc", { qcStatus: "PENDING" })}><strong>{proposals.filter((row) => row.status === "PENDING").length}</strong><span>QC Pending</span></button>
+            <button onClick={() => navigate("qc", { qcStatus: "APPROVED" })}><strong>{proposals.filter((row) => row.status === "APPROVED").length}</strong><span>Approved</span></button>
+            <button onClick={() => navigate("qc", { qcStatus: "MERGED" })}><strong>{proposals.filter((row) => row.status === "MERGED").length}</strong><span>Merged</span></button>
+            <button onClick={() => navigate("qc", { qcStatus: "REJECTED" })}><strong>{proposals.filter((row) => row.status === "REJECTED").length}</strong><span>Rejected</span></button>
+          </div>}
+
+          {!loading && tab === "stations" && <div className="status-tabs filling-mode-tabs" role="tablist" aria-label="Mode Stasiun dan Pengisian">
+            <button role="tab" aria-selected={fillingMode === "master"} className={fillingMode === "master" ? "active" : ""} onClick={() => { setFillingMode("master"); setSearch(""); }}>Master Pengisian</button>
+            <button role="tab" aria-selected={fillingMode === "submissions"} className={fillingMode === "submissions" ? "active" : ""} onClick={() => { setFillingMode("submissions"); setSearch(""); }}>Submission</button>
           </div>}
 
           {!loading && searchTab && tab !== "stations" && <label className="admin-search">Cari<input autoComplete="off" value={search} onChange={(event) => setSearch(event.target.value)} placeholder={adminSearchPlaceholder(searchTab)} /></label>}
 
-          {!loading && tab === "stations" && <div className="station-filling-toolbar">
+          {!loading && tab === "stations" && fillingMode === "master" && <div className="station-filling-toolbar">
             <label className="admin-search">Cari<input autoComplete="off" value={search} onChange={(event) => setSearch(event.target.value)} placeholder={adminSearchPlaceholder("stations")} /></label>
             <AdminBulkExport stations={stations} sites={sites} siteTypes={siteTypes} subtypes={subtypes} onMessage={setMessage} />
           </div>}
 
-          {!loading && tab === "stations" && <div className="admin-list">
+          {!loading && tab === "stations" && fillingMode === "master" && <div className="admin-list">
             {filteredStationFillingViews.map(({ station, view, visibleRows }) => <details key={station.id}>
               <summary><strong>{station.name}</strong><span>{view.siteCount} site {"\u2022"} {view.submissionCount} submission</span></summary>
               <div className="admin-table-wrap station-filling-table"><table><thead><tr><th>Site</th><th>Tipe Site</th><th>Subtipe</th><th>Status</th><th>Versi</th><th>Terakhir Simpan</th><th>Aksi</th></tr></thead><tbody>
@@ -355,6 +398,15 @@ export default function AdminDashboard({ username }: { username: string }) {
               </tbody></table></div>
             </details>)}
           </div>}
+
+          {!loading && tab === "stations" && fillingMode === "submissions" && <AdminSubmissionMonitor
+            stations={stations}
+            siteTypes={siteTypes}
+            onMessage={setMessage}
+            onDownload={downloadSubmission}
+            onEdit={editSubmission}
+            onChanged={refresh}
+          />}
 
           {!loading && tab === "accounts" && <div className="admin-table-wrap accounts-table"><table><thead><tr><th>Stasiun</th><th>Username</th><th>Status</th><th>Aksi</th></tr></thead><tbody>
             {filteredAccounts.map((account) => <tr key={account.id}><td>{stationMap.get(account.station_id)?.name ?? "Stasiun tidak ditemukan"}</td><td>{account.username}</td><td><span className={`status-pill ${account.active ? "active" : "inactive"}`}>{account.active ? "Aktif" : "Nonaktif"}</span></td><td className="table-actions"><button onClick={() => void accountAction({ action: "set-active", accountId: account.id, active: !account.active }, `${account.active ? "Nonaktifkan" : "Aktifkan"} akun ${account.username}?`)}>{account.active ? "Nonaktifkan" : "Aktifkan"}</button><button onClick={() => void accountAction({ action: "reset-password", accountId: account.id }, `Reset password ${account.username}? Password lama langsung tidak berlaku.`)}>Reset Password</button></td></tr>)}

@@ -60,12 +60,15 @@ export async function POST(request: Request) {
   }, { onConflict: "station_id,site_id,site_subtype_id", ignoreDuplicates: true });
   if (ensureError) return NextResponse.json({ error: ensureError.message }, { status: 400 });
   const { data: submission } = await serviceClient.from("submissions")
-    .select("id")
+    .select("id, archived_at")
     .eq("station_id", body.stationId)
     .eq("site_id", body.siteId)
     .eq("site_subtype_id", body.siteSubtypeId)
     .single();
   if (!submission) return NextResponse.json({ error: "Submission tidak dapat dibuka." }, { status: 500 });
+  if (submission.archived_at) {
+    return NextResponse.json({ error: "Submission ini sedang diarsipkan. Pulihkan melalui tab Submission sebelum mengedit." }, { status: 409 });
+  }
 
   const { data: openRows, error: openError } = await sessionClient.rpc("admin_open_submission", {
     p_submission_id: submission.id,

@@ -64,6 +64,7 @@ export async function downloadAdminInventory({
   siteTypes,
   subtypes,
   scope,
+  submissionId,
 }: {
   client: SupabaseClient;
   station: AdminStation;
@@ -71,6 +72,7 @@ export async function downloadAdminInventory({
   siteTypes: AdminSiteType[];
   subtypes: AdminSubtype[];
   scope: AdminExportScope;
+  submissionId?: string;
 }) {
   const [submissionResult, proposalResult] = await Promise.all([
     loadAllAdminRows((from, to) => {
@@ -79,6 +81,7 @@ export async function downloadAdminInventory({
         .eq("station_id", scope.stationId);
       if (scope.siteId) query = query.eq("site_id", scope.siteId);
       if (scope.siteSubtypeId) query = query.eq("site_subtype_id", scope.siteSubtypeId);
+      query = submissionId ? query.eq("id", submissionId) : query.is("archived_at", null);
       return query.order("updated_at").order("id").range(from, to);
     }),
     loadAllAdminRows((from, to) => client.from("product_proposals")

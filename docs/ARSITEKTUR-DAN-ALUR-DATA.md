@@ -23,6 +23,22 @@ subtipe, profil barang, barang, dan produk. Sumber utamanya Spreadsheet/CSV.
 **Data pengisian** adalah submission per Station, Site, dan Subtipe. Submission
 menyimpan payload JSON, version, operator, dan informasi lock di Supabase.
 
+## Monitoring Super Admin
+
+```text
+Tab Submission -> RPC list metadata + progress (50/page, tanpa payload)
+Klik satu row  -> RPC detail satu submission -> cache state halaman
+Archive        -> tandai archived_at + audit, payload tetap tersimpan
+Restore        -> aktifkan UUID yang sama + audit
+```
+
+Progress dihitung di database dari `site_subtypes.item_profile_id` ke
+`profile_items` dan `items`. Denominator adalah kategori aktif yang expected
+untuk Subtipe. Numerator adalah kategori dengan minimal satu produk valid
+(Brand dan Tipe) atau material bernama pada `payload.inventory`. Metadata
+Aloptama tidak ikut progress. Model ini menghindari N+1 dan mencegah seluruh
+JSONB payload dikirim ketika tabel monitoring dibuka.
+
 ## Pengisian
 
 ```text
@@ -42,6 +58,10 @@ Supabase Auth menangani session. RLS membatasi Station User ke stasiunnya;
 Super Admin memiliki operasi terkontrol melalui RPC dan route server. Secret
 tidak masuk browser. `SUPABASE_SECRET_KEY` hanya digunakan server/script
 tepercaya, sedangkan `NEXT_PUBLIC_*` hanya untuk konfigurasi publik.
+
+List, detail, archive, dan restore submission memanggil RPC `security definer`
+yang selalu menjalankan `require_super_admin()`. Station User hanya dapat membaca
+submission aktif milik stasiunnya melalui RLS existing.
 
 ## QC dan ekspor
 
