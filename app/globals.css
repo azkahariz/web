@@ -314,8 +314,8 @@ select:disabled { color: #9aa39f; background: #f2f2ee; cursor: not-allowed; }
 .station-filling-toolbar .admin-search { margin-top: 0; }
 .admin-list { margin-top: 18px; display: flex; flex-direction: column; gap: 8px; }
 .admin-list > details { border: 1px solid var(--line); border-radius: 8px; background: white; overflow: hidden; }
-.admin-list > details > summary { padding: 15px; display: flex; justify-content: space-between; gap: 12px; cursor: pointer; }
-.admin-list > details > summary span { color: var(--muted); font-size: 10px; }
+.admin-list > details > summary { padding: 16px; display: flex; justify-content: space-between; gap: 12px; cursor: pointer; font-size: 13px; line-height: 1.4; }
+.admin-list > details > summary span { color: var(--muted); font-size: 12px; }
 .admin-table-wrap { margin-top: 20px; max-width: 100%; overflow: auto; border: 1px solid var(--line); border-radius: 8px; background: white; }
 .admin-list .admin-table-wrap { margin: 0; border-width: 1px 0 0; border-radius: 0; }
 .admin-table-wrap table { width: 100%; border-collapse: collapse; font-size: 10px; }
@@ -325,8 +325,9 @@ select:disabled { color: #9aa39f; background: #f2f2ee; cursor: not-allowed; }
 .admin-table-wrap td code { max-width: 300px; display: block; overflow-wrap: anywhere; font-size: 9px; }
 .admin-table-wrap details summary { color: var(--green); cursor: pointer; font-weight: 800; }
 .admin-table-wrap pre { width: min(520px, 70vw); max-height: 280px; overflow: auto; white-space: pre-wrap; font-size: 9px; }
-.station-filling-table table { min-width: 980px; table-layout: fixed; }
-.station-filling-table th, .station-filling-table td { white-space: normal; overflow-wrap: anywhere; }
+.station-filling-table table { min-width: 1080px; table-layout: fixed; font-size: 12px; }
+.station-filling-table th, .station-filling-table td { padding: 13px 14px; white-space: normal; overflow-wrap: anywhere; }
+.station-filling-table th { font-size: 10px; }
 .station-filling-table th:nth-child(1) { width: 23%; }
 .station-filling-table th:nth-child(2) { width: 16%; }
 .station-filling-table th:nth-child(3) { width: 19%; }
@@ -335,10 +336,10 @@ select:disabled { color: #9aa39f; background: #f2f2ee; cursor: not-allowed; }
 .station-filling-table th:nth-child(6) { width: 13%; }
 .station-filling-table th:nth-child(7) { width: 8%; }
 .station-filling-table td:first-child strong { display: block; line-height: 1.4; }
-.row-action-menu > summary { width: fit-content; min-height: 31px; padding: 7px 9px; border: 1px solid #bdd0c8; border-radius: 6px; list-style: none; background: white; white-space: nowrap; }
+.row-action-menu > summary { width: fit-content; min-height: 34px; padding: 8px 10px; border: 1px solid #bdd0c8; border-radius: 6px; list-style: none; background: white; white-space: nowrap; font-size: 11px; }
 .row-action-menu > summary::-webkit-details-marker { display: none; }
-.row-action-menu > div { width: 150px; padding-top: 6px; display: flex; flex-direction: column; gap: 4px; }
-.row-action-menu a, .row-action-menu button { width: 100%; padding: 7px 8px; border: 0; border-radius: 4px; background: #f7f8f5; color: var(--green-deep); font-size: 9px; font-weight: 800; text-align: left; text-decoration: none; cursor: pointer; }
+.row-action-menu > div { width: 180px; padding-top: 6px; display: flex; flex-direction: column; gap: 5px; }
+.row-action-menu a, .row-action-menu button { width: 100%; padding: 9px 10px; border: 0; border-radius: 4px; background: #f7f8f5; color: var(--green-deep); font-size: 11px; font-weight: 800; text-align: left; text-decoration: none; cursor: pointer; }
 .accounts-view .admin-search { width: min(680px, 100%); }
 .accounts-table table { min-width: 760px; font-size: 12px; }
 .accounts-table th, .accounts-table td { padding: 15px 16px; }
@@ -360,27 +361,31 @@ select:disabled { color: #9aa39f; background: #f2f2ee; cursor: not-allowed; }
 .submission-toolbar { margin-top: 16px; display: grid; grid-template-columns: minmax(260px, 1.4fr) minmax(420px, 2fr) auto; align-items: end; gap: 12px; }
 .submission-toolbar .admin-search { width: 100%; margin-top: 0; }
 .submission-filter-grid { display: grid; grid-template-columns: repeat(4, minmax(130px, 1fr)); gap: 8px; }
-.submission-filter-grid label { color: var(--muted); font-size: 9px; font-weight: 800; }
-.submission-filter-grid select { margin-top: 6px; min-height: 39px; font-size: 10px; }
+.submission-filter-grid label { color: var(--muted); font-size: 11px; font-weight: 800; }
+.submission-filter-grid select { margin-top: 6px; min-height: 42px; font-size: 12px; }
 .submission-reload { width: auto; }
 .submission-archive-tabs { margin-top: 14px; align-items: center; }
 .submission-archive-tabs > span { margin-left: auto; color: var(--muted); font-size: 10px; }
-.submission-table table { min-width: 1160px; }
+.submission-table table { min-width: 1240px; font-size: 12px; }
+.submission-table th { font-size: 10px; }
+.submission-table td { line-height: 1.45; }
 .submission-table tr.is-expanded td { background: #fbfcfa; }
-.detail-toggle { width: 32px; min-width: 32px; padding: 4px !important; font-size: 10px !important; }
+.submission-table .status-pill { font-size: 10px; }
+.submission-table td small { font-size: 11px; line-height: 1.35; }
+.detail-toggle { width: 34px; min-width: 34px; min-height: 34px; padding: 4px !important; font-size: 12px !important; }
 .submission-detail-row > td { padding: 0 !important; background: #f8faf7; }
 .submission-inline-detail { padding: 20px; }
 .submission-detail-summary { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
 .submission-detail-summary span { margin-top: 4px; display: block; color: var(--muted); }
 .submission-detail-summary > strong { font: 500 26px/1 Georgia, serif; color: var(--green-deep); }
 .submission-item-list { margin-top: 14px; display: grid; grid-template-columns: repeat(3, minmax(180px, 1fr)); gap: 7px; }
-.submission-item-list span { padding: 8px 9px; border: 1px solid var(--line); border-radius: 5px; background: white; }
+.submission-item-list span { padding: 9px 10px; border: 1px solid var(--line); border-radius: 5px; background: white; font-size: 12px; line-height: 1.35; }
 .submission-item-list .filled { color: var(--green-deep); }
 .submission-item-list .empty { color: var(--muted); }
 .submission-info { margin: 16px 0 0; display: grid; grid-template-columns: repeat(4, minmax(140px, 1fr)); gap: 8px; }
 .submission-info div { padding: 9px; border-top: 1px solid var(--line); }
-.submission-info dt { color: var(--muted); font-size: 8px; font-weight: 900; text-transform: uppercase; }
-.submission-info dd { margin: 4px 0 0; }
+.submission-info dt { color: var(--muted); font-size: 10px; font-weight: 900; text-transform: uppercase; }
+.submission-info dd { margin: 4px 0 0; font-size: 12px; }
 .submission-detail-actions { margin-top: 16px; }
 .submission-pagination { margin-top: 14px; display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
 .submission-pagination span { color: var(--muted); font-size: 10px; }
