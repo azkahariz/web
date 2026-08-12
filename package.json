@@ -10,7 +10,7 @@
     "build": "next build",
     "start": "next start",
     "test": "npm run build && node --experimental-strip-types --test tests/rendered-html.test.mjs tests/master-sync.test.mjs tests/auth-autosave.test.mjs tests/admin-qc.test.mjs tests/ux-polish.test.mjs tests/admin-export.test.mjs",
-    "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
+    "lint": "eslint . --ignore-pattern .next",
     "check": "npm run lint && npm run test",
     "validate:master": "node scripts/sync-master.mjs --validate-only",
     "sync:master": "node scripts/sync-master.mjs",
@@ -23,7 +23,6 @@
   "dependencies": {
     "@supabase/ssr": "^0.12.4",
     "@supabase/supabase-js": "^2.112.2",
-    "drizzle-orm": "0.45.2",
     "fflate": "^0.8.3",
     "next": "16.2.6",
     "react": "19.2.6",
@@ -36,11 +35,9 @@
     "@types/react-dom": "19.2.3",
     "csv-parse": "^7.0.2",
     "csv-stringify": "^6.8.3",
-    "drizzle-kit": "0.31.10",
     "eslint": "9.39.4",
     "eslint-config-next": "16.2.6",
     "postgres": "^3.4.9",
-    "react-server-dom-webpack": "19.2.6",
     "tailwindcss": "4.2.1",
     "typescript": "5.9.3"
   },
