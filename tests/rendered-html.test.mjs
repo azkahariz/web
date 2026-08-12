@@ -1,17 +1,67 @@
 import assert from "node:assert/strict";
+import { spawn } from "node:child_process";
 import { readFile } from "node:fs/promises";
-import test from "node:test";
+import { createServer } from "node:net";
+import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import { after, before, test } from "node:test";
 import { resolveFieldDomain } from "../app/lib/site-metadata.ts";
 
+const projectRoot = fileURLToPath(new URL("..", import.meta.url));
+let server;
+let serverUrl;
+
+function getAvailablePort() {
+  return new Promise((resolvePort, reject) => {
+    const probe = createServer();
+    probe.once("error", reject);
+    probe.listen(0, "127.0.0.1", () => {
+      const address = probe.address();
+      const port = typeof address === "object" && address ? address.port : undefined;
+      probe.close((error) => error ? reject(error) : resolvePort(port));
+    });
+  });
+}
+
+async function startNextServer() {
+  const port = await getAvailablePort();
+  const output = [];
+  server = spawn(process.execPath, [
+    resolve(projectRoot, "node_modules/next/dist/bin/next"),
+    "start",
+    "--hostname", "127.0.0.1",
+    "--port", String(port),
+  ], {
+    cwd: projectRoot,
+    env: process.env,
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+  server.stdout.on("data", (chunk) => output.push(chunk.toString()));
+  server.stderr.on("data", (chunk) => output.push(chunk.toString()));
+  serverUrl = `http://127.0.0.1:${port}`;
+
+  for (let attempt = 0; attempt < 60; attempt += 1) {
+    if (server.exitCode !== null) throw new Error(`next start berhenti: ${output.join("")}`);
+    try {
+      const response = await fetch(serverUrl);
+      if (response.ok) return;
+    } catch {
+      // Server masih melakukan inisialisasi.
+    }
+    await new Promise((resolveDelay) => setTimeout(resolveDelay, 250));
+  }
+  throw new Error(`next start tidak siap: ${output.join("")}`);
+}
+
+before(startNextServer);
+after(async () => {
+  if (!server || server.exitCode !== null) return;
+  server.kill();
+  await new Promise((resolveExit) => server.once("exit", resolveExit));
+});
+
 async function render() {
-  const workerUrl = new URL("../dist/server/index.js", import.meta.url);
-  workerUrl.searchParams.set("test", `${process.pid}-${Date.now()}`);
-  const { default: worker } = await import(workerUrl.href);
-  return worker.fetch(
-    new Request("http://localhost/", { headers: { accept: "text/html" } }),
-    { ASSETS: { fetch: async () => new Response("Not found", { status: 404 }) } },
-    { waitUntil() {}, passThroughOnException() {} },
-  );
+  return fetch(`${serverUrl}/`, { headers: { accept: "text/html" } });
 }
 
 function parseCsvLine(line) {
@@ -264,25 +314,22 @@ test("panduan ringkas tersedia untuk Station User dan Super Admin", async () => 
   assert.match(adminGuide, /super_admins/);
 });
 
-test("Vercel adalah deployment resmi dan Sites hanya compatibility legacy", async () => {
-  const [packageText, readme, developerGuide, productionSop, legacyWorker] = await Promise.all([
+test("Vercel adalah deployment resmi dengan build Next.js native", async () => {
+  const [packageText, readme, developerGuide, productionSop] = await Promise.all([
     readFile(new URL("../package.json", import.meta.url), "utf8"),
     readFile(new URL("../README.md", import.meta.url), "utf8"),
     readFile(new URL("../docs/PANDUAN-PENGEMBANG.md", import.meta.url), "utf8"),
     readFile(new URL("../docs/SOP-PERUBAHAN-PRODUCTION.md", import.meta.url), "utf8"),
-    readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
   ]);
 
   assert.match(packageText, /"dev": "next dev"/);
   assert.match(packageText, /"build": "next build"/);
   assert.match(packageText, /"start": "next start"/);
-  assert.match(packageText, /"build:legacy-sites": "vinext build"/);
-  assert.doesNotMatch(packageText, /"(?:dev|build|start):sites"/);
+  assert.doesNotMatch(packageText, /legacy-sites|vinext|cloudflare|wrangler/i);
   for (const source of [readme, developerGuide, productionSop]) {
     assert.match(source, /https:\/\/aloptama-collect\.vercel\.app/);
   }
-  assert.match(developerGuide, /ChatGPT Sites sudah tidak digunakan/);
-  assert.match(legacyWorker, /Legacy Cloudflare Worker entry point/);
+  assert.doesNotMatch(developerGuide, /legacy Sites compatibility/i);
 });
 
 test("form metadata menyediakan seluruh pilihan operasional dan komunikasi", async () => {

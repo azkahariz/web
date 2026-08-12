@@ -69,9 +69,8 @@ npm.cmd run verify:admin-qc
 npm.cmd run verify:admin-api
 ```
 
-`check` menjalankan lint, test, legacy Sites compatibility build, dan build
-Next.js. `build:legacy-sites` bukan perintah deployment; build tersebut hanya
-dipertahankan agar regression test rendering lama tetap terjaga. Script
+`check` menjalankan lint, build Next.js, dan seluruh test. Regression test
+rendering membuka server Next.js hasil build pada port lokal sementara. Script
 verification database hanya dijalankan bila area terkait berubah.
 `verify:admin-api` memerlukan server lokal dan credential Super Admin lokal.
 

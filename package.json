@@ -9,10 +9,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "build:legacy-sites": "vinext build",
-    "test": "npm run build:legacy-sites && node --experimental-strip-types --test tests/rendered-html.test.mjs tests/master-sync.test.mjs tests/auth-autosave.test.mjs tests/admin-qc.test.mjs tests/ux-polish.test.mjs tests/admin-export.test.mjs",
+    "test": "npm run build && node --experimental-strip-types --test tests/rendered-html.test.mjs tests/master-sync.test.mjs tests/auth-autosave.test.mjs tests/admin-qc.test.mjs tests/ux-polish.test.mjs tests/admin-export.test.mjs",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
-    "check": "npm run lint && npm run test && npm run build",
+    "check": "npm run lint && npm run test",
     "validate:master": "node scripts/sync-master.mjs --validate-only",
     "sync:master": "node scripts/sync-master.mjs",
     "provision:station-accounts": "node --env-file-if-exists=.env.local scripts/provision-station-accounts.mjs",
@@ -31,13 +30,10 @@
     "react-dom": "19.2.6"
   },
   "devDependencies": {
-    "@cloudflare/vite-plugin": "1.37.1",
     "@tailwindcss/postcss": "4.2.1",
     "@types/node": "22.19.19",
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
-    "@vitejs/plugin-react": "6.0.2",
-    "@vitejs/plugin-rsc": "0.5.26",
     "csv-parse": "^7.0.2",
     "csv-stringify": "^6.8.3",
     "drizzle-kit": "0.31.10",
@@ -46,10 +42,7 @@
     "postgres": "^3.4.9",
     "react-server-dom-webpack": "19.2.6",
     "tailwindcss": "4.2.1",
-    "typescript": "5.9.3",
-    "vinext": "0.0.50",
-    "vite": "8.0.13",
-    "wrangler": "4.92.0"
+    "typescript": "5.9.3"
   },
   "type": "module"
 }
