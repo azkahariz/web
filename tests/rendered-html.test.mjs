@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
+import { resolveFieldDomain } from "../app/lib/site-metadata.ts";
 
 async function render() {
   const workerUrl = new URL("../dist/server/index.js", import.meta.url);
@@ -240,6 +241,12 @@ test("metadata Aloptama tersimpan per site dan memakai nilai lokasi otomatis", a
   assert.match(metadataLib, /function resolveFieldDomain/);
   assert.match(formOptions, /FIELD_DOMAIN_SITE_TYPES[\s\S]*Meteorologi:[\s\S]*AWOS Kategori III[\s\S]*Radar Gematronik/);
   assert.match(formOptions, /Klimatologi:[\s\S]*AAWS[\s\S]*Digitalisasi Taman Alat Klimatologi/);
+  assert.match(formOptions, /Geofisika:\s*\["Seismograph InaTEWS"\]/);
+  assert.match(metadataLib, /FIELD_DOMAIN_SITE_TYPES\.Geofisika[\s\S]*return "Geofisika"/);
+  assert.match(metadataLib, /FIELD_DOMAIN_SITE_TYPES\.Meteorologi[\s\S]*return "Meteorologi"[\s\S]*FIELD_DOMAIN_SITE_TYPES\.Klimatologi[\s\S]*return "Klimatologi"/);
+  assert.equal(resolveFieldDomain("Seismograph InaTEWS"), "Geofisika");
+  assert.equal(resolveFieldDomain("AWS Rekayasa"), "Meteorologi");
+  assert.equal(resolveFieldDomain("AAWS"), "Klimatologi");
 });
 
 test("form metadata menyediakan seluruh pilihan operasional dan komunikasi", async () => {

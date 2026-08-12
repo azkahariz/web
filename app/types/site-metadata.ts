@@ -42,6 +42,6 @@ export type AutomaticMetadata = {
   stationName: string;
   siteName: string;
   equipmentType: string;
-  fieldDomain: "Meteorologi" | "Klimatologi" | "";
+  fieldDomain: "Meteorologi" | "Klimatologi" | "Geofisika" | "";
   uptManager: string;
 };

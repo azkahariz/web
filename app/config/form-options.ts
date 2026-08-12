@@ -47,6 +47,7 @@ export const FIELD_DOMAIN_SITE_TYPES = {
     "Iklim Mikro",
     "Digitalisasi Taman Alat Klimatologi",
   ],
+  Geofisika: ["Seismograph InaTEWS"],
 } as const;
 
 export const OWNERSHIP_STATUS_OPTIONS = [

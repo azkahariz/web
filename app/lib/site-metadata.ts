@@ -134,5 +134,8 @@ export function resolveFieldDomain(equipmentType: string): AutomaticMetadata["fi
   if ((FIELD_DOMAIN_SITE_TYPES.Klimatologi as readonly string[]).includes(equipmentType)) {
     return "Klimatologi";
   }
+  if ((FIELD_DOMAIN_SITE_TYPES.Geofisika as readonly string[]).includes(equipmentType)) {
+    return "Geofisika";
+  }
   return "";
 }
