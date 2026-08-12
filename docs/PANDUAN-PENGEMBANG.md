@@ -148,4 +148,29 @@ audit metadata tanpa payload, lalu menghapus Submission secara atomic. FK
 QC tetap dipertahankan. Migration hard delete tidak boleh diterapkan ke
 production sebelum verifikasi lokal, Preview, dan persetujuan deployment.
 
+## Contract Gudang dan multi-category
+
+Mode Gudang dipilih oleh UUID canonical Site Type, Subtype, dan Item Profile di
+`app/lib/warehouse.ts`; nama Site tidak dipakai. Payload tetap schema v1 dan
+berbentuk `inventory[kategori] -> InstalledItem[] -> UnitDetail[]`.
+
+Field additive `functionCategories` dan `functionCategoryIds` berada pada
+`InstalledItem`. Payload lama tanpa field tersebut otomatis memakai kategori
+penyimpanan sebagai satu-satunya fungsi. `UnitDetail.id` adalah stable physical
+unit ID. Field Gudang `procurementYear` dan `procurementActivity` bersifat
+opsional; Site biasa tetap memakai `installedYear`.
+
+Pasangan fungsi canonical didefinisikan terpusat di
+`app/lib/category-functions.ts`: Suhu/Kelembaban dan Kecepatan/Arah Angin.
+Istilah UI **Kategori Barang** mengacu pada `items` yang dipetakan melalui
+`profile_items`; tabel `product_categories` tidak mempunyai relasi faktual ke
+`products`, sehingga fitur Gudang tidak mengarang filter Product per kategori.
+Progress Site tetap expected-category based dan membership kombinasi dapat
+memenuhi dua numerator. Profil `Profil Barang Gudang` adalah allowed catalog;
+monitoring Gudang memakai category/unit count dan tidak memiliki completeness.
+
+Master Gudang disinkronkan melalui CSV dan `npm.cmd run sync:master`. UUID
+existing harus dipertahankan. Migration warehouse hanya mengganti helper/RPC
+monitoring dan wajib diuji lokal/Preview sebelum diterapkan ke production.
+
 ← [Arsitektur dan Alur Data](ARSITEKTUR-DAN-ALUR-DATA.md) | → [Master Data](MASTER-DATA.md)

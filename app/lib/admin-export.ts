@@ -9,6 +9,8 @@ import { downloadBlob, downloadText } from "./download";
 import { buildInventoryCsv, createDefaultDraftPayload } from "./inventory-export";
 import { resolveInstalledProduct } from "./product-qc";
 import type { DraftPayload } from "./server-draft";
+import { inventoryCategoryNames } from "./category-functions";
+import { isWarehouseContext } from "./warehouse";
 
 const generated = rawData as DataSet;
 
@@ -54,7 +56,11 @@ function exportDefinition(siteId: string, siteSubtypeId: string) {
   const site = generated.stationSites.find((row) => row.siteId === siteId);
   const subtype = generated.siteSubtypes.find((row) => row.subtypeId === siteSubtypeId);
   if (!site || !subtype) throw new Error("Definisi master export tidak ditemukan pada build aplikasi.");
-  return { profile: subtype.profile, categories: generated.barangByJenis[subtype.profile] ?? [] };
+  return {
+    profile: subtype.profile,
+    categories: generated.barangByJenis[subtype.profile] ?? [],
+    warehouseMode: isWarehouseContext(generated, site, subtype),
+  };
 }
 
 export async function downloadAdminInventory({
@@ -103,6 +109,9 @@ export async function downloadAdminInventory({
     const payload = row.submission?.payload && "schemaVersion" in row.submission.payload
       ? row.submission.payload as DraftPayload
       : createDefaultDraftPayload(scope.stationId, row.site.id, row.subtype!.id);
+    const categories = definition.warehouseMode
+      ? inventoryCategoryNames(payload.inventory).filter((category) => definition.categories.includes(category))
+      : definition.categories;
     const resolveItem = (item: InstalledItem) => {
       if (item.itemKind === "material") return item;
       const resolved = resolveInstalledProduct(item, proposals);
@@ -116,8 +125,9 @@ export async function downloadAdminInventory({
         siteTypeName: row.siteType?.name ?? "Belum terpetakan",
         subtypeName: row.subtype!.name,
         profile: definition.profile,
-        categories: definition.categories,
+        categories,
         payload,
+        warehouseMode: definition.warehouseMode,
         resolveItem,
       }),
       hasSubmission: Boolean(row.submission),

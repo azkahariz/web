@@ -88,7 +88,12 @@ test("detail barang menampilkan produk ganda, material, dan item kosong dari sat
     } },
   });
   assert.deepEqual(rows[0].entries.map((entry) => [entry.primary, entry.secondary]), [["Vaisala", "HMP155"], ["Campbell", "Model X"]]);
-  assert.deepEqual(rows[1].entries, [{ kind: "material", primary: "Tiang galvanis" }]);
+  assert.deepEqual(rows[1].entries, [{
+    kind: "material",
+    primary: "Tiang galvanis",
+    unitCount: 1,
+    functions: ["Mounting"],
+  }]);
   assert.equal(rows[2].filled, false);
 });
 

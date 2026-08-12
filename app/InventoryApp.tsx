@@ -16,6 +16,18 @@ import { buildAloptamaFilename, downloadText } from "./lib/download";
 import { buildInventoryCsv, buildInventoryJson } from "./lib/inventory-export";
 import { normalizeProductText, resolveInstalledProduct, suggestProducts } from "./lib/product-qc";
 import {
+  getItemFunctionCategories,
+  inventoryCategoryEntries,
+  inventoryCategoryIsFilled,
+  inventoryCategoryNames,
+  itemIdByName,
+  physicalUnitCount,
+  recordedCategoryCount,
+  removeInventoryCategory,
+  sensorFunctionGroup,
+  withItemFunctionCategories,
+} from "./lib/category-functions";
+import {
   createUnitDetail,
   getItemUnits,
   isMountingCategory,
@@ -27,6 +39,7 @@ import {
   resolveFieldDomain,
 } from "./lib/site-metadata";
 import { AWOS_KAT3_SITE_TYPE, getAllowedSiteSubtypes, getAwosKat3Family } from "./lib/site-subtypes";
+import { isWarehouseContext } from "./lib/warehouse";
 import SiteMetadataForm from "./SiteMetadataForm";
 import type {
   Condition,
@@ -44,6 +57,7 @@ import type { SiteMetadata } from "./types/site-metadata";
 import type { StationAccount } from "./lib/auth";
 
 const data = rawData as DataSet;
+const EMPTY_CATEGORIES: string[] = [];
 
 export default function InventoryApp({
   account,
@@ -72,6 +86,8 @@ export default function InventoryApp({
   const [subtype, setSubtype] = useState(initialSubtype);
   const templateProfile = "";
   const [categoryQuery, setCategoryQuery] = useState("");
+  const [warehouseCategoryPickerOpen, setWarehouseCategoryPickerOpen] = useState(false);
+  const [warehouseCategoryQuery, setWarehouseCategoryQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [productQuery, setProductQuery] = useState("");
   const [customMaterial, setCustomMaterial] = useState("");
@@ -133,6 +149,15 @@ export default function InventoryApp({
   }, [activeCategory]);
 
   useEffect(() => {
+    if (!warehouseCategoryPickerOpen) return;
+    const close = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setWarehouseCategoryPickerOpen(false);
+    };
+    window.addEventListener("keydown", close);
+    return () => window.removeEventListener("keydown", close);
+  }, [warehouseCategoryPickerOpen]);
+
+  useEffect(() => {
     if (!downloadOpen) return;
     const closeWithKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") setDownloadOpen(false);
@@ -171,11 +196,18 @@ export default function InventoryApp({
   const currentSubtype = subtypes.length === 1 ? subtypes[0] : subtypes.includes(subtype) ? subtype : "";
   const selectedSubtype = subtypeOptions.find((row) => row.subtype === currentSubtype);
   const profile = mode === "template" ? templateProfile : selectedSubtype?.profile ?? "";
-  const categories = data.barangByJenis[profile] ?? [];
+  const profileCategories = data.barangByJenis[profile] ?? EMPTY_CATEGORIES;
+  const warehouseMode = isWarehouseContext(data, selectedSite, selectedSubtype);
   const draftKey = mode === "template"
     ? `template::${profile}`
     : `site::${station}::${site}::${currentSubtype}`;
   const inventory = useMemo(() => drafts[draftKey] ?? {}, [draftKey, drafts]);
+  const categoryIds = useMemo(() => itemIdByName(data.master), []);
+  const warehouseCategories = useMemo(() => {
+    const allowed = new Set(profileCategories);
+    return inventoryCategoryNames(inventory).filter((category) => allowed.has(category));
+  }, [inventory, profileCategories]);
+  const categories = warehouseMode ? warehouseCategories : profileCategories;
   const metadataKey = `site-metadata::${station}::${site}`;
   const siteMetadata = useMemo(() => siteMetadataDrafts[metadataKey] ?? EMPTY_SITE_METADATA, [metadataKey, siteMetadataDrafts]);
   const automaticMetadata = {
@@ -187,20 +219,23 @@ export default function InventoryApp({
   };
   const runwayAzimuth = draftContexts[draftKey]?.runwayAzimuth ?? "";
   const acceptsRunwayAzimuth = /(?:TDZ|End Point)$/i.test(currentSubtype);
-  const filledCount = categories.filter((category) => (inventory[category]?.length ?? 0) > 0).length;
-  const totalUnits = categories.reduce(
-    (sum, category) => sum + (inventory[category] ?? []).reduce((itemSum, item) => itemSum + Math.max(1, item.quantity || 1), 0),
-    0,
-  );
-  const progress = categories.length ? Math.round((filledCount / categories.length) * 100) : 0;
+  const filledCount = profileCategories.filter((category) => inventoryCategoryIsFilled(inventory, category)).length;
+  const totalUnits = physicalUnitCount(inventory);
+  const warehouseRecordedCategories = recordedCategoryCount(inventory);
+  const progress = profileCategories.length ? Math.round((filledCount / profileCategories.length) * 100) : 0;
   const filteredCategories = categories.filter((category) =>
     normalizeSearch(category).includes(normalizeSearch(categoryQuery)),
   );
   const hasLocalDraft = Boolean(
     Object.values(inventory).some((items) => items.length > 0)
     || runwayAzimuth
-    || Object.values(siteMetadata).some((value) => Array.isArray(value) ? value.length > 0 : Boolean(value)),
+    || (!warehouseMode && Object.values(siteMetadata).some((value) => Array.isArray(value) ? value.length > 0 : Boolean(value))),
   );
+
+  const availableWarehouseCategories = profileCategories.filter((category) => (
+    !warehouseCategories.includes(category)
+    && normalizeSearch(category).includes(normalizeSearch(warehouseCategoryQuery))
+  ));
 
   const visibleProducts = useMemo(() => {
     const query = normalizeSearch(productQuery);
@@ -218,9 +253,16 @@ export default function InventoryApp({
     setDrafts((current) => ({ ...current, [draftKey]: next }));
   }
 
+  function addWarehouseCategory(category: string) {
+    if (!warehouseMode || !profileCategories.includes(category) || category in inventory) return;
+    setInventory({ ...inventory, [category]: [] });
+    setWarehouseCategoryPickerOpen(false);
+    setWarehouseCategoryQuery("");
+  }
+
   function addProduct(product: Product, proposal?: { id?: string; status: InstalledItem["proposalStatus"] }) {
     if (!activeCategory) return;
-    const nextItem: InstalledItem = {
+    const nextItem = withItemFunctionCategories({
       ...product,
       id: makeId(),
       itemKind: proposal ? "custom-product" : "product",
@@ -228,7 +270,7 @@ export default function InventoryApp({
       proposalStatus: proposal?.status,
       quantity: 1,
       units: [createUnitDetail()],
-    };
+    }, [activeCategory], categoryIds);
     setInventory({
       ...inventory,
       [activeCategory]: [...(inventory[activeCategory] ?? []), nextItem],
@@ -267,7 +309,7 @@ export default function InventoryApp({
 
   function addMaterial(material: string) {
     if (!activeCategory || !material.trim()) return;
-    const nextItem: InstalledItem = {
+    const nextItem = withItemFunctionCategories({
       brand: "",
       model: "",
       id: makeId(),
@@ -275,7 +317,7 @@ export default function InventoryApp({
       material: material.trim(),
       quantity: 1,
       units: [createUnitDetail()],
-    };
+    }, [activeCategory], categoryIds);
     setInventory({
       ...inventory,
       [activeCategory]: [...(inventory[activeCategory] ?? []), nextItem],
@@ -305,6 +347,19 @@ export default function InventoryApp({
     updateItem(category, item.id, { units });
   }
 
+  function updateItemFunctions(storageCategory: string, item: InstalledItem, categories: string[]) {
+    if (!categories.length) return;
+    const nextItem = withItemFunctionCategories(item, categories, categoryIds);
+    const destination = categories.includes(storageCategory) ? storageCategory : categories[0];
+    const next: Inventory = { ...inventory };
+    next[storageCategory] = (inventory[storageCategory] ?? []).filter((row) => row.id !== item.id);
+    next[destination] = [...(destination === storageCategory ? next[destination] : inventory[destination] ?? []), nextItem];
+    if (warehouseMode) {
+      for (const category of categories) if (!(category in next)) next[category] = [];
+    }
+    setInventory(next);
+  }
+
   function updateRunwayAzimuth(value: string) {
     setDraftContexts((current) => ({
       ...current,
@@ -330,15 +385,33 @@ export default function InventoryApp({
     });
   }
 
-  function removeItem(category: string, id: string) {
+  async function removeItem(category: string, item: InstalledItem) {
+    const functions = getItemFunctionCategories(item, category);
+    if (functions.length > 1 && !await feedback.confirm({
+      title: "Hapus unit sensor kombinasi?",
+      description: `Produk ini akan dihapus dari fungsi ${functions.join(" dan ")}.`,
+      confirmLabel: "Hapus Unit",
+      danger: true,
+    })) return;
     setInventory({
       ...inventory,
-      [category]: (inventory[category] ?? []).filter((item) => item.id !== id),
+      [category]: (inventory[category] ?? []).filter((row) => row.id !== item.id),
     });
   }
 
+  async function removeWarehouseCategory(category: string) {
+    const affected = inventoryCategoryEntries(inventory, category);
+    if (affected.length && !await feedback.confirm({
+      title: `Hapus kategori ${category}?`,
+      description: `${affected.reduce((sum, row) => sum + getItemUnits(row.item).length, 0)} unit terkait akan dihapus dari kategori ini. Unit kombinasi tetap dipertahankan pada fungsi lainnya.`,
+      confirmLabel: "Hapus Kategori",
+      danger: true,
+    })) return;
+    setInventory(removeInventoryCategory(inventory, category, categoryIds));
+  }
+
   async function resetCurrentDraft() {
-    if (!categories.length || !await feedback.confirm({
+    if (!profileCategories.length || !await feedback.confirm({
       title: "Kosongkan seluruh pilihan barang?",
       description: "Seluruh pilihan barang pada lokasi ini akan dihapus dari draf.",
       confirmLabel: "Kosongkan Draf",
@@ -372,7 +445,7 @@ export default function InventoryApp({
       siteSubtypeId: selectedSubtypeId,
       inventory,
       runwayAzimuth: acceptsRunwayAzimuth ? runwayAzimuth : "",
-      siteMetadata,
+      siteMetadata: warehouseMode ? EMPTY_SITE_METADATA : siteMetadata,
     }
     : null;
 
@@ -557,6 +630,7 @@ export default function InventoryApp({
       profile,
       categories,
       payload: serverPayload,
+      warehouseMode,
       resolveItem: productForExport,
     });
     const filename = buildAloptamaFilename(station, site, currentSubtype, "json");
@@ -575,6 +649,7 @@ export default function InventoryApp({
       profile,
       categories,
       payload: serverPayload,
+      warehouseMode,
       resolveItem: productForExport,
     });
     const filename = buildAloptamaFilename(station, site, currentSubtype, "csv");
@@ -646,9 +721,11 @@ export default function InventoryApp({
 
       <section className="intro">
         <div>
-          <p className="kicker">INVENTARISASI BARANG TERPASANG</p>
-          <h2>Lengkapi Site dan Perangkatnya.</h2>
-          <p className="intro-copy">Pilih lokasi, lengkapi metadata Aloptama, tentukan subtipe, lalu catat setiap perangkat. Draf tersimpan otomatis di browser ini.</p>
+          <p className="kicker">{warehouseMode ? "INVENTARISASI BARANG GUDANG" : "INVENTARISASI BARANG TERPASANG"}</p>
+          <h2>{warehouseMode ? "Catat Barang di Gudang." : "Lengkapi Site dan Perangkatnya."}</h2>
+          <p className="intro-copy">{warehouseMode
+            ? "Pilih kategori yang tersedia di Gudang, lalu catat produk dan setiap unit fisiknya."
+            : "Pilih lokasi, lengkapi metadata Aloptama, tentukan subtipe, lalu catat setiap perangkat."} Draf tersimpan otomatis di browser ini.</p>
         </div>
         <div className="dataset-facts" aria-label="Ringkasan data">
           <div><strong>{stations.length}</strong><span>stasiun</span></div>
@@ -720,7 +797,9 @@ export default function InventoryApp({
             <div className="selection-summary">
               <p className="eyebrow">PROFIL BARANG</p>
               <strong>{profile}</strong>
-              <span>{categories.length} kategori perlu diperiksa</span>
+              <span>{warehouseMode
+                ? `${profileCategories.length} kategori tersedia · ${categories.length} dipilih`
+                : `${profileCategories.length} kategori perlu diperiksa`}</span>
             </div>
           )}
         </aside>
@@ -747,7 +826,7 @@ export default function InventoryApp({
             </div>
           )}
           <fieldset className="editing-surface" disabled={locationReady && !sync.canEdit} onInputCapture={sync.touchActivity} onChangeCapture={sync.touchActivity}>
-          {mode === "site" && selectedSite && (
+          {mode === "site" && selectedSite && !warehouseMode && (
             <SiteMetadataForm
               value={siteMetadata}
               automatic={automaticMetadata}
@@ -762,7 +841,7 @@ export default function InventoryApp({
               <span className="empty-index">01</span>
               <div><h3>Mulai dari lokasi</h3><p>Lengkapi pilihan di sebelah kiri. Daftar barang yang sesuai akan muncul otomatis di sini.</p></div>
             </div>
-          ) : !profile || !categories.length ? (
+          ) : !profile || !profileCategories.length ? (
             <div className="empty-state warning-state">
               <span className="empty-index">!</span>
               <div><h3>Profil barang belum tersedia</h3><p>Subtipe ini belum mempunyai pasangan <em>Jenis</em> pada sheet Barang.</p></div>
@@ -772,39 +851,54 @@ export default function InventoryApp({
               <div className="inventory-head">
                 <div>
                   <p className="eyebrow">{mode === "site" ? "LANGKAH KETIGA" : "LANGKAH KEDUA"}</p>
-                  <h3>Pilih barang terpasang</h3>
+                  <h3>{warehouseMode ? "Barang di Gudang" : "Pilih barang terpasang"}</h3>
                   <p>{mode === "site" ? site : `Pratinjau ${profile}`}</p>
                 </div>
-                <div className="progress-block">
-                  <div><span>{filledCount} dari {categories.length} kategori</span><strong>{progress}%</strong></div>
+                {warehouseMode ? <div className="warehouse-summary">
+                  <strong>{totalUnits} unit fisik</strong>
+                  <span>{warehouseRecordedCategories} kategori tercatat</span>
+                </div> : <div className="progress-block">
+                  <div><span>{filledCount} dari {profileCategories.length} kategori</span><strong>{progress}%</strong></div>
                   <div className="progress-track"><span style={{ width: `${progress}%` }} /></div>
-                </div>
+                </div>}
               </div>
 
               <div className="inventory-tools">
-                <label className="category-search">
+                {warehouseMode ? <button className="primary-button warehouse-add-category" type="button" onClick={() => setWarehouseCategoryPickerOpen(true)}>+ Tambah Kategori Barang</button> : <label className="category-search">
                   <span aria-hidden="true">⌕</span>
                   <input autoComplete="off" value={categoryQuery} onChange={(event) => setCategoryQuery(event.target.value)} placeholder="Cari kategori barang…" />
-                </label>
+                </label>}
                 <span>{totalUnits} unit dipilih</span>
               </div>
 
+              {warehouseMode && !categories.length && <div className="empty-state warehouse-empty-state">
+                <span className="empty-index">01</span>
+                <div><h3>Gudang belum mempunyai kategori</h3><p>Tambahkan hanya kategori barang yang benar-benar tersedia di Gudang ini.</p></div>
+              </div>}
+
               <div className="category-list">
                 {filteredCategories.map((category) => {
-                  const items = inventory[category] ?? [];
+                  const entries = inventoryCategoryEntries(inventory, category);
+                  const unitCount = entries.reduce((sum, entry) => sum + getItemUnits(entry.item).length, 0);
                   const mountingCategory = isMountingCategory(category);
                   return (
-                    <article className={`category-card ${items.length ? "is-filled" : ""}`} key={category}>
+                    <article className={`category-card ${entries.length ? "is-filled" : ""}`} key={category}>
                       <div className="category-title-row">
                         <span className="category-number">{String(categories.indexOf(category) + 1).padStart(2, "0")}</span>
-                        <div className="category-name"><h4>{category}</h4><p>{items.length ? `${items.length} ${mountingCategory ? "bahan mounting" : "produk terpasang"}` : mountingCategory ? "Belum memilih bahan" : "Belum memilih produk"}</p></div>
+                        <div className="category-name"><h4>{category}</h4><p>{entries.length ? `${unitCount} ${mountingCategory ? "bahan mounting" : "unit fisik"}` : mountingCategory ? "Belum memilih bahan" : "Belum memilih produk"}</p></div>
+                        {warehouseMode && <button className="remove-category" type="button" aria-label={`Hapus kategori ${category}`} onClick={() => void removeWarehouseCategory(category)}>Hapus kategori</button>}
                         <button className="add-product" onClick={() => { setActiveCategory(category); setProductQuery(""); setCustomMaterial(""); setCustomBrand(""); setCustomModel(""); setCustomProductNote(""); void productCatalog.refresh(); }}>
                           <span aria-hidden="true">＋</span> {mountingCategory ? "Pilih bahan" : "Pilih produk"}
                         </button>
                       </div>
 
-                      {items.map((item) => {
+                      {entries.map(({ storageCategory, item }) => {
                         const resolved = productForDisplay(item);
+                        const functionGroup = sensorFunctionGroup(category);
+                        const functions = getItemFunctionCategories(item, storageCategory);
+                        const functionValue = functionGroup
+                          ? functionGroup.categories.filter((name) => functions.includes(name)).join("|")
+                          : "";
                         return (
                         <div className={`installed-item proposal-${resolved.status?.toLowerCase() ?? "none"}`} key={item.id}>
                           <div className="product-identity">
@@ -813,7 +907,7 @@ export default function InventoryApp({
                               <strong>{item.itemKind === "material" ? "Bahan mounting" : resolved.brand}</strong>
                               <span>{item.itemKind === "material" ? item.material : resolved.model}</span>
                             </p>
-                            <button aria-label={`Hapus ${item.itemKind === "material" ? item.material : `${item.brand} ${item.model}`}`} onClick={() => removeItem(category, item.id)}>Hapus</button>
+                            <button aria-label={`Hapus ${item.itemKind === "material" ? item.material : `${item.brand} ${item.model}`}`} onClick={() => void removeItem(storageCategory, item)}>Hapus</button>
                           </div>
                           {resolved.status === "PENDING" && <p className="proposal-message">Produk ini sedang menunggu pemeriksaan admin.</p>}
                           {resolved.status === "PENDING_LOCAL" && <p className="proposal-message">Usulan masih tersimpan lokal dan akan dikirim saat server tersedia.</p>}
@@ -821,22 +915,33 @@ export default function InventoryApp({
                             <p className="proposal-message is-resolved">Produk telah disesuaikan admin dari {item.brand} - {item.model}.</p>
                           )}
                           {resolved.status === "REJECTED" && <p className="proposal-message is-rejected">Usulan produk ditolak. Silakan pilih produk lain atau perbaiki usulan.{resolved.reviewNote ? ` Catatan: ${resolved.reviewNote}` : ""}</p>}
+                          {functionGroup && item.itemKind !== "material" && <label className="function-field">Fungsi sensor
+                            <select value={functionValue} onChange={(event) => updateItemFunctions(storageCategory, item, event.target.value.split("|").filter(Boolean))}>
+                              <option value={functionGroup.categories[0]}>{functionGroup.labels[0]}</option>
+                              <option value={functionGroup.categories[1]}>{functionGroup.labels[1]}</option>
+                              <option value={functionGroup.categories.join("|")}>{functionGroup.labels[2]}</option>
+                            </select>
+                            {functions.length > 1 && <small>Satu unit fisik memenuhi dua kategori.</small>}
+                          </label>}
                           <label className="quantity-field">Jumlah
-                            <input autoComplete="off" type="number" min="1" value={item.quantity} onChange={(event) => updateItemQuantity(category, item, Number(event.target.value))} />
+                            <input autoComplete="off" type="number" min="1" value={item.quantity} onChange={(event) => updateItemQuantity(storageCategory, item, Number(event.target.value))} />
                           </label>
                           <div className="unit-list">
                             {getItemUnits(item).map((unit, unitIndex) => (
                               <section className="unit-detail" key={unit.id}>
                                 <strong>Unit {unitIndex + 1}</strong>
                                 <div className="metadata-grid">
-                                  {item.itemKind !== "material" && <label>Nomor seri<input autoComplete="off" value={unit.serialNumber} onChange={(event) => updateUnit(category, item, unit.id, { serialNumber: event.target.value })} placeholder="Opsional" /></label>}
+                                  {item.itemKind !== "material" && <label>Nomor seri<input autoComplete="off" value={unit.serialNumber} onChange={(event) => updateUnit(storageCategory, item, unit.id, { serialNumber: event.target.value })} placeholder="Opsional" /></label>}
                                   <label>Kondisi
-                                    <select value={unit.condition} onChange={(event) => updateUnit(category, item, unit.id, { condition: event.target.value as Condition })}>
+                                    <select value={unit.condition} onChange={(event) => updateUnit(storageCategory, item, unit.id, { condition: event.target.value as Condition })}>
                                       {CONDITION_OPTIONS.map((condition) => <option key={condition}>{condition}</option>)}
                                     </select>
                                   </label>
-                                  <label>Tahun pasang<input autoComplete="off" inputMode="numeric" maxLength={4} value={unit.installedYear} onChange={(event) => updateUnit(category, item, unit.id, { installedYear: event.target.value.replace(/\D/g, "").slice(0, 4) })} placeholder="YYYY" /></label>
-                                  <label className="notes-field">Catatan<input autoComplete="off" value={unit.notes} onChange={(event) => updateUnit(category, item, unit.id, { notes: event.target.value })} placeholder="Keterangan tambahan" /></label>
+                                  {warehouseMode ? <>
+                                    <label>Tahun pengadaan<input autoComplete="off" inputMode="numeric" maxLength={4} value={unit.procurementYear ?? ""} onChange={(event) => updateUnit(storageCategory, item, unit.id, { procurementYear: event.target.value.replace(/\D/g, "").slice(0, 4) })} placeholder="YYYY" /></label>
+                                    <label className="wide-unit-field">Nama kegiatan pengadaan<input autoComplete="off" value={unit.procurementActivity ?? ""} onChange={(event) => updateUnit(storageCategory, item, unit.id, { procurementActivity: event.target.value })} placeholder="Contoh: Pengadaan Aloptama MKG 2025" /></label>
+                                  </> : <label>Tahun pasang<input autoComplete="off" inputMode="numeric" maxLength={4} value={unit.installedYear} onChange={(event) => updateUnit(storageCategory, item, unit.id, { installedYear: event.target.value.replace(/\D/g, "").slice(0, 4) })} placeholder="YYYY" /></label>}
+                                  <label className="notes-field">Catatan<input autoComplete="off" value={unit.notes} onChange={(event) => updateUnit(storageCategory, item, unit.id, { notes: event.target.value })} placeholder="Keterangan tambahan" /></label>
                                 </div>
                               </section>
                             ))}
@@ -873,6 +978,30 @@ export default function InventoryApp({
           </fieldset>
         </div>
       </div>
+
+      {warehouseCategoryPickerOpen && warehouseMode && sync.canEdit && (
+        <div className="drawer-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setWarehouseCategoryPickerOpen(false); }}>
+          <section className="product-drawer category-picker-drawer" role="dialog" aria-modal="true" aria-labelledby="warehouse-category-dialog-title">
+            <div className="drawer-head">
+              <div><p className="eyebrow">KATALOG PROFIL BARANG GUDANG</p><h3 id="warehouse-category-dialog-title">Tambah Kategori Barang</h3></div>
+              <button aria-label="Tutup pemilih kategori" onClick={() => setWarehouseCategoryPickerOpen(false)}>×</button>
+            </div>
+            <label className="product-search">
+              <span aria-hidden="true">⌕</span>
+              <input autoComplete="off" autoFocus value={warehouseCategoryQuery} onChange={(event) => setWarehouseCategoryQuery(event.target.value)} placeholder="Cari kategori barang…" />
+            </label>
+            <p className="search-caption">Kategori yang sudah dipilih tidak ditampilkan lagi.</p>
+            <div className="product-results warehouse-category-results">
+              {availableWarehouseCategories.map((category) => <button key={category} onClick={() => addWarehouseCategory(category)}>
+                <span className="product-avatar">KB</span>
+                <span><strong>{category}</strong><small>Kategori Barang</small></span>
+                <span className="choose-label">Tambah</span>
+              </button>)}
+              {!availableWarehouseCategories.length && <div className="no-product"><strong>Kategori tidak ditemukan</strong><span>Coba kata pencarian lain atau semua kategori sudah dipilih.</span></div>}
+            </div>
+          </section>
+        </div>
+      )}
 
       {activeCategory && sync.canEdit && (
         <div className="drawer-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setActiveCategory(null); }}>

@@ -141,22 +141,25 @@ test("data hasil CSV lengkap dan Water Level memiliki 17 kategori", async () => 
   const expectedWaterLevel = [
     "Adaptor", "Arrester", "Boks Panel", "Data Akuisisi", "Kabel Data",
     "Mounting Sensor Pasut", "Pengolah Data", "Penyimpanan", "Regulator",
-    "Sensor Tekanan Udara", "Sensor Pasut", "Modem Komunikasi",
+    "Sensor Tekanan Udara", "Sensor pasut", "Modem Komunikasi",
     "SIstem Catu Daya Tidak Terputus", "Solar Panel", "Mounting Sensor Hujan",
     "Proteksi Petir", "Sensor Hujan",
   ];
 
-  const expectedStationSites = stationRows.map((row) => ({
-    station: row["Nama Stasiun"].trim(),
-    site: row["Nama Site"].trim(),
-    siteType: row["Tipe Site"].trim(),
-  }));
+  const expectedStationSites = Array.from(new Map(stationRows.map((row) => [
+    row.site_id || `${row["Nama Stasiun"]}\u001f${row["Nama Site"]}\u001f${row["Tipe Site"]}`,
+    {
+      station: row["Nama Stasiun"].trim(),
+      site: row["Nama Site"].trim(),
+      siteType: row["Tipe Site"].trim(),
+    },
+  ])).values());
   const expectedSiteSubtypes = siteSubtypeRows.map((row) => {
     const subtype = row["Sub Tipe Site"].trim();
     return {
       siteType: row["Tipe Site"].trim(),
       subtype,
-      profile: profileForSubtype(subtype, data.barangByJenis),
+      profile: row["Profil Barang"]?.trim() || profileForSubtype(subtype, data.barangByJenis),
     };
   });
 
@@ -364,7 +367,7 @@ test("metadata Aloptama ikut dalam ekspor JSON dan CSV", async () => {
   ]);
 
   assert.match(source, /buildInventoryJson/);
-  assert.match(exportSource, /siteMetadata: \{ \.\.\.automaticMetadata/);
+  assert.match(exportSource, /siteMetadata: context\.warehouseMode \? null : \{ \.\.\.automaticMetadata/);
   assert.match(exportSource, /\.\.\.SITE_METADATA_CSV_HEADERS/);
   assert.match(exportSource, /\.\.\.metadataCells/);
   assert.match(metadataSource, /export const SITE_METADATA_CSV_HEADERS/);

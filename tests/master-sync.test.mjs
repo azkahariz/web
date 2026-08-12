@@ -18,13 +18,14 @@ test("master source dinormalisasi sesuai kontrak CSV existing", async () => {
   const generated = JSON.parse(await readFile(path.join(projectRoot, "app", "data.generated.json"), "utf8"));
   const counts = sourceCounts(model);
   assert.ok(Object.values(counts).every((count) => count > 0));
-  assert.equal(counts.sites, model.sourceRows.stationRows.length);
+  assert.ok(counts.sites <= model.sourceRows.stationRows.length);
   assert.ok(counts.profileItems <= model.sourceRows.profileItemRows.length);
   assert.ok(counts.productCategories <= model.sourceRows.productCategoryRows.length);
   assert.ok(counts.products <= model.sourceRows.productRows.length);
   assert.ok(model.registries.siteSubtypes.rows.some((row) => row.name.endsWith("TDZ") && row.profile?.name === "AWOS TDZ"));
   assert.ok(generated.master?.profileItems.length > 0);
   assert.ok(generated.master?.productCategories.length > 0);
+  assert.equal(new Set(generated.stationSites.map((row) => row.siteId)).size, counts.sites);
   assert.ok(generated.stationSites.every((row) => UUID_PATTERN.test(row.stationId) && UUID_PATTERN.test(row.siteId)));
 });
 

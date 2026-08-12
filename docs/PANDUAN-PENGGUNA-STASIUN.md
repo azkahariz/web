@@ -80,6 +80,20 @@ Lihat [Panduan QC Produk](PANDUAN-QC-PRODUK.md) untuk penjelasan status.
 - Jangan meminta Site/Subtipe diubah langsung dari form. Laporkan ke pengelola
   master data.
 
+## Mengisi Gudang
+
+1. Pilih Site bertipe **Gudang** dan Subtipe **Gudang**, lalu mulai pengisian.
+2. Tekan **Tambah Kategori Barang** dan cari kategori yang benar-benar tersedia.
+   Katalog profil Gudang bukan daftar barang yang wajib dipenuhi.
+3. Pilih atau usulkan Brand/Tipe melalui alur QC yang sama dengan Site biasa.
+4. Isi Nomor Seri, Kondisi, Tahun Pengadaan, Nama Kegiatan Pengadaan, dan Catatan
+   untuk setiap unit. Metadata Aloptama dan Tahun Pasang tidak digunakan.
+5. Untuk sensor kombinasi, pilih Suhu + Kelembaban atau Kecepatan + Arah. Satu
+   unit fisik tetap dicatat sekali walaupun memenuhi dua kategori.
+
+Kategori kosong dapat dihapus langsung. Menghapus kategori yang sudah berisi
+unit meminta konfirmasi; fungsi lain dari sensor kombinasi tetap dipertahankan.
+
 Untuk pilot, uji login, pemilihan Site/Subtipe, pengisian, save, unduh, dua
 perangkat, dan usulan produk. Laporkan istilah yang membingungkan, data salah,
 error, tampilan sulit, atau langkah yang terlalu panjang.

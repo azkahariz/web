@@ -39,7 +39,7 @@ function Add-OptionalBoolean([System.Collections.Specialized.OrderedDictionary]$
   throw "Nilai $sourceName harus TRUE atau FALSE: $($property.Value)"
 }
 
-$stations = @($stationRows | ForEach-Object {
+$stationEntries = @($stationRows | ForEach-Object {
   $entry = [ordered]@{
     station = $_.'Nama Stasiun'.Trim()
     site = $_.'Nama Site'.Trim()
@@ -52,6 +52,20 @@ $stations = @($stationRows | ForEach-Object {
   Add-OptionalText $entry $_ 'site_type_id' 'siteTypeId'
   Add-OptionalBoolean $entry $_ 'site_type_active' 'siteTypeActive'
   $entry
+})
+
+$seenStationSites = @{}
+$stations = @($stationEntries | Where-Object {
+  $key = if ($_.siteId) { $_.siteId } else { "$($_.station)$([char]31)$($_.site)$([char]31)$($_.siteType)" }
+  if (-not $seenStationSites.ContainsKey($key)) {
+    $seenStationSites[$key] = $_
+    return $true
+  }
+  $existing = $seenStationSites[$key]
+  if ($existing.station -ne $_.station -or $existing.site -ne $_.site -or $existing.siteType -ne $_.siteType) {
+    throw "UUID Site dipakai oleh identitas berbeda: $key"
+  }
+  return $false
 })
 
 $barangByJenis = [ordered]@{}

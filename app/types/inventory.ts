@@ -72,6 +72,8 @@ export type UnitDetail = {
   serialNumber: string;
   condition: Condition;
   installedYear: string;
+  procurementYear?: string;
+  procurementActivity?: string;
   notes: string;
 };
 
@@ -83,6 +85,8 @@ export type InstalledItem = Product & {
   material?: string;
   quantity: number;
   units?: UnitDetail[];
+  functionCategories?: string[];
+  functionCategoryIds?: string[];
   // Kolom lama dipertahankan agar draf browser versi sebelumnya tetap terbaca.
   serialNumber?: string;
   condition?: Condition;

@@ -104,6 +104,16 @@ version check dan tercatat dalam audit.
 Simpan atau kirim password baru sebelum dialog ditutup. Jangan menyimpan
 password di audit, catatan publik, atau Git.
 
+## Gudang pada Master dan Submission
+
+Gudang tetap muncul sebagai Site di **Master Pengisian** dan memakai aksi Buka
+serta Unduh existing. Pada tab Submission, kolom Progres menampilkan jumlah unit
+fisik dan kategori tercatat, bukan persentase kelengkapan seluruh katalog.
+Detail Gudang tetap lazy-load dan menampilkan fungsi sensor kombinasi.
+
+Produk baru dari Gudang masuk ke antrean QC yang sama. Buka/Edit sebagai Admin,
+lock, version, archive, dan bulk download tetap mengikuti lifecycle Submission.
+
 ## QC Produk dan audit
 
 Gunakan **Approve Baru** untuk produk benar-benar baru, **Merge** untuk variasi

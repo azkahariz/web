@@ -69,5 +69,24 @@ Usulan produk disimpan sebagai proposal terpisah. QC dapat approve produk baru,
 merge ke canonical product, atau reject. CSV/JSON Station dan Admin memakai
 serializer bersama. Bulk export membuat ZIP di browser dari data baca saja.
 
+## Gudang Stasiun/Balai
+
+```text
+Station/Balai -> Site Gudang -> Tipe Gudang -> Subtipe Gudang
+               -> Profil Barang Gudang -> kategori yang dipilih user
+               -> Product/QC -> physical units
+```
+
+Gudang memakai tabel `sites` dan `submissions`; tidak ada entity atau persistence
+kedua. Form tidak menampilkan Metadata Aloptama dan tidak merender seluruh katalog
+kosong. Key inventaris kosong menyimpan kategori yang dipilih, sedangkan produk
+dan unit baru ditambahkan setelahnya.
+
+Satu product group dapat mempunyai dua `functionCategories`. Unit fisik tetap
+unik berdasarkan `UnitDetail.id`; CSV menyertakan ID dan fungsi, sedangkan JSON
+menambahkan projection `physicalUnits` tanpa menghapus struktur `items` lama.
+Autosave, lock, version, RLS, QC, Admin monitoring, dan bulk export tetap reuse
+infrastruktur Submission existing.
+
 Lihat [Master Data](MASTER-DATA.md), [Panduan QC Produk](PANDUAN-QC-PRODUK.md),
 dan [Panduan Pengembang](PANDUAN-PENGEMBANG.md).

@@ -18,6 +18,8 @@ export function createUnitDetail(): UnitDetail {
     serialNumber: "",
     condition: "Baik",
     installedYear: "",
+    procurementYear: "",
+    procurementActivity: "",
     notes: "",
   };
 }
@@ -29,6 +31,8 @@ export function getItemUnits(item: InstalledItem): UnitDetail[] {
     serialNumber: index === 0 ? item.serialNumber ?? "" : "",
     condition: index === 0 ? item.condition ?? "Baik" : "Baik",
     installedYear: index === 0 ? item.installedYear ?? "" : "",
+    procurementYear: "",
+    procurementActivity: "",
     notes: index === 0 ? item.notes ?? "" : "",
   }));
 }

@@ -37,7 +37,7 @@ type ListCacheValue = {
 };
 
 const progressOptions: Array<SubmissionProgressStatus | ""> = [
-  "", "Kosong", "Terisi Sebagian", "Lengkap", "Belum terpetakan",
+  "", "Kosong", "Terisi Sebagian", "Lengkap", "Gudang", "Belum terpetakan",
 ];
 
 const sortableColumns: Array<{ field: SubmissionSortField; label: string }> = [
@@ -388,7 +388,7 @@ export default function AdminSubmissionMonitor({
           }}
         >
           <td>{row.station_name}</td><td><strong>{row.site_name}</strong></td><td>{row.site_type_name}</td><td>{row.subtype_name}</td>
-          <td><span className={`status-pill progress-${row.progress_status.toLocaleLowerCase("id-ID").replaceAll(" ", "-")}`}>{row.filled_count}/{row.total_count} ({row.progress_percent}%)</span><small>{row.progress_status}</small></td>
+          <td>{row.progress_kind === "WAREHOUSE" ? <><span className="status-pill progress-gudang">{row.warehouse_unit_count} unit / {row.warehouse_category_count} kategori</span><small>Inventaris Gudang</small></> : <><span className={`status-pill progress-${row.progress_status.toLocaleLowerCase("id-ID").replaceAll(" ", "-")}`}>{row.filled_count}/{row.total_count} ({row.progress_percent}%)</span><small>{row.progress_status}</small></>}</td>
           <td>v{row.version}</td><td>{row.operator_name || "-"}</td><td>{formatUpdated(row)}</td>
           <td><button className="detail-toggle" type="button" aria-expanded={expandedId === row.id} aria-label={`${expandedId === row.id ? "Tutup" : "Buka"} detail ${row.site_name}`} onClick={() => void toggleDetail(row.id)}>{expandedId === row.id ? "\u25B2" : "\u25BC"}</button></td>
         </tr>
@@ -396,7 +396,7 @@ export default function AdminSubmissionMonitor({
           {detailLoadingId === row.id && <p className="submission-loading-copy"><span className="loading-spinner" aria-hidden="true" />Memuat detail submission...</p>}
           {detailErrors[row.id] && <p className="submission-detail-error">{detailErrors[row.id]}<AsyncButton type="button" onClick={() => void loadDetail(row.id)} loading={detailLoadingId === row.id} loadingText="Memuat...">Coba lagi</AsyncButton></p>}
           {visibleDetail && <div className="submission-inline-detail">
-            <div className="submission-detail-summary"><div><strong>Progress Barang</strong><span>{visibleDetail.filled_count} dari {visibleDetail.total_count} kategori terisi</span></div><strong>{visibleDetail.progress_percent}%</strong></div>
+            <div className="submission-detail-summary">{visibleDetail.progress_kind === "WAREHOUSE" ? <><div><strong>Inventaris Gudang</strong><span>Tidak memakai target kelengkapan katalog</span></div><strong>{visibleDetail.warehouse_unit_count} unit / {visibleDetail.warehouse_category_count} kategori</strong></> : <><div><strong>Progress Barang</strong><span>{visibleDetail.filled_count} dari {visibleDetail.total_count} kategori terisi</span></div><strong>{visibleDetail.progress_percent}%</strong></>}</div>
             <div className="submission-item-list">{visibleItems.map((item) => {
               const itemKey = `${row.id}:${item.name}`;
               const itemExpanded = expandedItems.has(itemKey);
@@ -413,10 +413,10 @@ export default function AdminSubmissionMonitor({
                   })}
                 >
                   <span>{item.filled ? "\u2713" : "\u25CB"} {item.name}</span>
-                  {first && <small>{first.kind === "material" ? first.primary : `${first.primary} - ${first.secondary}`}{item.entries.length > 1 ? ` + ${item.entries.length - 1} lainnya` : ""}</small>}
+                  {first && <small>{first.kind === "material" ? first.primary : `${first.primary} - ${first.secondary}`} · {first.unitCount} unit{first.functions.length > 1 ? ` · ${first.functions.join(" + ")}` : ""}{item.entries.length > 1 ? ` + ${item.entries.length - 1} lainnya` : ""}</small>}
                   {item.entries.length > 1 && <b aria-hidden="true">{itemExpanded ? "\u25B2" : "\u25BC"}</b>}
                 </button>
-                {itemExpanded && <ol>{item.entries.map((entry, index) => <li key={`${entry.primary}:${entry.secondary ?? ""}:${index}`}>{entry.kind === "material" ? entry.primary : `${entry.primary} - ${entry.secondary}`}</li>)}</ol>}
+                {itemExpanded && <ol>{item.entries.map((entry, index) => <li key={`${entry.primary}:${entry.secondary ?? ""}:${index}`}>{entry.kind === "material" ? entry.primary : `${entry.primary} - ${entry.secondary}`} · {entry.unitCount} unit{entry.functions.length > 1 ? ` · ${entry.functions.join(" + ")}` : ""}</li>)}</ol>}
               </div>;
             })}</div>
             {!visibleDetail.expected_items.length && <p>Profil barang belum terpetakan pada master.</p>}
