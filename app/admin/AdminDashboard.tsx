@@ -62,6 +62,7 @@ export default function AdminDashboard({ username }: { username: string }) {
   const router = useRouter();
   const [tab, setTab] = useState<Tab>("summary");
   const [fillingMode, setFillingMode] = useState<FillingMode>("master");
+  const [submissionMonitorMounted, setSubmissionMonitorMounted] = useState(false);
   const [stations, setStations] = useState<Station[]>([]);
   const [sites, setSites] = useState<Site[]>([]);
   const [siteTypes, setSiteTypes] = useState<SiteType[]>([]);
@@ -338,7 +339,10 @@ export default function AdminDashboard({ username }: { username: string }) {
   function navigate(nextTab: Tab, options?: { fillingMode?: FillingMode; qcStatus?: Proposal["status"] }) {
     setTab(nextTab);
     setSearch("");
-    if (options?.fillingMode) setFillingMode(options.fillingMode);
+    if (options?.fillingMode) {
+      setFillingMode(options.fillingMode);
+      if (options.fillingMode === "submissions") setSubmissionMonitorMounted(true);
+    }
     if (options?.qcStatus) {
       setQcStatus(options.qcStatus);
       setSelectedProposals([]);
@@ -381,7 +385,7 @@ export default function AdminDashboard({ username }: { username: string }) {
 
           {!loading && tab === "stations" && <div className="status-tabs filling-mode-tabs" role="tablist" aria-label="Mode Stasiun dan Pengisian">
             <button role="tab" aria-selected={fillingMode === "master"} className={fillingMode === "master" ? "active" : ""} onClick={() => { setFillingMode("master"); setSearch(""); }}>Master Pengisian</button>
-            <button role="tab" aria-selected={fillingMode === "submissions"} className={fillingMode === "submissions" ? "active" : ""} onClick={() => { setFillingMode("submissions"); setSearch(""); }}>Submission</button>
+            <button role="tab" aria-selected={fillingMode === "submissions"} className={fillingMode === "submissions" ? "active" : ""} onClick={() => { setSubmissionMonitorMounted(true); setFillingMode("submissions"); setSearch(""); }}>Submission</button>
           </div>}
 
           {!loading && searchTab && tab !== "stations" && <label className="admin-search">Cari<input autoComplete="off" value={search} onChange={(event) => setSearch(event.target.value)} placeholder={adminSearchPlaceholder(searchTab)} /></label>}
@@ -416,14 +420,16 @@ export default function AdminDashboard({ username }: { username: string }) {
             </details>)}
           </div>}
 
-          {!loading && tab === "stations" && fillingMode === "submissions" && <AdminSubmissionMonitor
-            stations={stations}
-            siteTypes={siteTypes}
-            onMessage={setMessage}
-            onDownload={downloadSubmission}
-            onEdit={editSubmission}
-            onChanged={refresh}
-          />}
+          {submissionMonitorMounted && <div hidden={tab !== "stations" || fillingMode !== "submissions"}>
+            <AdminSubmissionMonitor
+              stations={stations}
+              siteTypes={siteTypes}
+              onMessage={setMessage}
+              onDownload={downloadSubmission}
+              onEdit={editSubmission}
+              onChanged={refresh}
+            />
+          </div>}
 
           {!loading && tab === "accounts" && <div className="admin-table-wrap accounts-table"><table><thead><tr><th>Stasiun</th><th>Username</th><th>Status</th><th>Aksi</th></tr></thead><tbody>
             {filteredAccounts.map((account) => <tr key={account.id}><td>{stationMap.get(account.station_id)?.name ?? "Stasiun tidak ditemukan"}</td><td>{account.username}</td><td><span className={`status-pill ${account.active ? "active" : "inactive"}`}>{account.active ? "Aktif" : "Nonaktif"}</span></td><td className="table-actions"><AsyncButton loading={activeAction === `account:${account.id}:active`} loadingText={account.active ? "Menonaktifkan..." : "Mengaktifkan..."} onClick={() => void runAction(`account:${account.id}:active`, () => accountAction({ action: "set-active", accountId: account.id, active: !account.active }, `${account.active ? "Nonaktifkan" : "Aktifkan"} akun ${account.username}?`))}>{account.active ? "Nonaktifkan" : "Aktifkan"}</AsyncButton><AsyncButton loading={activeAction === `account:${account.id}:reset`} loadingText="Mereset..." onClick={() => void runAction(`account:${account.id}:reset`, () => accountAction({ action: "reset-password", accountId: account.id }, `Reset password ${account.username}? Password lama langsung tidak berlaku.`))}>Reset Password</AsyncButton></td></tr>)}

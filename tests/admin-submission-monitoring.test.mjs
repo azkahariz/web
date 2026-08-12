@@ -103,6 +103,10 @@ test("list ringan, lazy detail cache, search/filter, dan archive dijaga oleh con
   assert.match(monitor, /loadingText="Membuka mode edit\.\.\."/);
   assert.match(dashboard, /runAction\(/);
   assert.match(dashboard, /loadingText="Melepas lock\.\.\."/);
+  assert.match(dashboard, /const \[submissionMonitorMounted, setSubmissionMonitorMounted\] = useState\(false\)/);
+  assert.match(dashboard, /setSubmissionMonitorMounted\(true\)/);
+  assert.match(dashboard, /<div hidden=\{tab !== "stations" \|\| fillingMode !== "submissions"\}>[\s\S]*<AdminSubmissionMonitor/);
+  assert.doesNotMatch(dashboard, /!loading && tab === "stations" && fillingMode === "submissions" && <AdminSubmissionMonitor/);
   assert.match(monitor, /pageSize: 50|SUBMISSION_PAGE_SIZE/);
   assert.doesNotMatch(monitor, /setInterval|Realtime|channel\(/);
   assert.match(monitor, /href=\{`\/admin\/submissions\/\$\{row\.id\}`\}>Buka Lengkap/);
