@@ -3,7 +3,16 @@ import { NextResponse } from "next/server";
 import { getPublicSupabaseConfig } from "../../../lib/supabase/config";
 import { createSupabaseServerClient } from "../../../lib/supabase/server";
 
-async function requireAdmin(request: Request) {
+type RpcError = { code?: string | null };
+
+function rpcErrorResponse(error: RpcError, message: string) {
+  if (error.code === "42501") {
+    return NextResponse.json({ error: "Akses Super Admin diperlukan." }, { status: 403 });
+  }
+  return NextResponse.json({ error: message }, { status: 400 });
+}
+
+async function requireAuthenticatedUser(request: Request) {
   const bearer = request.headers.get("authorization")?.match(/^Bearer\s+(.+)$/i)?.[1];
   const config = getPublicSupabaseConfig();
   const client = bearer && config
@@ -15,9 +24,6 @@ async function requireAdmin(request: Request) {
   if (!client) return { response: NextResponse.json({ error: "Konfigurasi Supabase belum tersedia." }, { status: 503 }) };
   const { data: userData } = await client.auth.getUser(bearer);
   if (!userData.user) return { response: NextResponse.json({ error: "Belum login." }, { status: 401 }) };
-  const { data: isAdmin, error } = await client.rpc("is_super_admin", { p_auth_user_id: userData.user.id });
-  if (error) return { response: NextResponse.json({ error: error.message }, { status: 400 }) };
-  if (!isAdmin) return { response: NextResponse.json({ error: "Akses Super Admin diperlukan." }, { status: 403 }) };
   return { client };
 }
 
@@ -26,7 +32,7 @@ function optionalUuid(value: string | null) {
 }
 
 export async function GET(request: Request) {
-  const auth = await requireAdmin(request);
+  const auth = await requireAuthenticatedUser(request);
   if ("response" in auth) return auth.response;
   const url = new URL(request.url);
   const submissionId = url.searchParams.get("id")?.trim();
@@ -35,7 +41,7 @@ export async function GET(request: Request) {
     const { data, error } = await auth.client.rpc("admin_get_submission_detail", {
       p_submission_id: submissionId,
     });
-    if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+    if (error) return rpcErrorResponse(error, "Detail submission gagal dimuat.");
     return NextResponse.json({ detail: data });
   }
 
@@ -50,12 +56,12 @@ export async function GET(request: Request) {
     p_updated_filter: url.searchParams.get("updated")?.trim() || "ALL",
     p_archive_filter: url.searchParams.get("archive")?.trim() || "ACTIVE",
   });
-  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+  if (error) return rpcErrorResponse(error, "Daftar submission gagal dimuat.");
   return NextResponse.json(data);
 }
 
 export async function POST(request: Request) {
-  const auth = await requireAdmin(request);
+  const auth = await requireAuthenticatedUser(request);
   if ("response" in auth) return auth.response;
   const body = await request.json() as { action?: string; submissionId?: string; reason?: string };
   if (!body.submissionId) return NextResponse.json({ error: "Submission wajib dipilih." }, { status: 400 });
@@ -71,7 +77,7 @@ export async function POST(request: Request) {
   if (!rpc) return NextResponse.json({ error: "Aksi tidak valid." }, { status: 400 });
 
   const { data, error } = await rpc;
-  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+  if (error) return rpcErrorResponse(error, "Aksi submission gagal diproses.");
   if (!data) return NextResponse.json({ error: "Status submission sudah berubah. Muat ulang daftar." }, { status: 409 });
   return NextResponse.json({ ok: true });
 }

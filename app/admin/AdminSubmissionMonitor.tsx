@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import AsyncButton from "../components/AsyncButton";
 import {
   SUBMISSION_PAGE_SIZE,
@@ -65,8 +65,13 @@ export default function AdminSubmissionMonitor({
   const [detailCache, setDetailCache] = useState<Record<string, SubmissionDetail>>({});
   const [detailErrors, setDetailErrors] = useState<Record<string, string>>({});
   const [actionId, setActionId] = useState<string | null>(null);
+  const lastScheduledRequestKeyRef = useRef<string | null>(null);
 
   const pageCount = Math.max(1, Math.ceil(totalCount / SUBMISSION_PAGE_SIZE));
+  const requestKey = useMemo(
+    () => [page, search, stationId, siteTypeId, progress, updated, archive].join("\u0000"),
+    [archive, page, progress, search, siteTypeId, stationId, updated],
+  );
 
   const loadList = useCallback(async () => {
     setLoading(true);
@@ -90,9 +95,16 @@ export default function AdminSubmissionMonitor({
   }, [archive, onMessage, page, progress, search, siteTypeId, stationId, updated]);
 
   useEffect(() => {
+    if (lastScheduledRequestKeyRef.current === requestKey) return;
+    const isInitialLoad = lastScheduledRequestKeyRef.current === null;
+    lastScheduledRequestKeyRef.current = requestKey;
+    if (isInitialLoad) {
+      void loadList();
+      return;
+    }
     const timer = window.setTimeout(() => void loadList(), 250);
     return () => window.clearTimeout(timer);
-  }, [loadList]);
+  }, [loadList, requestKey]);
 
   const visibleDetail = useMemo(() => expandedId ? detailCache[expandedId] : undefined, [detailCache, expandedId]);
 

@@ -113,14 +113,6 @@ export default function InventoryApp({
   }, [account.username, isAdminEditor, station]);
 
   useEffect(() => {
-    if (!isAdminEditor) return;
-    setSite(initialSite);
-    setSubtype(initialSubtype);
-    autoEditStartedRef.current = false;
-    setEditFeedback("");
-  }, [adminSubmissionId, initialSite, initialSubtype, isAdminEditor]);
-
-  useEffect(() => {
     if (!hydrated || isAdminEditor) return;
     saveLocalDraft({ mode, station, site, subtype, templateProfile, drafts, draftContexts, siteMetadataDrafts });
   }, [mode, station, site, subtype, templateProfile, drafts, draftContexts, siteMetadataDrafts, hydrated, isAdminEditor]);

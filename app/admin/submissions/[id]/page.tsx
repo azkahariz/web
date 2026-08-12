@@ -34,6 +34,7 @@ export default async function AdminSubmissionPage({ params, searchParams }: {
   if (!station || !site || !subtype) notFound();
 
   return <InventoryApp
+    key={submission.id}
     account={{ id: admin.id, stationId: submission.station_id, stationName: station.name, username: admin.username }}
     adminSubmissionId={submission.id}
     adminMode

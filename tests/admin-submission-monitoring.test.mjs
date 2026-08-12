@@ -84,9 +84,16 @@ test("list ringan, lazy detail cache, search/filter, dan archive dijaga oleh con
   assert.match(route, /admin_get_submission_detail/);
   assert.match(route, /admin_archive_submission/);
   assert.match(route, /admin_restore_submission/);
-  assert.match(route, /is_super_admin/);
-  assert.match(route, /status: 403/);
+  assert.match(route, /auth\.getUser\(bearer\)/);
+  assert.match(route, /Belum login[\s\S]*status: 401/);
+  assert.doesNotMatch(route, /is_super_admin/);
+  assert.match(route, /error\.code === "42501"[\s\S]*Akses Super Admin diperlukan[\s\S]*status: 403/);
+  assert.match(route, /rpcErrorResponse\(error, "Daftar submission gagal dimuat\."\)/);
   assert.doesNotMatch(route, /SUPABASE_SECRET_KEY|createSupabaseAdminClient/);
+  assert.match(monitor, /lastScheduledRequestKeyRef/);
+  assert.match(monitor, /const isInitialLoad = lastScheduledRequestKeyRef\.current === null/);
+  assert.match(monitor, /if \(isInitialLoad\) \{[\s\S]*void loadList\(\)/);
+  assert.match(monitor, /window\.setTimeout\(\(\) => void loadList\(\), 250\)/);
   assert.match(monitor, /if \(!detailCache\[id\]\) await loadDetail\(id\)/);
   assert.match(monitor, /\/api\/admin\/submissions\?id=/);
   assert.match(monitor, /setDetailCache\(\{\}\)/);
