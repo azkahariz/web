@@ -326,6 +326,14 @@ button[aria-busy="true"] { display: inline-flex; align-items: center; justify-co
 .admin-stats strong, .admin-stats span { display: block; }
 .admin-stats strong { font: 500 28px/1 Georgia, serif; color: var(--ink); }
 .admin-stats span { margin-top: 10px; color: var(--muted); font-size: 10px; font-weight: 800; text-transform: uppercase; }
+.admin-site-type-summary { margin-top: 26px; }
+.admin-section-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.admin-section-heading h3 { margin: 0; color: var(--ink); font-size: 15px; }
+.admin-section-heading span { color: var(--muted); font-size: 10px; }
+.admin-site-type-grid { margin-top: 10px; display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; }
+.admin-site-type-item { min-height: 54px; padding: 11px 13px; display: flex; align-items: center; justify-content: space-between; gap: 12px; border: 1px solid var(--line); border-radius: 7px; background: white; }
+.admin-site-type-item span { color: var(--muted); font-size: 11px; line-height: 1.35; }
+.admin-site-type-item strong { color: var(--green-deep); font: 600 20px/1 Georgia, serif; }
 .admin-search { width: min(500px, 100%); margin-top: 22px; display: block; color: var(--muted); font-size: 10px; font-weight: 800; }
 .admin-search input { margin-top: 6px; }
 .station-filling-toolbar { margin-top: 22px; display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }

@@ -18,6 +18,7 @@ import {
 } from "../lib/admin-view";
 import { csvCell, downloadText } from "../lib/download";
 import { logoutCurrentBrowser } from "../lib/local-logout";
+import { summarizeSitesByType } from "../lib/admin-summary";
 import type { SubmissionSummary } from "../lib/submission-monitoring";
 import { getSupabaseBrowserClient } from "../lib/supabase/client";
 
@@ -228,6 +229,7 @@ export default function AdminDashboard({ username }: { username: string }) {
   const filteredAccounts = accounts.filter((account) => accountMatchesAdminSearch(account, query, stationMap));
   const filteredUnprovisionedStations = stations.filter((station) => !accountByStation.has(station.id)
     && (!query || station.name.toLocaleLowerCase("id-ID").includes(query)));
+  const siteTypeSummary = useMemo(() => summarizeSitesByType(sites, siteTypes), [sites, siteTypes]);
   const filteredProposals = proposals.filter((proposal) => proposal.status === qcStatus && (!query
     || `${proposal.proposed_brand} ${proposal.proposed_model} ${stationMap.get(proposal.station_id)?.name ?? ""}`.toLocaleLowerCase("id-ID").includes(query)));
   const searchTab = (tab === "stations" && fillingMode === "master") || tab === "accounts" || tab === "qc" ? tab : null;
@@ -424,7 +426,7 @@ export default function AdminDashboard({ username }: { username: string }) {
           {!loading && tab === "summary" && <div className="admin-stats">
             <button onClick={() => navigate("stations", { fillingMode: "master" })}><strong>{stations.filter((row) => row.active).length}</strong><span>Stasiun aktif</span></button>
             <button onClick={() => navigate("accounts")}><strong>{accounts.filter((row) => row.active).length}</strong><span>Akun aktif</span></button>
-            <button onClick={() => navigate("stations", { fillingMode: "master" })}><strong>{new Set(sites.map((site) => site.id)).size}</strong><span>Site</span></button>
+            <button onClick={() => navigate("stations", { fillingMode: "master" })}><strong>{siteTypeSummary.totalCount}</strong><span>Site</span></button>
             <button onClick={() => navigate("stations", { fillingMode: "submissions" })}><strong>{submissions.length}</strong><span>Submission</span></button>
             <button onClick={() => navigate("locks")}><strong>{activeLocks.length}</strong><span>Lock aktif</span></button>
             <button onClick={() => navigate("qc", { qcStatus: "PENDING" })}><strong>{proposals.filter((row) => row.status === "PENDING").length}</strong><span>QC Pending</span></button>
@@ -432,6 +434,13 @@ export default function AdminDashboard({ username }: { username: string }) {
             <button onClick={() => navigate("qc", { qcStatus: "MERGED" })}><strong>{proposals.filter((row) => row.status === "MERGED").length}</strong><span>Merged</span></button>
             <button onClick={() => navigate("qc", { qcStatus: "REJECTED" })}><strong>{proposals.filter((row) => row.status === "REJECTED").length}</strong><span>Rejected</span></button>
           </div>}
+
+          {!loading && tab === "summary" && <section className="admin-site-type-summary" aria-labelledby="site-type-summary-heading">
+            <div className="admin-section-heading"><h3 id="site-type-summary-heading">Site berdasarkan Tipe Site</h3><span>{siteTypeSummary.totalCount} site unik</span></div>
+            <div className="admin-site-type-grid">
+              {siteTypeSummary.byType.map((siteType) => <div className="admin-site-type-item" key={siteType.id}><span>{siteType.name}</span><strong>{siteType.count}</strong></div>)}
+            </div>
+          </section>}
 
           {!loading && tab === "stations" && <div className="status-tabs filling-mode-tabs" role="tablist" aria-label="Mode Stasiun dan Pengisian">
             <button role="tab" aria-selected={fillingMode === "master"} className={fillingMode === "master" ? "active" : ""} onClick={() => { setFillingMode("master"); setSearch(""); }}>Master Pengisian</button>

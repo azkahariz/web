@@ -13,6 +13,7 @@ import {
   stationMatchesAdminSearch,
 } from "../app/lib/admin-view.ts";
 import { buildAloptamaFilename, csvCell, sanitizeFilenamePart } from "../app/lib/download.ts";
+import { summarizeSitesByType } from "../app/lib/admin-summary.ts";
 
 test("filename export memakai station-site_subtype terbaru dan aman", () => {
   assert.equal(
@@ -252,4 +253,33 @@ test("Master Pengisian merender detail station secara lazy dan memoized", async 
   assert.match(dashboard, /previous\.view === next\.view/);
   assert.match(dashboard, /busyAction === next\.busyAction/);
   assert.match(dashboard, /filteredStationFillingViews = useMemo/);
+});
+
+test("Ringkasan mengelompokkan Site unik berdasarkan Tipe Site parent", async () => {
+  const [dashboard, summary] = await Promise.all([
+    readFile(new URL("../app/admin/AdminDashboard.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/lib/admin-summary.ts", import.meta.url), "utf8"),
+  ]);
+  assert.match(summary, /seenSites = new Set/);
+  assert.match(summary, /counts\.set\(site\.site_type_id/);
+  assert.match(dashboard, /summarizeSitesByType\(sites, siteTypes\)/);
+  assert.match(dashboard, /Site berdasarkan Tipe Site/);
+  assert.doesNotMatch(dashboard, /siteSubtypes.*summarizeSitesByType/);
+  const summaryResult = summarizeSitesByType([
+    { id: "awos", site_type_id: "kat3" },
+    { id: "awos", site_type_id: "kat3" },
+    { id: "warehouse", site_type_id: "warehouse" },
+    { id: "unmapped", site_type_id: "missing" },
+  ], [
+    { id: "kat3", name: "AWOS Kategori III" },
+    { id: "warehouse", name: "Gudang" },
+  ]);
+  assert.deepEqual(summaryResult, {
+    totalCount: 3,
+    byType: [
+      { id: "kat3", name: "AWOS Kategori III", count: 1 },
+      { id: "warehouse", name: "Gudang", count: 1 },
+      { id: "unmapped", name: "Belum terpetakan", count: 1 },
+    ],
+  });
 });
