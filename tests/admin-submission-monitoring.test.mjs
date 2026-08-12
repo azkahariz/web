@@ -91,8 +91,15 @@ test("list ringan, lazy detail cache, search/filter, dan archive dijaga oleh con
   assert.match(route, /rpcErrorResponse\(error, "Daftar submission gagal dimuat\."\)/);
   assert.doesNotMatch(route, /SUPABASE_SECRET_KEY|createSupabaseAdminClient/);
   assert.match(monitor, /lastScheduledRequestKeyRef/);
+  assert.match(monitor, /listCacheRef = useRef\(new Map<string, ListCacheValue>\(\)\)/);
+  assert.match(monitor, /listCacheRef\.current\.get\(requestKey\)/);
+  assert.match(monitor, /listCacheRef\.current\.set\(requestKey, cached\)/);
+  assert.match(monitor, /listCacheRef\.current\.has\(requestKey\)/);
+  assert.match(monitor, /pageSize: result\.pageSize \?\? SUBMISSION_PAGE_SIZE/);
+  assert.match(monitor, /listCacheRef\.current\.clear\(\)/);
+  assert.match(monitor, /loadList\(\{ force: true \}\)/);
   assert.match(monitor, /const isInitialLoad = lastScheduledRequestKeyRef\.current === null/);
-  assert.match(monitor, /if \(isInitialLoad\) \{[\s\S]*void loadList\(\)/);
+  assert.match(monitor, /if \(isInitialLoad \|\| listCacheRef\.current\.has\(requestKey\)\) \{[\s\S]*void loadList\(\)/);
   assert.match(monitor, /window\.setTimeout\(\(\) => void loadList\(\), 250\)/);
   assert.match(monitor, /if \(!detailCache\[id\]\) await loadDetail\(id\)/);
   assert.match(monitor, /\/api\/admin\/submissions\?id=/);

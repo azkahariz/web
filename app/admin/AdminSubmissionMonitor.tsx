@@ -21,6 +21,13 @@ type ListResponse = {
   error?: string;
 };
 
+type ListCacheValue = {
+  rows: SubmissionSummary[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+};
+
 const progressOptions: Array<SubmissionProgressStatus | ""> = [
   "", "Kosong", "Terisi Sebagian", "Lengkap", "Belum terpetakan",
 ];
@@ -66,14 +73,25 @@ export default function AdminSubmissionMonitor({
   const [detailErrors, setDetailErrors] = useState<Record<string, string>>({});
   const [actionId, setActionId] = useState<string | null>(null);
   const lastScheduledRequestKeyRef = useRef<string | null>(null);
+  const listCacheRef = useRef(new Map<string, ListCacheValue>());
 
   const pageCount = Math.max(1, Math.ceil(totalCount / SUBMISSION_PAGE_SIZE));
   const requestKey = useMemo(
-    () => [page, search, stationId, siteTypeId, progress, updated, archive].join("\u0000"),
+    () => [page, SUBMISSION_PAGE_SIZE, search, stationId, siteTypeId, progress, updated, archive].join("\u0000"),
     [archive, page, progress, search, siteTypeId, stationId, updated],
   );
 
-  const loadList = useCallback(async () => {
+  const loadList = useCallback(async ({ force = false }: { force?: boolean } = {}) => {
+    if (!force) {
+      const cached = listCacheRef.current.get(requestKey);
+      if (cached) {
+        setRows(cached.rows);
+        setTotalCount(cached.totalCount);
+        setPage(cached.page);
+        setLoading(false);
+        return;
+      }
+    }
     setLoading(true);
     const params = new URLSearchParams({ page: String(page), archive, updated });
     if (search.trim()) params.set("search", search.trim());
@@ -84,21 +102,28 @@ export default function AdminSubmissionMonitor({
       const response = await fetch(`/api/admin/submissions?${params}`, { cache: "no-store" });
       const result = await response.json() as ListResponse;
       if (!response.ok) throw new Error(result.error || "Daftar submission gagal dimuat.");
-      setRows(result.rows ?? []);
-      setTotalCount(result.totalCount ?? 0);
-      if ((result.page ?? page) > Math.max(1, Math.ceil((result.totalCount ?? 0) / SUBMISSION_PAGE_SIZE))) setPage(1);
+      const cached: ListCacheValue = {
+        rows: result.rows ?? [],
+        totalCount: result.totalCount ?? 0,
+        page: result.page ?? page,
+        pageSize: result.pageSize ?? SUBMISSION_PAGE_SIZE,
+      };
+      listCacheRef.current.set(requestKey, cached);
+      setRows(cached.rows);
+      setTotalCount(cached.totalCount);
+      if (cached.page > Math.max(1, Math.ceil(cached.totalCount / SUBMISSION_PAGE_SIZE))) setPage(1);
     } catch (error) {
       onMessage(error instanceof Error ? error.message : "Daftar submission gagal dimuat.");
     } finally {
       setLoading(false);
     }
-  }, [archive, onMessage, page, progress, search, siteTypeId, stationId, updated]);
+  }, [archive, onMessage, page, progress, requestKey, search, siteTypeId, stationId, updated]);
 
   useEffect(() => {
     if (lastScheduledRequestKeyRef.current === requestKey) return;
     const isInitialLoad = lastScheduledRequestKeyRef.current === null;
     lastScheduledRequestKeyRef.current = requestKey;
-    if (isInitialLoad) {
+    if (isInitialLoad || listCacheRef.current.has(requestKey)) {
       void loadList();
       return;
     }
@@ -139,9 +164,10 @@ export default function AdminSubmissionMonitor({
   }
 
   async function reload() {
+    listCacheRef.current.clear();
     setDetailCache({});
     setExpandedId(null);
-    await loadList();
+    await loadList({ force: true });
   }
 
   async function changeArchive(row: SubmissionSummary) {
@@ -172,9 +198,10 @@ export default function AdminSubmissionMonitor({
         delete next[row.id];
         return next;
       });
+      listCacheRef.current.clear();
       setExpandedId(null);
       onMessage(restoring ? "Submission berhasil dipulihkan." : "Submission berhasil diarsipkan.");
-      await Promise.all([loadList(), onChanged()]);
+      await Promise.all([loadList({ force: true }), onChanged()]);
     } catch {
       onMessage("Aksi submission gagal diproses. Coba lagi.");
     } finally {
