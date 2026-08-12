@@ -3,6 +3,8 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 import {
   SUBMISSION_PAGE_SIZE,
+  normalizeSubmissionPageSize,
+  submissionItemDisplays,
   submissionPageOffset,
   summarizeSubmissionProgress,
 } from "../app/lib/submission-monitoring.ts";
@@ -61,12 +63,43 @@ test("pagination 50 row menghasilkan offset benar melewati 1000 submission", () 
   assert.equal(submissionPageOffset(21), 1000);
 });
 
-test("list ringan, lazy detail cache, search/filter, dan archive dijaga oleh contract", async () => {
-  const [migration, route, monitor, dashboard] = await Promise.all([
+test("page size custom dibatasi 10 sampai 1000 dan offset mengikuti nilai aktif", () => {
+  assert.equal(normalizeSubmissionPageSize(9), 10);
+  assert.equal(normalizeSubmissionPageSize(100), 100);
+  assert.equal(normalizeSubmissionPageSize(1001), 1000);
+  assert.equal(normalizeSubmissionPageSize("invalid"), 50);
+  assert.equal(submissionPageOffset(2, 200), 200);
+});
+
+test("detail barang menampilkan produk ganda, material, dan item kosong dari satu payload", () => {
+  const rows = submissionItemDisplays({
+    expected_items: [
+      { name: "Sensor", filled: true },
+      { name: "Mounting", filled: true },
+      { name: "Radio", filled: false },
+    ],
+    payload: { inventory: {
+      Sensor: [
+        { id: "1", brand: "Vaisala", model: "HMP155", quantity: 1 },
+        { id: "2", brand: "Campbell", model: "Model X", quantity: 1 },
+      ],
+      Mounting: [{ id: "3", itemKind: "material", material: "Tiang galvanis", quantity: 1 }],
+      Radio: [],
+    } },
+  });
+  assert.deepEqual(rows[0].entries.map((entry) => [entry.primary, entry.secondary]), [["Vaisala", "HMP155"], ["Campbell", "Model X"]]);
+  assert.deepEqual(rows[1].entries, [{ kind: "material", primary: "Tiang galvanis" }]);
+  assert.equal(rows[2].filled, false);
+});
+
+test("list ringan, lazy detail cache, sorting, page size, dan delete dijaga oleh contract", async () => {
+  const [migration, extensionMigration, route, monitor, dashboard, feedback] = await Promise.all([
     readFile(new URL("../supabase/migrations/20260812120000_admin_submission_monitoring.sql", import.meta.url), "utf8"),
+    readFile(new URL("../supabase/migrations/20260813120000_admin_monitoring_sort_delete.sql", import.meta.url), "utf8"),
     readFile(new URL("../app/api/admin/submissions/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/admin/AdminSubmissionMonitor.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/admin/AdminDashboard.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/AppFeedback.tsx", import.meta.url), "utf8"),
   ]);
 
   const pagedProjection = migration.match(/paged as \([\s\S]*?from filtered/)?.[0] ?? "";
@@ -94,29 +127,46 @@ test("list ringan, lazy detail cache, search/filter, dan archive dijaga oleh con
   assert.match(monitor, /listCacheRef = useRef\(new Map<string, ListCacheValue>\(\)\)/);
   assert.match(monitor, /listCacheRef\.current\.get\(requestKey\)/);
   assert.match(monitor, /listCacheRef\.current\.set\(requestKey, cached\)/);
-  assert.match(monitor, /listCacheRef\.current\.has\(requestKey\)/);
-  assert.match(monitor, /pageSize: result\.pageSize \?\? SUBMISSION_PAGE_SIZE/);
+  assert.match(monitor, /pageSize: result\.pageSize \?\? pageSize/);
   assert.match(monitor, /listCacheRef\.current\.clear\(\)/);
   assert.match(monitor, /loadList\(\{ force: true \}\)/);
-  assert.match(monitor, /const isInitialLoad = lastScheduledRequestKeyRef\.current === null/);
-  assert.match(monitor, /if \(isInitialLoad \|\| listCacheRef\.current\.has\(requestKey\)\) \{[\s\S]*void loadList\(\)/);
-  assert.match(monitor, /window\.setTimeout\(\(\) => void loadList\(\), 250\)/);
+  assert.match(monitor, /const \[debouncedSearch, setDebouncedSearch\] = useState\(""\)/);
+  assert.match(monitor, /window\.setTimeout\(\(\) => \{[\s\S]*setPage\(1\)[\s\S]*setDebouncedSearch\(search\)[\s\S]*\}, 250\)/);
+  assert.match(monitor, /lastScheduledRequestKeyRef\.current = requestKey;[\s\S]*void loadList\(\)/);
   assert.match(monitor, /if \(!detailCache\[id\]\) await loadDetail\(id\)/);
   assert.match(monitor, /\/api\/admin\/submissions\?id=/);
   assert.match(monitor, /setDetailCache\(\{\}\)/);
   assert.match(monitor, /Memuat detail submission/);
   assert.match(monitor, /Coba lagi/);
   assert.match(monitor, /Mengarsipkan\.\.\./);
-  assert.match(monitor, /loadingText="Membuka mode edit\.\.\."/);
+  assert.doesNotMatch(monitor, /Edit sebagai Admin|Membuka mode edit/);
   assert.match(dashboard, /runAction\(/);
   assert.match(dashboard, /loadingText="Melepas lock\.\.\."/);
   assert.match(dashboard, /const \[submissionMonitorMounted, setSubmissionMonitorMounted\] = useState\(false\)/);
   assert.match(dashboard, /setSubmissionMonitorMounted\(true\)/);
   assert.match(dashboard, /<div hidden=\{tab !== "stations" \|\| fillingMode !== "submissions"\}>[\s\S]*<AdminSubmissionMonitor/);
   assert.doesNotMatch(dashboard, /!loading && tab === "stations" && fillingMode === "submissions" && <AdminSubmissionMonitor/);
-  assert.match(monitor, /pageSize: 50|SUBMISSION_PAGE_SIZE/);
+  assert.match(monitor, /\[page, pageSize, debouncedSearch, stationId, siteTypeId, progress, updated, archive, sortField, sortDirection\]/);
+  assert.match(monitor, /pageSize: String\(pageSize\)[\s\S]*sort: sortField[\s\S]*direction: sortDirection/);
+  assert.match(monitor, /SUBMISSION_PAGE_SIZE_OPTIONS/);
+  assert.match(monitor, /min=\{SUBMISSION_PAGE_SIZE_MIN\}[\s\S]*max=\{SUBMISSION_PAGE_SIZE_MAX\}/);
   assert.doesNotMatch(monitor, /setInterval|Realtime|channel\(/);
-  assert.match(monitor, /href=\{`\/admin\/submissions\/\$\{row\.id\}`\}>Buka Lengkap/);
+  assert.match(monitor, /href=\{`\/admin\/submissions\/\$\{row\.id\}`\} target="_blank" rel="noopener noreferrer">Buka/);
+  assert.match(monitor, /submissionItemDisplays\(visibleDetail\)/);
+  assert.match(monitor, /confirmationText: "HAPUS"/);
+  assert.match(route, /admin_permanently_delete_submission/);
+  assert.match(extensionMigration, /require_super_admin\(\)/);
+  assert.match(extensionMigration, /SUBMISSION_PERMANENT_DELETE/);
+  assert.match(extensionMigration, /lock_last_activity_at >= now\(\) - interval '5 minutes'/);
+  assert.match(extensionMigration, /delete from public\.submissions/);
+  assert.doesNotMatch(extensionMigration.match(/jsonb_build_object\([\s\S]*?\n    \)/)?.[0] ?? "", /payload/);
+  for (const field of ["station", "site", "siteType", "subtype", "progress", "version", "operator", "updated"]) {
+    assert.match(extensionMigration, new RegExp(`v_sort_field = '${field}'`));
+  }
+  assert.match(feedback, /ToastVariant = "success" \| "error" \| "info" \| "warning"/);
+  assert.match(feedback, /toast-\$\{item\.variant\}/);
+  assert.match(feedback, /confirmAction/);
+  assert.match(feedback, /confirmationText/);
   assert.match(dashboard, /\.select\("id, station_id, site_id, site_subtype_id, version, operator_name/);
   assert.doesNotMatch(dashboard, /version, payload, operator_name/);
   assert.match(dashboard, /\.is\("archived_at", null\)/);

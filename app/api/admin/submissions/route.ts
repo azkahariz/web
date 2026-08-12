@@ -2,6 +2,11 @@ import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 import { getPublicSupabaseConfig } from "../../../lib/supabase/config";
 import { createSupabaseServerClient } from "../../../lib/supabase/server";
+import {
+  normalizeSubmissionPageSize,
+  type SubmissionSortDirection,
+  type SubmissionSortField,
+} from "../../../lib/submission-monitoring";
 
 type RpcError = { code?: string | null };
 
@@ -31,6 +36,16 @@ function optionalUuid(value: string | null) {
   return value?.trim() || null;
 }
 
+const sortFields = new Set<SubmissionSortField>(["station", "site", "siteType", "subtype", "progress", "version", "operator", "updated"]);
+
+function sortField(value: string | null): SubmissionSortField {
+  return sortFields.has(value as SubmissionSortField) ? value as SubmissionSortField : "updated";
+}
+
+function sortDirection(value: string | null): SubmissionSortDirection {
+  return value === "asc" ? "asc" : "desc";
+}
+
 export async function GET(request: Request) {
   const auth = await requireAuthenticatedUser(request);
   if ("response" in auth) return auth.response;
@@ -46,15 +61,18 @@ export async function GET(request: Request) {
   }
 
   const page = Math.max(1, Number.parseInt(url.searchParams.get("page") || "1", 10) || 1);
+  const pageSize = normalizeSubmissionPageSize(url.searchParams.get("pageSize"));
   const { data, error } = await auth.client.rpc("admin_list_submissions", {
     p_page: page,
-    p_page_size: 50,
+    p_page_size: pageSize,
     p_search: url.searchParams.get("search")?.trim() || null,
     p_station_id: optionalUuid(url.searchParams.get("stationId")),
     p_site_type_id: optionalUuid(url.searchParams.get("siteTypeId")),
     p_progress_status: url.searchParams.get("progress")?.trim() || null,
     p_updated_filter: url.searchParams.get("updated")?.trim() || "ALL",
     p_archive_filter: url.searchParams.get("archive")?.trim() || "ACTIVE",
+    p_sort_field: sortField(url.searchParams.get("sort")),
+    p_sort_direction: sortDirection(url.searchParams.get("direction")),
   });
   if (error) return rpcErrorResponse(error, "Daftar submission gagal dimuat.");
   return NextResponse.json(data);
@@ -73,10 +91,19 @@ export async function POST(request: Request) {
     })
     : body.action === "restore"
       ? auth.client.rpc("admin_restore_submission", { p_submission_id: body.submissionId })
+      : body.action === "delete"
+        ? auth.client.rpc("admin_permanently_delete_submission", { p_submission_id: body.submissionId })
       : null;
   if (!rpc) return NextResponse.json({ error: "Aksi tidak valid." }, { status: 400 });
 
   const { data, error } = await rpc;
+  if (error?.code === "55000") {
+    const message = body.action === "delete"
+      ? "Submission sedang diedit. Selesaikan atau lepaskan lock terlebih dahulu sebelum menghapus permanen."
+      : "Submission sedang diedit. Selesaikan atau lepaskan lock terlebih dahulu sebelum mengarsipkan.";
+    return NextResponse.json({ error: message }, { status: 409 });
+  }
+  if (error?.code === "P0002") return NextResponse.json({ error: "Submission tidak ditemukan." }, { status: 404 });
   if (error) return rpcErrorResponse(error, "Aksi submission gagal diproses.");
   if (!data) return NextResponse.json({ error: "Status submission sudah berubah. Muat ulang daftar." }, { status: 409 });
   return NextResponse.json({ ok: true });

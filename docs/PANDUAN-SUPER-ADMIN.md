@@ -1,6 +1,6 @@
 # Panduan Super Admin
 
-Terakhir diperbarui: 12 Agustus 2026. Dashboard tersedia setelah login dengan
+Terakhir diperbarui: 13 Agustus 2026. Dashboard tersedia setelah login dengan
 akun aktif di `super_admins`. Baca [SOP Perubahan Production](SOP-PERUBAHAN-PRODUCTION.md)
 sebelum menjalankan tindakan yang mengubah data.
 
@@ -30,7 +30,10 @@ subtipe validnya; status menunjukkan apakah kombinasi itu sudah diisi.
 - **Buka**: baca snapshot server atau form default. Tidak ada lock, submission
   baru, maupun write database.
 - **Unduh CSV**: baca snapshot atau buat CSV default. Tidak ada lock atau write.
-- **Edit sebagai Admin**: baru memulai lifecycle submission dan meminta lock.
+
+Tombol **Buka** membuka form read-only di tab browser baru agar dashboard tetap
+tersedia. Menu Master Pengisian hanya menampilkan **Buka** dan **Unduh**;
+kemampuan edit Admin tetap tersedia pada lifecycle form yang sudah ada.
 
 Pencarian bagian ini mencari stasiun, Site, tipe Site, dan subtipe. AWOS Kategori
 III dibatasi ke empat subtipe family yang sesuai Site: AllWeather, Coastal,
@@ -41,7 +44,10 @@ subtipe secara otomatis.
 
 Cari berdasarkan Stasiun, Site, Subtipe, atau operator. Filter tersedia untuk
 Stasiun, Tipe Site, status progress, waktu pembaruan, serta Aktif/Diarsipkan.
-Urutan awal menampilkan data terbaru.
+Urutan awal menampilkan data terbaru. Klik header Stasiun, Site, Tipe Site,
+Subtipe, Progres, Versi, Operator, atau Terakhir Diperbarui untuk mengurutkan
+seluruh hasil di server. Gunakan **Baris per halaman** untuk memilih 50, 100,
+200, 500, 1000, atau Custom 10-1000.
 
 Progress hanya menghitung kategori barang yang terikat pada profil Subtipe.
 Kategori dianggap terisi bila mempunyai minimal satu produk dengan Brand dan
@@ -50,10 +56,11 @@ runway, dan field unit opsional tidak masuk perhitungan. Status **Lengkap** hany
 berarti semua kategori expected mempunyai data menurut aturan aplikasi, bukan
 jaminan bahwa isinya sudah benar secara substantif.
 
-Klik panah detail untuk memuat satu payload dan melihat kategori terisi/kosong,
-operator, versi, waktu simpan, dan jumlah QC Pending. Membuka tab tidak mengunduh
-seluruh payload. **Buka Lengkap** tetap read-only; **Edit sebagai Admin** memakai
-lock, autosave, dan version check existing; **Unduh CSV** memakai snapshot terbaru.
+Klik row atau panah detail untuk memuat satu payload dan melihat kategori
+terisi/kosong, Merk dan Tipe produk, material, operator, versi, waktu simpan,
+dan jumlah QC Pending. Kategori dengan beberapa produk dapat dibuka lagi tanpa
+request tambahan. Membuka tab tidak mengunduh seluruh payload. **Buka** membuka
+read-only view di tab baru dan **Unduh** memakai snapshot terbaru.
 
 **Arsipkan Submission** mengeluarkan submission dari pengisian aktif tanpa
 menghapus UUID, payload, atau version. Kombinasi tersebut kembali berstatus
@@ -62,6 +69,13 @@ menghapus UUID, payload, atau version. Kombinasi tersebut kembali berstatus
 tercatat di Audit Admin; submission arsip harus dipulihkan sebelum diedit.
 Archive ditolak bila masih ada lock editor aktif agar perubahan yang belum
 tersimpan tidak terputus; tunggu editor selesai atau tangani lock terlebih dahulu.
+
+**Hapus Permanen** berbeda dengan arsip: data Submission tidak dapat dipulihkan
+dan tidak akan tampil di daftar Aktif maupun Diarsipkan. Gunakan hanya setelah
+memastikan data memang harus dihapus. Modal meminta teks `HAPUS`, menolak
+Submission dengan lock aktif, dan mencatat `SUBMISSION_PERMANENT_DELETE` tanpa
+menyalin payload ke Audit Admin. Master Stasiun, Site, Subtipe, produk, dan akun
+tidak ikut dihapus.
 
 ## Bulk Download
 

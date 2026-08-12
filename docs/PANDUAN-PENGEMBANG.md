@@ -1,6 +1,6 @@
 # Panduan Pengembang
 
-Terakhir diperbarui: 12 Agustus 2026. Baca [SOP Perubahan Production](SOP-PERUBAHAN-PRODUCTION.md)
+Terakhir diperbarui: 13 Agustus 2026. Baca [SOP Perubahan Production](SOP-PERUBAHAN-PRODUCTION.md)
 sebelum mengubah aplikasi karena production sudah berisi data nyata.
 
 ## Menjalankan lokal
@@ -48,6 +48,7 @@ variable `NEXT_PUBLIC_*`.
 | Logout lokal | `app/lib/local-logout.ts` |
 | Admin | `app/admin/AdminDashboard.tsx`, `app/api/admin/` |
 | Monitoring submission | `app/admin/AdminSubmissionMonitor.tsx`, `app/lib/submission-monitoring.ts` |
+| Toast dan dialog | `app/components/AppFeedback.tsx` |
 | QC produk | `app/lib/product-qc.ts`, `app/hooks/useProductCatalog.ts` |
 | AWOS mapping | `app/lib/site-subtypes.ts` |
 | Field/Domain | `app/config/form-options.ts`, `app/lib/site-metadata.ts` |
@@ -69,6 +70,11 @@ menonaktifkan tombol dan menambahkan spinner. Untuk pemuatan tabel atau detail,
 pertahankan data/layout yang ada lalu tampilkan teks inline seperti `Memuat...`.
 Jangan memakai delay buatan, progress palsu, atau loader global untuk request
 kecil. Pastikan setiap operasi mengembalikan UI ke kondisi normal pada `finally`.
+
+Gunakan `useAppFeedback()` untuk Toast, confirmation modal, dan input dialog.
+Jangan menambahkan `alert()`, `confirm()`, atau `prompt()` native pada application
+code. Secret dan temporary password tidak boleh masuk Toast; password sementara
+tetap hanya ditampilkan pada credential dialog sekali setelah reset/provision.
 
 ## Test dan verification
 
@@ -114,7 +120,9 @@ RLS, atau pagination data besar tanpa audit consumer dan regression test.
 master, search/filter, progress, sort, dan pagination di database, lalu hanya
 mengembalikan metadata ringkas. Jangan menambahkan `payload` ke projection list.
 Ukuran halaman default 50 dan query tidak boleh diganti dengan load-all lalu
-slice di browser.
+slice di browser. Cache key client wajib mencakup page, page size, search,
+filter, archive, sort field, dan direction. Sorting harus dilakukan database
+sebelum limit/offset dengan `id` sebagai tie-breaker stabil.
 
 `admin_get_submission_detail` baru dipanggil saat satu row dibuka. Komponen
 menyimpan detail dalam state selama halaman aktif; Muat ulang mengosongkan cache.
@@ -132,5 +140,12 @@ UUID, payload, dan version tidak diubah. Semua perubahan archive/restore melalui
 RPC Super Admin dan audit hanya menyimpan identitas relasi serta alasan, bukan
 payload. RPC archive menolak lock yang masih aktif dan hanya membersihkan lock
 yang sudah kedaluwarsa.
+
+Hard delete hanya melalui `admin_permanently_delete_submission()`. RPC wajib
+memanggil `require_super_admin()`, mengunci row, menolak lock aktif, menulis
+audit metadata tanpa payload, lalu menghapus Submission secara atomic. FK
+`product_proposals.submission_id` memakai `ON DELETE SET NULL`, sehingga record
+QC tetap dipertahankan. Migration hard delete tidak boleh diterapkan ke
+production sebelum verifikasi lokal, Preview, dan persetujuan deployment.
 
 ← [Arsitektur dan Alur Data](ARSITEKTUR-DAN-ALUR-DATA.md) | → [Master Data](MASTER-DATA.md)

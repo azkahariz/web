@@ -187,8 +187,8 @@ test("navigasi client-side dari Submission menghydrate payload server pada rende
     readFile(new URL("../app/admin/AdminSubmissionMonitor.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/admin/AdminDashboard.tsx", import.meta.url), "utf8"),
   ]);
-  assert.match(monitor, /href=\{`\/admin\/submissions\/\$\{row\.id\}`\}>Buka Lengkap/);
-  assert.match(dashboard, /router\.push\(`\/admin\/submissions\/\$\{result\.submissionId\}\?edit=1`\)/);
+  assert.match(monitor, /href=\{`\/admin\/submissions\/\$\{row\.id\}`\} target="_blank" rel="noopener noreferrer">Buka/);
+  assert.match(submissionPage, /startInEditMode=\{edit === "1"\}/);
   assert.doesNotMatch(monitor, /window\.location|location\.reload/);
   assert.doesNotMatch(dashboard, /window\.location|location\.reload/);
 

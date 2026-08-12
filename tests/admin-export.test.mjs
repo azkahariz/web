@@ -163,7 +163,9 @@ test("download Browse dan Admin tidak menjalankan lifecycle lock atau write", as
   assert.match(inventory, /buildInventoryJson/);
   assert.doesNotMatch(adminExport, /\.rpc\(|\.insert\(|\.update\(|\.upsert\(|open_submission|release_submission|touch_submission|takeover/);
   assert.match(adminExport, /loadAllAdminRows[\s\S]*\.eq\("station_id", scope\.stationId\)/);
-  assert.match(dashboard, />Buka<\/[\s\S]*>Unduh CSV<\/[\s\S]*>Edit sebagai Admin<\//);
+  assert.match(dashboard, /target="_blank" rel="noopener noreferrer">Buka<\/Link>[\s\S]*>Unduh<\/AsyncButton>/);
+  const masterTable = dashboard.match(/fillingMode === "master" && <div className="admin-list">[\s\S]*?submissionMonitorMounted/)?.[0] ?? "";
+  assert.doesNotMatch(masterTable, /Edit sebagai Admin|editRow|\/ensure/);
   assert.doesNotMatch(adminBrowse, /\.insert\(|\.update\(|\.upsert\(|open_submission/);
   assert.match(hook, /if \(adminMode && !adminSubmissionId\)[\s\S]*setStatus\("browsing"\)/);
   assert.match(ensureRoute, /is_super_admin/);

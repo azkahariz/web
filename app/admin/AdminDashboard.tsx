@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import AdminBulkExport from "./AdminBulkExport";
 import AdminSubmissionMonitor from "./AdminSubmissionMonitor";
+import { useAppFeedback } from "../components/AppFeedback";
 import AsyncButton from "../components/AsyncButton";
 import EyeIcon from "../components/EyeIcon";
 import { downloadAdminInventory } from "../lib/admin-export";
@@ -17,7 +18,6 @@ import {
 } from "../lib/admin-view";
 import { csvCell, downloadText } from "../lib/download";
 import { logoutCurrentBrowser } from "../lib/local-logout";
-import { getTabSessionId } from "../lib/server-draft";
 import type { SubmissionSummary } from "../lib/submission-monitoring";
 import { getSupabaseBrowserClient } from "../lib/supabase/client";
 
@@ -60,6 +60,7 @@ function ageLabel(value: string | null, now: number) {
 
 export default function AdminDashboard({ username }: { username: string }) {
   const router = useRouter();
+  const feedback = useAppFeedback();
   const [tab, setTab] = useState<Tab>("summary");
   const [fillingMode, setFillingMode] = useState<FillingMode>("master");
   const [submissionMonitorMounted, setSubmissionMonitorMounted] = useState(false);
@@ -197,19 +198,30 @@ export default function AdminDashboard({ username }: { username: string }) {
   }
 
   async function forceRelease(id: string) {
-    if (!window.confirm("Paksa lepas lock ini? Editor saat ini akan kehilangan hak menyimpan.")) return;
-    if (await rpc("admin_force_release_submission", { p_submission_id: id })) setMessage("Lock berhasil dilepas.");
+    await feedback.confirmAction({
+      title: "Paksa lepas lock?",
+      description: "Editor saat ini akan kehilangan hak menyimpan.",
+      confirmLabel: "Lepas Lock",
+      danger: true,
+    }, async () => {
+      const ok = await rpc("admin_force_release_submission", { p_submission_id: id });
+      if (ok) feedback.toast("Lock berhasil dilepas.", "success");
+      return ok;
+    });
   }
 
   async function approve(proposal: Proposal) {
-    const brand = window.prompt("Brand canonical", proposal.proposed_brand)?.trim();
+    const brand = await feedback.prompt({ title: "Brand canonical", inputLabel: "Brand", initialValue: proposal.proposed_brand, required: true, confirmLabel: "Berikutnya" });
     if (!brand) return;
-    const model = window.prompt("Tipe/model canonical", proposal.proposed_model)?.trim();
-    if (!model || !window.confirm(`Approve sebagai produk baru: ${brand} - ${model}?`)) return;
-    const note = window.prompt("Catatan pemeriksaan (opsional)", "") ?? "";
-    if (await rpc("admin_approve_product_proposal", { p_proposal_id: proposal.id, p_canonical_brand: brand, p_canonical_model: model, p_review_note: note || null })) {
-      setMessage("Proposal disetujui sebagai produk baru.");
-    }
+    const model = await feedback.prompt({ title: "Tipe/model canonical", inputLabel: "Tipe/model", initialValue: proposal.proposed_model, required: true, confirmLabel: "Berikutnya" });
+    if (!model) return;
+    const note = await feedback.prompt({ title: "Catatan pemeriksaan", inputLabel: "Catatan (opsional)", confirmLabel: "Berikutnya" });
+    if (note === null) return;
+    await feedback.confirmAction({ title: "Setujui produk baru?", description: `${brand} - ${model}`, confirmLabel: "Setujui" }, async () => {
+      const ok = await rpc("admin_approve_product_proposal", { p_proposal_id: proposal.id, p_canonical_brand: brand, p_canonical_model: model, p_review_note: note || null });
+      if (ok) feedback.toast("Proposal disetujui sebagai produk baru.", "success");
+      return ok;
+    });
   }
 
   async function merge(ids: string[]) {
@@ -218,49 +230,61 @@ export default function AdminDashboard({ username }: { username: string }) {
       return;
     }
     const target = productMap.get(mergeProductId);
-    if (!target || !window.confirm(`Gabungkan ${ids.length} proposal ke ${target.brand} - ${target.model}?`)) return;
-    const note = window.prompt("Catatan merge (opsional)", "") ?? "";
-    if (await rpc("admin_merge_product_proposals", { p_proposal_ids: ids, p_product_id: mergeProductId, p_review_note: note || null })) {
-      setSelectedProposals([]);
-      setMessage(`${ids.length} proposal berhasil digabungkan.`);
-    }
+    if (!target) return;
+    const note = await feedback.prompt({ title: "Catatan merge", inputLabel: "Catatan (opsional)", confirmLabel: "Berikutnya" });
+    if (note === null) return;
+    await feedback.confirmAction({ title: "Gabungkan proposal?", description: `${ids.length} proposal akan digabungkan ke ${target.brand} - ${target.model}.`, confirmLabel: "Gabungkan" }, async () => {
+      const ok = await rpc("admin_merge_product_proposals", { p_proposal_ids: ids, p_product_id: mergeProductId, p_review_note: note || null });
+      if (ok) {
+        setSelectedProposals([]);
+        feedback.toast(`${ids.length} proposal berhasil digabungkan.`, "success");
+      }
+      return ok;
+    });
   }
 
   async function reject(proposal: Proposal) {
-    const reason = window.prompt("Alasan penolakan (wajib)", "")?.trim();
-    if (!reason || !window.confirm("Tolak proposal ini? Raw input tetap disimpan.")) return;
-    if (await rpc("admin_reject_product_proposal", { p_proposal_id: proposal.id, p_review_note: reason })) setMessage("Proposal ditolak.");
+    const reason = await feedback.prompt({ title: "Tolak proposal", description: "Raw input tetap disimpan.", inputLabel: "Alasan penolakan", required: true, confirmLabel: "Berikutnya", danger: true });
+    if (!reason) return;
+    await feedback.confirmAction({ title: "Konfirmasi penolakan", description: reason, confirmLabel: "Tolak", danger: true }, async () => {
+      const ok = await rpc("admin_reject_product_proposal", { p_proposal_id: proposal.id, p_review_note: reason });
+      if (ok) feedback.toast("Proposal ditolak.", "success");
+      return ok;
+    });
   }
 
   async function editCanonical(product: Product) {
-    const brand = window.prompt("Brand canonical", product.brand)?.trim();
+    const brand = await feedback.prompt({ title: "Koreksi brand canonical", inputLabel: "Brand", initialValue: product.brand, required: true, confirmLabel: "Berikutnya" });
     if (!brand) return;
-    const model = window.prompt("Tipe/model canonical", product.model)?.trim();
-    if (!model || !window.confirm("Simpan koreksi ini? Produk akan masuk daftar rekonsiliasi Spreadsheet.")) return;
-    if (await rpc("admin_update_canonical_product", { p_product_id: product.id, p_brand: brand, p_model: model })) {
-      setMessage("Produk diperbarui dan ditandai perlu disinkronkan ke Spreadsheet.");
-    }
+    const model = await feedback.prompt({ title: "Koreksi tipe/model canonical", inputLabel: "Tipe/model", initialValue: product.model, required: true, confirmLabel: "Berikutnya" });
+    if (!model) return;
+    await feedback.confirmAction({ title: "Simpan koreksi?", description: "Produk akan masuk daftar rekonsiliasi Spreadsheet.", confirmLabel: "Simpan" }, async () => {
+      const ok = await rpc("admin_update_canonical_product", { p_product_id: product.id, p_brand: brand, p_model: model });
+      if (ok) feedback.toast("Produk diperbarui dan perlu disinkronkan ke Spreadsheet.", "success");
+      return ok;
+    });
   }
 
   async function accountAction(body: Record<string, unknown>, confirmation: string) {
-    if (!window.confirm(confirmation)) return;
-    setMessage("");
-    setCredential(null);
-    setCredentialVisible(false);
-    const response = await fetch("/api/admin/accounts", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
-    const result = await response.json() as { error?: string; username?: string; temporaryPassword?: string };
-    if (!response.ok) setMessage(result.error ?? "Aksi akun gagal.");
-    else {
-      if (result.temporaryPassword) {
-        setCredential({
-          username: result.username ?? "",
-          password: result.temporaryPassword,
-          title: body.action === "reset-password" ? "Password berhasil direset" : "Akun dan password berhasil dibuat",
-        });
+    await feedback.confirmAction({ title: "Konfirmasi aksi akun", description: confirmation, confirmLabel: "Lanjutkan", danger: body.action === "set-active" }, async () => {
+      setMessage("");
+      setCredential(null);
+      setCredentialVisible(false);
+      const response = await fetch("/api/admin/accounts", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+      const result = await response.json() as { error?: string; username?: string; temporaryPassword?: string };
+      if (!response.ok) {
+        feedback.toast(result.error ?? "Aksi akun gagal.", "error");
+        return false;
       }
-      setMessage("Aksi akun berhasil.");
+      if (result.temporaryPassword) setCredential({
+        username: result.username ?? "",
+        password: result.temporaryPassword,
+        title: body.action === "reset-password" ? "Password berhasil direset" : "Akun dan password berhasil dibuat",
+      });
+      feedback.toast("Aksi akun berhasil.", "success");
       await refresh();
-    }
+      return true;
+    });
   }
 
   function closeCredentialDialog() {
@@ -293,27 +317,6 @@ export default function AdminDashboard({ username }: { username: string }) {
     }
   }
 
-  async function editRow(station: Station, site: Site, subtype: Subtype) {
-    setMessage("Membuka lifecycle Edit sebagai Admin...");
-    const response = await fetch("/api/admin/submissions/ensure", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        stationId: station.id,
-        siteId: site.id,
-        siteSubtypeId: subtype.id,
-        sessionId: getTabSessionId(),
-        operatorName: username,
-      }),
-    });
-    const result = await response.json() as { submissionId?: string; error?: string };
-    if (!response.ok || !result.submissionId) {
-      setMessage(result.error || "Edit sebagai Admin gagal dimulai.");
-      return;
-    }
-    router.push(`/admin/submissions/${result.submissionId}?edit=1`);
-  }
-
   async function downloadSubmission(row: SubmissionSummary) {
     const station = stationMap.get(row.station_id);
     const site = siteMap.get(row.site_id);
@@ -323,17 +326,6 @@ export default function AdminDashboard({ username }: { username: string }) {
       return;
     }
     await downloadRow(station, site, subtype, row.id);
-  }
-
-  async function editSubmission(row: SubmissionSummary) {
-    const station = stationMap.get(row.station_id);
-    const site = siteMap.get(row.site_id);
-    const subtype = subtypeMap.get(row.site_subtype_id);
-    if (!station || !site || !subtype) {
-      setMessage("Relasi master untuk submission ini tidak ditemukan.");
-      return;
-    }
-    await editRow(station, site, subtype);
   }
 
   function navigate(nextTab: Tab, options?: { fillingMode?: FillingMode; qcStatus?: Proposal["status"] }) {
@@ -409,9 +401,8 @@ export default function AdminDashboard({ username }: { username: string }) {
                   <td>{subtype ? <details className="row-action-menu">
                     <summary>Aksi</summary>
                     <div>
-                      <Link href={submission ? `/admin/submissions/${submission.id}` : `/admin/inventory?siteId=${site.id}&subtypeId=${subtype.id}`}>Buka</Link>
-                      <AsyncButton loading={activeAction === `download:${site.id}:${subtype.id}`} loadingText="Menyiapkan..." onClick={() => void runAction(`download:${site.id}:${subtype.id}`, () => downloadRow(station, site, subtype))}>Unduh CSV</AsyncButton>
-                      <AsyncButton loading={activeAction === `edit:${site.id}:${subtype.id}`} loadingText="Membuka..." onClick={() => void runAction(`edit:${site.id}:${subtype.id}`, () => editRow(station, site, subtype))}>Edit sebagai Admin</AsyncButton>
+                      <Link href={submission ? `/admin/submissions/${submission.id}` : `/admin/inventory?siteId=${site.id}&subtypeId=${subtype.id}`} target="_blank" rel="noopener noreferrer">Buka</Link>
+                      <AsyncButton loading={activeAction === `download:${site.id}:${subtype.id}`} loadingText="Menyiapkan..." onClick={() => void runAction(`download:${site.id}:${subtype.id}`, () => downloadRow(station, site, subtype))}>Unduh</AsyncButton>
                     </div>
                   </details> : "-"}</td>
                 </tr>)}
@@ -424,9 +415,7 @@ export default function AdminDashboard({ username }: { username: string }) {
             <AdminSubmissionMonitor
               stations={stations}
               siteTypes={siteTypes}
-              onMessage={setMessage}
               onDownload={downloadSubmission}
-              onEdit={editSubmission}
               onChanged={refresh}
             />
           </div>}

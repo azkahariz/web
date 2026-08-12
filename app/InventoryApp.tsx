@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useAppFeedback } from "./components/AppFeedback";
 import { CONDITION_OPTIONS, MOUNTING_MATERIALS } from "./config/form-options";
 import rawData from "./data.generated.json";
 import { loadLocalDraft, saveLocalDraft } from "./lib/draft-storage";
@@ -59,6 +60,7 @@ export default function InventoryApp({
   initialSite?: string;
   initialSubtype?: string;
 }) {
+  const feedback = useAppFeedback();
   const router = useRouter();
   const stations = useMemo(
     () => Array.from(new Set(data.stationSites.map((row) => row.station))).sort((a, b) => a.localeCompare(b, "id")),
@@ -314,8 +316,13 @@ export default function InventoryApp({
     setSiteMetadataDrafts((current) => ({ ...current, [metadataKey]: next }));
   }
 
-  function resetSiteMetadata() {
-    if (!window.confirm("Kosongkan seluruh metadata Aloptama untuk site ini?")) return;
+  async function resetSiteMetadata() {
+    if (!await feedback.confirm({
+      title: "Kosongkan metadata Aloptama?",
+      description: "Seluruh metadata untuk site ini akan dikosongkan dari draf saat ini.",
+      confirmLabel: "Kosongkan",
+      danger: true,
+    })) return;
     setSiteMetadataDrafts((current) => {
       const next = { ...current };
       delete next[metadataKey];
@@ -330,8 +337,13 @@ export default function InventoryApp({
     });
   }
 
-  function resetCurrentDraft() {
-    if (!categories.length || !window.confirm("Hapus seluruh pilihan barang pada lokasi ini?")) return;
+  async function resetCurrentDraft() {
+    if (!categories.length || !await feedback.confirm({
+      title: "Kosongkan seluruh pilihan barang?",
+      description: "Seluruh pilihan barang pada lokasi ini akan dihapus dari draf.",
+      confirmLabel: "Kosongkan Draf",
+      danger: true,
+    })) return;
     setDrafts((current) => {
       const next = { ...current };
       delete next[draftKey];
@@ -722,10 +734,13 @@ export default function InventoryApp({
               </div>
               {sync.status === "conflict" && <button className="secondary-button" onClick={sync.loadLatest}>Muat versi terbaru</button>}
               {(sync.canTakeover || (isAdminEditor && sync.status === "read-only")) && (
-                <button className="secondary-button" onClick={() => {
-                  if (!isAdminEditor || window.confirm("Ambil alih lock aktif sebagai Super Admin? Perubahan yang belum tersimpan pada editor lain dapat terputus.")) {
-                    void sync.takeover();
-                  }
+                <button className="secondary-button" onClick={async () => {
+                  if (!isAdminEditor || await feedback.confirm({
+                    title: "Ambil alih lock aktif?",
+                    description: "Perubahan yang belum tersimpan pada editor lain dapat terputus.",
+                    confirmLabel: "Ambil Alih",
+                    danger: true,
+                  })) void sync.takeover();
                 }}>{isAdminEditor ? "Ambil Alih sebagai Admin" : "Ambil alih draf"}</button>
               )}
               {sync.status === "read-only" && <button className="secondary-button" onClick={startEditing}>Coba lagi</button>}

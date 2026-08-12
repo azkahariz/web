@@ -69,6 +69,15 @@ try {
       end
       $$;
     `);
+    await tx.unsafe(`
+      do $$
+      begin
+        perform public.admin_permanently_delete_submission('${sites[0].id}'::uuid);
+        raise exception 'station_delete_was_not_blocked';
+      exception when insufficient_privilege then null;
+      end
+      $$;
+    `);
 
     await tx`reset role`;
     await tx`set local role authenticated`;
@@ -79,6 +88,28 @@ try {
     assert(page1.result.rows.length === 50 && page1.result.totalCount === 1006, "Page 1 harus 50 row dari 1.006 submission.");
     assert(page21.result.rows.length === 6, "Page 21 harus memuat enam row tanpa truncation 1.000.");
     assert(page1.result.rows.every((row) => !("payload" in row)), "List ringan tidak boleh mengandung payload.");
+
+    for (const size of [50, 100, 200, 500, 1000]) {
+      const [sized] = await tx`select public.admin_list_submissions(1, ${size}, null, null, null, null, 'ALL', 'ACTIVE', 'updated', 'desc') as result`;
+      assert(sized.result.rows.length === Math.min(size, 1006) && sized.result.pageSize === size, `Page size ${size} harus diproses server-side.`);
+    }
+    const [customSize] = await tx`select public.admin_list_submissions(1, 37, null, null, null, null, 'ALL', 'ACTIVE', 'updated', 'desc') as result`;
+    const [minimumSize] = await tx`select public.admin_list_submissions(1, 9, null, null, null, null, 'ALL', 'ACTIVE', 'updated', 'desc') as result`;
+    const [maximumSize] = await tx`select public.admin_list_submissions(1, 1001, null, null, null, null, 'ALL', 'ACTIVE', 'updated', 'desc') as result`;
+    assert(customSize.result.rows.length === 37, "Custom page size valid harus diterapkan.");
+    assert(minimumSize.result.pageSize === 10 && maximumSize.result.pageSize === 1000, "Page size database harus dibatasi 10-1000.");
+
+    for (const sortField of ['station', 'site', 'siteType', 'subtype', 'progress', 'version', 'operator', 'updated']) {
+      for (const direction of ['asc', 'desc']) {
+        const [sorted] = await tx`select public.admin_list_submissions(1, 50, null, null, null, null, 'ALL', 'ACTIVE', ${sortField}, ${direction}) as result`;
+        assert(sorted.result.rows.length === 50, `Sort ${sortField} ${direction} harus menghasilkan page server.`);
+      }
+    }
+    const [siteAsc1] = await tx`select public.admin_list_submissions(1, 50, null, null, null, null, 'ALL', 'ACTIVE', 'site', 'asc') as result`;
+    const [siteAsc2] = await tx`select public.admin_list_submissions(2, 50, null, null, null, null, 'ALL', 'ACTIVE', 'site', 'asc') as result`;
+    const globalSiteIds = [...siteAsc1.result.rows, ...siteAsc2.result.rows].map((row) => row.id);
+    assert(new Set(globalSiteIds).size === 100, "Pagination sort global tidak boleh duplicate row.");
+    assert(siteAsc1.result.rows.at(-1).site_name < siteAsc2.result.rows[0].site_name, "Page 1 dan 2 harus mengikuti urutan Site global.");
 
     const [partialSearch] = await tx`select public.admin_list_submissions(1, 50, 'Azka Verifier', null, null, null, 'ALL', 'ACTIVE') as result`;
     const partial = partialSearch.result.rows[0];
@@ -141,6 +172,51 @@ try {
     `);
     const [stillActive] = await tx`select archived_at from public.submissions where id = ${partial.id}`;
     assert(stillActive.archived_at === null, "Archive harus ditolak selama editor lock masih aktif.");
+
+    await tx`reset role`;
+    const [proposal] = await tx`
+      insert into public.product_proposals (
+        station_id, submission_id, created_by_auth_user, proposed_brand, proposed_model,
+        normalized_brand, normalized_model
+      ) values (
+        ${station.id}, ${partial.id}, ${stationAuthId}, 'Verifier', 'Delete Test', 'verifier', 'deletetest'
+      ) returning id
+    `;
+    await tx`set local role authenticated`;
+    await tx`select set_config('request.jwt.claim.sub', ${adminAuthId}, true)`;
+    await tx.unsafe(`
+      do $$
+      begin
+        perform public.admin_permanently_delete_submission('${partial.id}'::uuid);
+        raise exception 'active_lock_delete_was_not_blocked';
+      exception when sqlstate '55000' then null;
+      end
+      $$;
+    `);
+    await tx`reset role`;
+    await tx`update public.submissions set locked_by_session_id = null, lock_operator_name = null, lock_last_activity_at = null where id = ${partial.id}`;
+    await tx`set local role authenticated`;
+    await tx`select set_config('request.jwt.claim.sub', ${adminAuthId}, true)`;
+    const [deleted] = await tx`select public.admin_permanently_delete_submission(${partial.id}) as deleted`;
+    assert(deleted.deleted === true, "Active submission tanpa lock harus dapat dihapus permanen.");
+    const [deletedRow] = await tx`select count(*)::integer as count from public.submissions where id = ${partial.id}`;
+    const [detachedProposal] = await tx`select submission_id from public.product_proposals where id = ${proposal.id}`;
+    const [deleteAudit] = await tx`select action, metadata from public.admin_audit_log where target_id = ${partial.id} and action = 'SUBMISSION_PERMANENT_DELETE'`;
+    assert(deletedRow.count === 0, "Submission harus benar-benar hilang.");
+    assert(detachedProposal.submission_id === null, "Proposal QC harus dipertahankan dengan submission_id null.");
+    assert(deleteAudit.action === 'SUBMISSION_PERMANENT_DELETE' && !("payload" in deleteAudit.metadata), "Audit delete harus bertahan tanpa payload.");
+
+    const archivedDeleteId = page1.result.rows.find((row) => row.id !== partial.id).id;
+    await tx`select public.admin_archive_submission(${archivedDeleteId}, 'Delete archived fixture')`;
+    const [deletedArchived] = await tx`select public.admin_permanently_delete_submission(${archivedDeleteId}) as deleted`;
+    assert(deletedArchived.deleted === true, "Archived submission harus dapat dihapus permanen.");
+    const [masterStillExists] = await tx`
+      select
+        exists(select 1 from public.stations where id = ${station.id}) as station_exists,
+        exists(select 1 from public.sites where id = ${sites[0].id}) as site_exists,
+        exists(select 1 from public.site_subtypes where id = ${subtype17.id}) as subtype_exists
+    `;
+    assert(masterStillExists.station_exists && masterStillExists.site_exists && masterStillExists.subtype_exists, "Hard delete tidak boleh menghapus master Station/Site/Subtype.");
 
     throw new Error(rollbackMarker);
   });

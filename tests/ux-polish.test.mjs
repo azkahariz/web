@@ -203,6 +203,24 @@ test("shared async button memberi spinner, label proses, dan disabled state", as
   assert.match(button, /className="loading-spinner"/);
 });
 
+test("shared feedback menggantikan dialog browser native pada flow production", async () => {
+  const [feedback, dashboard, monitor, inventory] = await Promise.all([
+    readFile(new URL("../app/components/AppFeedback.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/admin/AdminDashboard.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/admin/AdminSubmissionMonitor.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/InventoryApp.tsx", import.meta.url), "utf8"),
+  ]);
+  assert.match(feedback, /aria-live="polite"/);
+  assert.match(feedback, /role="dialog" aria-modal="true"/);
+  assert.match(feedback, /dialogLoading/);
+  assert.match(feedback, /confirmationText/);
+  assert.match(feedback, /disabled=\{Boolean\(dialog\.confirmationText && inputValue\.trim\(\) !== dialog\.confirmationText\)\}/);
+  assert.match(feedback, /event\.key === "Escape"/);
+  for (const source of [dashboard, monitor, inventory]) {
+    assert.doesNotMatch(source, /window\.(?:alert|confirm|prompt)\s*\(/);
+  }
+});
+
 test("temporary password hanya berada di response sukses dan state dialog", async () => {
   const [route, dashboard] = await Promise.all([
     readFile(new URL("../app/api/admin/accounts/route.ts", import.meta.url), "utf8"),
