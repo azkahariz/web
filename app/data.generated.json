@@ -17912,8 +17912,11 @@
                              "station":  "Stasiun Meteorologi Aek Godang - Padang Sidempuan",
                              "site":  "AWOS All Weather Kat.1 Stamet Aek Godang - Padang Sidempuan",
                              "siteType":  "AWOS Kategori I",
+                             "stationId":  "4caa47a9-6e44-4e48-8826-b3fc935ea262",
                              "stationActive":  true,
+                             "siteId":  "b3878811-3e61-48fe-a37e-02649a39e35c",
                              "siteActive":  true,
+                             "siteTypeId":  "c7dd2a64-0691-4445-b281-de22aa52baed",
                              "siteTypeActive":  true
                          },
                          {
@@ -22938,7 +22941,7 @@
                                               "Sensor Suhu Udara",
                                               "Sensor Tekanan Udara",
                                               "Sensor Suhu Air",
-                                              "Sensor pasut",
+                                              "Sensor Pasut",
                                               "Modem Komunikasi",
                                               "SIstem Catu Daya Tidak Terputus",
                                               "Sekring Pengaman",
@@ -23030,7 +23033,7 @@
                                               "Penyimpanan",
                                               "Regulator",
                                               "Sensor Tekanan Udara",
-                                              "Sensor pasut",
+                                              "Sensor Pasut",
                                               "Modem Komunikasi",
                                               "SIstem Catu Daya Tidak Terputus",
                                               "Solar Panel",
@@ -27001,7 +27004,7 @@
                                         },
                                         {
                                             "profile":  "AWS Maritim",
-                                            "item":  "Sensor pasut",
+                                            "item":  "Sensor Pasut",
                                             "profileId":  "a61b0b61-e629-4fa3-b6e8-726db25bfef6",
                                             "profileActive":  true,
                                             "itemId":  "6d2d9b61-04d5-44f0-80b0-8aab93d99ea8",
@@ -27871,7 +27874,7 @@
                                         },
                                         {
                                             "profile":  "Water Level",
-                                            "item":  "Sensor pasut",
+                                            "item":  "Sensor Pasut",
                                             "profileId":  "35ddd0e8-fedf-4729-becd-ef9baa85228e",
                                             "profileActive":  true,
                                             "itemId":  "6d2d9b61-04d5-44f0-80b0-8aab93d99ea8",

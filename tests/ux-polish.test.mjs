@@ -134,10 +134,10 @@ test("beberapa submission pada satu site tidak menduplikasi site count", () => {
   assert.equal(view.submissionCount, 2);
 });
 
-test("fixture generated BMKG Pusat mempunyai tiga site master", async () => {
+test("fixture generated BMKG Pusat mempunyai tujuh site master", async () => {
   const generated = JSON.parse(await readFile(new URL("../app/data.generated.json", import.meta.url), "utf8"));
   const bmkgPusat = generated.stationSites.filter((row) => row.station === "BMKG Pusat");
-  assert.equal(new Set(bmkgPusat.map((row) => row.siteId)).size, 3);
+  assert.equal(new Set(bmkgPusat.map((row) => row.siteId)).size, 7);
 });
 
 test("search Stasiun dan Pengisian mencakup stasiun, site, tipe, dan subtipe", () => {
