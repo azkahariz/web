@@ -12,7 +12,13 @@ import {
 } from "../app/lib/category-functions.ts";
 import { buildInventoryCsv, buildInventoryJson, createDefaultDraftPayload } from "../app/lib/inventory-export.ts";
 import { summarizeSubmissionProgress, summarizeWarehouseInventory } from "../app/lib/submission-monitoring.ts";
-import { isWarehouseContext, WAREHOUSE_PROFILE } from "../app/lib/warehouse.ts";
+import {
+  isWarehouseContext,
+  WAREHOUSE_PROFILE,
+  WAREHOUSE_PROFILE_ID,
+  WAREHOUSE_SITE_TYPE_ID,
+  WAREHOUSE_SUBTYPE_ID,
+} from "../app/lib/warehouse.ts";
 
 const generated = JSON.parse(await readFile(new URL("../app/data.generated.json", import.meta.url), "utf8"));
 const warehouseSubtype = generated.siteSubtypes.find((row) => row.siteType === "Gudang" && row.subtype === "Gudang");
@@ -38,12 +44,15 @@ function combinedProduct(categories, id = "physical-1") {
   }, categories, categoryIds);
 }
 
-test("master Gudang memakai UUID canonical dan Profil Barang Gudang sebagai allowed catalog", () => {
+test("master Gudang memakai UUID canonical dan label Gudang sebagai allowed catalog", () => {
   assert.ok(warehouseSite?.siteId);
   assert.ok(warehouseSubtype?.siteTypeId);
   assert.ok(warehouseSubtype?.subtypeId);
   assert.ok(warehouseSubtype?.profileId);
   assert.equal(warehouseSubtype.profile, WAREHOUSE_PROFILE);
+  assert.equal(warehouseSubtype.siteTypeId, WAREHOUSE_SITE_TYPE_ID);
+  assert.equal(warehouseSubtype.subtypeId, WAREHOUSE_SUBTYPE_ID);
+  assert.equal(warehouseSubtype.profileId, WAREHOUSE_PROFILE_ID);
   assert.equal(generated.barangByJenis[WAREHOUSE_PROFILE].length, 128);
   assert.equal(isWarehouseContext(generated, warehouseSite, warehouseSubtype), true);
   assert.deepEqual(summarizeWarehouseInventory({}), { categoryCount: 0, unitCount: 0 });
@@ -77,6 +86,32 @@ test("kombinasi Arah dan Kecepatan Angin tetap satu physical unit", () => {
   assert.equal(physicalUnitCount(inventory), 1);
   assert.equal(recordedCategoryCount(inventory), 2);
   assert.equal(inventoryCategoryEntries(inventory, categories[1])[0].item.units[0].id, "wind-unit");
+});
+
+test("unit dengan ID sama pada dua representasi kategori hanya dihitung sekali", () => {
+  const item = combinedProduct(["Sensor Suhu Udara", "Sensor Kelembaban Udara"], "shared-unit");
+  assert.equal(physicalUnitCount({
+    "Sensor Suhu Udara": [item],
+    "Sensor Kelembaban Udara": [{ ...item }],
+  }), 1);
+});
+
+test("unit tanpa ID dan item quantity-only tetap dihitung per kemunculan", () => {
+  assert.equal(physicalUnitCount({
+    "Sensor Tekanan Udara": [{
+      id: "legacy-units",
+      brand: "Legacy",
+      model: "Unit",
+      quantity: 2,
+      units: [{ serialNumber: "A" }, { serialNumber: "B" }],
+    }],
+    "Sensor Suhu Udara": [{
+      id: "legacy-quantity",
+      brand: "Legacy",
+      model: "Quantity",
+      quantity: 3,
+    }],
+  }), 5);
 });
 
 test("ubah fungsi mempertahankan product dan physical unit ID", () => {
@@ -147,7 +182,7 @@ test("form Site biasa dan Gudang mempertahankan field serta lifecycle infrastruc
   assert.match(hook, /release_submission/);
   assert.match(qc, /product_proposals/);
   assert.match(migration, /perform public\.require_super_admin\(\)/);
-  assert.match(migration, /profile\.name = 'Profil Barang Gudang'/);
+  assert.match(migration, /profile\.id = '78b3c5db-2606-43fb-bd5e-ab6e379b9e6e'::uuid/);
   assert.match(migration, /submission_warehouse_summary/);
   assert.doesNotMatch(migration, /create table|alter table|disable row level security/i);
 });

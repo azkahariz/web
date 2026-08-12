@@ -22821,7 +22821,7 @@
                          {
                              "siteType":  "Gudang",
                              "subtype":  "Gudang",
-                             "profile":  "Profil Barang Gudang",
+                             "profile":  "Gudang",
                              "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true,
                              "subtypeId":  "346cfc56-437c-4c5d-9c6b-c9f75926a31c",
@@ -23338,136 +23338,136 @@
                                                       "Arrester",
                                                       "Power Monitor"
                                                   ],
-                          "Profil Barang Gudang":  [
-                                                       "Adaptor",
-                                                       "Antena",
-                                                       "Antena Radar",
-                                                       "Arrester",
-                                                       "Baterai",
-                                                       "Blok Pengolah Data",
-                                                       "Blok Receiver",
-                                                       "Blok Transmitter",
-                                                       "Boks Panel",
-                                                       "Data Akuisisi",
-                                                       "Data Akuisisi Primer",
-                                                       "Data Akuisisi Sekunder",
-                                                       "Display",
-                                                       "Display Outdoor LED",
-                                                       "Kabel antena",
-                                                       "Kabel Data",
-                                                       "Kabel Listrik",
-                                                       "Kabinet",
-                                                       "Kelengkapan",
-                                                       "Konverter",
-                                                       "Magnetron",
-                                                       "Modem Komunikasi",
-                                                       "Mounting Sensor",
-                                                       "Mounting Sensor Arah dan Kecepatan Angin",
-                                                       "Mounting Sensor Arah dan Kecepatan Angin 10m",
-                                                       "Mounting Sensor Arah dan Kecepatan Angin 4m",
-                                                       "Mounting Sensor Arah dan Kecepatan Angin 7m",
-                                                       "Mounting Sensor Hujan",
-                                                       "Mounting Sensor Kecepatan Angin 0.5m",
-                                                       "Mounting Sensor Kecepatan Angin 2m",
-                                                       "Mounting Sensor Lama Penyinaran Matahari",
-                                                       "Mounting Sensor Pasut",
-                                                       "Mounting Sensor Radiasi Matahari",
-                                                       "Mounting Sensor Suhu dan Kelembaban Udara",
-                                                       "Mounting Sensor Suhu dan Kelembaban Udara 0.2m",
-                                                       "Mounting Sensor Suhu dan Kelembaban Udara 1.2m",
-                                                       "Mounting Sensor Suhu dan Kelembaban Udara 10m",
-                                                       "Mounting Sensor Suhu dan Kelembaban Udara 4m",
-                                                       "Mounting Sensor Suhu dan Kelembaban Udara 7m",
-                                                       "Mounting Solar Panel",
-                                                       "Multiplekser Data Akuisisi",
-                                                       "Pagar Pengaman",
-                                                       "Panci Penguapan Kelas A",
-                                                       "Pedestal",
-                                                       "Pengolah Data",
-                                                       "Penurun Tegangan",
-                                                       "Penyimpanan",
-                                                       "Perangkat Jaringan",
-                                                       "Proteksi Petir",
-                                                       "Pyrheliometer",
-                                                       "Radom",
-                                                       "Regulator",
-                                                       "Sangkar Meteorologi 0.2m",
-                                                       "Sangkar Meteorologi 1.2m",
-                                                       "Sangkar Sensor Suhu dan Kelembaban Udara",
-                                                       "Sekring Pengaman",
-                                                       "Sensor Arah Angin",
-                                                       "Sensor Arah Angin 10m",
-                                                       "Sensor Arah Angin 4m",
-                                                       "Sensor Arah Angin 7m",
-                                                       "Sensor Hujan",
-                                                       "Sensor Jarak Pandang",
-                                                       "Sensor Kecepatan Angin",
-                                                       "Sensor Kecepatan Angin 0.5m",
-                                                       "Sensor Kecepatan Angin 10m",
-                                                       "Sensor Kecepatan Angin 2m",
-                                                       "Sensor Kecepatan Angin 4m",
-                                                       "Sensor Kecepatan Angin 7m",
-                                                       "Sensor Kelembaban Udara",
-                                                       "Sensor Kelembaban Udara 0.2m",
-                                                       "Sensor Kelembaban Udara 1.2m",
-                                                       "Sensor Kelembaban Udara 10m",
-                                                       "Sensor Kelembaban Udara 4m",
-                                                       "Sensor Kelembaban Udara 7m",
-                                                       "Sensor Ketinggian Air",
-                                                       "Sensor Ketinggian Awan",
-                                                       "Sensor Lama Penyinaran Matahari",
-                                                       "Sensor PAR",
-                                                       "Sensor pasut",
-                                                       "Sensor Pendeteksi Petir",
-                                                       "Sensor Radiasi Matahari",
-                                                       "Sensor Radiasi Matahari Diffuse",
-                                                       "Sensor Radiasi Matahari Reflected",
-                                                       "Sensor Radiasi Matahari UV A",
-                                                       "Sensor Radiasi Matahari UV B",
-                                                       "Sensor Suhu Air",
-                                                       "Sensor Suhu Tanah kedalaman 0 cm",
-                                                       "Sensor Suhu Tanah kedalaman 2 cm",
-                                                       "Sensor Suhu Udara",
-                                                       "Sensor Suhu Udara 0,5m",
-                                                       "Sensor Suhu Udara 1.2m",
-                                                       "Sensor Suhu Udara 10m",
-                                                       "Sensor Suhu Udara 4m",
-                                                       "Sensor Suhu Udara 7m",
-                                                       "Sensor Tanah",
-                                                       "Sensor Tanah Berumput",
-                                                       "Sensor Tanah Gundul",
-                                                       "Sensor Tekanan Udara",
-                                                       "SIstem Catu Daya Tidak Terputus",
-                                                       "Sistem Kelistrikan",
-                                                       "Sistem Pemosisi Global",
-                                                       "Sistem Pendukung",
-                                                       "Sistem Radio",
-                                                       "Sling Kabel",
-                                                       "Solar Panel",
-                                                       "Sun Sensor",
-                                                       "Terminal Blok",
-                                                       "Tiang",
-                                                       "Tiang 1.5 meter",
-                                                       "Tiang 10 meter",
-                                                       "Tiang Soil Moisture",
-                                                       "Tiang Solar Panel",
-                                                       "Tracker",
-                                                       "Unit Pembangkit Listrik",
-                                                       "Videotron LED Luar Ruangan",
-                                                       "Seismometer",
-                                                       "Akselerometer",
-                                                       "Kabel Sensor",
-                                                       "Digitzer",
-                                                       "PC Industri",
-                                                       "GNSS",
-                                                       "Solar Inverter Hybrid",
-                                                       "DC to DC Converter",
-                                                       "Boks Solar Panel",
-                                                       "Panel DC",
-                                                       "Kabel Set Power Suppy",
-                                                       "Kabel Set Solar Panel",
-                                                       "Power Monitor"
-                                                   ]
+                          "Gudang":  [
+                                         "Adaptor",
+                                         "Antena",
+                                         "Antena Radar",
+                                         "Arrester",
+                                         "Baterai",
+                                         "Blok Pengolah Data",
+                                         "Blok Receiver",
+                                         "Blok Transmitter",
+                                         "Boks Panel",
+                                         "Data Akuisisi",
+                                         "Data Akuisisi Primer",
+                                         "Data Akuisisi Sekunder",
+                                         "Display",
+                                         "Display Outdoor LED",
+                                         "Kabel antena",
+                                         "Kabel Data",
+                                         "Kabel Listrik",
+                                         "Kabinet",
+                                         "Kelengkapan",
+                                         "Konverter",
+                                         "Magnetron",
+                                         "Modem Komunikasi",
+                                         "Mounting Sensor",
+                                         "Mounting Sensor Arah dan Kecepatan Angin",
+                                         "Mounting Sensor Arah dan Kecepatan Angin 10m",
+                                         "Mounting Sensor Arah dan Kecepatan Angin 4m",
+                                         "Mounting Sensor Arah dan Kecepatan Angin 7m",
+                                         "Mounting Sensor Hujan",
+                                         "Mounting Sensor Kecepatan Angin 0.5m",
+                                         "Mounting Sensor Kecepatan Angin 2m",
+                                         "Mounting Sensor Lama Penyinaran Matahari",
+                                         "Mounting Sensor Pasut",
+                                         "Mounting Sensor Radiasi Matahari",
+                                         "Mounting Sensor Suhu dan Kelembaban Udara",
+                                         "Mounting Sensor Suhu dan Kelembaban Udara 0.2m",
+                                         "Mounting Sensor Suhu dan Kelembaban Udara 1.2m",
+                                         "Mounting Sensor Suhu dan Kelembaban Udara 10m",
+                                         "Mounting Sensor Suhu dan Kelembaban Udara 4m",
+                                         "Mounting Sensor Suhu dan Kelembaban Udara 7m",
+                                         "Mounting Solar Panel",
+                                         "Multiplekser Data Akuisisi",
+                                         "Pagar Pengaman",
+                                         "Panci Penguapan Kelas A",
+                                         "Pedestal",
+                                         "Pengolah Data",
+                                         "Penurun Tegangan",
+                                         "Penyimpanan",
+                                         "Perangkat Jaringan",
+                                         "Proteksi Petir",
+                                         "Pyrheliometer",
+                                         "Radom",
+                                         "Regulator",
+                                         "Sangkar Meteorologi 0.2m",
+                                         "Sangkar Meteorologi 1.2m",
+                                         "Sangkar Sensor Suhu dan Kelembaban Udara",
+                                         "Sekring Pengaman",
+                                         "Sensor Arah Angin",
+                                         "Sensor Arah Angin 10m",
+                                         "Sensor Arah Angin 4m",
+                                         "Sensor Arah Angin 7m",
+                                         "Sensor Hujan",
+                                         "Sensor Jarak Pandang",
+                                         "Sensor Kecepatan Angin",
+                                         "Sensor Kecepatan Angin 0.5m",
+                                         "Sensor Kecepatan Angin 10m",
+                                         "Sensor Kecepatan Angin 2m",
+                                         "Sensor Kecepatan Angin 4m",
+                                         "Sensor Kecepatan Angin 7m",
+                                         "Sensor Kelembaban Udara",
+                                         "Sensor Kelembaban Udara 0.2m",
+                                         "Sensor Kelembaban Udara 1.2m",
+                                         "Sensor Kelembaban Udara 10m",
+                                         "Sensor Kelembaban Udara 4m",
+                                         "Sensor Kelembaban Udara 7m",
+                                         "Sensor Ketinggian Air",
+                                         "Sensor Ketinggian Awan",
+                                         "Sensor Lama Penyinaran Matahari",
+                                         "Sensor PAR",
+                                         "Sensor pasut",
+                                         "Sensor Pendeteksi Petir",
+                                         "Sensor Radiasi Matahari",
+                                         "Sensor Radiasi Matahari Diffuse",
+                                         "Sensor Radiasi Matahari Reflected",
+                                         "Sensor Radiasi Matahari UV A",
+                                         "Sensor Radiasi Matahari UV B",
+                                         "Sensor Suhu Air",
+                                         "Sensor Suhu Tanah kedalaman 0 cm",
+                                         "Sensor Suhu Tanah kedalaman 2 cm",
+                                         "Sensor Suhu Udara",
+                                         "Sensor Suhu Udara 0,5m",
+                                         "Sensor Suhu Udara 1.2m",
+                                         "Sensor Suhu Udara 10m",
+                                         "Sensor Suhu Udara 4m",
+                                         "Sensor Suhu Udara 7m",
+                                         "Sensor Tanah",
+                                         "Sensor Tanah Berumput",
+                                         "Sensor Tanah Gundul",
+                                         "Sensor Tekanan Udara",
+                                         "SIstem Catu Daya Tidak Terputus",
+                                         "Sistem Kelistrikan",
+                                         "Sistem Pemosisi Global",
+                                         "Sistem Pendukung",
+                                         "Sistem Radio",
+                                         "Sling Kabel",
+                                         "Solar Panel",
+                                         "Sun Sensor",
+                                         "Terminal Blok",
+                                         "Tiang",
+                                         "Tiang 1.5 meter",
+                                         "Tiang 10 meter",
+                                         "Tiang Soil Moisture",
+                                         "Tiang Solar Panel",
+                                         "Tracker",
+                                         "Unit Pembangkit Listrik",
+                                         "Videotron LED Luar Ruangan",
+                                         "Seismometer",
+                                         "Akselerometer",
+                                         "Kabel Sensor",
+                                         "Digitzer",
+                                         "PC Industri",
+                                         "GNSS",
+                                         "Solar Inverter Hybrid",
+                                         "DC to DC Converter",
+                                         "Boks Solar Panel",
+                                         "Panel DC",
+                                         "Kabel Set Power Suppy",
+                                         "Kabel Set Solar Panel",
+                                         "Power Monitor"
+                                     ]
                       },
     "products":  [
                      {
@@ -30734,7 +30734,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Adaptor",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -30744,7 +30744,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Antena",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -30754,7 +30754,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Antena Radar",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -30764,7 +30764,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Arrester",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -30774,7 +30774,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Baterai",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -30784,7 +30784,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Blok Pengolah Data",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -30794,7 +30794,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Blok Receiver",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -30804,7 +30804,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Blok Transmitter",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -30814,7 +30814,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Boks Panel",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -30824,7 +30824,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Data Akuisisi",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -30834,7 +30834,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Data Akuisisi Primer",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -30844,7 +30844,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Data Akuisisi Sekunder",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -30854,7 +30854,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Display",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -30864,7 +30864,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Display Outdoor LED",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -30874,7 +30874,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Kabel antena",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -30884,7 +30884,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Kabel Data",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -30894,7 +30894,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Kabel Listrik",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -30904,7 +30904,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Kabinet",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -30914,7 +30914,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Kelengkapan",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -30924,7 +30924,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Konverter",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -30934,7 +30934,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Magnetron",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -30944,7 +30944,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Modem Komunikasi",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -30954,7 +30954,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Mounting Sensor",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -30964,7 +30964,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Mounting Sensor Arah dan Kecepatan Angin",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -30974,7 +30974,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Mounting Sensor Arah dan Kecepatan Angin 10m",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -30984,7 +30984,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Mounting Sensor Arah dan Kecepatan Angin 4m",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -30994,7 +30994,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Mounting Sensor Arah dan Kecepatan Angin 7m",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31004,7 +31004,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Mounting Sensor Hujan",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31014,7 +31014,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Mounting Sensor Kecepatan Angin 0.5m",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31024,7 +31024,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Mounting Sensor Kecepatan Angin 2m",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31034,7 +31034,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Mounting Sensor Lama Penyinaran Matahari",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31044,7 +31044,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Mounting Sensor Pasut",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31054,7 +31054,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Mounting Sensor Radiasi Matahari",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31064,7 +31064,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Mounting Sensor Suhu dan Kelembaban Udara",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31074,7 +31074,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Mounting Sensor Suhu dan Kelembaban Udara 0.2m",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31084,7 +31084,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Mounting Sensor Suhu dan Kelembaban Udara 1.2m",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31094,7 +31094,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Mounting Sensor Suhu dan Kelembaban Udara 10m",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31104,7 +31104,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Mounting Sensor Suhu dan Kelembaban Udara 4m",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31114,7 +31114,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Mounting Sensor Suhu dan Kelembaban Udara 7m",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31124,7 +31124,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Mounting Solar Panel",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31134,7 +31134,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Multiplekser Data Akuisisi",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31144,7 +31144,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Pagar Pengaman",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31154,7 +31154,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Panci Penguapan Kelas A",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31164,7 +31164,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Pedestal",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31174,7 +31174,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Pengolah Data",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31184,7 +31184,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Penurun Tegangan",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31194,7 +31194,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Penyimpanan",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31204,7 +31204,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Perangkat Jaringan",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31214,7 +31214,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Proteksi Petir",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31224,7 +31224,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Pyrheliometer",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31234,7 +31234,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Radom",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31244,7 +31244,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Regulator",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31254,7 +31254,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Sangkar Meteorologi 0.2m",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31264,7 +31264,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Sangkar Meteorologi 1.2m",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31274,7 +31274,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Sangkar Sensor Suhu dan Kelembaban Udara",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31284,7 +31284,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Sekring Pengaman",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31294,7 +31294,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Sensor Arah Angin",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31304,7 +31304,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Sensor Arah Angin 10m",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31314,7 +31314,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Sensor Arah Angin 4m",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31324,7 +31324,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Sensor Arah Angin 7m",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31334,7 +31334,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Sensor Hujan",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31344,7 +31344,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Sensor Jarak Pandang",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31354,7 +31354,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Sensor Kecepatan Angin",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31364,7 +31364,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Sensor Kecepatan Angin 0.5m",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31374,7 +31374,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Sensor Kecepatan Angin 10m",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31384,7 +31384,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Sensor Kecepatan Angin 2m",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31394,7 +31394,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Sensor Kecepatan Angin 4m",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31404,7 +31404,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Sensor Kecepatan Angin 7m",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31414,7 +31414,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Sensor Kelembaban Udara",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31424,7 +31424,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Sensor Kelembaban Udara 0.2m",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31434,7 +31434,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Sensor Kelembaban Udara 1.2m",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31444,7 +31444,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Sensor Kelembaban Udara 10m",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31454,7 +31454,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Sensor Kelembaban Udara 4m",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31464,7 +31464,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Sensor Kelembaban Udara 7m",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31474,7 +31474,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Sensor Ketinggian Air",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31484,7 +31484,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Sensor Ketinggian Awan",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31494,7 +31494,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Sensor Lama Penyinaran Matahari",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31504,7 +31504,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Sensor PAR",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31514,7 +31514,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Sensor pasut",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31524,7 +31524,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Sensor Pendeteksi Petir",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31534,7 +31534,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Sensor Radiasi Matahari",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31544,7 +31544,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Sensor Radiasi Matahari Diffuse",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31554,7 +31554,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Sensor Radiasi Matahari Reflected",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31564,7 +31564,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Sensor Radiasi Matahari UV A",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31574,7 +31574,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Sensor Radiasi Matahari UV B",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31584,7 +31584,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Sensor Suhu Air",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31594,7 +31594,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Sensor Suhu Air",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31604,7 +31604,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Sensor Suhu Tanah kedalaman 0 cm",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31614,7 +31614,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Sensor Suhu Tanah kedalaman 2 cm",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31624,7 +31624,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Sensor Suhu Udara",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31634,7 +31634,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Sensor Suhu Udara 0,5m",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31644,7 +31644,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Sensor Suhu Udara 1.2m",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31654,7 +31654,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Sensor Suhu Udara 10m",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31664,7 +31664,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Sensor Suhu Udara 4m",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31674,7 +31674,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Sensor Suhu Udara 7m",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31684,7 +31684,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Sensor Tanah",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31694,7 +31694,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Sensor Tanah Berumput",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31704,7 +31704,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Sensor Tanah Gundul",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31714,7 +31714,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Sensor Tekanan Udara",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31724,7 +31724,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "SIstem Catu Daya Tidak Terputus",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31734,7 +31734,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Sistem Kelistrikan",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31744,7 +31744,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Sistem Pemosisi Global",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31754,7 +31754,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Sistem Pendukung",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31764,7 +31764,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Sistem Radio",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31774,7 +31774,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Sling Kabel",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31784,7 +31784,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Solar Panel",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31794,7 +31794,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Sun Sensor",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31804,7 +31804,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Terminal Blok",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31814,7 +31814,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Tiang",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31824,7 +31824,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Tiang 1.5 meter",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31834,7 +31834,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Tiang 1.5 meter",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31844,7 +31844,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Tiang 10 meter",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31854,7 +31854,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Tiang Soil Moisture",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31864,7 +31864,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Tiang Solar Panel",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31874,7 +31874,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Tracker",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31884,7 +31884,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Unit Pembangkit Listrik",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31894,7 +31894,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Videotron LED Luar Ruangan",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31904,7 +31904,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Seismometer",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31914,7 +31914,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Akselerometer",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31924,7 +31924,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Kabel Sensor",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31934,7 +31934,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Digitzer",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31944,7 +31944,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "PC Industri",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31954,7 +31954,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "GNSS",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31964,7 +31964,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Regulator",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31974,7 +31974,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Solar Inverter Hybrid",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31984,7 +31984,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Baterai",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -31994,7 +31994,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "DC to DC Converter",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -32004,7 +32004,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Boks Solar Panel",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -32014,7 +32014,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Panel DC",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -32024,7 +32024,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Solar Panel",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -32034,7 +32034,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Kabel Set Power Suppy",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -32044,7 +32044,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Kabel Set Solar Panel",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -32054,7 +32054,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Sekring Pengaman",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -32064,7 +32064,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Arrester",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,
@@ -32074,7 +32074,7 @@
                                             "mappingActive":  true
                                         },
                                         {
-                                            "profile":  "Profil Barang Gudang",
+                                            "profile":  "Gudang",
                                             "item":  "Power Monitor",
                                             "profileId":  "78b3c5db-2606-43fb-bd5e-ab6e379b9e6e",
                                             "profileActive":  true,

@@ -1,4 +1,3 @@
-import { getItemUnits } from "./inventory.ts";
 import type { InstalledItem, Inventory, MasterDataReferences } from "../types/inventory.ts";
 
 export const SENSOR_FUNCTION_GROUPS = [
@@ -76,10 +75,25 @@ export function inventoryCategoryIsFilled(inventory: Inventory, category: string
 }
 
 export function physicalUnitCount(inventory: Inventory) {
-  return Object.values(inventory).reduce((total, items) => total + items.reduce(
-    (itemTotal, item) => itemTotal + (isRecognizableInventoryItem(item) ? getItemUnits(item).length : 0),
-    0,
-  ), 0);
+  const ids = new Set<string>();
+  let anonymousCount = 0;
+  for (const items of Object.values(inventory)) {
+    for (const item of items) {
+      if (!isRecognizableInventoryItem(item)) continue;
+      const units = Array.isArray(item.units) && item.units.length > 0 ? item.units : null;
+      if (units) {
+        for (const unit of units) {
+          const id = typeof unit?.id === "string" ? unit.id.trim() : "";
+          if (id) ids.add(id);
+          else anonymousCount += 1;
+        }
+        continue;
+      }
+      const quantity = Number.isInteger(item.quantity) && item.quantity > 0 ? item.quantity : 1;
+      anonymousCount += quantity;
+    }
+  }
+  return ids.size + anonymousCount;
 }
 
 export function recordedCategoryCount(inventory: Inventory) {

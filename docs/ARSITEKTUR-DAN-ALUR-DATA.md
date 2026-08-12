@@ -73,7 +73,7 @@ serializer bersama. Bulk export membuat ZIP di browser dari data baca saja.
 
 ```text
 Station/Balai -> Site Gudang -> Tipe Gudang -> Subtipe Gudang
-               -> Profil Barang Gudang -> kategori yang dipilih user
+               -> Profil Barang: Gudang -> kategori yang dipilih user
                -> Product/QC -> physical units
 ```
 

@@ -17,6 +17,29 @@ const payload = {
     }],
   },
 };
+const duplicatePayload = {
+  inventory: {
+    "Sensor Suhu Udara": payload.inventory["Sensor Suhu Udara"],
+    "Sensor Kelembaban Udara": payload.inventory["Sensor Suhu Udara"],
+  },
+};
+const legacyPayload = {
+  inventory: {
+    "Sensor Tekanan Udara": [{
+      id: "legacy-units",
+      brand: "Legacy",
+      model: "Unit",
+      quantity: 2,
+      units: [{ serialNumber: "A" }, { serialNumber: "B" }],
+    }],
+    "Sensor Suhu Udara": [{
+      id: "legacy-quantity",
+      brand: "Legacy",
+      model: "Quantity",
+      quantity: 3,
+    }],
+  },
+};
 
 try {
   const [summary] = await sql`
@@ -27,6 +50,12 @@ try {
       ${sql.json(payload)}::jsonb,
       'Sensor Suhu Udara'
     ) as filled
+  `;
+  const [duplicateSummary] = await sql`
+    select * from public.submission_warehouse_summary(${sql.json(duplicatePayload)}::jsonb)
+  `;
+  const [legacySummary] = await sql`
+    select * from public.submission_warehouse_summary(${sql.json(legacyPayload)}::jsonb)
   `;
   const [humidity] = await sql`
     select public.submission_item_is_filled(
@@ -40,6 +69,11 @@ try {
   );
   assert.equal(temperature.filled, true);
   assert.equal(humidity.filled, true);
+  assert.deepEqual(
+    { categoryCount: duplicateSummary.category_count, unitCount: duplicateSummary.unit_count },
+    { categoryCount: 2, unitCount: 1 },
+  );
+  assert.equal(legacySummary.unit_count, 5);
   console.log("Verifikasi SQL Gudang lulus: 1 unit fisik, 2 kategori fungsi.");
 } finally {
   await sql.end();

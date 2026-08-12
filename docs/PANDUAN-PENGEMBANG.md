@@ -166,7 +166,7 @@ Istilah UI **Kategori Barang** mengacu pada `items` yang dipetakan melalui
 `profile_items`; tabel `product_categories` tidak mempunyai relasi faktual ke
 `products`, sehingga fitur Gudang tidak mengarang filter Product per kategori.
 Progress Site tetap expected-category based dan membership kombinasi dapat
-memenuhi dua numerator. Profil `Profil Barang Gudang` adalah allowed catalog;
+memenuhi dua numerator. Profil `Gudang` adalah allowed catalog;
 monitoring Gudang memakai category/unit count dan tidak memiliki completeness.
 
 Master Gudang disinkronkan melalui CSV dan `npm.cmd run sync:master`. UUID

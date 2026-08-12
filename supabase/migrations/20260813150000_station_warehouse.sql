@@ -59,7 +59,7 @@ as $$
   join public.items as item on item.id = profile_item.item_id and item.active
   where profile.id = p_item_profile_id
     and profile.active
-    and profile.name <> 'Profil Barang Gudang'
+    and profile.id <> '78b3c5db-2606-43fb-bd5e-ab6e379b9e6e'::uuid
 $$;
 
 create or replace function public.submission_warehouse_summary(p_payload jsonb)
@@ -95,16 +95,27 @@ as $$
         else jsonb_build_array(storage_category)
       end
     ) as function_category(name)
+  ), unit_rows as (
+    select nullif(btrim(unit.value ->> 'id'), '') as unit_id
+    from entries
+    cross join lateral jsonb_array_elements(
+      case when jsonb_typeof(item -> 'units') = 'array'
+        and jsonb_array_length(item -> 'units') > 0
+        then item -> 'units' else '[]'::jsonb end
+    ) as unit(value)
+    where jsonb_typeof(unit.value) = 'object'
+  ), quantity_only as (
+    select coalesce(sum(greatest(case when coalesce(item ->> 'quantity', '') ~ '^[0-9]+$'
+      then (item ->> 'quantity')::integer else 1 end, 1)), 0)::integer as count
+    from entries
+    where not coalesce(jsonb_typeof(item -> 'units') = 'array'
+      and jsonb_array_length(item -> 'units') > 0, false)
   )
   select
     (select count(*)::integer from functions),
-    coalesce((select sum(
-      case when jsonb_typeof(item -> 'units') = 'array' and jsonb_array_length(item -> 'units') > 0
-        then jsonb_array_length(item -> 'units')
-        else greatest(case when coalesce(item ->> 'quantity', '') ~ '^[0-9]+$'
-          then (item ->> 'quantity')::integer else 1 end, 1)
-      end
-    )::integer from entries), 0)
+    ((select count(distinct unit_id)::integer from unit_rows where unit_id is not null)
+      + (select count(*)::integer from unit_rows where unit_id is null)
+      + (select count from quantity_only))::integer
 $$;
 
 create or replace function public.admin_list_submissions(
@@ -162,19 +173,19 @@ begin
         submission.operator_name,
         submission.updated_at,
         submission.last_saved_at,
-        case when profile.name = 'Profil Barang Gudang' then 0 else progress.filled_count end as filled_count,
-        case when profile.name = 'Profil Barang Gudang' then 0 else progress.total_count end as total_count,
-        case when profile.name = 'Profil Barang Gudang' or progress.total_count = 0 then 0
+        case when profile.id = '78b3c5db-2606-43fb-bd5e-ab6e379b9e6e'::uuid then 0 else progress.filled_count end as filled_count,
+        case when profile.id = '78b3c5db-2606-43fb-bd5e-ab6e379b9e6e'::uuid then 0 else progress.total_count end as total_count,
+        case when profile.id = '78b3c5db-2606-43fb-bd5e-ab6e379b9e6e'::uuid or progress.total_count = 0 then 0
           else round(progress.filled_count * 100.0 / progress.total_count)::integer end as progress_percent,
-        case when profile.name = 'Profil Barang Gudang' then 'Gudang'
+        case when profile.id = '78b3c5db-2606-43fb-bd5e-ab6e379b9e6e'::uuid then 'Gudang'
           when progress.total_count = 0 then 'Belum terpetakan'
           when progress.filled_count = 0 then 'Kosong'
           when progress.filled_count = progress.total_count then 'Lengkap'
           else 'Terisi Sebagian' end as progress_status,
-        case when profile.name = 'Profil Barang Gudang' then 'WAREHOUSE' else 'EXPECTED' end as progress_kind,
-        case when profile.name = 'Profil Barang Gudang' then warehouse.category_count else 0 end as warehouse_category_count,
-        case when profile.name = 'Profil Barang Gudang' then warehouse.unit_count else 0 end as warehouse_unit_count,
-        case when profile.name = 'Profil Barang Gudang' then warehouse.unit_count
+        case when profile.id = '78b3c5db-2606-43fb-bd5e-ab6e379b9e6e'::uuid then 'WAREHOUSE' else 'EXPECTED' end as progress_kind,
+        case when profile.id = '78b3c5db-2606-43fb-bd5e-ab6e379b9e6e'::uuid then warehouse.category_count else 0 end as warehouse_category_count,
+        case when profile.id = '78b3c5db-2606-43fb-bd5e-ab6e379b9e6e'::uuid then warehouse.unit_count else 0 end as warehouse_unit_count,
+        case when profile.id = '78b3c5db-2606-43fb-bd5e-ab6e379b9e6e'::uuid then warehouse.unit_count
           when progress.total_count = 0 then 0
           else round(progress.filled_count * 100.0 / progress.total_count)::integer end as progress_sort_value,
         submission.archived_at,
@@ -187,7 +198,7 @@ begin
       join public.site_subtypes as subtype on subtype.id = submission.site_subtype_id
       join public.item_profiles as profile on profile.id = subtype.item_profile_id
       left join lateral public.submission_progress(submission.payload, subtype.item_profile_id) as progress on true
-      left join lateral public.submission_warehouse_summary(submission.payload) as warehouse on profile.name = 'Profil Barang Gudang'
+      left join lateral public.submission_warehouse_summary(submission.payload) as warehouse on profile.id = '78b3c5db-2606-43fb-bd5e-ab6e379b9e6e'::uuid
       where ((coalesce(p_archive_filter, 'ACTIVE') = 'ACTIVE' and submission.archived_at is null)
         or (coalesce(p_archive_filter, 'ACTIVE') = 'ARCHIVED' and submission.archived_at is not null))
     ), filtered as materialized (
@@ -262,17 +273,17 @@ begin
     'operator_name', submission.operator_name,
     'updated_at', submission.updated_at,
     'last_saved_at', submission.last_saved_at,
-    'filled_count', case when profile.name = 'Profil Barang Gudang' then 0 else progress.filled_count end,
-    'total_count', case when profile.name = 'Profil Barang Gudang' then 0 else progress.total_count end,
-    'progress_percent', case when profile.name = 'Profil Barang Gudang' or progress.total_count = 0 then 0 else round(progress.filled_count * 100.0 / progress.total_count)::integer end,
-    'progress_status', case when profile.name = 'Profil Barang Gudang' then 'Gudang'
+    'filled_count', case when profile.id = '78b3c5db-2606-43fb-bd5e-ab6e379b9e6e'::uuid then 0 else progress.filled_count end,
+    'total_count', case when profile.id = '78b3c5db-2606-43fb-bd5e-ab6e379b9e6e'::uuid then 0 else progress.total_count end,
+    'progress_percent', case when profile.id = '78b3c5db-2606-43fb-bd5e-ab6e379b9e6e'::uuid or progress.total_count = 0 then 0 else round(progress.filled_count * 100.0 / progress.total_count)::integer end,
+    'progress_status', case when profile.id = '78b3c5db-2606-43fb-bd5e-ab6e379b9e6e'::uuid then 'Gudang'
       when progress.total_count = 0 then 'Belum terpetakan'
       when progress.filled_count = 0 then 'Kosong'
       when progress.filled_count = progress.total_count then 'Lengkap'
       else 'Terisi Sebagian' end,
-    'progress_kind', case when profile.name = 'Profil Barang Gudang' then 'WAREHOUSE' else 'EXPECTED' end,
-    'warehouse_category_count', case when profile.name = 'Profil Barang Gudang' then warehouse.category_count else 0 end,
-    'warehouse_unit_count', case when profile.name = 'Profil Barang Gudang' then warehouse.unit_count else 0 end,
+    'progress_kind', case when profile.id = '78b3c5db-2606-43fb-bd5e-ab6e379b9e6e'::uuid then 'WAREHOUSE' else 'EXPECTED' end,
+    'warehouse_category_count', case when profile.id = '78b3c5db-2606-43fb-bd5e-ab6e379b9e6e'::uuid then warehouse.category_count else 0 end,
+    'warehouse_unit_count', case when profile.id = '78b3c5db-2606-43fb-bd5e-ab6e379b9e6e'::uuid then warehouse.unit_count else 0 end,
     'archived_at', submission.archived_at,
     'archive_reason', submission.archive_reason,
     'payload', submission.payload,
@@ -285,7 +296,7 @@ begin
       join public.items as item on item.id = profile_item.item_id and item.active
       where profile_item.item_profile_id = profile.id
         and profile_item.active
-        and (profile.name <> 'Profil Barang Gudang'
+        and (profile.id <> '78b3c5db-2606-43fb-bd5e-ab6e379b9e6e'::uuid
           or coalesce(submission.payload -> 'inventory', '{}'::jsonb) ? item.name
           or public.submission_item_is_filled(submission.payload, item.name))
     ), '[]'::jsonb),
@@ -301,7 +312,7 @@ begin
   join public.site_subtypes as subtype on subtype.id = submission.site_subtype_id
   join public.item_profiles as profile on profile.id = subtype.item_profile_id
   left join lateral public.submission_progress(submission.payload, subtype.item_profile_id) as progress on true
-  left join lateral public.submission_warehouse_summary(submission.payload) as warehouse on profile.name = 'Profil Barang Gudang'
+  left join lateral public.submission_warehouse_summary(submission.payload) as warehouse on profile.id = '78b3c5db-2606-43fb-bd5e-ab6e379b9e6e'::uuid
   where submission.id = p_submission_id;
 
   if v_result is null then

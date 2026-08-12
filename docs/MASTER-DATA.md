@@ -63,7 +63,7 @@ hard delete master.
 ## Gudang
 
 Master canonical Gudang adalah Site Type `Gudang`, Subtype `Gudang`, dan profil
-`Profil Barang Gudang`. Profil tersebut memetakan seluruh kategori valid sebagai
+Profil `Gudang`. Profil tersebut memetakan seluruh kategori valid sebagai
 katalog yang boleh dipilih, bukan checklist expected. Site Gudang tetap dibuat
 per Station/Balai melalui sheet Nama Stasiun; jangan membuat Site Gudang massal
 atau relasi Balai baru tanpa daftar master yang disetujui.
