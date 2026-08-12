@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { CONDITION_OPTIONS, MOUNTING_MATERIALS } from "./config/form-options";
 import rawData from "./data.generated.json";
@@ -626,6 +627,7 @@ export default function InventoryApp({
         <div className="account-actions">
           <div className={`local-badge status-${sync.status}`}><span /> {syncLabels[sync.status]}{sync.status === "saved" && savedTime ? ` ${savedTime}` : ""}</div>
           {isAdminEditor && <button className="logout-button" onClick={() => router.push("/admin")}>Dashboard Admin</button>}
+          <Link className="logout-button" href="/panduan">Panduan</Link>
           <button className="logout-button" onClick={logout}>Keluar</button>
         </div>
       </header>

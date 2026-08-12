@@ -1,116 +1,68 @@
 # Panduan Super Admin
 
-## Login dan Dashboard
+Terakhir diperbarui: 12 Agustus 2026. Dashboard tersedia setelah login dengan
+akun aktif di `super_admins`. Baca [SOP Perubahan Production](SOP-PERUBAHAN-PRODUCTION.md)
+sebelum menjalankan tindakan yang mengubah data.
 
-Super Admin memakai halaman login yang sama dengan Station User. Setelah login,
-database mengenali row aktif pada `super_admins` dan mengarahkan ke `/admin`.
-Jangan membuat Super Admin sebagai akun stasiun palsu.
+## Dashboard
 
-Dashboard mempunyai enam bagian:
+- **Ringkasan**: jumlah stasiun, akun, Site, submission, lock, dan status QC.
+- **Stasiun & Pengisian**: kombinasi master Site/Subtipe dan submission.
+- **Akun Stasiun**: provision, aktif/nonaktif, dan reset password.
+- **Lock Aktif**: lock yang belum melewati lima menit tanpa aktivitas.
+- **QC Produk**: pemeriksaan usulan Brand/Tipe.
+- **Audit Admin**: rekam tindakan administrasi yang berisiko.
 
-- **Ringkasan**: jumlah stasiun, akun, site, submission, lock, dan status QC.
-- **Stasiun & Pengisian**: seluruh submission dan payload lintas stasiun.
-- **Akun Stasiun**: aktif/nonaktif, reset password, dan provision akun.
-- **Lock Aktif**: operator, session pendek, durasi, serta force release.
-- **QC Produk**: approve, merge, bulk merge, reject, dan export Spreadsheet.
-- **Audit Admin**: catatan tindakan admin yang berisiko.
+## Stasiun dan Pengisian
 
-Pada **Stasiun & Pengisian**, kotak pencarian mencari nama stasiun, nama site,
-tipe site, dan subtipe. Jumlah site adalah jumlah site unik milik stasiun, bukan
-jumlah submission. Semua nama site tetap ditampilkan walaupun belum mempunyai
-submission. Setiap site ditampilkan per subtipe valid dari master; kolom status
-menunjukkan apakah submission untuk kombinasi tersebut sudah tersedia. Angka
-site pada header tetap total master meskipun isi tabel sedang difilter. Pada
-**Akun Stasiun**, pencarian hanya memakai nama stasiun dan username.
+Jumlah Site adalah jumlah Site unik dari master, bukan jumlah submission. Nama
+Site tetap tampil meskipun belum ada submission. Setiap Site ditampilkan untuk
+subtipe validnya; status menunjukkan apakah kombinasi itu sudah diisi.
 
-Menu **Aksi** tersedia untuk kombinasi Site/Subtipe yang valid, termasuk yang
-belum pernah mempunyai submission:
+- **Buka**: baca snapshot server atau form default. Tidak ada lock, submission
+  baru, maupun write database.
+- **Unduh CSV**: baca snapshot atau buat CSV default. Tidak ada lock atau write.
+- **Edit sebagai Admin**: baru memulai lifecycle submission dan meminta lock.
 
-- **Buka** menampilkan snapshot server atau form default secara read-only. Tidak
-  ada lock, submission baru, atau write database.
-- **Unduh CSV** membaca snapshot terbaru atau membuat CSV default. Tidak ada lock
-  atau write database.
-- **Edit sebagai Admin** baru memulai lifecycle submission dan memperoleh lock.
-
-AWOS Kategori III hanya menampilkan empat subtipe yang sesuai variant Site:
-AllWeather, Coastal, Degreane, Microstep, atau Vaisala. Variant yang tidak dikenali
-ditampilkan sebagai **Belum terpetakan**, bukan diberi seluruh subtipe AWOS.
+Pencarian bagian ini mencari stasiun, Site, tipe Site, dan subtipe. AWOS Kategori
+III dibatasi ke empat subtipe family yang sesuai Site: AllWeather, Coastal,
+Degreane, Microstep, atau Vaisala. Variant belum terpetakan tidak diberi semua
+subtipe secara otomatis.
 
 ## Bulk Download
 
-Tekan **Bulk Download**, lalu pilih Stasiun terlebih dahulu. Pilihan Site hanya
-berasal dari stasiun tersebut, dan pilihan Subtipe mengikuti mapping Site.
+Pilih Stasiun, lalu Site dan Subtipe bila diperlukan. Stasiun menghasilkan ZIP
+seluruh Site/subtipe valid, Site menghasilkan ZIP semua subtipe, sedangkan satu
+Subtipe menghasilkan CSV. Kombinasi tanpa submission tetap dimasukkan sebagai
+template kosong. Bulk download tidak mengambil lock dan tidak membuat submission.
 
-- Stasiun + Semua Site menghasilkan `nama-stasiun.zip`.
-- Site tertentu + Semua Subtipe menghasilkan `nama-stasiun_nama-site.zip`.
-- Satu Subtipe menghasilkan CSV langsung.
+Panduan langkahnya ada di [Panduan Bulk Download](PANDUAN-BULK-DOWNLOAD.md).
 
-ZIP berisi satu CSV untuk setiap kombinasi Site/Subtipe valid. Kombinasi yang
-belum mempunyai submission tetap disertakan sebagai CSV default dengan field
-kosong. Bulk Download tidak dipengaruhi kotak pencarian tabel dan tidak membuat
-submission baru.
+## Lock dan version
 
-## Submission dan lock
+Lock berarti ada session editor aktif. **Paksa Lepas Lock** menghapus lock aktif;
+**Ambil Alih sebagai Admin** mengambil hak edit dari editor lain. Keduanya perlu
+konfirmasi karena perubahan editor lama yang belum tersimpan dapat gagal disimpan.
+Gunakan setelah menghubungi editor bila memungkinkan. Tindakan ini tetap memakai
+version check dan tercatat dalam audit.
 
-**Buka** dan **Unduh** tidak mengambil lock. **Edit sebagai Admin** mencoba lock
-biasa. Jika masih dikunci petugas, snapshot tersimpan tetap dapat dilihat dan
-informasi operator serta aktivitas terakhir ditampilkan.
+## Akun Stasiun
 
-**Ambil Alih sebagai Admin** adalah tindakan paksa. Konfirmasi terlebih dahulu,
-karena editor lama dapat kehilangan hak menyimpan. Force takeover bersifat
-atomik dan tetap memakai version checking. **Paksa Lepas Lock** juga harus
-dikonfirmasi dan dicatat di audit.
+- **Provision akun** membuat akun untuk stasiun yang belum memiliki akun.
+- **Nonaktifkan/Aktifkan** menghentikan atau mengembalikan akses akun.
+- **Reset Password** memberi password sementara baru. Password lama tidak dapat
+  dibaca, dan password baru hanya tampil pada dialog hasil reset.
 
-## Akun stasiun
+Simpan atau kirim password baru sebelum dialog ditutup. Jangan menyimpan
+password di audit, catatan publik, atau Git.
 
-- **Provision akun** membuat Auth user dan row `station_accounts` bila belum ada.
-- **Nonaktifkan** membuat akun tidak dapat memperoleh scope stasiun atau RPC.
-- **Aktifkan** mengembalikan akses.
-- **Reset Password** membuat password sementara yang kuat. Password lama tidak
-  dapat dilihat karena Supabase Auth tidak menyimpan password dalam bentuk yang
-  dapat dibaca kembali.
+## QC Produk dan audit
 
-Setelah reset berhasil, dialog menampilkan username dan password baru. Gunakan
-ikon mata untuk menampilkan password, lalu tekan **Salin Password**. Simpan atau
-kirim password saat dialog masih terbuka. Setelah dialog ditutup atau halaman
-dimuat ulang, password tidak dapat ditampilkan lagi dan harus direset kembali
-bila diperlukan. Password tidak disimpan di database, audit, atau penyimpanan
-browser.
+Gunakan **Approve Baru** untuk produk benar-benar baru, **Merge** untuk variasi
+tulisan produk existing, dan **Tolak** dengan alasan bila tidak dapat diterima.
+Raw input pengguna tidak dihapus. Baca [Panduan QC Produk](PANDUAN-QC-PRODUK.md).
 
-## QC Produk
+Audit mencatat force lock, edit admin, perubahan akun, reset password, dan
+tindakan QC. Audit tidak boleh berisi password atau secret.
 
-Contoh proposal: `Campbel / CR 1000 X`.
-
-- **Approve Baru**: gunakan jika produknya benar-benar baru. Admin boleh
-  memperbaiki penulisan menjadi Brand/Tipe canonical.
-- **Merge**: pilih produk existing jika usulan hanya variasi penulisan.
-- **Gabungkan Semua**: centang beberapa proposal Pending dan pilih satu produk
-  tujuan. Alias raw dibuat untuk setiap variasi.
-- **Tolak**: isi alasan. Proposal dan raw input tidak dihapus.
-
-Produk hasil approve langsung masuk katalog Supabase sehingga user lain dapat
-memakainya tanpa deployment. Produk tersebut belum selesai sebagai master
-Spreadsheet sampai direkonsiliasi.
-
-## Rekonsiliasi ke Spreadsheet
-
-1. Pada QC Produk, tekan **Unduh Produk Baru untuk Spreadsheet**.
-2. File `products-qc-pending-spreadsheet.csv` berisi `product_id`, `Merk`,
-   `Tipe`, dan `active`.
-3. Masukkan baris ke sheet products tanpa mengubah `product_id`.
-4. Export kembali CSV master normal.
-5. Jalankan `npm.cmd run validate:master` dan `npm.cmd run sync:master`.
-6. Sync melakukan UPDATE berdasarkan UUID, bukan INSERT duplicate, lalu menandai
-   produk sudah sinkron Spreadsheet.
-
-Koreksi canonical oleh admin juga masuk daftar export ini agar perubahan tidak
-menjadi perbedaan diam-diam dengan Spreadsheet.
-
-## Audit dan tindakan berisiko
-
-Audit mencatat force release/takeover, edit submission, perubahan akun, reset
-password, approve, merge, bulk merge, reject, dan koreksi canonical. Audit tidak
-boleh memuat password atau secret.
-
-Jangan menghapus master, mengubah UUID, mass-merge produk existing, membagikan
-credential CSV, atau memakai secret key di browser.
+← [Mulai di Sini](MULAI-DI-SINI.md) | → [Troubleshooting](TROUBLESHOOTING.md)

@@ -249,6 +249,21 @@ test("metadata Aloptama tersimpan per site dan memakai nilai lokasi otomatis", a
   assert.equal(resolveFieldDomain("AAWS"), "Klimatologi");
 });
 
+test("panduan ringkas tersedia untuk Station User dan Super Admin", async () => {
+  const [stationApp, stationGuide, adminDashboard, adminGuide] = await Promise.all([
+    readFile(new URL("../app/InventoryApp.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/panduan/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/admin/AdminDashboard.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/admin/panduan/page.tsx", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(stationApp, /href="\/panduan">Panduan</);
+  assert.match(stationGuide, /Panduan ringkas pengisian Aloptama Collect/);
+  assert.match(adminDashboard, /href="\/admin\/panduan">Panduan Super Admin</);
+  assert.match(adminGuide, /createSupabaseServerClient/);
+  assert.match(adminGuide, /super_admins/);
+});
+
 test("form metadata menyediakan seluruh pilihan operasional dan komunikasi", async () => {
   const [source, formOptions] = await Promise.all([
     readFile(new URL("../app/SiteMetadataForm.tsx", import.meta.url), "utf8"),

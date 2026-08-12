@@ -301,7 +301,7 @@ export default function AdminDashboard({ username }: { username: string }) {
     <main className="admin-shell">
       <header className="topbar admin-topbar">
         <div className="brand-lockup"><div className="brand-mark">AC</div><div><p className="eyebrow">SUPER ADMIN</p><h1>Aloptama Collect</h1></div></div>
-        <div className="account-actions"><span className="admin-username">{username}</span><button className="logout-button" onClick={logout}>Keluar</button></div>
+        <div className="account-actions"><span className="admin-username">{username}</span><Link className="logout-button" href="/admin/panduan">Panduan Super Admin</Link><button className="logout-button" onClick={logout}>Keluar</button></div>
       </header>
       <div className="admin-layout">
         <nav className="admin-nav" aria-label="Menu admin">

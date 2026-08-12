@@ -1,115 +1,66 @@
-# Aloptama Collect
+# Mulai di Sini
 
-## Apa aplikasi ini?
+Terakhir diperbarui: 12 Agustus 2026. Status: **Production / Pilot**.
 
-Aloptama Collect dipakai untuk mencatat metadata lokasi dan perangkat yang
-terpasang pada setiap site Aloptama BMKG. Data dapat disimpan bertahap, dibuka
-kembali, dan diunduh sebagai CSV atau JSON tanpa menghilangkan format lama.
+Aloptama Collect mencatat metadata lokasi dan perangkat yang terpasang pada
+setiap Site Aloptama BMKG. Pengisian dapat dilakukan bertahap, disimpan,
+dibuka kembali, dan diunduh sebagai CSV atau JSON.
 
-Production: https://aloptama-collect.vercel.app
+## Siapa yang memakai?
 
-## Siapa yang menggunakan?
+- **Station User** adalah petugas UPT. Akun ini otomatis terikat ke satu
+  stasiun dan hanya dapat mengisi Site stasiun tersebut.
+- **Super Admin** mengelola pengisian lintas stasiun, akun, lock, QC produk,
+  bulk download, dan audit.
+- **Developer** menjaga aplikasi, master data, database, dan deployment.
 
-- **Station User**: akun bersama satu stasiun. Hanya dapat melihat dan mengubah
-  site milik stasiunnya.
-- **Super Admin**: pengelola lintas stasiun. Dapat melihat submission, lock,
-  akun stasiun, proposal produk, dan audit tindakan admin.
+## Istilah dasar
 
-## Gambaran alur
+- **Aloptama / Site**: lokasi atau paket alat yang dipilih pada aplikasi.
+- **Subtipe Site**: jenis rincian pengisian di dalam tipe Site.
+- **Master data**: daftar stasiun, Site, subtipe, profil barang, barang, dan
+  produk yang menentukan pilihan yang tersedia.
+- **Submission**: data pengisian untuk satu kombinasi Site dan Subtipe.
+- **Draft**: data pengisian yang masih dapat dilanjutkan.
 
-```text
-Station User
-    -> Login
-    -> Stasiun sendiri
-    -> Pilih Site dan Subtipe
-    -> Browse Mode
-    -> Edit Data
-    -> localStorage + Supabase
-    -> CSV / JSON
-```
+## Alur data
 
-Browse Mode hanya membaca. Lock baru diminta saat pengguna menekan **Edit
-Data**. Satu draft hanya dapat diedit satu session pada satu waktu. Lock habis
-setelah lima menit tanpa aktivitas.
-
-## Komponen utama
-
-- **Google Spreadsheet**: tempat master stasiun, site, subtipe, profil, barang,
-  dan produk dipelihara manusia.
-- **CSV**: hasil export Spreadsheet yang dibaca script lokal.
-- **data.generated.json**: hasil generator untuk fallback cepat aplikasi.
-- **Supabase**: layanan login dan database PostgreSQL untuk master ber-UUID,
-  akun, submission, lock, proposal produk, serta audit admin.
-- **Vercel**: layanan yang menjalankan website Next.js di internet.
-
-## Bagaimana data mengalir?
-
-MASTER:
+Master data:
 
 ```text
-Google Spreadsheet
-      -> CSV
-      -> scripts/generate-data.ps1
-      -> app/data.generated.json
-      -> npm.cmd run sync:master
-      -> Supabase
+Spreadsheet -> CSV -> generated data -> Supabase
 ```
 
-PENGISIAN:
+Pengisian:
 
 ```text
-Station User
-      -> Aloptama Collect
-      -> localStorage + Supabase submissions
-      -> CSV / JSON
+Station User -> Aloptama Collect -> localStorage + Supabase -> CSV / JSON
 ```
 
-PRODUCT QC:
+QC produk:
 
 ```text
-User mengusulkan produk
-      -> PENDING
-      -> Super Admin
-         +-> APPROVED sebagai produk baru
-         +-> MERGED ke produk existing
-         `-> REJECTED
-      -> produk baku/canonical
-      -> langsung tersedia dari Supabase
-      -> export products-qc-pending-spreadsheet.csv
-      -> Spreadsheet
-      -> sync:master
-      -> selesai direkonsiliasi
+Produk tidak ditemukan -> Proposal -> Super Admin -> Approve / Merge / Reject
 ```
 
-Raw input pengguna tidak ditimpa. Contoh `Campbel / CR 1000 X` tetap tersimpan
-di proposal walaupun hasil QC menjadi `Campbell Scientific / CR1000X`.
+Spreadsheet adalah source of truth untuk master. Supabase menyimpan akun,
+submission, lock, QC, dan audit operasional.
 
-## Istilah sederhana
+## Baca sesuai peran
 
-- **UUID**: nomor identitas unik yang tetap sama walaupun nama record berubah.
-- **Supabase**: layanan login dan database aplikasi.
-- **Vercel**: layanan hosting website Production dan Preview.
-- **localStorage**: penyimpanan cadangan di browser/perangkat yang sedang dipakai.
-- **RLS**: aturan database yang membatasi baris mana yang boleh dilihat user.
-- **Migration**: file SQL berurutan untuk mengubah struktur database secara aman.
-- **RPC**: fungsi database yang dipanggil aplikasi untuk operasi terkontrol.
-- **Payload**: isi lengkap satu draft yang disimpan sebagai JSONB.
-- **JSONB**: format JSON yang disimpan dan dapat diproses PostgreSQL.
-- **Soft lock**: tanda bahwa satu draft sedang diedit session tertentu.
-- **Version conflict**: server sudah memiliki versi lebih baru daripada browser.
-- **Proposal Produk**: Brand/Tipe baru yang diajukan pengguna untuk diperiksa.
-- **Produk Canonical**: penulisan Brand/Tipe baku yang disetujui admin.
-- **Merge**: menghubungkan proposal ke produk existing yang sebenarnya sama.
-- **Alias**: variasi penulisan yang diarahkan ke produk canonical.
-- **Source of Truth**: sumber utama yang menjadi acuan akhir. Untuk master
-  Aloptama, sumber ini adalah Spreadsheet.
+- Saya pengguna pengisian: [Panduan Pengguna Stasiun](PANDUAN-PENGGUNA-STASIUN.md).
+- Saya Super Admin: [Panduan Super Admin](PANDUAN-SUPER-ADMIN.md).
+- Saya developer: [Panduan Pengembang](PANDUAN-PENGEMBANG.md), lalu
+  [Arsitektur dan Alur Data](ARSITEKTUR-DAN-ALUR-DATA.md).
 
-## Baca apa selanjutnya?
+## Glosarium singkat
 
-1. [Panduan Pengguna Stasiun](PANDUAN-PENGGUNA-STASIUN.md)
-2. [Panduan Super Admin](PANDUAN-SUPER-ADMIN.md)
-3. [Master Data Supabase](MASTER-DATA-SUPABASE.md)
-4. [Panduan Pengembang](PANDUAN-PENGEMBANG.md)
-5. [Struktur Proyek](STRUKTUR-PROYEK.md)
-6. [Troubleshooting](TROUBLESHOOTING.md)
-7. [Checklist Publikasi](CHECKLIST-PUBLIKASI.md)
+**UUID** adalah ID tetap suatu record. **localStorage** adalah cadangan draf di
+browser. **Autosave** menyimpan perubahan otomatis. **Lock** membatasi satu
+editor aktif. **Version** mencegah perubahan lama menimpa data baru. **RLS**
+adalah batas akses di database. **RPC** adalah operasi database terkontrol.
+**Proposal** adalah usulan produk. **Merge** menghubungkan variasi penulisan ke
+produk yang sama. **Alias** adalah variasi nama. **Canonical Product** adalah
+Brand/Tipe baku hasil QC.
+
+Lanjutkan ke [Troubleshooting](TROUBLESHOOTING.md) bila ada kendala.

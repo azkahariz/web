@@ -1,70 +1,85 @@
 # Panduan Pengguna Stasiun
 
-Panduan ini ditulis untuk petugas yang tidak perlu memahami pemrograman.
+Terakhir diperbarui: 12 Agustus 2026. Baca [Mulai di Sini](MULAI-DI-SINI.md)
+untuk istilah dasar.
 
-1. Buka website dan masuk memakai **Username** serta **Password** stasiun.
-   Tekan ikon mata pada kolom Password untuk menampilkan atau menyembunyikan
-   password yang sedang diketik.
-2. Nama stasiun terisi otomatis dan tidak dapat diganti.
-3. Pilih **Site**, lalu pilih **Subtipe Site**.
-4. Aplikasi mulai dalam **Mode lihat**. Anda dapat melihat dan mengunduh CSV/JSON
-   tanpa mengambil lock dan tanpa masuk ke mode pengisian.
-5. Isi **Nama petugas**, lalu tekan **Mulai Pengisian** atau **Edit Data** hanya
-   jika ingin mengubah data.
-6. Jika berhasil, status berubah menjadi **Mode pengisian aktif**.
-7. Isi metadata lokasi pada bagian Metadata Aloptama.
-8. Buka kategori barang, tekan **Pilih produk**, lalu pilih produk terpasang.
-9. Atur jumlah. Setiap unit mempunyai Nomor Seri, Kondisi, Tahun Pasang, dan
-   Catatan sendiri.
-10. Perubahan disimpan di browser dan dikirim ke server sekitar lima detik
-    setelah perubahan terakhir. Penyimpanan maksimum ditunda sekitar 18 detik.
-11. Tekan **Simpan** untuk mengirim perubahan saat itu juga.
-12. Menu **Unduh** menyediakan CSV dan JSON, termasuk saat masih dalam Mode
-    lihat. Jika sedang mengedit dan ada perubahan, aplikasi menyimpan draf lokal
-    lalu mencoba sinkron ke server sebelum mengunduh. Jika server gagal, file
-    tetap dibuat dari data terbaru di browser dan muncul peringatan bahwa server
-    belum sinkron. Nama file mengikuti pilihan terbaru:
-    `nama-stasiun_nama-site_nama-subtipe.csv`, misalnya
-    `stasiun-meteorologi-soekarno-hatta_awos-runway-07l_awos-end-point.csv`.
-    JSON memakai pola nama yang sama dengan akhiran `.json`.
-13. Setelah selesai, tekan **Selesai Mengedit**. Aplikasi melakukan final save
-    lalu melepas lock.
+## Yang perlu dilakukan
 
-Status **Tersimpan di server** berarti data sudah terkirim. Status **Tersimpan
-lokal** berarti data aman pada browser ini, tetapi belum tersedia dari perangkat
-lain. Mengunduh saat Mode lihat tidak membuat submission, tidak menaikkan versi,
-dan tidak mengubah lock.
+1. Buka aplikasi, isi **Username** dan **Password**, lalu tekan **Masuk**.
+   Gunakan ikon mata untuk menampilkan atau menyembunyikan password.
+2. Nama stasiun otomatis mengikuti akun. Pilih **Aloptama / Site**, lalu
+   **Subtipe Site** yang akan diperiksa.
+3. Awalnya aplikasi berada di **Mode lihat**. Baca data atau pilih **Unduh**
+   untuk CSV/JSON tanpa mengambil lock.
+4. Isi **Nama operator**, lalu tekan **Mulai Pengisian** atau **Edit Data**.
+   Jika berhasil, status menjadi **Mode pengisian aktif**.
+5. Lengkapi **Metadata Aloptama**, lalu buka kategori barang dan pilih produk.
+   Bila jumlah lebih dari satu, isi Nomor Seri, Kondisi, Tahun Pasang, dan
+   Catatan untuk setiap unit.
+6. Aplikasi menyimpan draf di browser dan mengirim perubahan otomatis sekitar
+   lima detik setelah perubahan terakhir. Tekan **Simpan** untuk mengirim
+   sekarang.
+7. Setelah selesai, tekan **Selesai Mengedit**. Aplikasi melakukan final save
+   dan melepas lock untuk session ini.
 
-## Jika data sedang diedit orang lain
+Status **Tersimpan di server** berarti data sudah tersedia dari perangkat lain.
+Status **Tersimpan lokal** berarti draf masih aman di browser ini, tetapi belum
+berhasil dikirim ke server.
 
-Aplikasi menjadi read-only dan menampilkan nama operator serta aktivitas
-terakhir. Tekan **Coba lagi** untuk memeriksa lock terbaru. Tidak perlu logout
-atau reload. **Muat versi terbaru** hanya memuat payload/version terbaru; tombol
-itu berbeda dari percobaan memperoleh lock.
+## Mengunduh hasil
 
-Lock dapat diambil alih Station User setelah lima menit tanpa aktivitas. Super
-Admin dapat melakukan force takeover dengan konfirmasi.
+Menu **Unduh** menyediakan CSV dan JSON saat Mode lihat maupun Edit. Saat
+mengedit, aplikasi mencoba sinkron lebih dulu; bila server tidak dapat dihubungi,
+file tetap dibuat dari draf browser dan peringatan ditampilkan.
 
-## Jika internet terputus
+Nama CSV memakai pola:
 
-Data tetap disimpan di browser. Jangan menghapus data browser. Setelah koneksi
-kembali, buka draft dan tekan **Edit Data** serta **Simpan**. Jika muncul version
-conflict, bandingkan data lokal dan server sebelum memilih **Muat versi terbaru**.
+```text
+nama-stasiun_nama-site_nama-subtipe.csv
+```
+
+Contoh: `stasiun-meteorologi-soekarno-hatta_awos-runway-07l_awos-end-point.csv`.
+JSON menggunakan pola sama dengan akhiran `.json`.
 
 ## Produk tidak ditemukan
 
-1. Isi Brand dan Tipe pada bagian **Usulkan produk baru**.
-2. Periksa saran "Apakah yang Anda maksud...". Jika cocok, pilih produk tersebut.
-3. Jika memang berbeda, lanjutkan usulan.
-4. Pesan **menunggu pemeriksaan admin** berarti raw Brand/Tipe sudah tersimpan,
-   tetapi belum menjadi master.
-5. Jika admin merge atau approve, aplikasi menampilkan nama produk hasil QC dan
-   export memakai nama tersebut.
-6. Jika ditolak, raw input tidak hilang. Pilih produk lain atau buat usulan yang
-   sudah diperbaiki.
+1. Cari dahulu berdasarkan Brand atau Tipe. Gunakan saran yang muncul bila
+   produknya sama.
+2. Bila memang belum ada, isi **Brand**, **Tipe**, dan Catatan opsional pada
+   **Usulkan produk baru**.
+3. Status **Pending QC** berarti usulan telah tersimpan dan menunggu pemeriksaan
+   Super Admin.
+4. **Merged** berarti variasi tulisan dihubungkan ke produk yang sudah ada.
+   **Approved** berarti menjadi produk canonical baru. **Rejected** berarti
+   usulan ditolak; raw input tetap tersimpan bersama alasan admin.
 
-## Logout
+Lihat [Panduan QC Produk](PANDUAN-QC-PRODUK.md) untuk penjelasan status.
 
-Tekan **Keluar**. Hanya browser/perangkat ini yang logout. Lock milik session ini
-dicoba dilepas sebelum logout; perangkat lain dengan akun stasiun yang sama tetap
-login.
+## Bila ada kendala
+
+- Data sedang diedit orang lain: aplikasi read-only. Tekan **Coba lagi** untuk
+  meminta lock berdasarkan kondisi server terbaru. Jangan perlu logout atau
+  reload halaman.
+- **Muat versi terbaru** hanya memuat payload dan versi server; tombol ini tidak
+  mengambil lock.
+- Version conflict: jangan langsung menimpa. Muat versi terbaru dan periksa
+  kembali perubahan lokal.
+- Internet putus: jangan hapus data browser. Setelah koneksi kembali, pilih
+  draft yang sama lalu tekan **Edit Data** dan **Simpan**.
+- Logout: tekan **Keluar**. Hanya browser/perangkat ini yang logout; aplikasi
+  mencoba melepas lock session ini terlebih dahulu.
+
+## Yang jangan dilakukan
+
+- Jangan mengisi satu Site/Subtipe yang sama dari beberapa perangkat bersamaan.
+- Jangan menutup pekerjaan tanpa mencoba **Selesai Mengedit**.
+- Jangan menghapus cache/browser data saat status masih tersimpan lokal atau
+  terjadi conflict.
+- Jangan meminta Site/Subtipe diubah langsung dari form. Laporkan ke pengelola
+  master data.
+
+Untuk pilot, uji login, pemilihan Site/Subtipe, pengisian, save, unduh, dua
+perangkat, dan usulan produk. Laporkan istilah yang membingungkan, data salah,
+error, tampilan sulit, atau langkah yang terlalu panjang.
+
+← [Mulai di Sini](MULAI-DI-SINI.md) | → [Troubleshooting](TROUBLESHOOTING.md)

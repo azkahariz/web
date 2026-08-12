@@ -1,39 +1,56 @@
 # Panduan Pengembang
 
-## Requirement
+Terakhir diperbarui: 12 Agustus 2026. Baca [SOP Perubahan Production](SOP-PERUBAHAN-PRODUCTION.md)
+sebelum mengubah aplikasi karena production sudah berisi data nyata.
 
-- Windows PowerShell
-- Node.js minimal 22.13
-- npm
-- akses project Supabase dan Vercel untuk pekerjaan deployment
-
-## Menjalankan project
+## Menjalankan lokal
 
 ```powershell
 cd Z:\collect-irm-data\web
 npm.cmd install
 npm.cmd run dev
+npm.cmd run check
 ```
 
-Local URL biasanya `http://localhost:3000`.
+Node.js minimal 22.13 diperlukan. Local URL biasanya `http://localhost:3000`.
 
 ## Environment
 
-Buat `.env.local` berdasarkan `.env.example`:
+Salin format dari `.env.example` ke `.env.local`; jangan commit nilainya.
 
-```text
-NEXT_PUBLIC_SUPABASE_URL=...
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=...
-SUPABASE_SECRET_KEY=...
-SUPABASE_DB_URL=...
-```
+- `NEXT_PUBLIC_SUPABASE_URL` dan `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` boleh
+  tersedia di browser/Vercel.
+- `SUPABASE_SECRET_KEY` hanya untuk route server dan script provisioning.
+- `SUPABASE_DB_URL` hanya untuk workflow database tepercaya seperti sync master
+  dan verification.
 
-- Dua variable `NEXT_PUBLIC_` boleh masuk browser dan diperlukan di Vercel.
-- `SUPABASE_SECRET_KEY` hanya server-side. Diperlukan Vercel untuk provision dan
-  reset password melalui route admin.
-- `SUPABASE_DB_URL` hanya workflow lokal tepercaya: sync dan verification.
+`.env.local`, `private-output/`, output credential, `sync-output/`, dan archive
+sudah diabaikan Git. Jangan memasukkan secret pada komponen client atau nama
+variable `NEXT_PUBLIC_*`.
 
-## Pemeriksaan
+## Struktur dan tanggung jawab
+
+| Fitur | File utama |
+| --- | --- |
+| Login dan akun | `app/LoginForm.tsx`, `app/lib/auth.ts`, `app/lib/supabase/` |
+| Form Station/Admin | `app/InventoryApp.tsx`, `app/SiteMetadataForm.tsx` |
+| Autosave, lock, version | `app/hooks/useServerDraft.ts`, `app/lib/server-draft.ts` |
+| Logout lokal | `app/lib/local-logout.ts` |
+| Admin | `app/admin/AdminDashboard.tsx`, `app/api/admin/` |
+| QC produk | `app/lib/product-qc.ts`, `app/hooks/useProductCatalog.ts` |
+| AWOS mapping | `app/lib/site-subtypes.ts` |
+| Field/Domain | `app/config/form-options.ts`, `app/lib/site-metadata.ts` |
+| CSV/JSON | `app/lib/inventory-export.ts`, `app/lib/download.ts` |
+| Bulk export | `app/lib/admin-export.ts`, `app/lib/admin-export-plan.ts` |
+| Master sync | `scripts/sync-master.mjs`, `scripts/master/` |
+| Schema/RLS/RPC | `supabase/migrations/` |
+| Regression | `tests/` |
+
+Gunakan helper bersama, bukan aturan baru dalam beberapa komponen. Contohnya,
+subtipe AWOS selalu melalui `getAllowedSiteSubtypes()` dan export Station/Admin
+selalu memakai `buildInventoryCsv()`.
+
+## Test dan verification
 
 ```powershell
 npm.cmd run check
@@ -42,121 +59,31 @@ npm.cmd run verify:admin-qc
 npm.cmd run verify:admin-api
 ```
 
-`check` menjalankan lint, tes, build kompatibilitas Vinext, dan build native
-Next.js. Verification database memakai fixture sementara yang di-rollback atau
-dibersihkan pada akhir proses.
+`check` menjalankan lint, test, build Vinext, dan build Next.js. Script
+verification database hanya dijalankan bila area terkait berubah.
+`verify:admin-api` memerlukan server lokal dan credential Super Admin lokal.
 
-## Index command
-
-```powershell
-npm.cmd install
-npm.cmd run dev
-npm.cmd run check
-npm.cmd run validate:master
-npm.cmd run sync:master
-npm.cmd run provision:station-accounts
-npm.cmd run provision:super-admin
-npm.cmd run verify:auth-autosave
-npm.cmd run verify:admin-qc
-npm.cmd run verify:admin-api
-```
-
-`verify:admin-api` memerlukan server lokal pada `http://127.0.0.1:3000` dan
-credential Super Admin lokal. Script membuat fixture sendiri dan membersihkannya.
-
-## Git dan Vercel
-
-```powershell
-git switch -c feature/nama-fitur
-git status
-git add <file-yang-relevan>
-git commit -m "feat: jelaskan perubahan"
-git push -u origin feature/nama-fitur
-```
-
-Push feature branch membuat Vercel Preview. Uji Preview sebelum merge ke
-`main`. Production berasal dari branch produksi yang dikonfigurasi di Vercel.
-
-## Migration Supabase
-
-Jangan mengedit migration yang sudah applied. Buat file baru di
-`supabase/migrations/`, lalu:
-
-```powershell
-npx.cmd supabase link --project-ref PROJECT_REF
-npx.cmd supabase db push --linked --dry-run
-npx.cmd supabase db push --linked
-```
-
-Setelah push, jalankan verification terkait.
-
-## Master data
+## Master dan provisioning
 
 ```powershell
 npm.cmd run validate:master
 npm.cmd run sync:master
-```
-
-Jangan edit `app/data.generated.json`. Edit Spreadsheet/CSV, lalu jalankan
-generator/sync. Lihat [MASTER-DATA-SUPABASE.md](MASTER-DATA-SUPABASE.md).
-
-## Provisioning
-
-```powershell
 npm.cmd run provision:station-accounts
 npm.cmd run provision:super-admin
 ```
 
-Hasil credential baru berada di `private-output/` dan tidak boleh di-commit.
-Provision Super Admin idempotent: rerun tidak mengubah password existing.
+Validasi tidak menulis database. Sync memperbarui master dari Spreadsheet/CSV;
+jangan edit `app/data.generated.json` atau UUID manual. Credential baru hanya
+ditulis ke `private-output/`. Provisioning tidak dipakai untuk reset data atau
+mengambil kembali password existing.
 
-## Tanggung jawab file
+## Migration dan deploy
 
-- `app/InventoryApp.tsx`: alur form station dan editor admin.
-- `app/hooks/useServerDraft.ts`: browse/edit, autosave, lock, dan version.
-- `app/hooks/useProductCatalog.ts`: generated fallback + katalog live Supabase.
-- `app/lib/product-qc.ts`: normalisasi, similarity, dan resolusi export.
-- `app/lib/site-subtypes.ts`: satu-satunya business rule subtype per Site,
-  termasuk family AWOS Kategori III.
-- `app/lib/inventory-export.ts`: serializer CSV/JSON bersama untuk Station dan
-  Admin; jangan membuat schema export khusus Admin.
-- `app/lib/admin-export.ts`: query batch read-only dan pembuatan ZIP Admin.
-- `app/lib/admin-export-plan.ts`: scope Station/Site/Subtipe serta filename.
-- `app/admin/`: dashboard dan editor Super Admin.
-- `app/api/admin/`: tindakan Admin server-only. Endpoint `submissions/ensure`
-  hanya dipanggil oleh aksi Edit eksplisit, bukan Buka atau Unduh.
-- `supabase/migrations/`: schema, RLS, dan RPC.
-- `scripts/master/`: validasi dan sync Spreadsheet/CSV.
-- `tests/`: kontrak yang tidak boleh rusak.
+Buat migration baru; jangan edit migration yang sudah applied. Uji Preview
+Vercel dari branch fitur, lakukan smoke test, lalu merge ke `main` setelah
+review. Production mengikuti branch yang dikonfigurasi Vercel.
 
-## Yang tidak boleh dilakukan
+Jangan ubah timeout lock lima menit, lifecycle Browse/Edit, format CSV/JSON,
+RLS, atau pagination data besar tanpa audit consumer dan regression test.
 
-- Jangan masukkan service/secret key ke komponen client atau prefix
-  `NEXT_PUBLIC_`.
-- Jangan hard delete master atau mengganti UUID existing.
-- Jangan bypass RLS dengan secret di browser.
-- Jangan mengubah timeout lock lima menit atau format CSV/JSON tanpa keputusan
-  produk yang eksplisit.
-- Jangan menjalankan sync master sebelum validasi CSV lulus.
-
-## Mapping subtype dan export
-
-Seluruh consumer wajib memakai `getAllowedSiteSubtypes()`. Untuk AWOS Kategori
-III, nama Site menentukan salah satu family AllWeather, Coastal, Degreane,
-Microstep, atau Vaisala. Variant unknown menghasilkan daftar kosong agar masalah
-master tampak, bukan fallback ke seluruh subtype AWOS.
-
-CSV Station, single Admin, dan bulk Admin semuanya memakai
-`buildInventoryCsv()`. Data tanpa submission menggunakan
-`createDefaultDraftPayload()` dan tidak ditulis ke database. ZIP dibuat di
-browser dengan dynamic import `fflate`, sehingga bundle Station tidak memuat ZIP
-library pada jalur normal.
-
-Query bulk mengambil submission dan proposal per stasiun, lalu melakukan mapping
-lokal dengan `site_id + site_subtype_id`; jangan membuat request per file. Semua
-query yang dapat melebihi batas PostgREST 1.000 row harus memakai
-`loadAllAdminRows()`, stable ordering, dan `.range()`.
-
-Lifecycle harus tetap terpisah: Browse/Buka/Unduh adalah read-only dan tidak
-menyentuh lock. Hanya Edit yang boleh membuat submission, acquire/touch/release
-lock, autosave, atau menaikkan version.
+← [Arsitektur dan Alur Data](ARSITEKTUR-DAN-ALUR-DATA.md) | → [Master Data](MASTER-DATA.md)

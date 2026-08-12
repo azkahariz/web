@@ -1,64 +1,36 @@
 # Aloptama Collect
 
-Aloptama Collect adalah aplikasi pendataan metadata lokasi dan perangkat
-Aloptama BMKG. Petugas stasiun mengisi data site miliknya, sedangkan Super
-Admin mengelola akun, lock, seluruh submission, dan pemeriksaan usulan produk.
+Aloptama Collect adalah aplikasi pengisian metadata Site dan inventaris
+perangkat Aloptama BMKG. Station User mengisi Site stasiunnya, sedangkan Super
+Admin mengelola akun, submission, lock, dan QC produk.
 
 Production: https://aloptama-collect.vercel.app
 
-## Mulai di sini
+Status dokumentasi: **Production / Pilot**. Aplikasi telah digunakan untuk
+data nyata. Jangan mengubah data, UUID, schema, atau secret tanpa prosedur
+yang benar.
 
-Pembaca baru mulai dari [docs/MULAI-DI-SINI.md](docs/MULAI-DI-SINI.md). Dokumen
-itu menjelaskan tujuan aplikasi, aliran data, jenis pengguna, istilah dasar,
-dan urutan dokumen berikutnya.
-
-Arsitektur ringkas:
+Arsitektur singkat:
 
 ```text
-Next.js di Vercel
-  + Supabase Auth dan PostgreSQL
-  + localStorage sebagai cadangan draf browser
-  + Spreadsheet/CSV sebagai sumber master
+Browser -> Next.js di Vercel -> Supabase Auth + PostgreSQL
+       -> localStorage sebagai cadangan draf
+Spreadsheet/CSV -> master data -> aplikasi dan Supabase
 ```
 
-## Quick start
+Mulai dari [docs/MULAI-DI-SINI.md](docs/MULAI-DI-SINI.md) untuk menentukan
+panduan sesuai peran.
+
+## Quick Start Developer
 
 ```powershell
 cd Z:\collect-irm-data\web
 npm.cmd install
 npm.cmd run dev
-```
-
-Buka `http://localhost:3000`.
-
-Pemeriksaan utama:
-
-```powershell
 npm.cmd run check
-npm.cmd run verify:auth-autosave
-npm.cmd run verify:admin-qc
-npm.cmd run verify:admin-api
 ```
 
-## Command penting
-
-- `npm.cmd run validate:master`: validasi CSV tanpa mengubah database.
-- `npm.cmd run sync:master`: sinkronkan Spreadsheet/CSV ke Supabase.
-- `npm.cmd run provision:station-accounts`: buat akun stasiun yang belum ada.
-- `npm.cmd run provision:super-admin`: buat Super Admin secara idempotent.
-
-## Environment dan keamanan
-
-Browser boleh menerima `NEXT_PUBLIC_SUPABASE_URL` dan
-`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`. `SUPABASE_SECRET_KEY` hanya boleh
-digunakan server atau script tepercaya. `SUPABASE_DB_URL` hanya untuk workflow
-lokal seperti migration, sync master, dan verification database.
-
-Jangan commit `.env.local`, `private-output/`, credential CSV, atau secret.
-
-## Git dan Vercel
-
-Kerjakan fitur di branch, jalankan seluruh pemeriksaan, push branch untuk
-Vercel Preview, uji Preview, lalu merge ke `main` setelah disetujui. Push ke
-`main` memicu deployment Production. Panduan lengkap ada di
-[docs/PANDUAN-PENGEMBANG.md](docs/PANDUAN-PENGEMBANG.md).
+Jangan commit `.env.local`, `private-output/`, credential CSV, atau nilai
+secret. Panduan pengembangan dan prosedur production ada di
+[docs/PANDUAN-PENGEMBANG.md](docs/PANDUAN-PENGEMBANG.md) dan
+[docs/SOP-PERUBAHAN-PRODUCTION.md](docs/SOP-PERUBAHAN-PRODUCTION.md).
