@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
-import { SOURCE_COLUMNS, SOURCE_FILES, sourceRows } from "../scripts/export-source-csv-remote.mjs";
+import { SOURCE_COLUMNS, SOURCE_FILES, assertRoundTrip, sourceRows } from "../scripts/export-source-csv-remote.mjs";
 
 const ids = {
   station: "11111111-1111-4111-8111-111111111111",
@@ -60,4 +60,18 @@ test("source exporter tidak menulis operational data atau generated resmi", asyn
   for (const table of ["stations", "sites", "site_types", "site_subtypes", "item_profiles", "items", "profile_items", "product_categories", "products"]) {
     assert.doesNotMatch(source, new RegExp(`public\\.${table}`));
   }
+});
+
+test("round-trip memakai contract generator: profileItems dan productCategories nested di master", () => {
+  const generated = {
+    stationSites: [{ stationId: "station", siteId: "site" }],
+    siteSubtypes: [{ siteTypeId: "type", subtypeId: "subtype" }],
+    barangByJenis: { Profile: ["Item"] },
+    products: [{}],
+    master: { profileItems: [{}], productCategories: [{}] },
+  };
+  assert.doesNotThrow(() => assertRoundTrip(generated, {
+    stations: 1, sites: 1, siteTypes: 1, siteSubtypes: 1, itemProfiles: 1,
+    items: 1, profileItems: 1, productCategories: 1, products: 1,
+  }));
 });

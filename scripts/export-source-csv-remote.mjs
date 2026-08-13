@@ -101,8 +101,8 @@ function assertRoundTrip(generated, counts) {
     siteSubtypes: generated.siteSubtypes?.length,
     itemProfiles: Object.keys(generated.barangByJenis ?? {}).length,
     items: new Set(Object.values(generated.barangByJenis ?? {}).flat()).size,
-    profileItems: generated.profileItems?.length,
-    productCategories: generated.productCategories?.length,
+    profileItems: generated.master?.profileItems?.length,
+    productCategories: generated.master?.productCategories?.length,
     products: generated.products?.length,
   };
   for (const [key, expected] of Object.entries(counts)) {
