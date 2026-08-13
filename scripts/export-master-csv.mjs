@@ -31,11 +31,27 @@ const EXPORT_DEFINITIONS = [
 ];
 
 function parseArgs(argv) {
+  const targetIndex = argv.indexOf("--target");
+  const target = targetIndex === -1 ? "local" : argv[targetIndex + 1];
+  if (!["local", "remote"].includes(target)) throw new Error("--target harus local atau remote.");
   const outputIndex = argv.indexOf("--output");
-  if (outputIndex === -1) return "exports/master";
+  if (outputIndex === -1) return { target, output: "exports/master" };
   const output = argv[outputIndex + 1];
   if (!output || output.startsWith("--")) throw new Error("--output membutuhkan folder tujuan.");
-  return output;
+  return { target, output };
+}
+
+function resolveDatabaseTarget(target, environment = process.env) {
+  if (target === "local") {
+    return { label: "LOCAL", url: DEFAULT_DATABASE_URL };
+  }
+  const url = environment.SUPABASE_DB_URL?.trim();
+  if (!url) throw new Error("SUPABASE_DB_URL remote tidak tersedia. Tambahkan ke .env.local atau set environment variable secara eksplisit.");
+  const parsed = new URL(url);
+  if (["localhost", "127.0.0.1", "::1"].includes(parsed.hostname)) {
+    throw new Error("SUPABASE_DB_URL remote harus menunjuk database remote, bukan Supabase lokal.");
+  }
+  return { label: "REMOTE", url };
 }
 
 function assertUnique(rows, idColumn, label) {
@@ -135,14 +151,15 @@ function combinedRows(data) {
 }
 
 async function main() {
-  const outputRoot = path.resolve(process.cwd(), parseArgs(process.argv.slice(2)));
-  const databaseUrl = process.env.SUPABASE_DB_URL || DEFAULT_DATABASE_URL;
+  const { target, output } = parseArgs(process.argv.slice(2));
+  const outputRoot = path.resolve(process.cwd(), output);
+  const { label, url: databaseUrl } = resolveDatabaseTarget(target);
   const parsedUrl = new URL(databaseUrl);
   const isLocal = ["localhost", "127.0.0.1"].includes(parsedUrl.hostname);
   const sql = postgres(databaseUrl, { max: 1, prepare: false, ssl: isLocal ? false : "require", connect_timeout: 15 });
 
   try {
-    console.log("Exporting master from Supabase (read-only)...");
+    console.log(`Exporting master from ${label} Supabase (read-only)...`);
     const data = await sql.begin(async (tx) => {
       await tx`set transaction read only`;
       return queryMaster(tx);
@@ -165,7 +182,7 @@ async function main() {
   }
 }
 
-export { DEFAULT_DATABASE_URL, EXPORT_DEFINITIONS, combinedRows, csv, parseArgs, queryMaster, validateMaster };
+export { DEFAULT_DATABASE_URL, EXPORT_DEFINITIONS, combinedRows, csv, parseArgs, queryMaster, resolveDatabaseTarget, validateMaster };
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   main().catch((error) => {

@@ -128,6 +128,17 @@ npm.cmd run export:master:csv
 npm.cmd run export:master:csv -- --output exports/master-snapshot
 ```
 
+Command remote harus dipilih secara eksplisit dan membaca `SUPABASE_DB_URL`
+dari `.env.local` atau environment sesi:
+
+```powershell
+npm.cmd run export:master:csv:remote
+```
+
+Command pertama selalu LOCAL dan mengabaikan `SUPABASE_DB_URL`. Command kedua
+selalu REMOTE, gagal bila URL tidak tersedia, dan menolak URL `127.0.0.1` atau
+localhost. Keduanya hanya menjalankan query baca dalam transaksi `READ ONLY`.
+
 Hasil ditulis ke `exports/master/` (diabaikan Git) sebagai CSV UTF-8 dengan BOM,
 escaping CSV standar, UUID, dan nama relasi. File per tabel mencakup sembilan
 tabel master: stations, sites, site_types, site_subtypes, item_profiles, items,

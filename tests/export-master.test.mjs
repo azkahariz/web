@@ -6,6 +6,7 @@ import {
   combinedRows,
   csv,
   parseArgs,
+  resolveDatabaseTarget,
   validateMaster,
 } from "../scripts/export-master-csv.mjs";
 
@@ -80,10 +81,19 @@ test("site Gudang tanpa subtype tetap masuk export gabungan", () => {
 });
 
 test("argument output dan definisi file export stabil", () => {
-  assert.equal(parseArgs([]), "exports/master");
-  assert.equal(parseArgs(["--output", "tmp/master"]), "tmp/master");
+  assert.deepEqual(parseArgs([]), { target: "local", output: "exports/master" });
+  assert.deepEqual(parseArgs(["--output", "tmp/master"]), { target: "local", output: "tmp/master" });
+  assert.deepEqual(parseArgs(["--target", "remote"]), { target: "remote", output: "exports/master" });
   assert.deepEqual(EXPORT_DEFINITIONS.map(([filename]) => filename), [
     "stations.csv", "sites.csv", "site_types.csv", "site_subtypes.csv", "item_profiles.csv",
     "items.csv", "profile_items.csv", "product_categories.csv", "products.csv", "nama-stasiun.csv",
   ]);
+});
+
+test("target export memisahkan local dan remote tanpa fallback", () => {
+  assert.equal(resolveDatabaseTarget("local", { SUPABASE_DB_URL: "postgresql://remote.example/db" }).label, "LOCAL");
+  assert.match(resolveDatabaseTarget("local").url, /127\.0\.0\.1:54322/);
+  assert.equal(resolveDatabaseTarget("remote", { SUPABASE_DB_URL: "postgresql://remote.example/db" }).label, "REMOTE");
+  assert.throws(() => resolveDatabaseTarget("remote", {}), /SUPABASE_DB_URL remote tidak tersedia/);
+  assert.throws(() => resolveDatabaseTarget("remote", { SUPABASE_DB_URL: "postgresql://127.0.0.1:54322/postgres" }), /bukan Supabase lokal/);
 });

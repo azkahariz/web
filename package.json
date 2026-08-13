@@ -15,6 +15,7 @@
     "validate:master": "node scripts/sync-master.mjs --validate-only",
     "sync:master": "node scripts/sync-master.mjs",
     "export:master:csv": "node scripts/export-master-csv.mjs",
+    "export:master:csv:remote": "node --env-file-if-exists=.env.local scripts/export-master-csv.mjs --target remote",
     "export:master": "npm run export:master:csv",
     "provision:station-accounts": "node --env-file-if-exists=.env.local scripts/provision-station-accounts.mjs",
     "provision:super-admin": "node --env-file-if-exists=.env.local scripts/provision-super-admin.mjs",
