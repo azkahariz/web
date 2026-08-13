@@ -37,3 +37,23 @@ Jangan commit `.env.local`, `private-output/`, credential CSV, atau nilai
 secret. Panduan pengembangan dan prosedur production ada di
 [docs/PANDUAN-PENGEMBANG.md](docs/PANDUAN-PENGEMBANG.md) dan
 [docs/SOP-PERUBAHAN-PRODUCTION.md](docs/SOP-PERUBAHAN-PRODUCTION.md).
+
+## Master data dan verification
+
+```powershell
+npm.cmd run validate:master
+npm.cmd run verify:warehouse
+npm.cmd run check
+npm.cmd run build
+```
+
+CSV master adalah input source; `app/data.generated.json` adalah generated
+artifact yang dilacak Git dan dipakai aplikasi; tabel master Supabase dipakai
+untuk operasi aplikasi. Untuk membaca kembali tabel master ke CSV tanpa write:
+
+```powershell
+npm.cmd run export:master:csv
+```
+
+Command export memakai database lokal secara default. Database remote hanya
+digunakan bila `SUPABASE_DB_URL` diberikan secara eksplisit.

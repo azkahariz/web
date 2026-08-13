@@ -1,6 +1,6 @@
 # Arsitektur dan Alur Data
 
-Terakhir diperbarui: 12 Agustus 2026.
+Terakhir diperbarui: 13 Agustus 2026.
 
 ```text
 Spreadsheet / CSV
@@ -19,6 +19,10 @@ Browser
 
 **Master data** menentukan pilihan yang tersedia: stasiun, Site, tipe,
 subtipe, profil barang, barang, dan produk. Sumber utamanya Spreadsheet/CSV.
+
+`app/data.generated.json` adalah hasil generate yang dilacak Git. Sinkronisasi
+master mengirim input CSV ke tabel master Supabase; export master hanya membaca
+tabel tersebut dan menghasilkan snapshot CSV, bukan perubahan balik otomatis.
 
 **Data pengisian** adalah submission per Station, Site, dan Subtipe. Submission
 menyimpan payload JSON, version, operator, dan informasi lock di Supabase.
@@ -72,7 +76,7 @@ serializer bersama. Bulk export membuat ZIP di browser dari data baca saja.
 ## Gudang Stasiun/Balai
 
 ```text
-Station/Balai -> Site Gudang -> Tipe Gudang -> Subtipe Gudang
+Station/Balai -> Site -> Tipe Site: Gudang -> Sub Tipe Site: Gudang
                -> Profil Barang: Gudang -> kategori yang dipilih user
                -> Product/QC -> physical units
 ```
@@ -87,6 +91,9 @@ unik berdasarkan `UnitDetail.id`; CSV menyertakan ID dan fungsi, sedangkan JSON
 menambahkan projection `physicalUnits` tanpa menghapus struktur `items` lama.
 Autosave, lock, version, RLS, QC, Admin monitoring, dan bulk export tetap reuse
 infrastruktur Submission existing.
+
+Gudang dimiliki dan ditampilkan dalam scope Station/Balai yang sama dengan Site
+biasa. Tidak ada alur Gudang yang hanya tersedia untuk Super Admin.
 
 Lihat [Master Data](MASTER-DATA.md), [Panduan QC Produk](PANDUAN-QC-PRODUK.md),
 dan [Panduan Pengembang](PANDUAN-PENGEMBANG.md).

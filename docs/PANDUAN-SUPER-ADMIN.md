@@ -27,6 +27,10 @@ Jumlah Site adalah jumlah Site unik dari master, bukan jumlah submission. Nama
 Site tetap tampil meskipun belum ada submission. Setiap Site ditampilkan untuk
 subtipe validnya; status menunjukkan apakah kombinasi itu sudah diisi.
 
+Bagian **Site berdasarkan Tipe Site** mengelompokkan `sites.site_type_id` ke
+`site_types`. AWOS Kategori III dihitung satu kali sebagai Site parent;
+subtipe TDZ, Mid, End Point, dan Station tidak menjadi empat Site.
+
 - **Buka**: baca snapshot server atau form default. Tidak ada lock, submission
   baru, maupun write database.
 - **Unduh CSV**: baca snapshot atau buat CSV default. Tidak ada lock atau write.

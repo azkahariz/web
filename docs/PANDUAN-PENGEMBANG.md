@@ -14,6 +14,20 @@ npm.cmd run check
 
 Node.js minimal 22.13 diperlukan. Local URL biasanya `http://localhost:3000`.
 
+## Workflow branch
+
+Gunakan alur berikut untuk perubahan baru:
+
+```text
+main -> feature branch -> implement -> validate/test/build -> commit
+     -> push -> Vercel Preview -> smoke test -> merge main
+     -> production smoke test -> hapus branch yang sudah merged
+```
+
+Branch bukan arsip permanen. History commit tetap tersimpan setelah branch
+yang sudah merged dihapus. Jangan menghapus branch yang masih memiliki commit
+unik atau pekerjaan aktif.
+
 ## Hosting dan deployment
 
 - Development: `http://localhost:3000` melalui `npm.cmd run dev`.
@@ -128,11 +142,38 @@ Script membuka transaksi `READ ONLY`, mengurutkan hasil secara deterministik,
 memeriksa UUID/FK, dan tidak memuat submission, lock, audit, QC, atau tabel
 operasional lain. Jangan menaruh URL berisi credential di source code atau log.
 
+### Source of truth
+
+Workflow master berjalan sebagai berikut:
+
+```text
+CSV/Spreadsheet master -> generator -> app/data.generated.json -> Supabase master tables
+Supabase master tables -> export:master:csv -> CSV snapshot read-only
+```
+
+CSV/Spreadsheet adalah input master. `data.generated.json` adalah generated
+artifact yang sengaja dilacak Git. Snapshot hasil export bukan input otomatis
+dan tidak mengubah source of truth. Data submission, lock, QC, dan audit adalah
+data operasional yang terpisah.
+
+### Warehouse verification
+
+```powershell
+npx.cmd supabase start
+npm.cmd run verify:warehouse
+```
+
+Verification default memakai Supabase lokal dan mengembalikan fixture database
+keadaan semula. Jangan memakai database production untuk regression test.
+
 ## Migration dan deploy
 
-Buat migration baru; jangan edit migration yang sudah applied. Uji Vercel
-Preview dari branch fitur, lakukan smoke test, lalu merge ke `main` setelah
-review. Production resmi adalah https://aloptama-collect.vercel.app.
+Buat migration baru; jangan edit migration yang sudah applied. Uji lokal dahulu,
+lalu periksa `migration list --linked` dan jalankan
+`db push --linked --dry-run`. Setelah review, terapkan ke environment yang
+sesuai dan lakukan smoke test. Uji Vercel Preview dari branch fitur, lalu merge
+ke `main` setelah review. Jangan menjalankan migration production dalam workflow
+housekeeping. Production resmi adalah https://aloptama-collect.vercel.app.
 
 Jangan ubah timeout lock lima menit, lifecycle Browse/Edit, format CSV/JSON,
 RLS, atau pagination data besar tanpa audit consumer dan regression test.

@@ -24,6 +24,9 @@ Akses resmi aplikasi: https://aloptama-collect.vercel.app
 7. Setelah selesai, tekan **Selesai Mengedit**. Aplikasi melakukan final save
    dan melepas lock untuk session ini.
 
+Status operasional Site dapat berupa **OPERATIONAL**, **TRIAL**, atau
+**INACTIVE** sesuai data yang tersedia pada form.
+
 Status **Tersimpan di server** berarti data sudah tersedia dari perangkat lain.
 Status **Tersimpan lokal** berarti draf masih aman di browser ini, tetapi belum
 berhasil dikirim ke server.
@@ -88,6 +91,8 @@ Lihat [Panduan QC Produk](PANDUAN-QC-PRODUK.md) untuk penjelasan status.
 3. Pilih atau usulkan Brand/Tipe melalui alur QC yang sama dengan Site biasa.
 4. Isi Nomor Seri, Kondisi, Tahun Pengadaan, Nama Kegiatan Pengadaan, dan Catatan
    untuk setiap unit. Metadata Aloptama dan Tahun Pasang tidak digunakan.
+   Kondisi Gudang memakai pilihan **Baik**; Site biasa memakai **Baik** atau
+   **Rusak**.
 5. Untuk sensor kombinasi, pilih Suhu + Kelembaban atau Kecepatan + Arah. Satu
    unit fisik tetap dicatat sekali walaupun memenuhi dua kategori.
 
