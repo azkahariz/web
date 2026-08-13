@@ -1,13 +1,12 @@
 # Aloptama Collect
 
-Aloptama Collect adalah aplikasi pengisian metadata Site dan inventaris
-perangkat Aloptama BMKG. Station User mengisi Site stasiunnya, sedangkan Super
-Admin mengelola akun, submission, lock, dan QC produk.
+Aloptama Collect adalah aplikasi untuk mengelola metadata Site dan inventaris
+perangkat Aloptama BMKG. Station User mengisi data Site sesuai stasiunnya,
+sedangkan Super Admin mengelola akun, submission, lock, dan QC produk.
 
 Production: https://aloptama-collect.vercel.app
 
-Hosting resmi: **Vercel**. ChatGPT Sites pernah dipakai pada tahap awal
-pengembangan, tetapi sudah dihentikan dan bukan target deployment repository.
+Hosting resmi: **Vercel**.
 
 Status dokumentasi: **Production / Pilot**. Aplikasi telah digunakan untuk
 data nyata. Jangan mengubah data, UUID, schema, atau secret tanpa prosedur
