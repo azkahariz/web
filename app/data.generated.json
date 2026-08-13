@@ -22984,8 +22984,11 @@
                              "site":  "AWOS All Weather Kat. 3  Hasanuddin",
                              "siteType":  "AWOS Kategori III",
                              "stationId":  "6b9aa698-d1f6-4eb5-9023-66f7eba90f47",
+                             "stationActive":  true,
                              "siteId":  "43072b8d-88ac-414e-8070-315714440ae3",
-                             "siteTypeId":  "20e3dd30-2334-4155-9986-77efdc04b145"
+                             "siteActive":  false,
+                             "siteTypeId":  "20e3dd30-2334-4155-9986-77efdc04b145",
+                             "siteTypeActive":  true
                          },
                          {
                              "station":  "Stasiun Meteorologi Sultan Hasanuddin - Maros",
@@ -24510,8 +24513,11 @@
                              "site":  "AWOS All Weather Kat. 3 Wamena - Jayawijaya",
                              "siteType":  "AWOS Kategori III",
                              "stationId":  "7120d270-9bd9-4b02-85d0-eba51d3fb60b",
+                             "stationActive":  true,
                              "siteId":  "b4ac404f-5673-4d2e-8588-1127dc0d6f1d",
-                             "siteTypeId":  "20e3dd30-2334-4155-9986-77efdc04b145"
+                             "siteActive":  false,
+                             "siteTypeId":  "20e3dd30-2334-4155-9986-77efdc04b145",
+                             "siteTypeActive":  true
                          },
                          {
                              "station":  "Stasiun Meteorologi Wamena - Jayawijaya",
