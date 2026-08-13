@@ -3,8 +3,9 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import postgres from "postgres";
 import { stringify } from "csv-stringify/sync";
+import { LOCAL_DATABASE_URL, resolveRemoteDatabaseUrl } from "./master/database-connection.mjs";
 
-const DEFAULT_DATABASE_URL = "postgresql://postgres:postgres@127.0.0.1:54322/postgres";
+const DEFAULT_DATABASE_URL = LOCAL_DATABASE_URL;
 const TABLE_SPECS = [
   ["stations", "stations", "station_id"],
   ["sites", "sites", "site_id"],
@@ -45,13 +46,7 @@ function resolveDatabaseTarget(target, environment = process.env) {
   if (target === "local") {
     return { label: "LOCAL", url: DEFAULT_DATABASE_URL };
   }
-  const url = environment.SUPABASE_DB_POOLER_URL?.trim() || environment.SUPABASE_DB_URL?.trim();
-  if (!url) throw new Error("SUPABASE_DB_URL remote tidak tersedia. Tambahkan ke .env.local atau set environment variable secara eksplisit.");
-  const parsed = new URL(url);
-  if (["localhost", "127.0.0.1", "::1"].includes(parsed.hostname)) {
-    throw new Error("SUPABASE_DB_URL remote harus menunjuk database remote, bukan Supabase lokal.");
-  }
-  return { label: "REMOTE", url };
+  return { label: "REMOTE", url: resolveRemoteDatabaseUrl(environment) };
 }
 
 function assertUnique(rows, idColumn, label) {

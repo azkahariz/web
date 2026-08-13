@@ -1,5 +1,6 @@
 import postgres from "postgres";
 import { naturalText } from "./source.mjs";
+import { databaseIsLocal } from "./database-connection.mjs";
 
 function blankStats() {
   return { inserted: 0, updated: 0, deactivated: 0, reactivated: 0, unchanged: 0 };
@@ -188,8 +189,7 @@ function tableConfigurations(registries) {
 }
 
 export async function synchronizeMaster(model, databaseUrl) {
-  const parsedUrl = new URL(databaseUrl);
-  const isLocal = ["localhost", "127.0.0.1"].includes(parsedUrl.hostname);
+  const isLocal = databaseIsLocal(databaseUrl);
   const sql = postgres(databaseUrl, {
     max: 1,
     prepare: false,

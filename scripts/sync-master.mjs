@@ -4,6 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 import { synchronizeMaster } from "./master/database.mjs";
+import { resolveRemoteDatabaseUrl } from "./master/database-connection.mjs";
 import { loadMasterSource, sourceCounts, writeSyncedCsv } from "./master/source.mjs";
 
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
@@ -58,10 +59,7 @@ try {
     process.exitCode = 0;
   } else {
     generateApplicationData();
-    const databaseUrl = process.env.SUPABASE_DB_URL;
-    if (!databaseUrl) {
-      throw new Error("SUPABASE_DB_URL belum tersedia. Isi di .env.local, lalu jalankan kembali npm.cmd run sync:master.");
-    }
+    const databaseUrl = resolveRemoteDatabaseUrl();
     const result = await synchronizeMaster(model, databaseUrl);
     const files = await writeSyncedCsv(model, outputRoot);
     printSyncSummary(result);
