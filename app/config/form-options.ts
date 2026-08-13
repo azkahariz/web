@@ -6,12 +6,17 @@
  * atau menghapus pilihan.
  */
 
-export const CONDITION_OPTIONS = [
+export const SITE_CONDITION_OPTIONS = [
   "Baik",
-  "Rusak ringan",
   "Rusak",
-  "Tidak beroperasi",
 ] as const;
+
+export const WAREHOUSE_CONDITION_OPTIONS = ["Baik"] as const;
+export const CONDITION_OPTIONS = SITE_CONDITION_OPTIONS;
+
+export function getConditionOptions(warehouseMode: boolean) {
+  return warehouseMode ? WAREHOUSE_CONDITION_OPTIONS : SITE_CONDITION_OPTIONS;
+}
 
 export const MOUNTING_MATERIALS = [
   "Besi galvanis",
@@ -62,7 +67,6 @@ export const OPERATIONAL_STATUS_OPTIONS = [
   "OPERATIONAL",
   "TRIAL",
   "INACTIVE",
-  "RETIRED",
 ] as const;
 
 export const MEASUREMENT_METHOD_OPTIONS = [
@@ -71,6 +75,7 @@ export const MEASUREMENT_METHOD_OPTIONS = [
   "Altimeter Analog",
   "Topographic Map",
   "Survey Barometric",
+  "Lainnya",
 ] as const;
 
 export const TRANSPORT_METHOD_OPTIONS = [

@@ -126,10 +126,11 @@ export default function SiteMetadataForm({ value, automatic, onChange, onReset }
           {value.ownershipStatus === "Lainnya" && <label>Status Kepemilikan Lainnya<input autoComplete="off" value={value.ownershipOther} onChange={(event) => update("ownershipOther", event.target.value)} /></label>}
           <label>Kode BMN (NUP)<input autoComplete="off" value={value.bmnCode} onChange={(event) => update("bmnCode", event.target.value)} placeholder="1.01.02.99.999.000804" /></label>
           <label>Tanggal Instalasi<input autoComplete="off" type="date" value={value.installationDate} onChange={(event) => update("installationDate", event.target.value)} /></label>
-          <label>Status Operasional
+          <label>Status
             <select value={value.operationalStatus} onChange={(event) => update("operationalStatus", event.target.value)}>
               <option value="">Pilih status</option>
               {OPERATIONAL_STATUS_OPTIONS.map((status) => <option key={status}>{status}</option>)}
+              {!OPERATIONAL_STATUS_OPTIONS.includes(value.operationalStatus as typeof OPERATIONAL_STATUS_OPTIONS[number]) && value.operationalStatus && <option>{value.operationalStatus}</option>}
             </select>
           </label>
         </div>
@@ -227,11 +228,13 @@ export default function SiteMetadataForm({ value, automatic, onChange, onReset }
           </label>
           <label>Elevasi (meter)<input autoComplete="off" inputMode="decimal" value={value.elevationMeters} onChange={(event) => update("elevationMeters", event.target.value.replace(",", "."))} placeholder="32" /></label>
           <label>Metode Ukur
-            <select value={value.measurementMethod} onChange={(event) => update("measurementMethod", event.target.value)}>
+            <select value={value.measurementMethod} onChange={(event) => onChange({ ...value, measurementMethod: event.target.value, measurementMethodOther: event.target.value === "Lainnya" ? value.measurementMethodOther : "" })}>
               <option value="">Pilih metode</option>
               {MEASUREMENT_METHOD_OPTIONS.map((method) => <option key={method}>{method}</option>)}
+              {!MEASUREMENT_METHOD_OPTIONS.includes(value.measurementMethod as typeof MEASUREMENT_METHOD_OPTIONS[number]) && value.measurementMethod && <option>{value.measurementMethod}</option>}
             </select>
           </label>
+          {value.measurementMethod === "Lainnya" && <label>Metode Ukur Lainnya<input autoComplete="off" value={value.measurementMethodOther} onChange={(event) => update("measurementMethodOther", event.target.value)} required /></label>}
           <label>Tanggal Ukur<input autoComplete="off" type="date" value={value.measurementDate} onChange={(event) => update("measurementDate", event.target.value)} /></label>
         </div>
       </details>

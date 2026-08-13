@@ -1,8 +1,7 @@
 import assert from "node:assert/strict";
 import postgres from "postgres";
 
-const databaseUrl = process.env.SUPABASE_DB_URL;
-if (!databaseUrl) throw new Error("SUPABASE_DB_URL wajib diisi untuk verifikasi Gudang.");
+const databaseUrl = process.env.SUPABASE_DB_URL || "postgresql://postgres:postgres@127.0.0.1:54322/postgres";
 
 const sql = postgres(databaseUrl, { max: 1 });
 const payload = {

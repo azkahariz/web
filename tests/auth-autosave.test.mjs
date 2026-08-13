@@ -90,6 +90,22 @@ test("migration membatasi stasiun dan menerapkan lock serta optimistic version",
   assert.match(sql, /revoke all on table public\.submissions from public, anon, authenticated/);
 });
 
+test("Station User hanya memfilter Site miliknya dan Gudang mengikuti scope yang sama", async () => {
+  const [inventory, page, adminPage, sql] = await Promise.all([
+    readFile(new URL("../app/InventoryApp.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/admin/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../supabase/migrations/20260810010000_station_auth_autosave.sql", import.meta.url), "utf8"),
+  ]);
+  assert.match(inventory, /data\.stationSites\.filter\(\(row\) => row\.stationId === account\.stationId\)/);
+  assert.match(inventory, /isWarehouseContext\(data, selectedSite, selectedSubtype\)/);
+  assert.match(page, /stationId: row\.station_id/);
+  assert.match(adminPage, /from\("super_admins"\)/);
+  assert.match(adminPage, /<AdminDashboard username=\{admin\.username\}/);
+  assert.match(sql, /site\.station_id = v_station_id/);
+  assert.match(sql, /subtype\.site_type_id = site\.site_type_id/);
+});
+
 test("autosave memakai debounce, session tab, dan touch berbasis aktivitas", async () => {
   const [hook, storage] = await Promise.all([
     readFile(new URL("../app/hooks/useServerDraft.ts", import.meta.url), "utf8"),

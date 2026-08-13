@@ -25,6 +25,7 @@ export type SiteMetadata = {
   longitude: string;
   elevationMeters: string;
   measurementMethod: string;
+  measurementMethodOther: string;
   measurementDate: string;
   simNumber: string;
   transportMethods: string[];

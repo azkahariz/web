@@ -1,4 +1,4 @@
-import type { InstalledItem, UnitDetail } from "../types/inventory";
+import type { InstalledItem, Inventory, UnitDetail } from "../types/inventory";
 
 export function isMountingCategory(category: string | null): boolean {
   return Boolean(category && /^mounting\b/i.test(category));
@@ -35,4 +35,15 @@ export function getItemUnits(item: InstalledItem): UnitDetail[] {
     procurementActivity: "",
     notes: index === 0 ? item.notes ?? "" : "",
   }));
+}
+
+export function normalizeWarehouseConditions(inventory: Inventory): Inventory {
+  return Object.fromEntries(Object.entries(inventory).map(([category, items]) => [
+    category,
+    items.map((item) => ({
+      ...item,
+      condition: "Baik" as const,
+      units: item.units?.map((unit) => ({ ...unit, condition: "Baik" as const })),
+    })),
+  ]));
 }

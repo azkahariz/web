@@ -19,7 +19,7 @@
     "verify:auth-autosave": "node --env-file-if-exists=.env.local scripts/verify-auth-autosave.mjs",
     "verify:admin-qc": "node --env-file-if-exists=.env.local scripts/verify-admin-qc.mjs",
     "verify:admin-submissions": "node --env-file-if-exists=.env.local scripts/verify-admin-submissions.mjs",
-    "verify:warehouse": "node --env-file-if-exists=.env.local scripts/verify-warehouse.mjs",
+    "verify:warehouse": "node scripts/verify-warehouse.mjs",
     "verify:admin-api": "node --env-file-if-exists=.env.local scripts/verify-admin-api.mjs"
   },
   "dependencies": {

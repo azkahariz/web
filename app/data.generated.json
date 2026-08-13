@@ -4,32 +4,44 @@
                              "station":  "Balai BMKG I",
                              "site":  "Gudang Balai BMKG I",
                              "siteType":  "Gudang",
+                             "stationId":  "bb99a077-12fa-4856-9662-9a46239b90fc",
                              "stationActive":  true,
+                             "siteId":  "d0e7a15b-2714-4273-9b02-0ef9d2f61b8d",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
                              "station":  "Balai BMKG II",
                              "site":  "Gudang Balai BMKG II",
                              "siteType":  "Gudang",
+                             "stationId":  "459bd7ed-2304-4b61-8f6c-146e6fa49598",
                              "stationActive":  true,
+                             "siteId":  "43968a00-543a-475c-bf49-05b9f3f4eb7d",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
                              "station":  "Balai BMKG III",
                              "site":  "Gudang Balai BMKG III",
                              "siteType":  "Gudang",
+                             "stationId":  "c86cd1f3-77d5-42dd-bbef-eb5a933cc4ce",
                              "stationActive":  true,
+                             "siteId":  "183b9da3-af67-43cc-9998-8d49dcc70071",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
                              "station":  "Balai BMKG IV",
                              "site":  "Gudang Balai BMKG IV",
                              "siteType":  "Gudang",
+                             "stationId":  "4f788db3-d074-4f39-9aa0-4047e0e4c786",
                              "stationActive":  true,
+                             "siteId":  "6758be0e-fdd6-480d-923f-f2e2dc193d66",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -399,8 +411,11 @@
                              "station":  "Stasiun GAW Lore Lindu Bariri",
                              "site":  "Gudang Stasiun GAW Lore Lindu Bariri",
                              "siteType":  "Gudang",
+                             "stationId":  "2d251d56-f6e0-41db-b312-03b2a14da2e7",
                              "stationActive":  true,
+                             "siteId":  "dd204073-0652-4a79-9c94-a02c5b9cdc0d",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -616,8 +631,11 @@
                              "station":  "Stasiun Geofisika Aceh Besar",
                              "site":  "Gudang Stasiun Geofisika Aceh Besar",
                              "siteType":  "Gudang",
+                             "stationId":  "31b95af1-020f-463f-89bf-1ca67b4e18f6",
                              "stationActive":  true,
+                             "siteId":  "66ecd941-f9fa-4841-a10b-f1685aee4c84",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -789,8 +807,11 @@
                              "station":  "Stasiun Geofisika Aceh Selatan",
                              "site":  "Gudang Stasiun Geofisika Aceh Selatan",
                              "siteType":  "Gudang",
+                             "stationId":  "596c70d6-e3ff-46d2-92c4-c6d5f7378bd0",
                              "stationActive":  true,
+                             "siteId":  "89f6b613-9bfc-4400-9595-ede5c2bd55f3",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -874,8 +895,11 @@
                              "station":  "Stasiun Geofisika Alor",
                              "site":  "Gudang Stasiun Geofisika Alor",
                              "siteType":  "Gudang",
+                             "stationId":  "b10fbeca-38d0-4492-86dc-7bce7de1c782",
                              "stationActive":  true,
+                             "siteId":  "b7a33f5e-4fca-43d4-ad72-92555b8bbb9f",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -1091,8 +1115,11 @@
                              "station":  "Stasiun Geofisika Ambon",
                              "site":  "Gudang Stasiun Geofisika Ambon",
                              "siteType":  "Gudang",
+                             "stationId":  "21274efb-842c-4903-90fc-b197c2c9f194",
                              "stationActive":  true,
+                             "siteId":  "f6fbf2d0-b332-4855-ac09-6398fb4fe401",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -1341,8 +1368,11 @@
                              "station":  "Stasiun Geofisika Balikpapan",
                              "site":  "Gudang Stasiun Geofisika Balikpapan",
                              "siteType":  "Gudang",
+                             "stationId":  "4f506b21-79c4-46ac-810c-f51d3e040c73",
                              "stationActive":  true,
+                             "siteId":  "bd0fdb04-fa3e-447c-bdf2-f4d507b2dd66",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -1613,8 +1643,11 @@
                              "station":  "Stasiun Geofisika Bandung",
                              "site":  "Gudang Stasiun Geofisika Bandung",
                              "siteType":  "Gudang",
+                             "stationId":  "bc24e858-1c38-47ce-af8e-cb676edd9969",
                              "stationActive":  true,
+                             "siteId":  "4633d7d0-8037-49c4-b2e1-ed15017e5c4e",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -1918,8 +1951,11 @@
                              "station":  "Stasiun Geofisika Banjarnegara",
                              "site":  "Gudang Stasiun Geofisika Banjarnegara",
                              "siteType":  "Gudang",
+                             "stationId":  "580ddc80-d41f-44f7-bb4d-fe210f7934fe",
                              "stationActive":  true,
+                             "siteId":  "9f3fc920-fb49-4ca6-b922-6f011eb1414a",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -2113,8 +2149,11 @@
                              "station":  "Stasiun Geofisika Deli Serdang",
                              "site":  "Gudang Stasiun Geofisika Deli Serdang",
                              "siteType":  "Gudang",
+                             "stationId":  "6728f174-2a5f-4106-a5a6-6380b9bfabd9",
                              "stationActive":  true,
+                             "siteId":  "27cc9748-1086-4caf-9028-bfab6c174e14",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -2264,8 +2303,11 @@
                              "station":  "Stasiun Geofisika Denpasar",
                              "site":  "Gudang Stasiun Geofisika Denpasar",
                              "siteType":  "Gudang",
+                             "stationId":  "1f5db5bf-b838-47dd-a184-7dc963b1c5b5",
                              "stationActive":  true,
+                             "siteId":  "b4bc5e5a-f2fb-4e9c-8ea9-0186258b9125",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -2327,8 +2369,11 @@
                              "station":  "Stasiun Geofisika Gorontalo",
                              "site":  "Gudang Stasiun Geofisika Gorontalo",
                              "siteType":  "Gudang",
+                             "stationId":  "1e873bd6-98d7-4d63-9e4d-0d5ab14bdb80",
                              "stationActive":  true,
+                             "siteId":  "500022da-43c3-4f55-95aa-3ebdd602e6d6",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -2599,8 +2644,11 @@
                              "station":  "Stasiun Geofisika Gowa",
                              "site":  "Gudang Stasiun Geofisika Gowa",
                              "siteType":  "Gudang",
+                             "stationId":  "521ecac3-2edc-4236-bcd5-82c24caf8608",
                              "stationActive":  true,
+                             "siteId":  "33f5ef39-d88b-442c-ac73-9b886ca3964e",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -2717,8 +2765,11 @@
                              "station":  "Stasiun Geofisika Gunungsitoli",
                              "site":  "Gudang Stasiun Geofisika Gunungsitoli",
                              "siteType":  "Gudang",
+                             "stationId":  "9e9133c6-d039-47f6-9ca8-29d68a1f50c2",
                              "stationActive":  true,
+                             "siteId":  "e946b861-6e24-49c2-b2e3-f35a7734362f",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -3011,8 +3062,11 @@
                              "station":  "Stasiun Geofisika Jayapura",
                              "site":  "Gudang Stasiun Geofisika Jayapura",
                              "siteType":  "Gudang",
+                             "stationId":  "61067e35-e000-4d70-9947-96d9caaf12c8",
                              "stationActive":  true,
+                             "siteId":  "c4073235-5db1-45cb-b35e-f3e7d1be1edb",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -3228,8 +3282,11 @@
                              "station":  "Stasiun Geofisika Kendari",
                              "site":  "Gudang Stasiun Geofisika Kendari",
                              "siteType":  "Gudang",
+                             "stationId":  "39715e75-42d1-4351-b65a-6aa66ce4ca4d",
                              "stationActive":  true,
+                             "siteId":  "20ac326b-6fc6-4f03-9624-16b15de5635f",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -3478,8 +3535,11 @@
                              "station":  "Stasiun Geofisika Kepahiang",
                              "site":  "Gudang Stasiun Geofisika Kepahiang",
                              "siteType":  "Gudang",
+                             "stationId":  "14b5cf0d-4b20-42f0-8c52-751ff2e1bd30",
                              "stationActive":  true,
+                             "siteId":  "2a8a10df-d5c8-40f6-b6e1-c15ccff13b73",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -3750,8 +3810,11 @@
                              "station":  "Stasiun Geofisika Kupang",
                              "site":  "Gudang Stasiun Geofisika Kupang",
                              "siteType":  "Gudang",
+                             "stationId":  "49d73328-2b04-4c5a-a056-1a02982667cd",
                              "stationActive":  true,
+                             "siteId":  "ec1cd2d0-069f-4b15-bcab-ec33b596ee0c",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -4011,8 +4074,11 @@
                              "station":  "Stasiun Geofisika Lampung Utara",
                              "site":  "Gudang Stasiun Geofisika Lampung Utara",
                              "siteType":  "Gudang",
+                             "stationId":  "fa1ea67f-5c22-44ef-a797-d7e894f1934a",
                              "stationActive":  true,
+                             "siteId":  "4891b23f-b686-45f7-8844-6b15be85dca7",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -4129,8 +4195,11 @@
                              "station":  "Stasiun Geofisika Malang",
                              "site":  "Gudang Stasiun Geofisika Malang",
                              "siteType":  "Gudang",
+                             "stationId":  "74b6a44a-a105-4cdf-96b5-4a25da6475f0",
                              "stationActive":  true,
+                             "siteId":  "c85d3238-ab5d-4511-bc70-00744ade426e",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -4192,8 +4261,11 @@
                              "station":  "Stasiun Geofisika Maluku Tenggara Barat",
                              "site":  "Gudang Stasiun Geofisika Maluku Tenggara Barat",
                              "siteType":  "Gudang",
+                             "stationId":  "61e82d86-5a9a-40aa-a604-a57658b9de85",
                              "stationActive":  true,
+                             "siteId":  "dbdf1ff2-65f0-41f4-9dc1-cdfb4663856c",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -4332,8 +4404,11 @@
                              "station":  "Stasiun Geofisika Manado",
                              "site":  "Gudang Stasiun Geofisika Manado",
                              "siteType":  "Gudang",
+                             "stationId":  "dc9c71fc-c200-4c55-a1fb-5dcbac0dfb8f",
                              "stationActive":  true,
+                             "siteId":  "670149e1-b43a-471f-a55a-62dac41d75d1",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -4571,8 +4646,11 @@
                              "station":  "Stasiun Geofisika Mataram",
                              "site":  "Gudang Stasiun Geofisika Mataram",
                              "siteType":  "Gudang",
+                             "stationId":  "949a17ed-a1c4-42c4-9b1a-f3a27a0b35e4",
                              "stationActive":  true,
+                             "siteId":  "127001bb-f1e7-41b8-9e64-2ff4d7e187ac",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -4678,8 +4756,11 @@
                              "station":  "Stasiun Geofisika Nabire",
                              "site":  "Gudang Stasiun Geofisika Nabire",
                              "siteType":  "Gudang",
+                             "stationId":  "a0eb1755-e7e1-456c-918d-0cfcce1f5923",
                              "stationActive":  true,
+                             "siteId":  "618ee552-4246-4070-beaa-0c7f92567b50",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -4785,8 +4866,11 @@
                              "station":  "Stasiun Geofisika Nganjuk",
                              "site":  "Gudang Stasiun Geofisika Nganjuk",
                              "siteType":  "Gudang",
+                             "stationId":  "90f5c648-1e8c-4c99-aaf2-eff45df0caf3",
                              "stationActive":  true,
+                             "siteId":  "ba767c3b-461e-4793-9a0a-b8608014427c",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -5222,8 +5306,11 @@
                              "station":  "Stasiun Geofisika Padang Panjang",
                              "site":  "Gudang Stasiun Geofisika Padang Panjang",
                              "siteType":  "Gudang",
+                             "stationId":  "70157da2-899d-49c8-972d-f4a736695586",
                              "stationActive":  true,
+                             "siteId":  "dbe4050d-5eaf-4c21-ad4e-44ca21fa5125",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -5637,8 +5724,11 @@
                              "station":  "Stasiun Geofisika Palu",
                              "site":  "Gudang Stasiun Geofisika Palu",
                              "siteType":  "Gudang",
+                             "stationId":  "989c9aa0-7ce4-49bf-824e-1afa3fc241e3",
                              "stationActive":  true,
+                             "siteId":  "ca0b625e-fe9b-462d-a04f-69f8c5e2cd53",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -5810,8 +5900,11 @@
                              "station":  "Stasiun Geofisika Pasuruan",
                              "site":  "Gudang Stasiun Geofisika Pasuruan",
                              "siteType":  "Gudang",
+                             "stationId":  "c749726b-e65d-4062-bc15-172534b1e5e2",
                              "stationActive":  true,
+                             "siteId":  "586d4d93-192a-4f30-aa66-20071a6baccc",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -5961,8 +6054,11 @@
                              "station":  "Stasiun Geofisika Sleman",
                              "site":  "Gudang Stasiun Geofisika Sleman",
                              "siteType":  "Gudang",
+                             "stationId":  "9dd296dd-1c27-4f64-aaeb-d3bf634e0119",
                              "stationActive":  true,
+                             "siteId":  "8e04f757-5ac7-4355-857b-10f064637b49",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -6167,8 +6263,11 @@
                              "station":  "Stasiun Geofisika Sorong",
                              "site":  "Gudang Stasiun Geofisika Sorong",
                              "siteType":  "Gudang",
+                             "stationId":  "61731923-20c3-40e0-878e-a784df0f107c",
                              "stationActive":  true,
+                             "siteId":  "5a64775d-9230-4700-963f-3c90c45c428c",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -6307,8 +6406,11 @@
                              "station":  "Stasiun Geofisika Sukabumi",
                              "site":  "Gudang Stasiun Geofisika Sukabumi",
                              "siteType":  "Gudang",
+                             "stationId":  "4400fc67-e707-4b8a-820c-fcdd11a19029",
                              "stationActive":  true,
+                             "siteId":  "2ab6828e-ffa4-47af-8030-603e152c082a",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -6403,8 +6505,11 @@
                              "station":  "Stasiun Geofisika Sumba Timur",
                              "site":  "Gudang Stasiun Geofisika Sumba Timur",
                              "siteType":  "Gudang",
+                             "stationId":  "cec5603f-1413-4ed2-9ed3-b5d1e788fec8",
                              "stationActive":  true,
+                             "siteId":  "db5a0c39-5049-449a-8876-f11936939fbf",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -6543,8 +6648,11 @@
                              "station":  "Stasiun Geofisika Tangerang",
                              "site":  "Gudang Stasiun Geofisika Tangerang",
                              "siteType":  "Gudang",
+                             "stationId":  "1d50363d-b7d8-4ead-beaf-db7ba581eaf5",
                              "stationActive":  true,
+                             "siteId":  "21d6db1a-950e-4af7-83b0-b7577d179a8f",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -6738,8 +6846,11 @@
                              "station":  "Stasiun Geofisika Ternate",
                              "site":  "Gudang Stasiun Geofisika Ternate",
                              "siteType":  "Gudang",
+                             "stationId":  "bfe3f4f4-f88d-4ee1-9150-7ca49929221f",
                              "stationActive":  true,
+                             "siteId":  "ef7297aa-720e-4866-9a27-60c830d2a9fd",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -7120,8 +7231,11 @@
                              "station":  "Stasiun Klimatologi Bali",
                              "site":  "Gudang Stasiun Klimatologi Bali",
                              "siteType":  "Gudang",
+                             "stationId":  "3f9f593f-bcba-4e25-b6bc-46aaf595666e",
                              "stationActive":  true,
+                             "siteId":  "c20793d2-9a8e-44ff-9aeb-ca2f1cae656f",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -7755,8 +7869,11 @@
                              "station":  "Stasiun Klimatologi Banten",
                              "site":  "Gudang Stasiun Klimatologi Banten",
                              "siteType":  "Gudang",
+                             "stationId":  "b423f827-185d-403a-b54f-7f042a12f80d",
                              "stationActive":  true,
+                             "siteId":  "65393e40-eac2-499c-9bf8-fb779c955942",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -8060,8 +8177,11 @@
                              "station":  "Stasiun Klimatologi Bengkulu",
                              "site":  "Gudang Stasiun Klimatologi Bengkulu",
                              "siteType":  "Gudang",
+                             "stationId":  "531c0c70-2b0b-4b0d-ab6a-a8fb5eab8827",
                              "stationActive":  true,
+                             "siteId":  "c273946e-8bab-4918-be78-2c5b2b211fe1",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -8310,8 +8430,11 @@
                              "station":  "Stasiun Klimatologi DI Yogyakarta",
                              "site":  "Gudang Stasiun Klimatologi DI Yogyakarta",
                              "siteType":  "Gudang",
+                             "stationId":  "b03fd03b-91a0-4b3d-b80a-4c37081b321e",
                              "stationActive":  true,
+                             "siteId":  "cfe0d180-fcb8-4965-8592-04c0c1fc4536",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -8527,8 +8650,11 @@
                              "station":  "Stasiun Klimatologi Gorontalo",
                              "site":  "Gudang Stasiun Klimatologi Gorontalo",
                              "siteType":  "Gudang",
+                             "stationId":  "ca6e0472-b649-4f76-9131-b23ea657673d",
                              "stationActive":  true,
+                             "siteId":  "009701a6-1b20-4279-ac91-740a0881e48d",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -8975,8 +9101,11 @@
                              "station":  "Stasiun Klimatologi Jambi",
                              "site":  "Gudang Stasiun Klimatologi Jambi",
                              "siteType":  "Gudang",
+                             "stationId":  "a52f6064-3281-4e72-a28a-579fc7e791c1",
                              "stationActive":  true,
+                             "siteId":  "d4d00ba7-1596-4f9e-9102-61bb766ad3b1",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -10072,8 +10201,11 @@
                              "station":  "Stasiun Klimatologi Jawa Barat",
                              "site":  "Gudang Stasiun Klimatologi Jawa Barat",
                              "siteType":  "Gudang",
+                             "stationId":  "964a900b-7945-4063-aeca-e3bf30854b55",
                              "stationActive":  true,
+                             "siteId":  "d8da87ac-a52c-42f0-b4ea-b9f6f15bc9e0",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -11081,8 +11213,11 @@
                              "station":  "Stasiun Klimatologi Jawa Tengah",
                              "site":  "Gudang Stasiun Klimatologi Jawa Tengah",
                              "siteType":  "Gudang",
+                             "stationId":  "a7052d46-bd4c-44ae-bf84-0aa84dabc235",
                              "stationActive":  true,
+                             "siteId":  "b15a36db-ad22-40a5-8d99-aea7410e2d4f",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -12343,8 +12478,11 @@
                              "station":  "Stasiun Klimatologi Jawa Timur",
                              "site":  "Gudang Stasiun Klimatologi Jawa Timur",
                              "siteType":  "Gudang",
+                             "stationId":  "fe8dbb22-e8ba-43c0-afa4-47b0876c4285",
                              "stationActive":  true,
+                             "siteId":  "93e3d9bf-c1c1-46bf-b7b7-c97380773ddc",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -12725,8 +12863,11 @@
                              "station":  "Stasiun Klimatologi Kalimantan Barat",
                              "site":  "Gudang Stasiun Klimatologi Kalimantan Barat",
                              "siteType":  "Gudang",
+                             "stationId":  "95b1352d-111d-446a-8e8e-60a4d329f2ab",
                              "stationActive":  true,
+                             "siteId":  "419f4538-3569-4d5e-b733-95e4917d4c56",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -13140,8 +13281,11 @@
                              "station":  "Stasiun Klimatologi Kalimantan Selatan",
                              "site":  "Gudang Stasiun Klimatologi Kalimantan Selatan",
                              "siteType":  "Gudang",
+                             "stationId":  "57e6035c-144a-4071-86ed-bac10e4b2a02",
                              "stationActive":  true,
+                             "siteId":  "de973c90-8dd1-464a-8ba4-768827a68c11",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -13357,8 +13501,11 @@
                              "station":  "Stasiun Klimatologi Kepulauan Bangka Belitung",
                              "site":  "Gudang Stasiun Klimatologi Kepulauan Bangka Belitung",
                              "siteType":  "Gudang",
+                             "stationId":  "34f3efa1-6ad9-4fb9-a186-28fae63871fc",
                              "stationActive":  true,
+                             "siteId":  "06c9d71c-0e21-439b-8fdc-6f56893ef0ad",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -13915,8 +14062,11 @@
                              "station":  "Stasiun Klimatologi Lampung",
                              "site":  "Gudang Stasiun Klimatologi Lampung",
                              "siteType":  "Gudang",
+                             "stationId":  "cb284f29-1e0b-4e1c-a845-8c88bd96a513",
                              "stationActive":  true,
+                             "siteId":  "c6001e45-81f2-454a-a92e-0df959dfb9f0",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -14110,8 +14260,11 @@
                              "station":  "Stasiun Klimatologi Maluku",
                              "site":  "Gudang Stasiun Klimatologi Maluku",
                              "siteType":  "Gudang",
+                             "stationId":  "e77c20ac-7718-40b6-b999-b85c93b7bcd7",
                              "stationActive":  true,
+                             "siteId":  "68f9b5d8-0d15-42e9-9a77-f1ce22ce5061",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -14129,8 +14282,11 @@
                              "station":  "Stasiun Klimatologi Merauke",
                              "site":  "Gudang Stasiun Klimatologi Merauke",
                              "siteType":  "Gudang",
+                             "stationId":  "faaed66f-3bb6-4e02-abcd-a67da308f35e",
                              "stationActive":  true,
+                             "siteId":  "c5ff114d-98af-4eab-841d-a02d032077c6",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -14478,8 +14634,11 @@
                              "station":  "Stasiun Klimatologi Nanggroe Aceh Darusalam",
                              "site":  "Gudang Stasiun Klimatologi Nanggroe Aceh Darusalam",
                              "siteType":  "Gudang",
+                             "stationId":  "9b19e368-69a6-492b-b569-57a463c5c83d",
                              "stationActive":  true,
+                             "siteId":  "6be7e76a-e653-4f8a-98d8-f772cb154bd5",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -14970,8 +15129,11 @@
                              "station":  "Stasiun Klimatologi Nusa Tenggara Barat",
                              "site":  "Gudang Stasiun Klimatologi Nusa Tenggara Barat",
                              "siteType":  "Gudang",
+                             "stationId":  "93042261-4800-472f-959b-136063311987",
                              "stationActive":  true,
+                             "siteId":  "4325a019-debf-449d-b49e-0d560de72fa5",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -15319,8 +15481,11 @@
                              "station":  "Stasiun Klimatologi Nusa Tenggara Timur",
                              "site":  "Gudang Stasiun Klimatologi Nusa Tenggara Timur",
                              "siteType":  "Gudang",
+                             "stationId":  "972f316e-e04c-496f-92c6-25ad3bd406c2",
                              "stationActive":  true,
+                             "siteId":  "1ee19859-c160-45a4-9077-1f87ab8e95b7",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -15734,8 +15899,11 @@
                              "station":  "Stasiun Klimatologi Papua",
                              "site":  "Gudang Stasiun Klimatologi Papua",
                              "siteType":  "Gudang",
+                             "stationId":  "81dd1f94-f5b3-4b7a-a636-df65f1e329ff",
                              "stationActive":  true,
+                             "siteId":  "abaf1e31-1eeb-49f4-94db-cec0b46ea2b9",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -15907,8 +16075,11 @@
                              "station":  "Stasiun Klimatologi Papua Barat",
                              "site":  "Gudang Stasiun Klimatologi Papua Barat",
                              "siteType":  "Gudang",
+                             "stationId":  "37ec35ac-3d6b-4a40-9bec-5548aae7b8e7",
                              "stationActive":  true,
+                             "siteId":  "b70034a9-fa33-4cec-90dc-404cfce3fd7e",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -16256,8 +16427,11 @@
                              "station":  "Stasiun Klimatologi Riau",
                              "site":  "Gudang Stasiun Klimatologi Riau",
                              "siteType":  "Gudang",
+                             "stationId":  "bc636261-1139-42f2-8492-15290eaf64e2",
                              "stationActive":  true,
+                             "siteId":  "ff8bd2fa-a851-4e20-bc04-30210b7cd6ff",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -16704,8 +16878,11 @@
                              "station":  "Stasiun Klimatologi Sulawesi Selatan",
                              "site":  "Gudang Stasiun Klimatologi Sulawesi Selatan",
                              "siteType":  "Gudang",
+                             "stationId":  "7528c97b-5d70-4569-bb69-d673a5b597cb",
                              "stationActive":  true,
+                             "siteId":  "68ae6639-aa1f-4f14-9e0b-204e63287994",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -16998,8 +17175,11 @@
                              "station":  "Stasiun Klimatologi Sulawesi Tenggara",
                              "site":  "Gudang Stasiun Klimatologi Sulawesi Tenggara",
                              "siteType":  "Gudang",
+                             "stationId":  "bc3e1ef9-eb18-466d-b2b1-b883e7d2124f",
                              "stationActive":  true,
+                             "siteId":  "a609bf7a-d8c6-41f9-a6fd-7ffda332ecbc",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -17292,8 +17472,11 @@
                              "station":  "Stasiun Klimatologi Sulawesi Utara",
                              "site":  "Gudang Stasiun Klimatologi Sulawesi Utara",
                              "siteType":  "Gudang",
+                             "stationId":  "18a2ce98-2031-442d-bfd7-4577212b61d9",
                              "stationActive":  true,
+                             "siteId":  "4dc4322a-13ba-4151-8d35-365939cf37a4",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -17564,8 +17747,11 @@
                              "station":  "Stasiun Klimatologi Sumatera Barat",
                              "site":  "Gudang Stasiun Klimatologi Sumatera Barat",
                              "siteType":  "Gudang",
+                             "stationId":  "1e54b0dc-31d7-4b0c-bc35-8654682c5fc1",
                              "stationActive":  true,
+                             "siteId":  "e481a196-7971-43de-9533-8c115f8a548f",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -18012,8 +18198,11 @@
                              "station":  "Stasiun Klimatologi Sumatera Selatan",
                              "site":  "Gudang Stasiun Klimatologi Sumatera Selatan",
                              "siteType":  "Gudang",
+                             "stationId":  "bd019778-db85-492f-961d-9e6592bf205f",
                              "stationActive":  true,
+                             "siteId":  "0c741cf9-8753-43cc-97f4-5d40e8f6b1f8",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -18394,8 +18583,11 @@
                              "station":  "Stasiun Klimatologi Sumatera Utara",
                              "site":  "Gudang Stasiun Klimatologi Sumatera Utara",
                              "siteType":  "Gudang",
+                             "stationId":  "a86298d2-9eb7-4526-a10e-5630c16ef3bd",
                              "stationActive":  true,
+                             "siteId":  "7aee1df5-679e-43b8-91b2-dd4f6e9bda4c",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -18413,8 +18605,11 @@
                              "station":  "Stasiun Klimatologi Tanah Miring",
                              "site":  "Gudang Stasiun Klimatologi Tanah Miring",
                              "siteType":  "Gudang",
+                             "stationId":  "950ec779-ddf1-4cdc-94ab-7b0e5fd0c2a1",
                              "stationActive":  true,
+                             "siteId":  "1790b891-77b3-47e5-b39a-4faa391c31cd",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -18465,8 +18660,11 @@
                              "station":  "Stasiun Meteorologi Aek Godang - Padang Sidempuan",
                              "site":  "Gudang Stasiun Meteorologi Aek Godang - Padang Sidempuan",
                              "siteType":  "Gudang",
+                             "stationId":  "4caa47a9-6e44-4e48-8826-b3fc935ea262",
                              "stationActive":  true,
+                             "siteId":  "02f5e4d5-e9e8-4a0f-b3e4-bdf5fe1b6957",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -18770,8 +18968,11 @@
                              "station":  "Stasiun Meteorologi Aji Pangeran Tumenggung Pranoto - Samarinda",
                              "site":  "Gudang Stasiun Meteorologi Aji Pangeran Tumenggung Pranoto - Samarinda",
                              "siteType":  "Gudang",
+                             "stationId":  "8e45d316-b08e-4102-b148-dad7b0164b6f",
                              "stationActive":  true,
+                             "siteId":  "9c90995a-e7ac-4471-80d3-beadf9ec1793",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -18800,8 +19001,11 @@
                              "station":  "Stasiun Meteorologi Amahai - Maluku Tengah",
                              "site":  "Gudang Stasiun Meteorologi Amahai - Maluku Tengah",
                              "siteType":  "Gudang",
+                             "stationId":  "18f24698-e767-4b18-95e6-96db032c2c29",
                              "stationActive":  true,
+                             "siteId":  "06d14022-0d59-4824-8e78-ec843550a560",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -18863,8 +19067,11 @@
                              "station":  "Stasiun Meteorologi Andi Jemma - Luwu Utara",
                              "site":  "Gudang Stasiun Meteorologi Andi Jemma - Luwu Utara",
                              "siteType":  "Gudang",
+                             "stationId":  "57f53c2b-5c79-4dbc-8d07-f399e597fca9",
                              "stationActive":  true,
+                             "siteId":  "210be944-c32e-4e5e-86c5-29eb6f21ac9e",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -18893,8 +19100,11 @@
                              "station":  "Stasiun Meteorologi Bandaneira - Maluku Tengah",
                              "site":  "Gudang Stasiun Meteorologi Bandaneira - Maluku Tengah",
                              "siteType":  "Gudang",
+                             "stationId":  "f35950fc-17ef-4613-9f9d-25e4aaae7f37",
                              "stationActive":  true,
+                             "siteId":  "8255d92e-ebfc-4275-9ba0-a13194927cdd",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -18934,8 +19144,11 @@
                              "station":  "Stasiun Meteorologi Banyuwangi - Banyuwangi",
                              "site":  "Gudang Stasiun Meteorologi Banyuwangi - Banyuwangi",
                              "siteType":  "Gudang",
+                             "stationId":  "514a9daa-246a-479a-ba79-b97a8e097c30",
                              "stationActive":  true,
+                             "siteId":  "9c59c380-2234-4c77-bd83-49b5e8c31108",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -18975,8 +19188,11 @@
                              "station":  "Stasiun Meteorologi Beto Ambari - Baubau",
                              "site":  "Gudang Stasiun Meteorologi Beto Ambari - Baubau",
                              "siteType":  "Gudang",
+                             "stationId":  "f34dc0ca-7378-4aed-a750-a19f7a900db4",
                              "stationActive":  true,
+                             "siteId":  "f12bd668-acfe-4a20-9835-6bf83d58adab",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -18994,8 +19210,11 @@
                              "station":  "Stasiun Meteorologi Binaka - Gunung Sitoli",
                              "site":  "Gudang Stasiun Meteorologi Binaka - Gunung Sitoli",
                              "siteType":  "Gudang",
+                             "stationId":  "bbef6bca-8fb7-4acc-af08-6e674d640220",
                              "stationActive":  true,
+                             "siteId":  "19e3c1dd-ebaa-4c5c-bc2b-accc91c0c26b",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -19024,8 +19243,11 @@
                              "station":  "Stasiun Meteorologi Budiarto - Tangerang",
                              "site":  "Gudang Stasiun Meteorologi Budiarto - Tangerang",
                              "siteType":  "Gudang",
+                             "stationId":  "8aeba4b5-cce5-4786-87da-71c9c17fc84d",
                              "stationActive":  true,
+                             "siteId":  "3300320c-9042-49a5-b754-a9e4bf46a4ab",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -19043,8 +19265,11 @@
                              "station":  "Stasiun Meteorologi Citeko - Bogor",
                              "site":  "Gudang Stasiun Meteorologi Citeko - Bogor",
                              "siteType":  "Gudang",
+                             "stationId":  "d1a99304-930b-43c2-bd69-cdcd6b646ee9",
                              "stationActive":  true,
+                             "siteId":  "7901b101-2cec-4a94-aa56-a775f11c502e",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -19062,8 +19287,11 @@
                              "station":  "Stasiun Meteorologi Cut Nyak Dhien Nagan Raya - Nagan Raya",
                              "site":  "Gudang Stasiun Meteorologi Cut Nyak Dhien Nagan Raya - Nagan Raya",
                              "siteType":  "Gudang",
+                             "stationId":  "f3fbe26a-367e-4041-b4e9-26b47342e4fc",
                              "stationActive":  true,
+                             "siteId":  "fc480ad0-a415-49da-a609-797cc601c1d7",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -19081,8 +19309,11 @@
                              "station":  "Stasiun Meteorologi Dabo - Lingga",
                              "site":  "Gudang Stasiun Meteorologi Dabo - Lingga",
                              "siteType":  "Gudang",
+                             "stationId":  "0c33e747-0f48-48c9-b34c-41b0ddfb30eb",
                              "stationActive":  true,
+                             "siteId":  "982e46ac-a66c-4737-9853-56e96e687f04",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -19100,8 +19331,11 @@
                              "station":  "Stasiun Meteorologi David Constantijn Saudale - Rote Ndao",
                              "site":  "Gudang Stasiun Meteorologi David Constantijn Saudale - Rote Ndao",
                              "siteType":  "Gudang",
+                             "stationId":  "1571e7a1-24c1-4a5a-8069-4382a02c4143",
                              "stationActive":  true,
+                             "siteId":  "1e580818-a3df-4996-8e77-e4bcc29a6e57",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -19141,8 +19375,11 @@
                              "station":  "Stasiun Meteorologi Depati Amir - Pangkal Pinang",
                              "site":  "Gudang Stasiun Meteorologi Depati Amir - Pangkal Pinang",
                              "siteType":  "Gudang",
+                             "stationId":  "f998ca9e-02f2-4d35-8487-c96a7a65fb98",
                              "stationActive":  true,
+                             "siteId":  "3357d407-ff1d-45a1-beca-8d13af6637ee",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -19160,8 +19397,11 @@
                              "station":  "Stasiun Meteorologi Depati Parbo - Kerinci",
                              "site":  "Gudang Stasiun Meteorologi Depati Parbo - Kerinci",
                              "siteType":  "Gudang",
+                             "stationId":  "0a210453-e737-4b17-800f-1a5c772a5c50",
                              "stationActive":  true,
+                             "siteId":  "3982e1d5-7872-4b9b-bba4-8144a7dd42f5",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -19179,8 +19419,11 @@
                              "station":  "Stasiun Meteorologi Dhoho - Kediri",
                              "site":  "Gudang Stasiun Meteorologi Dhoho - Kediri",
                              "siteType":  "Gudang",
+                             "stationId":  "9e809aea-b991-4d87-bead-482d9d3ab1b2",
                              "stationActive":  true,
+                             "siteId":  "2da6b0d3-933e-4603-94ac-d76c62027dcf",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -19198,8 +19441,11 @@
                              "station":  "Stasiun Meteorologi Djalaluddin - Gorontalo",
                              "site":  "Gudang Stasiun Meteorologi Djalaluddin - Gorontalo",
                              "siteType":  "Gudang",
+                             "stationId":  "242d4de6-c9bc-4927-a2d4-1c179c33a4bf",
                              "stationActive":  true,
+                             "siteId":  "72349dd8-ad3e-4131-a792-93c31ea8338a",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -19305,8 +19551,11 @@
                              "station":  "Stasiun Meteorologi Domine Eduard Osok - Sorong",
                              "site":  "Gudang Stasiun Meteorologi Domine Eduard Osok - Sorong",
                              "siteType":  "Gudang",
+                             "stationId":  "4accf040-5c6d-4e86-9389-76ea221d0d67",
                              "stationActive":  true,
+                             "siteId":  "697b98d1-accb-458e-a405-a56713d2eabd",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -19335,8 +19584,11 @@
                              "station":  "Stasiun Meteorologi Douw Aturure - Nabire",
                              "site":  "Gudang Stasiun Meteorologi Douw Aturure - Nabire",
                              "siteType":  "Gudang",
+                             "stationId":  "d1fa28e8-6b86-4356-a2aa-f32b0aa55d3c",
                              "stationActive":  true,
+                             "siteId":  "a29a41b3-71bb-4c20-9b7b-3374f156a49f",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -19376,8 +19628,11 @@
                              "station":  "Stasiun Meteorologi Eltari - Kupang",
                              "site":  "Gudang Stasiun Meteorologi Eltari - Kupang",
                              "siteType":  "Gudang",
+                             "stationId":  "25fde31b-70bd-4a95-b623-19cd358a6141",
                              "stationActive":  true,
+                             "siteId":  "7df1f2a8-a055-4f3e-826d-dc2d98f42a18",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -19395,8 +19650,11 @@
                              "station":  "Stasiun Meteorologi Emalamo - Kepulauan Sula",
                              "site":  "Gudang Stasiun Meteorologi Emalamo - Kepulauan Sula",
                              "siteType":  "Gudang",
+                             "stationId":  "62cc37c4-e7e6-4d3f-bdbb-14487d473d89",
                              "stationActive":  true,
+                             "siteId":  "24aa3826-8b79-4aac-aaf6-25b4a587cd78",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -19425,8 +19683,11 @@
                              "station":  "Stasiun Meteorologi Enarotali - Paniai",
                              "site":  "Gudang Stasiun Meteorologi Enarotali - Paniai",
                              "siteType":  "Gudang",
+                             "stationId":  "6ca7d206-6b4e-460c-b380-7523cad0d4ba",
                              "stationActive":  true,
+                             "siteId":  "7f6af728-246b-4727-9687-fa6f3b9138fd",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -19477,8 +19738,11 @@
                              "station":  "Stasiun Meteorologi Fatmawati Soekarno - Bengkulu",
                              "site":  "Gudang Stasiun Meteorologi Fatmawati Soekarno - Bengkulu",
                              "siteType":  "Gudang",
+                             "stationId":  "7e4e949a-4ccb-4fc9-b277-cd68f1eea463",
                              "stationActive":  true,
+                             "siteId":  "a0ea8ab7-5ef5-420d-8bc0-a1e859b2ef1e",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -19496,8 +19760,11 @@
                              "station":  "Stasiun Meteorologi FL Tobing - Tapanuli Tengah",
                              "site":  "Gudang Stasiun Meteorologi FL Tobing - Tapanuli Tengah",
                              "siteType":  "Gudang",
+                             "stationId":  "c3851b02-6964-4ff9-b292-c314654ccb46",
                              "stationActive":  true,
+                             "siteId":  "3099e42f-7109-4cc3-9106-be7b79482ecc",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -19526,8 +19793,11 @@
                              "station":  "Stasiun Meteorologi Frans Kaisiepo - Biak Numfor",
                              "site":  "Gudang Stasiun Meteorologi Frans Kaisiepo - Biak Numfor",
                              "siteType":  "Gudang",
+                             "stationId":  "54e8e6e6-27a6-4007-816a-b88258908b0b",
                              "stationActive":  true,
+                             "siteId":  "8227f551-75ef-4725-b77e-b0a447c27af7",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -19567,8 +19837,11 @@
                              "station":  "Stasiun Meteorologi Frans Sales Lega - Manggarai",
                              "site":  "Gudang Stasiun Meteorologi Frans Sales Lega - Manggarai",
                              "siteType":  "Gudang",
+                             "stationId":  "204a97ac-5821-487a-a584-02934ab643b4",
                              "stationActive":  true,
+                             "siteId":  "cf42474a-4096-474a-a49a-2ab43c4e728a",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -19608,8 +19881,11 @@
                              "station":  "Stasiun Meteorologi Fransiskus Xaverius Seda - Sikka",
                              "site":  "Gudang Stasiun Meteorologi Fransiskus Xaverius Seda - Sikka",
                              "siteType":  "Gudang",
+                             "stationId":  "d3cf986f-67a4-4b73-99a3-6a6c722b9b50",
                              "stationActive":  true,
+                             "siteId":  "703275a2-b00d-4445-81d2-a8df66b0b687",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -19627,8 +19903,11 @@
                              "station":  "Stasiun Meteorologi Gamar Malamo - Halmahera Utara",
                              "site":  "Gudang Stasiun Meteorologi Gamar Malamo - Halmahera Utara",
                              "siteType":  "Gudang",
+                             "stationId":  "0a66bf06-43c9-44b2-9adb-7c271f43ba98",
                              "stationActive":  true,
+                             "siteId":  "1430ad18-f921-4d60-b032-7f393ef3548d",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -19657,8 +19936,11 @@
                              "station":  "Stasiun Meteorologi Gewayantana - Flores Timur",
                              "site":  "Gudang Stasiun Meteorologi Gewayantana - Flores Timur",
                              "siteType":  "Gudang",
+                             "stationId":  "8bfd107f-e4e2-49a6-8c7f-2969ace35f9a",
                              "stationActive":  true,
+                             "siteId":  "e3b834fc-5d55-4524-b08d-53421a2bfd72",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -19709,8 +19991,11 @@
                              "station":  "Stasiun Meteorologi Gusti Syamsir Alam - Kotabaru",
                              "site":  "Gudang Stasiun Meteorologi Gusti Syamsir Alam - Kotabaru",
                              "siteType":  "Gudang",
+                             "stationId":  "c53d4dda-29ba-41a9-8a93-14c2a71483b5",
                              "stationActive":  true,
+                             "siteId":  "469be137-bb41-4dfc-87dd-7f5e20e66ef2",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -19750,8 +20035,11 @@
                              "station":  "Stasiun Meteorologi H. Asan - Kotawaringin Timur",
                              "site":  "Gudang Stasiun Meteorologi H. Asan - Kotawaringin Timur",
                              "siteType":  "Gudang",
+                             "stationId":  "08b084b7-49d0-4335-b89e-c750b5e3a8fa",
                              "stationActive":  true,
+                             "siteId":  "77c14a9b-1484-429d-95bc-04f9d2f800e4",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -19780,8 +20068,11 @@
                              "station":  "Stasiun Meteorologi H.AS. Hanandjoeddin - Belitung",
                              "site":  "Gudang Stasiun Meteorologi H.AS. Hanandjoeddin - Belitung",
                              "siteType":  "Gudang",
+                             "stationId":  "b068152e-17a4-4d46-9204-5949b83cffdb",
                              "stationActive":  true,
+                             "siteId":  "c6386161-4a73-4f75-947e-9e0a4214160f",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -19799,8 +20090,11 @@
                              "station":  "Stasiun Meteorologi Haji Muhammad Sidik - Barito Utara",
                              "site":  "Gudang Stasiun Meteorologi Haji Muhammad Sidik - Barito Utara",
                              "siteType":  "Gudang",
+                             "stationId":  "62de06ad-adb5-4e6f-8282-031d32c4edf1",
                              "stationActive":  true,
+                             "siteId":  "8fb19a6e-222d-400d-80cf-172f2681d29a",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -20038,8 +20332,11 @@
                              "station":  "Stasiun Meteorologi Hang Nadim - Batam",
                              "site":  "Gudang Stasiun Meteorologi Hang Nadim - Batam",
                              "siteType":  "Gudang",
+                             "stationId":  "14a24ff4-dfc2-4419-a460-d8aa4b0d8fd6",
                              "stationActive":  true,
+                             "siteId":  "1f2498a6-efff-42aa-b05b-4069ce0d20f6",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -20057,8 +20354,11 @@
                              "station":  "Stasiun Meteorologi Harun Thohir - Gresik",
                              "site":  "Gudang Stasiun Meteorologi Harun Thohir - Gresik",
                              "siteType":  "Gudang",
+                             "stationId":  "dc5ef0c4-6b47-45ce-99c7-ec441f39b8a7",
                              "stationActive":  true,
+                             "siteId":  "f9d1f8c4-38c5-467d-970c-3d75a7bcd7e9",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -20109,8 +20409,11 @@
                              "station":  "Stasiun Meteorologi I Gusti Ngurah Rai - Badung",
                              "site":  "Gudang Stasiun Meteorologi I Gusti Ngurah Rai - Badung",
                              "siteType":  "Gudang",
+                             "stationId":  "390cb6bd-2042-4bf3-b0bd-916ab2a8103f",
                              "stationActive":  true,
+                             "siteId":  "a8d3fb5c-c7d9-454b-90c3-b2fae9f946cc",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -20128,8 +20431,11 @@
                              "station":  "Stasiun Meteorologi Iskandar - Kotawaringin Barat",
                              "site":  "Gudang Stasiun Meteorologi Iskandar - Kotawaringin Barat",
                              "siteType":  "Gudang",
+                             "stationId":  "af99c0a5-a465-4d5a-bfa2-7192bbf7d63a",
                              "stationActive":  true,
+                             "siteId":  "d6f4596c-e45d-4419-8827-06f62d75aa43",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -20147,8 +20453,11 @@
                              "station":  "Stasiun Meteorologi Japura - Indragiri",
                              "site":  "Gudang Stasiun Meteorologi Japura - Indragiri",
                              "siteType":  "Gudang",
+                             "stationId":  "7d162d2a-6129-4205-97ff-72719c40c853",
                              "stationActive":  true,
+                             "siteId":  "2094d748-7caf-4d86-bb8d-f28c14ced6a2",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -20199,8 +20508,11 @@
                              "station":  "Stasiun Meteorologi Jenderal Ahmad Yani - Semarang",
                              "site":  "Gudang Stasiun Meteorologi Jenderal Ahmad Yani - Semarang",
                              "siteType":  "Gudang",
+                             "stationId":  "82bd6622-8862-4b26-a872-d359b994ba5e",
                              "stationActive":  true,
+                             "siteId":  "e53954ec-617c-45a8-9d38-6d846ac23006",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -20229,8 +20541,11 @@
                              "station":  "Stasiun Meteorologi Juanda - Sidoarjo",
                              "site":  "Gudang Stasiun Meteorologi Juanda - Sidoarjo",
                              "siteType":  "Gudang",
+                             "stationId":  "42472603-66ac-4c6a-b1ed-f44ce6c2e2fb",
                              "stationActive":  true,
+                             "siteId":  "3460dbcc-c2ad-4ff0-badb-c73875dce904",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -20380,8 +20695,11 @@
                              "station":  "Stasiun Meteorologi Juwata - Tarakan",
                              "site":  "Gudang Stasiun Meteorologi Juwata - Tarakan",
                              "siteType":  "Gudang",
+                             "stationId":  "ebb7a3af-172f-4370-97f4-b38a0c0e68d6",
                              "stationActive":  true,
+                             "siteId":  "2b8598a9-989d-4576-a22f-1658770a7b91",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -20421,8 +20739,11 @@
                              "station":  "Stasiun Meteorologi Kalimarau - Berau",
                              "site":  "Gudang Stasiun Meteorologi Kalimarau - Berau",
                              "siteType":  "Gudang",
+                             "stationId":  "9e24912c-cd04-4f11-b4a6-2e1149f7d778",
                              "stationActive":  true,
+                             "siteId":  "1629e1e7-73e4-4b15-8ffa-bb3949bb4306",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -20440,8 +20761,11 @@
                              "station":  "Stasiun Meteorologi Karel Sadsuitubun - Maluku Tenggara",
                              "site":  "Gudang Stasiun Meteorologi Karel Sadsuitubun - Maluku Tenggara",
                              "siteType":  "Gudang",
+                             "stationId":  "a92c54f4-0b84-4cca-98ab-8c20c670ba2b",
                              "stationActive":  true,
+                             "siteId":  "a836f6a2-71ac-406e-b0de-52302e2427a7",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -20459,8 +20783,11 @@
                              "station":  "Stasiun Meteorologi Kasiguncu - Poso",
                              "site":  "Gudang Stasiun Meteorologi Kasiguncu - Poso",
                              "siteType":  "Gudang",
+                             "stationId":  "c0508c4c-308c-4bc3-8110-d5722604428c",
                              "stationActive":  true,
+                             "siteId":  "b9afd372-9176-4d96-9371-1e5398542577",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -20522,8 +20849,11 @@
                              "station":  "Stasiun Meteorologi Kertajati - Majalengka",
                              "site":  "Gudang Stasiun Meteorologi Kertajati - Majalengka",
                              "siteType":  "Gudang",
+                             "stationId":  "3bdc4fd2-a1d4-4772-bf9f-51110675c703",
                              "stationActive":  true,
+                             "siteId":  "e083b501-0766-49ea-9d3e-a575d17d5696",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -20552,8 +20882,11 @@
                              "station":  "Stasiun Meteorologi Komodo - Manggarai Barat",
                              "site":  "Gudang Stasiun Meteorologi Komodo - Manggarai Barat",
                              "siteType":  "Gudang",
+                             "stationId":  "9a0bdaa0-5715-4f13-aeb9-0fb9b63f31fe",
                              "stationActive":  true,
+                             "siteId":  "697a4f00-1b76-461b-9d92-e9a611f87d11",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -20582,8 +20915,11 @@
                              "station":  "Stasiun Meteorologi Kualanamu - Deli Serdang",
                              "site":  "Gudang Stasiun Meteorologi Kualanamu - Deli Serdang",
                              "siteType":  "Gudang",
+                             "stationId":  "ee561cfa-41f8-486d-bdff-910504354828",
                              "stationActive":  true,
+                             "siteId":  "4000b6b1-68c1-45a5-b762-adbe07717161",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -20601,8 +20937,11 @@
                              "station":  "Stasiun Meteorologi Kuffar - Seram Bagian Timur",
                              "site":  "Gudang Stasiun Meteorologi Kuffar - Seram Bagian Timur",
                              "siteType":  "Gudang",
+                             "stationId":  "4b424076-d0af-424f-a1e1-026c4a40ec7a",
                              "stationActive":  true,
+                             "siteId":  "c3ab2036-791e-4860-b298-2f14b9d550ca",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -20620,8 +20959,11 @@
                              "station":  "Stasiun Meteorologi Maimun Saleh - Sabang",
                              "site":  "Gudang Stasiun Meteorologi Maimun Saleh - Sabang",
                              "siteType":  "Gudang",
+                             "stationId":  "f1a0af2e-6a0a-4967-8c0a-72772399d732",
                              "stationActive":  true,
+                             "siteId":  "82896788-b47a-4e0c-976f-37a26017f754",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -20650,8 +20992,11 @@
                              "station":  "Stasiun Meteorologi Mali - Alor",
                              "site":  "Gudang Stasiun Meteorologi Mali - Alor",
                              "siteType":  "Gudang",
+                             "stationId":  "674740d4-65c9-4a8b-9d95-733e6b446ac1",
                              "stationActive":  true,
+                             "siteId":  "b6704a8e-421b-468d-9bf5-09191613fad3",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -20669,8 +21014,11 @@
                              "station":  "Stasiun Meteorologi Malikussaleh - Aceh Utara",
                              "site":  "Gudang Stasiun Meteorologi Malikussaleh - Aceh Utara",
                              "siteType":  "Gudang",
+                             "stationId":  "d577d4a3-cebe-4e6d-a4a1-b24c1a825b56",
                              "stationActive":  true,
+                             "siteId":  "3315f6ca-9461-4f57-b798-026c4d9a6e60",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -20688,8 +21036,11 @@
                              "station":  "Stasiun Meteorologi Maritim Belawan - Medan",
                              "site":  "Gudang Stasiun Meteorologi Maritim Belawan - Medan",
                              "siteType":  "Gudang",
+                             "stationId":  "8add33cd-267d-4110-85da-c500de799348",
                              "stationActive":  true,
+                             "siteId":  "97b0d0b7-bd38-4caf-af20-15e5158b697e",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -20718,8 +21069,11 @@
                              "station":  "Stasiun Meteorologi Maritim Bitung - Bitung",
                              "site":  "Gudang Stasiun Meteorologi Maritim Bitung - Bitung",
                              "siteType":  "Gudang",
+                             "stationId":  "9f344783-da1f-457f-a30a-321b0ebb3094",
                              "stationActive":  true,
+                             "siteId":  "97103517-aacb-4743-86e1-f2c8eaa0377d",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -20737,8 +21091,11 @@
                              "station":  "Stasiun Meteorologi Maritim Dwikora - Pontianak",
                              "site":  "Gudang Stasiun Meteorologi Maritim Dwikora - Pontianak",
                              "siteType":  "Gudang",
+                             "stationId":  "da778c7b-f18e-4896-9d4b-739ea52592b8",
                              "stationActive":  true,
+                             "siteId":  "ff14c4ce-d2e1-4e4a-a2db-d5816f7f5a5c",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -20767,8 +21124,11 @@
                              "station":  "Stasiun Meteorologi Maritim Jayapura - Jayapura",
                              "site":  "Gudang Stasiun Meteorologi Maritim Jayapura - Jayapura",
                              "siteType":  "Gudang",
+                             "stationId":  "1f6dc8e7-08a7-4f52-b575-ed54b4e66978",
                              "stationActive":  true,
+                             "siteId":  "ec0e7a51-78f6-46d8-aaed-ef73519f5010",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -20797,8 +21157,11 @@
                              "station":  "Stasiun Meteorologi Maritim Kendari - Kendari",
                              "site":  "Gudang Stasiun Meteorologi Maritim Kendari - Kendari",
                              "siteType":  "Gudang",
+                             "stationId":  "baaf5c4c-ee86-42fb-b440-68d3ffcdbb2b",
                              "stationActive":  true,
+                             "siteId":  "2e5702d7-8453-4d5d-a627-6fe478efb3fd",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -20838,8 +21201,11 @@
                              "station":  "Stasiun Meteorologi Maritim Merak - Cilegon",
                              "site":  "Gudang Stasiun Meteorologi Maritim Merak - Cilegon",
                              "siteType":  "Gudang",
+                             "stationId":  "b82e6a8b-83f5-4747-94d5-4d1aee200bac",
                              "stationActive":  true,
+                             "siteId":  "a7d5c38f-4bf6-4950-a9ba-eebdca104bad",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -20868,8 +21234,11 @@
                              "station":  "Stasiun Meteorologi Maritim Panjang - Bandar Lampung",
                              "site":  "Gudang Stasiun Meteorologi Maritim Panjang - Bandar Lampung",
                              "siteType":  "Gudang",
+                             "stationId":  "b321d70a-3ec2-4e53-bdeb-0b85ba6a076c",
                              "stationActive":  true,
+                             "siteId":  "647d064b-3673-4fdc-93d3-5e28b33a3cfa",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -20898,8 +21267,11 @@
                              "station":  "Stasiun Meteorologi Maritim Tanjung Emas - Semarang",
                              "site":  "Gudang Stasiun Meteorologi Maritim Tanjung Emas - Semarang",
                              "siteType":  "Gudang",
+                             "stationId":  "28c6f7ee-53f2-44f6-bc98-85f3e5de2018",
                              "stationActive":  true,
+                             "siteId":  "f7d18590-943a-497c-86c6-418bdddb0be1",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -20950,8 +21322,11 @@
                              "station":  "Stasiun Meteorologi Maritim Tanjung Perak - Surabaya",
                              "site":  "Gudang Stasiun Meteorologi Maritim Tanjung Perak - Surabaya",
                              "siteType":  "Gudang",
+                             "stationId":  "66fdfe01-c15b-49ee-9575-baefca9dd4cb",
                              "stationActive":  true,
+                             "siteId":  "3540ce87-7e90-45fe-8479-6d56327293b6",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -20980,8 +21355,11 @@
                              "station":  "Stasiun Meteorologi Maritim Tanjung Priok - Jakarta Utara",
                              "site":  "Gudang Stasiun Meteorologi Maritim Tanjung Priok - Jakarta Utara",
                              "siteType":  "Gudang",
+                             "stationId":  "b772c6ff-400e-41b0-a810-d9b8f1c1b61f",
                              "stationActive":  true,
+                             "siteId":  "2ee0a729-7d0a-4775-81a2-10572a0bf92d",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -20999,8 +21377,11 @@
                              "station":  "Stasiun Meteorologi Maritim Teluk Bayur - Padang",
                              "site":  "Gudang Stasiun Meteorologi Maritim Teluk Bayur - Padang",
                              "siteType":  "Gudang",
+                             "stationId":  "e30ab26e-e3f2-4f24-bbfe-d1005cbaf2f4",
                              "stationActive":  true,
+                             "siteId":  "8f47f4e9-5457-4a2a-b579-298e4d44ba43",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -21018,8 +21399,11 @@
                              "station":  "Stasiun Meteorologi Maritim Tenau - Kupang",
                              "site":  "Gudang Stasiun Meteorologi Maritim Tenau - Kupang",
                              "siteType":  "Gudang",
+                             "stationId":  "48f90e3e-b39c-466d-95a3-71fc0b8cc312",
                              "stationActive":  true,
+                             "siteId":  "d114e0fc-3258-47b1-b07b-6ba8bcc6590d",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -21048,8 +21432,11 @@
                              "station":  "Stasiun Meteorologi Maritim Untia - Makassar",
                              "site":  "Gudang Stasiun Meteorologi Maritim Untia - Makassar",
                              "siteType":  "Gudang",
+                             "stationId":  "83c899c4-e84b-46a3-94c6-2e31348e6758",
                              "stationActive":  true,
+                             "siteId":  "a0c386fc-a8ee-4201-bdd8-4564a0cc9d21",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -21067,8 +21454,11 @@
                              "station":  "Stasiun Meteorologi Maritim Yos Soedarso - Ambon",
                              "site":  "Gudang Stasiun Meteorologi Maritim Yos Soedarso - Ambon",
                              "siteType":  "Gudang",
+                             "stationId":  "42aa33a1-8959-4342-b8e2-4238431618d4",
                              "stationActive":  true,
+                             "siteId":  "1f32ce6e-830d-4df0-82a9-64da385f93cb",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -21086,8 +21476,11 @@
                              "station":  "Stasiun Meteorologi Mathilda Batlayeri - Maluku Tenggara Barat",
                              "site":  "Gudang Stasiun Meteorologi Mathilda Batlayeri - Maluku Tenggara Barat",
                              "siteType":  "Gudang",
+                             "stationId":  "7c5e6318-10c6-4702-9518-59a9f5d6f9fd",
                              "stationActive":  true,
+                             "siteId":  "f541d7a2-e55b-4abf-86b6-1171c89e1786",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -21127,8 +21520,11 @@
                              "station":  "Stasiun Meteorologi Minangkabau - Padang Pariaman",
                              "site":  "Gudang Stasiun Meteorologi Minangkabau - Padang Pariaman",
                              "siteType":  "Gudang",
+                             "stationId":  "1fac5d61-8651-45d1-85f4-2438772fb910",
                              "stationActive":  true,
+                             "siteId":  "9619bb36-4c48-4265-bfee-b9d3628a7d56",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -21190,8 +21586,11 @@
                              "station":  "Stasiun Meteorologi Mopah - Merauke",
                              "site":  "Gudang Stasiun Meteorologi Mopah - Merauke",
                              "siteType":  "Gudang",
+                             "stationId":  "a9e2fb7d-d596-4f21-abe3-f3b164eebdff",
                              "stationActive":  true,
+                             "siteId":  "149d1d18-2d1d-4b73-b355-74af41f4ae1f",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -21242,8 +21641,11 @@
                              "station":  "Stasiun Meteorologi Mozez Kilangin - Mimika",
                              "site":  "Gudang Stasiun Meteorologi Mozez Kilangin - Mimika",
                              "siteType":  "Gudang",
+                             "stationId":  "7d145437-a26d-48d0-9153-300f9af6b65a",
                              "stationActive":  true,
+                             "siteId":  "3562ff8e-98b9-4935-b96d-5a21346e1131",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -21272,8 +21674,11 @@
                              "station":  "Stasiun Meteorologi Mutiara Sis-Al Jufri - Palu",
                              "site":  "Gudang Stasiun Meteorologi Mutiara Sis-Al Jufri - Palu",
                              "siteType":  "Gudang",
+                             "stationId":  "7e82bbd2-ba3d-4735-8630-33b7a83299eb",
                              "stationActive":  true,
+                             "siteId":  "00724937-9372-4c77-8682-f7bdda1f13b2",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -21302,8 +21707,11 @@
                              "station":  "Stasiun Meteorologi Naha - Kepulauan Sangihe",
                              "site":  "Gudang Stasiun Meteorologi Naha - Kepulauan Sangihe",
                              "siteType":  "Gudang",
+                             "stationId":  "af40d355-9db5-4581-999b-8d115ec8fdec",
                              "stationActive":  true,
+                             "siteId":  "4a61f648-b1a2-4423-bce9-4deed7f4c243",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -21343,8 +21751,11 @@
                              "station":  "Stasiun Meteorologi Namniwel - Buru",
                              "site":  "Gudang Stasiun Meteorologi Namniwel - Buru",
                              "siteType":  "Gudang",
+                             "stationId":  "8c35498b-8c00-4d1b-b310-0aa8367c5aab",
                              "stationActive":  true,
+                             "siteId":  "adde778e-4e99-4bc5-901e-86f2371b1911",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -21362,8 +21773,11 @@
                              "station":  "Stasiun Meteorologi Nangapinoh - Melawi",
                              "site":  "Gudang Stasiun Meteorologi Nangapinoh - Melawi",
                              "siteType":  "Gudang",
+                             "stationId":  "938dc3dc-4f83-4c69-bc76-85c70faf7574",
                              "stationActive":  true,
+                             "siteId":  "1f1c1f06-01b1-46e2-a63f-76e3f4686b95",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -21414,8 +21828,11 @@
                              "station":  "Stasiun Meteorologi Nunukan - Nunukan",
                              "site":  "Gudang Stasiun Meteorologi Nunukan - Nunukan",
                              "siteType":  "Gudang",
+                             "stationId":  "3eb01899-9df4-4b74-bb6f-be2ba6d423d6",
                              "stationActive":  true,
+                             "siteId":  "aace27e2-fc53-4e72-a169-78aa9e41527c",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -21444,8 +21861,11 @@
                              "station":  "Stasiun Meteorologi Oesman Sadik - Halmahera Selatan",
                              "site":  "Gudang Stasiun Meteorologi Oesman Sadik - Halmahera Selatan",
                              "siteType":  "Gudang",
+                             "stationId":  "cc8fc77e-7d5d-41f6-8978-e7457964b22f",
                              "stationActive":  true,
+                             "siteId":  "832e6241-a62a-44a1-bfe5-7d1e1fe9b7bf",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -21474,8 +21894,11 @@
                              "station":  "Stasiun Meteorologi Pangsuma - Kapuas",
                              "site":  "Gudang Stasiun Meteorologi Pangsuma - Kapuas",
                              "siteType":  "Gudang",
+                             "stationId":  "1503334d-48ec-4a72-bc04-5c626459c904",
                              "stationActive":  true,
+                             "siteId":  "9d38873c-5721-4fa7-b0bb-88fca8fa99e9",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -21559,8 +21982,11 @@
                              "station":  "Stasiun Meteorologi Pattimura - Ambon",
                              "site":  "Gudang Stasiun Meteorologi Pattimura - Ambon",
                              "siteType":  "Gudang",
+                             "stationId":  "7cdb04d4-f016-4c90-8ea6-98277a7a6882",
                              "stationActive":  true,
+                             "siteId":  "881adc79-9a41-49d2-96fb-f04421ea089e",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -21611,8 +22037,11 @@
                              "station":  "Stasiun Meteorologi Radin Inten II - Lampung Selatan",
                              "site":  "Gudang Stasiun Meteorologi Radin Inten II - Lampung Selatan",
                              "siteType":  "Gudang",
+                             "stationId":  "75bc6635-823d-4003-9a85-216810cfd250",
                              "stationActive":  true,
+                             "siteId":  "cc8e3ca6-d5a4-45b2-bb32-752e6b252d98",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -21641,8 +22070,11 @@
                              "station":  "Stasiun Meteorologi Rahadi Oesman - Ketapang",
                              "site":  "Gudang Stasiun Meteorologi Rahadi Oesman - Ketapang",
                              "siteType":  "Gudang",
+                             "stationId":  "6add217c-a671-49c7-a122-a508d2e52f71",
                              "stationActive":  true,
+                             "siteId":  "3393a810-0b61-43b6-98d3-a3f6c5c8575e",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -21671,8 +22103,11 @@
                              "station":  "Stasiun Meteorologi Raja Haji Abdullah - Karimun",
                              "site":  "Gudang Stasiun Meteorologi Raja Haji Abdullah - Karimun",
                              "siteType":  "Gudang",
+                             "stationId":  "8783691f-66dd-4caf-bede-3d6000b1acef",
                              "stationActive":  true,
+                             "siteId":  "b697610b-de41-4800-81c1-54cc98aac878",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -21701,8 +22136,11 @@
                              "station":  "Stasiun Meteorologi Raja Haji Fisabilillah - Tanjung Pinang",
                              "site":  "Gudang Stasiun Meteorologi Raja Haji Fisabilillah - Tanjung Pinang",
                              "siteType":  "Gudang",
+                             "stationId":  "f0f5c2ad-58a7-4dd7-81cb-2699c2ddc6a3",
                              "stationActive":  true,
+                             "siteId":  "e7649e73-89b9-4a45-a6a3-d8bf7714c0b0",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -21819,8 +22257,11 @@
                              "station":  "Stasiun Meteorologi Raja Sisingamangaraja XII - Tapanuli Utara",
                              "site":  "Gudang Stasiun Meteorologi Raja Sisingamangaraja XII - Tapanuli Utara",
                              "siteType":  "Gudang",
+                             "stationId":  "4a89b872-10aa-4587-9812-0173938ba10b",
                              "stationActive":  true,
+                             "siteId":  "f01c6628-0e68-495e-96b9-4b92ff65f03c",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -21871,8 +22312,11 @@
                              "station":  "Stasiun Meteorologi Rendani - Manokwari",
                              "site":  "Gudang Stasiun Meteorologi Rendani - Manokwari",
                              "siteType":  "Gudang",
+                             "stationId":  "0fcb1294-49c6-4427-9aba-f6651a1e3e33",
                              "stationActive":  true,
+                             "siteId":  "1a6abc27-1660-40d0-8588-4d301185a3a5",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -21934,8 +22378,11 @@
                              "station":  "Stasiun Meteorologi Sam Ratulangi - Manado",
                              "site":  "Gudang Stasiun Meteorologi Sam Ratulangi - Manado",
                              "siteType":  "Gudang",
+                             "stationId":  "1c7fb756-6e4a-48ad-9ba7-45b4ed8e2995",
                              "stationActive":  true,
+                             "siteId":  "fbc437c1-0447-48b5-94fb-ba46cc174cde",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -21953,8 +22400,11 @@
                              "station":  "Stasiun Meteorologi Sanggu - Barito Selatan",
                              "site":  "Gudang Stasiun Meteorologi Sanggu - Barito Selatan",
                              "siteType":  "Gudang",
+                             "stationId":  "89010e5e-6f55-472c-98ed-b609dc0456cf",
                              "stationActive":  true,
+                             "siteId":  "ab32e5d8-f4c0-4f5d-b64c-fc6051a46adc",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -21983,8 +22433,11 @@
                              "station":  "Stasiun Meteorologi Sangia Ni Bandera - Kolaka",
                              "site":  "Gudang Stasiun Meteorologi Sangia Ni Bandera - Kolaka",
                              "siteType":  "Gudang",
+                             "stationId":  "f7dc0f8f-43b5-4ed3-821b-ff2fbd3f9127",
                              "stationActive":  true,
+                             "siteId":  "f9402905-31e1-4f61-b8be-7248d7d818ec",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -22046,8 +22499,11 @@
                              "station":  "Stasiun Meteorologi Sentani - Jayapura",
                              "site":  "Gudang Stasiun Meteorologi Sentani - Jayapura",
                              "siteType":  "Gudang",
+                             "stationId":  "7c9a7652-0de6-4c3f-bac1-4af9b4bb38e3",
                              "stationActive":  true,
+                             "siteId":  "0f5471ec-571d-4f78-af92-41bfbd603f36",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -22065,8 +22521,11 @@
                              "station":  "Stasiun Meteorologi Siboru - Fakfak",
                              "site":  "Gudang Stasiun Meteorologi Siboru - Fakfak",
                              "siteType":  "Gudang",
+                             "stationId":  "abb5df60-5ef3-4a4f-abe1-785c1f10bb06",
                              "stationActive":  true,
+                             "siteId":  "f8b348cf-5781-46cd-aeaa-d419dc074a93",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -22106,8 +22565,11 @@
                              "station":  "Stasiun Meteorologi Singkawang - Singkawang",
                              "site":  "Gudang Stasiun Meteorologi Singkawang - Singkawang",
                              "siteType":  "Gudang",
+                             "stationId":  "eb0ea1a7-7530-4933-9d0b-a01854e4d0b8",
                              "stationActive":  true,
+                             "siteId":  "ee844d16-9037-45f5-b116-a12e7ff33781",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -22136,8 +22598,11 @@
                              "station":  "Stasiun Meteorologi Soekarno Hatta - Tangerang",
                              "site":  "Gudang Stasiun Meteorologi Soekarno Hatta - Tangerang",
                              "siteType":  "Gudang",
+                             "stationId":  "f3f3a411-05c2-488b-82b7-57740c3c66cc",
                              "stationActive":  true,
+                             "siteId":  "356f2f06-a04b-484d-9fb1-3d84d27612b2",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -22166,8 +22631,11 @@
                              "station":  "Stasiun Meteorologi Stevanus Rumbewas - Kepulauan Yapen",
                              "site":  "Gudang Stasiun Meteorologi Stevanus Rumbewas - Kepulauan Yapen",
                              "siteType":  "Gudang",
+                             "stationId":  "dfab2069-d209-48be-a73e-9c93abcf3847",
                              "stationActive":  true,
+                             "siteId":  "4fec7c9f-58fd-4d45-9c35-f406ec6dac18",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -22207,8 +22675,11 @@
                              "station":  "Stasiun Meteorologi Sultan Aji Muhammad Sulaiman Sepinggan - Balikpapan",
                              "site":  "Gudang Stasiun Meteorologi Sultan Aji Muhammad Sulaiman Sepinggan - Balikpapan",
                              "siteType":  "Gudang",
+                             "stationId":  "79df8ae6-6f0c-4384-bf3c-64302537ee6e",
                              "stationActive":  true,
+                             "siteId":  "0ca59184-4c62-4a9b-a3f7-0d2706db6268",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -22391,8 +22862,11 @@
                              "station":  "Stasiun Meteorologi Sultan Babullah - Ternate",
                              "site":  "Gudang Stasiun Meteorologi Sultan Babullah - Ternate",
                              "siteType":  "Gudang",
+                             "stationId":  "fd11f5ce-2b28-4818-a5c6-ba46f1f773b2",
                              "stationActive":  true,
+                             "siteId":  "2ae97bc0-6a12-4a99-bb3e-894eed66ce83",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -22410,8 +22884,11 @@
                              "station":  "Stasiun Meteorologi Sultan Bantilan - Tolitoli",
                              "site":  "Gudang Stasiun Meteorologi Sultan Bantilan - Tolitoli",
                              "siteType":  "Gudang",
+                             "stationId":  "ad80f7a8-5596-4ac4-baa1-72500b47f846",
                              "stationActive":  true,
+                             "siteId":  "5bff25e1-db72-4615-b5e8-aa08d50d3b4a",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -22484,8 +22961,11 @@
                              "station":  "Stasiun Meteorologi Sultan Hasanuddin - Maros",
                              "site":  "Gudang Stasiun Meteorologi Sultan Hasanuddin - Maros",
                              "siteType":  "Gudang",
+                             "stationId":  "6b9aa698-d1f6-4eb5-9023-66f7eba90f47",
                              "stationActive":  true,
+                             "siteId":  "f08255c3-9976-4329-a045-ad25a767bd43",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -22569,8 +23049,11 @@
                              "station":  "Stasiun Meteorologi Sultan Iskandar Muda - Banda Aceh",
                              "site":  "Gudang Stasiun Meteorologi Sultan Iskandar Muda - Banda Aceh",
                              "siteType":  "Gudang",
+                             "stationId":  "3c97e6d2-a9f2-47b2-9373-6359c9efa4d3",
                              "stationActive":  true,
+                             "siteId":  "9dbd565e-ebf8-4530-9da5-20c6d7e2df1c",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -22621,8 +23104,11 @@
                              "station":  "Stasiun Meteorologi Sultan Mahmud Badaruddin II - Palembang",
                              "site":  "Gudang Stasiun Meteorologi Sultan Mahmud Badaruddin II - Palembang",
                              "siteType":  "Gudang",
+                             "stationId":  "5803e247-e691-42ea-b490-e646d9f3c658",
                              "stationActive":  true,
+                             "siteId":  "a7873001-eabb-4a32-b37c-1cc50df97b68",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -22640,8 +23126,11 @@
                              "station":  "Stasiun Meteorologi Sultan Muhammad Kaharuddin - Sumbawa",
                              "site":  "Gudang Stasiun Meteorologi Sultan Muhammad Kaharuddin - Sumbawa",
                              "siteType":  "Gudang",
+                             "stationId":  "26aeea5c-e5f3-4a36-9a9f-e154b8927fe1",
                              "stationActive":  true,
+                             "siteId":  "7e17497d-f620-4d4a-9907-0230bef92267",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -22670,8 +23159,11 @@
                              "station":  "Stasiun Meteorologi Sultan Muhammad Salahuddin - Bima",
                              "site":  "Gudang Stasiun Meteorologi Sultan Muhammad Salahuddin - Bima",
                              "siteType":  "Gudang",
+                             "stationId":  "ba30895f-bbe1-4833-9a2f-4cc32829b159",
                              "stationActive":  true,
+                             "siteId":  "4be3b3e2-1cc1-4ebb-927d-e071455f9503",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -22711,8 +23203,11 @@
                              "station":  "Stasiun Meteorologi Sultan Syarif Kasim II - Pekanbaru",
                              "site":  "Gudang Stasiun Meteorologi Sultan Syarif Kasim II - Pekanbaru",
                              "siteType":  "Gudang",
+                             "stationId":  "6bb4dfc8-aabc-410f-8b24-8318171ecf06",
                              "stationActive":  true,
+                             "siteId":  "93be74da-d86e-40f2-996c-7062fd2e2f7d",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -22763,8 +23258,11 @@
                              "station":  "Stasiun Meteorologi Sultan Thaha - Jambi",
                              "site":  "Gudang Stasiun Meteorologi Sultan Thaha - Jambi",
                              "siteType":  "Gudang",
+                             "stationId":  "d669e931-f142-4fbe-a907-5308f72c314b",
                              "stationActive":  true,
+                             "siteId":  "8463f8d6-700e-4d5a-839d-495997cbd875",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -22782,8 +23280,11 @@
                              "station":  "Stasiun Meteorologi Supadio - Pontianak",
                              "site":  "Gudang Stasiun Meteorologi Supadio - Pontianak",
                              "siteType":  "Gudang",
+                             "stationId":  "66bf97e3-bb20-4c76-a95e-68d4f92892db",
                              "stationActive":  true,
+                             "siteId":  "51f4423c-548e-455a-bc2c-19a8309c4fc3",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -22823,8 +23324,11 @@
                              "station":  "Stasiun Meteorologi Syamsudin Noor - Banjarmasin",
                              "site":  "Gudang Stasiun Meteorologi Syamsudin Noor - Banjarmasin",
                              "siteType":  "Gudang",
+                             "stationId":  "592b97a4-6d39-49ec-afd9-48557d10e773",
                              "stationActive":  true,
+                             "siteId":  "f7fc0a5d-bbdb-40a0-859d-9636c1324eee",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -22842,8 +23346,11 @@
                              "station":  "Stasiun Meteorologi Syukuran Aminudin Amir - Banggai",
                              "site":  "Gudang Stasiun Meteorologi Syukuran Aminudin Amir - Banggai",
                              "siteType":  "Gudang",
+                             "stationId":  "a298de12-0ce5-4217-ab62-38e49a919b1c",
                              "stationActive":  true,
+                             "siteId":  "f521e914-6f48-4834-92ea-dc1db472121a",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -23037,8 +23544,11 @@
                              "station":  "Stasiun Meteorologi Tampa Padang - Mamuju",
                              "site":  "Gudang Stasiun Meteorologi Tampa Padang - Mamuju",
                              "siteType":  "Gudang",
+                             "stationId":  "37c01302-ebb4-4557-a5ad-b025a5e25f4c",
                              "stationActive":  true,
+                             "siteId":  "3f22fe00-a300-445b-b060-634c7c05d6ff",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -23067,8 +23577,11 @@
                              "station":  "Stasiun Meteorologi Tanah Merah - Boven Digoel",
                              "site":  "Gudang Stasiun Meteorologi Tanah Merah - Boven Digoel",
                              "siteType":  "Gudang",
+                             "stationId":  "bac3ef64-18bb-497b-831b-2588e38e7406",
                              "stationActive":  true,
+                             "siteId":  "baa5c67f-92cc-4a38-bc4c-92cb3544cbaa",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -23119,8 +23632,11 @@
                              "station":  "Stasiun Meteorologi Tanjung Harapan - Bulungan",
                              "site":  "Gudang Stasiun Meteorologi Tanjung Harapan - Bulungan",
                              "siteType":  "Gudang",
+                             "stationId":  "8366844f-766c-4075-a849-b6a5964ab454",
                              "stationActive":  true,
+                             "siteId":  "5c97c462-ed0a-4c20-b70e-2d7ed40a2b4f",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -23149,8 +23665,11 @@
                              "station":  "Stasiun Meteorologi Tardamu - Sabu Raijua",
                              "site":  "Gudang Stasiun Meteorologi Tardamu - Sabu Raijua",
                              "siteType":  "Gudang",
+                             "stationId":  "28aa05ee-9863-443d-9834-97fee9da141f",
                              "stationActive":  true,
+                             "siteId":  "eeefa760-c7dc-4b9d-98f0-d9e611cd517c",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -23179,8 +23698,11 @@
                              "station":  "Stasiun Meteorologi Tarempa - Kepulauan Anambas",
                              "site":  "Gudang Stasiun Meteorologi Tarempa - Kepulauan Anambas",
                              "siteType":  "Gudang",
+                             "stationId":  "0102436d-5798-4294-9172-cd603d4297c1",
                              "stationActive":  true,
+                             "siteId":  "d9b00b50-9ad5-4111-9e29-f73869601e7a",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -23209,8 +23731,11 @@
                              "station":  "Stasiun Meteorologi Tebelian - Sintang",
                              "site":  "Gudang Stasiun Meteorologi Tebelian - Sintang",
                              "siteType":  "Gudang",
+                             "stationId":  "a4f82a11-d8d0-4e19-a778-9a3d4c0610b6",
                              "stationActive":  true,
+                             "siteId":  "9da3e694-ea77-4ef8-8302-42aea56663de",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -23591,8 +24116,11 @@
                              "station":  "Stasiun Meteorologi Tjilik Riwut - Palangkaraya",
                              "site":  "Gudang Stasiun Meteorologi Tjilik Riwut - Palangkaraya",
                              "siteType":  "Gudang",
+                             "stationId":  "37e4a782-bb5a-412e-8d06-d75053512177",
                              "stationActive":  true,
+                             "siteId":  "a4b57464-19a2-47d2-86d2-db0bc68da54d",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -23610,8 +24138,11 @@
                              "station":  "Stasiun Meteorologi Toraja - Tana Toraja",
                              "site":  "Gudang Stasiun Meteorologi Toraja - Tana Toraja",
                              "siteType":  "Gudang",
+                             "stationId":  "ffb074be-6eff-4d64-a363-c53faa80f628",
                              "stationActive":  true,
+                             "siteId":  "1e6c2d28-b3cb-49c6-bb83-cac0f5314e37",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -23640,8 +24171,11 @@
                              "station":  "Stasiun Meteorologi Trunojoyo - Sumenep",
                              "site":  "Gudang Stasiun Meteorologi Trunojoyo - Sumenep",
                              "siteType":  "Gudang",
+                             "stationId":  "7afdf5d9-df1d-468d-b8ee-e503ade860e7",
                              "stationActive":  true,
+                             "siteId":  "33cc2d82-0485-40c1-aa7e-3825cc8405f3",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -23659,8 +24193,11 @@
                              "station":  "Stasiun Meteorologi Tuban - Tuban",
                              "site":  "Gudang Stasiun Meteorologi Tuban - Tuban",
                              "siteType":  "Gudang",
+                             "stationId":  "266372a0-60c6-490d-9e8e-ecbf225e3365",
                              "stationActive":  true,
+                             "siteId":  "d1c3141a-1e6f-4991-8251-d9f1559f23b2",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -23722,8 +24259,11 @@
                              "station":  "Stasiun Meteorologi Tunggul Wulung - Cilacap",
                              "site":  "Gudang Stasiun Meteorologi Tunggul Wulung - Cilacap",
                              "siteType":  "Gudang",
+                             "stationId":  "97b41b05-3513-43ba-a8f3-884299f470f5",
                              "stationActive":  true,
+                             "siteId":  "d8f9aeb0-fcda-413e-b77c-5b5733777e77",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -23752,8 +24292,11 @@
                              "station":  "Stasiun Meteorologi Umbu Mehang Kunda - Sumba Timur",
                              "site":  "Gudang Stasiun Meteorologi Umbu Mehang Kunda - Sumba Timur",
                              "siteType":  "Gudang",
+                             "stationId":  "5e991f1b-9921-4723-9977-d9f74f36b937",
                              "stationActive":  true,
+                             "siteId":  "29391ad9-87af-4db1-aed0-a1e46876a844",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -23771,8 +24314,11 @@
                              "station":  "Stasiun Meteorologi Utarom - Kaimana",
                              "site":  "Gudang Stasiun Meteorologi Utarom - Kaimana",
                              "siteType":  "Gudang",
+                             "stationId":  "cd02ee63-2b0c-40c7-a07b-f504fd43a8b1",
                              "stationActive":  true,
+                             "siteId":  "b6600d5f-a8d4-4787-bd94-ecaa069f29fc",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -23801,8 +24347,11 @@
                              "station":  "Stasiun Meteorologi Wamena - Jayawijaya",
                              "site":  "Gudang Stasiun Meteorologi Wamena - Jayawijaya",
                              "siteType":  "Gudang",
+                             "stationId":  "7120d270-9bd9-4b02-85d0-eba51d3fb60b",
                              "stationActive":  true,
+                             "siteId":  "8eeb9526-b298-415e-9276-396833a88b7f",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -23820,8 +24369,11 @@
                              "station":  "Stasiun Meteorologi Yogyakarta - Kulon Progo",
                              "site":  "Gudang Stasiun Meteorologi Yogyakarta - Kulon Progo",
                              "siteType":  "Gudang",
+                             "stationId":  "dc5eead5-9cbf-4623-b0d5-a96afefa00d8",
                              "stationActive":  true,
+                             "siteId":  "bb11b3c0-f0d0-4f04-9869-a080328f0436",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -23839,8 +24391,11 @@
                              "station":  "Stasiun Meteorologi Yuvai Semaring - Nunukan",
                              "site":  "Gudang Stasiun Meteorologi Yuvai Semaring - Nunukan",
                              "siteType":  "Gudang",
+                             "stationId":  "5731cf9d-39c8-4af5-8fb7-fb3ed9b00898",
                              "stationActive":  true,
+                             "siteId":  "95aa399c-7ff6-4d8a-bd6f-b26f81905d77",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -23913,8 +24468,11 @@
                              "station":  "Stasiun Meteorologi Zainuddin Abdul Madjid - Lombok Tengah",
                              "site":  "Gudang Stasiun Meteorologi Zainuddin Abdul Madjid - Lombok Tengah",
                              "siteType":  "Gudang",
+                             "stationId":  "0bb02871-55d5-4d04-8550-80f41b69d807",
                              "stationActive":  true,
+                             "siteId":  "e55592eb-83ec-47a5-b53e-271c010ea6ea",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          },
                          {
@@ -23932,8 +24490,11 @@
                              "station":  "Stasiun Pemantau Atmosfer Global Puncak Vihara Klademak",
                              "site":  "Gudang Stasiun Pemantau Atmosfer Global Puncak Vihara Klademak",
                              "siteType":  "Gudang",
+                             "stationId":  "33ec8aed-24cb-46c7-8e7c-1600276dce60",
                              "stationActive":  true,
+                             "siteId":  "c2921ae4-9de7-43db-bf7f-19b9f3daa084",
                              "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
                              "siteTypeActive":  true
                          }
                      ],

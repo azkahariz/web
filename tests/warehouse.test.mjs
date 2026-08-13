@@ -10,6 +10,7 @@ import {
   removeInventoryCategory,
   withItemFunctionCategories,
 } from "../app/lib/category-functions.ts";
+import { normalizeWarehouseConditions } from "../app/lib/inventory.ts";
 import { buildInventoryCsv, buildInventoryJson, createDefaultDraftPayload } from "../app/lib/inventory-export.ts";
 import { summarizeSubmissionProgress, summarizeWarehouseInventory } from "../app/lib/submission-monitoring.ts";
 import {
@@ -112,6 +113,22 @@ test("unit tanpa ID dan item quantity-only tetap dihitung per kemunculan", () =>
       quantity: 3,
     }],
   }), 5);
+});
+
+test("kondisi Gudang disimpan canonical Baik tanpa menghapus metadata unit", () => {
+  const normalized = normalizeWarehouseConditions({
+    "Sensor Tekanan Udara": [{
+      id: "legacy",
+      brand: "Legacy",
+      model: "Unit",
+      quantity: 1,
+      condition: "Rusak ringan",
+      units: [{ id: "unit-1", condition: "Tidak beroperasi", serialNumber: "SN-1" }],
+    }],
+  });
+  assert.equal(normalized["Sensor Tekanan Udara"][0].condition, "Baik");
+  assert.equal(normalized["Sensor Tekanan Udara"][0].units[0].condition, "Baik");
+  assert.equal(normalized["Sensor Tekanan Udara"][0].units[0].serialNumber, "SN-1");
 });
 
 test("ubah fungsi mempertahankan product dan physical unit ID", () => {

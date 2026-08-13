@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAppFeedback } from "./components/AppFeedback";
-import { CONDITION_OPTIONS, MOUNTING_MATERIALS } from "./config/form-options";
+import { getConditionOptions, MOUNTING_MATERIALS } from "./config/form-options";
 import rawData from "./data.generated.json";
 import { loadLocalDraft, saveLocalDraft } from "./lib/draft-storage";
 import { getTabSessionId, OPERATOR_STORAGE_KEY, type DraftPayload } from "./lib/server-draft";
@@ -32,6 +32,7 @@ import {
   getItemUnits,
   isMountingCategory,
   makeId,
+  normalizeWarehouseConditions,
   normalizeSearch,
 } from "./lib/inventory";
 import {
@@ -198,6 +199,7 @@ export default function InventoryApp({
   const profile = mode === "template" ? templateProfile : selectedSubtype?.profile ?? "";
   const profileCategories = data.barangByJenis[profile] ?? EMPTY_CATEGORIES;
   const warehouseMode = isWarehouseContext(data, selectedSite, selectedSubtype);
+  const conditionOptions = getConditionOptions(warehouseMode);
   const draftKey = mode === "template"
     ? `template::${profile}`
     : `site::${station}::${site}::${currentSubtype}`;
@@ -209,7 +211,7 @@ export default function InventoryApp({
   }, [inventory, profileCategories]);
   const categories = warehouseMode ? warehouseCategories : profileCategories;
   const metadataKey = `site-metadata::${station}::${site}`;
-  const siteMetadata = useMemo(() => siteMetadataDrafts[metadataKey] ?? EMPTY_SITE_METADATA, [metadataKey, siteMetadataDrafts]);
+  const siteMetadata = useMemo(() => ({ ...EMPTY_SITE_METADATA, ...(siteMetadataDrafts[metadataKey] ?? {}) }), [metadataKey, siteMetadataDrafts]);
   const automaticMetadata = {
     stationName: station,
     siteName: site,
@@ -432,7 +434,7 @@ export default function InventoryApp({
   const applyRemotePayload = useCallback((next: DraftPayload) => {
     setDrafts((current) => ({ ...current, [draftKey]: next.inventory ?? {} }));
     setDraftContexts((current) => ({ ...current, [draftKey]: { runwayAzimuth: next.runwayAzimuth ?? "" } }));
-    setSiteMetadataDrafts((current) => ({ ...current, [metadataKey]: next.siteMetadata ?? EMPTY_SITE_METADATA }));
+    setSiteMetadataDrafts((current) => ({ ...current, [metadataKey]: { ...EMPTY_SITE_METADATA, ...(next.siteMetadata ?? {}) } }));
   }, [draftKey, metadataKey]);
 
   const selectedSiteId = selectedSite?.siteId ?? "";
@@ -443,7 +445,7 @@ export default function InventoryApp({
       stationId: account.stationId,
       siteId: selectedSiteId,
       siteSubtypeId: selectedSubtypeId,
-      inventory,
+      inventory: warehouseMode ? normalizeWarehouseConditions(inventory) : inventory,
       runwayAzimuth: acceptsRunwayAzimuth ? runwayAzimuth : "",
       siteMetadata: warehouseMode ? EMPTY_SITE_METADATA : siteMetadata,
     }
@@ -933,9 +935,10 @@ export default function InventoryApp({
                                 <div className="metadata-grid">
                                   {item.itemKind !== "material" && <label>Nomor seri<input autoComplete="off" value={unit.serialNumber} onChange={(event) => updateUnit(storageCategory, item, unit.id, { serialNumber: event.target.value })} placeholder="Opsional" /></label>}
                                   <label>Kondisi
-                                    <select value={unit.condition} onChange={(event) => updateUnit(storageCategory, item, unit.id, { condition: event.target.value as Condition })}>
-                                      {CONDITION_OPTIONS.map((condition) => <option key={condition}>{condition}</option>)}
-                                    </select>
+                                    {warehouseMode ? <input value="Baik" readOnly aria-label="Kondisi" /> : <select value={unit.condition} onChange={(event) => updateUnit(storageCategory, item, unit.id, { condition: event.target.value as Condition })}>
+                                      {conditionOptions.map((condition) => <option key={condition}>{condition}</option>)}
+                                      {!conditionOptions.some((condition) => condition === unit.condition) && unit.condition && <option>{unit.condition}</option>}
+                                    </select>}
                                   </label>
                                   {warehouseMode ? <>
                                     <label>Tahun pengadaan<input autoComplete="off" inputMode="numeric" maxLength={4} value={unit.procurementYear ?? ""} onChange={(event) => updateUnit(storageCategory, item, unit.id, { procurementYear: event.target.value.replace(/\D/g, "").slice(0, 4) })} placeholder="YYYY" /></label>

@@ -5,7 +5,7 @@ import { createServer } from "node:net";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { after, before, test } from "node:test";
-import { resolveFieldDomain } from "../app/lib/site-metadata.ts";
+import { EMPTY_SITE_METADATA, resolveFieldDomain, siteMetadataCsvValues } from "../app/lib/site-metadata.ts";
 
 const projectRoot = fileURLToPath(new URL("..", import.meta.url));
 let server;
@@ -342,7 +342,7 @@ test("form metadata menyediakan seluruh pilihan operasional dan komunikasi", asy
   ]);
   const expectedLabels = [
     "Sumber Anggaran Pemeliharaan", "Merk Pengadaan", "WIGOS ID", "AWS Center ID",
-    "Status Kepemilikan", "Kode BMN (NUP)", "Tanggal Instalasi", "Status Operasional",
+    "Status Kepemilikan", "Kode BMN (NUP)", "Tanggal Instalasi", "Status",
     "Alamat Detail", "Desa/Kelurahan", "Kecamatan", "Kab/Kota", "Nama Provinsi",
     "Nama Instansi Mitra", "Alamat Instansi", "Nama Penjaga", "No HP Penjaga",
     "Latitude", "Longitude", "Elevasi (meter)", "Metode Ukur", "Tanggal Ukur",
@@ -351,12 +351,32 @@ test("form metadata menyediakan seluruh pilihan operasional dan komunikasi", asy
   ];
 
   for (const label of expectedLabels) assert.match(source, new RegExp(label.replace(/[()]/g, "\\$&")));
-  assert.match(formOptions, /OPERATIONAL[\s\S]*TRIAL[\s\S]*INACTIVE[\s\S]*RETIRED/);
+  assert.match(formOptions, /OPERATIONAL[\s\S]*TRIAL[\s\S]*INACTIVE/);
+  assert.doesNotMatch(formOptions, /OPERATIONAL[\s\S]*TRIAL[\s\S]*INACTIVE[\s\S]*RETIRED/);
+  assert.match(formOptions, /SITE_CONDITION_OPTIONS[\s\S]*Baik[\s\S]*Rusak/);
+  assert.match(formOptions, /WAREHOUSE_CONDITION_OPTIONS[\s\S]*\["Baik"\]/);
+  assert.match(formOptions, /Survey Barometric[\s\S]*Lainnya/);
+  assert.match(source, /Metode Ukur Lainnya/);
   assert.match(formOptions, /MQTT[\s\S]*HTTP POST[\s\S]*FTP[\s\S]*TCP\/IP Direct/);
   assert.match(formOptions, /WIB \(UTC\+7\)[\s\S]*WITA \(UTC\+8\)[\s\S]*WIT \(UTC\+9\)/);
   assert.match(formOptions, /value: "1", label: "1 Menit"[\s\S]*value: "60", label: "60 Menit"[\s\S]*Lainnya/);
   assert.match(source, /transportMethods\.includes\(method\)/);
   assert.match(source, /Gunakan titik sebagai pemisah desimal/);
+});
+
+test("Metode Ukur Lainnya diekspor sebagai nilai manual aktual", () => {
+  const values = siteMetadataCsvValues({
+    ...EMPTY_SITE_METADATA,
+    measurementMethod: "Lainnya",
+    measurementMethodOther: "Theodolite",
+  }, {
+    stationName: "Stasiun A",
+    siteName: "Site A",
+    equipmentType: "AWS",
+    fieldDomain: "Klimatologi",
+    uptManager: "Stasiun A",
+  });
+  assert.equal(values[26], "Theodolite");
 });
 
 test("metadata Aloptama ikut dalam ekspor JSON dan CSV", async () => {
