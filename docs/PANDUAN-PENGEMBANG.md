@@ -139,6 +139,25 @@ Command pertama selalu LOCAL dan mengabaikan `SUPABASE_DB_URL`. Command kedua
 selalu REMOTE, gagal bila URL tidak tersedia, dan menolak URL `127.0.0.1` atau
 localhost. Keduanya hanya menjalankan query baca dalam transaksi `READ ONLY`.
 
+Untuk membangun ulang CSV dengan bentuk yang dibaca generator master, gunakan:
+
+```powershell
+npm.cmd run export:source-csv:remote
+```
+
+Command ini hanya REMOTE dan menghasilkan `Nama Stasiun.csv`, `Jenis Site.csv`,
+`Barang.csv`, `product_categories.csv`, dan `products.csv` di `exports/source/`.
+Header, urutan kolom, nilai flag `1/0`, CRLF, dan nama relasi mengikuti CSV
+sumber yang ada. Setelah menulis snapshot runtime, script menjalankan generator
+ke folder temporary dan memeriksa count/relasi tanpa menimpa
+`app/data.generated.json`.
+
+Untuk jaringan yang tidak dapat mengakses host database direct, isi
+`SUPABASE_DB_POOLER_URL` dengan Session Pooler connection string dari Supabase
+Dashboard -> Connect. Variable ini diprioritaskan atas `SUPABASE_DB_URL`;
+keduanya tidak pernah dicetak ke console. Jika tidak tersedia, command gagal
+jelas dan tidak fallback ke localhost.
+
 Hasil ditulis ke `exports/master/` (diabaikan Git) sebagai CSV UTF-8 dengan BOM,
 escaping CSV standar, UUID, dan nama relasi. File per tabel mencakup sembilan
 tabel master: stations, sites, site_types, site_subtypes, item_profiles, items,

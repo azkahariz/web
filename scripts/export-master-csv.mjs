@@ -45,7 +45,7 @@ function resolveDatabaseTarget(target, environment = process.env) {
   if (target === "local") {
     return { label: "LOCAL", url: DEFAULT_DATABASE_URL };
   }
-  const url = environment.SUPABASE_DB_URL?.trim();
+  const url = environment.SUPABASE_DB_POOLER_URL?.trim() || environment.SUPABASE_DB_URL?.trim();
   if (!url) throw new Error("SUPABASE_DB_URL remote tidak tersedia. Tambahkan ke .env.local atau set environment variable secara eksplisit.");
   const parsed = new URL(url);
   if (["localhost", "127.0.0.1", "::1"].includes(parsed.hostname)) {

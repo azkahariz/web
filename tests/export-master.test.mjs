@@ -96,4 +96,8 @@ test("target export memisahkan local dan remote tanpa fallback", () => {
   assert.equal(resolveDatabaseTarget("remote", { SUPABASE_DB_URL: "postgresql://remote.example/db" }).label, "REMOTE");
   assert.throws(() => resolveDatabaseTarget("remote", {}), /SUPABASE_DB_URL remote tidak tersedia/);
   assert.throws(() => resolveDatabaseTarget("remote", { SUPABASE_DB_URL: "postgresql://127.0.0.1:54322/postgres" }), /bukan Supabase lokal/);
+  assert.equal(resolveDatabaseTarget("remote", {
+    SUPABASE_DB_URL: "postgresql://direct.example/db",
+    SUPABASE_DB_POOLER_URL: "postgresql://pooler.example/db",
+  }).url, "postgresql://pooler.example/db");
 });
