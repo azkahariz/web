@@ -11,7 +11,7 @@ import { loadMasterSource, sourceCounts } from "./master/source.mjs";
 const SOURCE_COLUMNS = {
   stations: [
     "station_id", "Nama Stasiun", "station_active", "site_id", "Nama Site", "site_active",
-    "site_type_id", "Tipe Site", "site_type_active", ...Array.from({ length: 21 }, (_, index) => `Column ${index + 1}`),
+    "site_type_id", "Tipe Site", "site_type_active",
   ],
   subtypes: ["site_type_id", "Tipe Site", "site_type_active", "site_subtype_id", "Sub Tipe Site", "site_subtype_active", "item_profile_id", "Profil Barang"],
   profileItems: ["item_profile_id", "Jenis", "item_profile_active", "item_id", "Barang Terpasang", "item_active", "profile_item_id", "mapping_active"],

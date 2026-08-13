@@ -35,7 +35,9 @@ test("source export mempertahankan header dan urutan kolom generator", () => {
   ]);
   assert.equal(SOURCE_COLUMNS.stations[1], "Nama Stasiun");
   assert.equal(SOURCE_COLUMNS.stations[4], "Nama Site");
-  assert.equal(SOURCE_COLUMNS.stations.at(-1), "Column 21");
+  assert.equal(SOURCE_COLUMNS.stations.length, 9);
+  assert.equal(SOURCE_COLUMNS.stations.at(-1), "site_type_active");
+  assert.equal(SOURCE_COLUMNS.stations.some((column) => column.startsWith("Column ")), false);
 });
 
 test("source export merekonstruksi relasi UUID menjadi nama, AWOS tetap satu parent, dan Gudang literal", () => {

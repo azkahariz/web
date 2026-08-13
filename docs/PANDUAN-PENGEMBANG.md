@@ -147,8 +147,10 @@ npm.cmd run export:source-csv:remote
 
 Command ini hanya REMOTE dan menghasilkan `Nama Stasiun.csv`, `Jenis Site.csv`,
 `Barang.csv`, `product_categories.csv`, dan `products.csv` di `exports/source/`.
-Header, urutan kolom, nilai flag `1/0`, CRLF, dan nama relasi mengikuti CSV
-sumber yang ada. Setelah menulis snapshot runtime, script menjalankan generator
+Header canonical generator sampai kolom I, urutan kolom, nilai flag `1/0`, CRLF,
+dan nama relasi mengikuti CSV sumber. Kolom spreadsheet kosong `Column 1` sampai
+`Column 21` mulai dari kolom J tidak disertakan. Setelah menulis snapshot runtime,
+script menjalankan generator
 ke folder temporary dan memeriksa count/relasi tanpa menimpa
 `app/data.generated.json`.
 
