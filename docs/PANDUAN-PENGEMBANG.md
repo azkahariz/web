@@ -105,6 +105,29 @@ jangan edit `app/data.generated.json` atau UUID manual. Credential baru hanya
 ditulis ke `private-output/`. Provisioning tidak dipakai untuk reset data atau
 mengambil kembali password existing.
 
+### Export master ke CSV
+
+Export master bersifat read-only dan secara default memakai Supabase lokal:
+
+```powershell
+npm.cmd run export:master:csv
+npm.cmd run export:master:csv -- --output exports/master-snapshot
+```
+
+Hasil ditulis ke `exports/master/` (diabaikan Git) sebagai CSV UTF-8 dengan BOM,
+escaping CSV standar, UUID, dan nama relasi. File per tabel mencakup sembilan
+tabel master: stations, sites, site_types, site_subtypes, item_profiles, items,
+profile_items, product_categories, dan products. `nama-stasiun.csv` adalah
+gabungan referensi Station/Site/Type/Subtype/Profile; satu Site AWOS Kategori III
+tetap memakai satu `site_id` dan dapat muncul beberapa kali untuk setiap subtype.
+Site Gudang mempertahankan label literal `Gudang`.
+
+Untuk database remote, set `SUPABASE_DB_URL` hanya pada sesi PowerShell yang
+memang diizinkan membaca database tersebut, lalu jalankan command yang sama.
+Script membuka transaksi `READ ONLY`, mengurutkan hasil secara deterministik,
+memeriksa UUID/FK, dan tidak memuat submission, lock, audit, QC, atau tabel
+operasional lain. Jangan menaruh URL berisi credential di source code atau log.
+
 ## Migration dan deploy
 
 Buat migration baru; jangan edit migration yang sudah applied. Uji Vercel

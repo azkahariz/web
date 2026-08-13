@@ -38,6 +38,7 @@ yarn-error.log*
 
 # generated master synchronization output
 /sync-output/
+/exports/master/
 
 # vercel
 .vercel
