@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
-import { buildStationSiteProgress, summarizeStationSiteProgress } from "../app/lib/station-site-progress.ts";
+import { buildStationSiteProgress } from "../app/lib/station-site-progress.ts";
 import {
   WAREHOUSE_PROFILE_ID,
   WAREHOUSE_SITE_TYPE_ID,
@@ -20,7 +20,11 @@ const data = {
     { siteType: "AWS", subtype: "AWS Station", profile: "AWS", subtypeId: "aws-subtype" },
     { siteType: "Gudang", subtype: "Gudang", profile: "Gudang", siteTypeId: WAREHOUSE_SITE_TYPE_ID, subtypeId: WAREHOUSE_SUBTYPE_ID, profileId: WAREHOUSE_PROFILE_ID },
   ],
-  barangByJenis: {},
+  barangByJenis: {
+    "AWOS 0": ["A", "B"],
+    "AWOS 1": ["C", "D"],
+    "AWS": ["E", "F", "G"],
+  },
   products: [],
 };
 
@@ -31,7 +35,7 @@ const sites = [
   { siteId: "empty-site", station: "Stasiun Uji", site: "AWS Belum Mulai", siteType: "AWS" },
 ];
 
-test("ringkasan Station User menghitung AWOS multi-subtype sebagai satu parent site", () => {
+test("ringkasan Station User menghitung AWOS multi-subtype sebagai satu parent site dan kategori", () => {
   const rows = buildStationSiteProgress(data, sites, [
     { siteId: "awos-site", siteSubtypeId: "awos-0", filledCount: 2, totalCount: 2, progressKind: "EXPECTED", warehouseCategoryCount: 0, warehouseUnitCount: 0 },
     { siteId: "awos-site", siteSubtypeId: "awos-1", filledCount: 1, totalCount: 2, progressKind: "EXPECTED", warehouseCategoryCount: 0, warehouseUnitCount: 0 },
@@ -44,21 +48,46 @@ test("ringkasan Station User menghitung AWOS multi-subtype sebagai satu parent s
     siteId: "awos-site",
     siteName: "AWOS Vaisala Kat. 3 Uji",
     siteType: "AWOS Kategori III",
-    status: "Terisi sebagian",
-    detail: "2/4 subtipe sudah diisi",
     warehouseMode: false,
+    filledCount: 3,
+    totalCount: 4,
+    progressPercent: 75,
+    warehouseCategoryCount: 0,
+    warehouseUnitCount: 0,
   });
-  assert.equal(rows.find((row) => row.siteId === "aws-site")?.status, "Lengkap");
+  assert.deepEqual(rows.find((row) => row.siteId === "aws-site"), {
+    siteId: "aws-site",
+    siteName: "AWS Uji",
+    siteType: "AWS",
+    warehouseMode: false,
+    filledCount: 3,
+    totalCount: 3,
+    progressPercent: 100,
+    warehouseCategoryCount: 0,
+    warehouseUnitCount: 0,
+  });
   assert.deepEqual(rows.find((row) => row.siteId === "warehouse-site"), {
     siteId: "warehouse-site",
     siteName: "Gudang Uji",
     siteType: "Gudang",
-    status: "Terisi sebagian",
-    detail: "4 kategori · 7 unit",
     warehouseMode: true,
+    filledCount: 0,
+    totalCount: 0,
+    progressPercent: 0,
+    warehouseCategoryCount: 4,
+    warehouseUnitCount: 7,
   });
-  assert.equal(rows.find((row) => row.siteId === "empty-site")?.status, "Belum mulai");
-  assert.deepEqual(summarizeStationSiteProgress(rows), { total: 4, notStarted: 1, partial: 2, complete: 1 });
+  assert.deepEqual(rows.find((row) => row.siteId === "empty-site"), {
+    siteId: "empty-site",
+    siteName: "AWS Belum Mulai",
+    siteType: "AWS",
+    warehouseMode: false,
+    filledCount: 0,
+    totalCount: 3,
+    progressPercent: 0,
+    warehouseCategoryCount: 0,
+    warehouseUnitCount: 0,
+  });
 });
 
 test("RPC ringkasan Station User tidak mengembalikan payload submission", async () => {

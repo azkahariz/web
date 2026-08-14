@@ -17,17 +17,22 @@ type RpcRow = {
 export function useStationSiteProgress(enabled: boolean) {
   const [rows, setRows] = useState<StationSubmissionProgress[]>([]);
   const [loading, setLoading] = useState(enabled);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const refresh = useCallback(async () => {
     if (!enabled) return;
     const client = getSupabaseBrowserClient();
     if (!client) {
       setLoading(false);
+      setErrorMessage("Ringkasan server belum tersedia.");
       return;
     }
     setLoading(true);
     const { data, error } = await client.rpc("list_station_submission_summaries");
-    if (!error) {
+    if (error) {
+      setErrorMessage("Ringkasan server belum dapat dimuat.");
+    } else {
+      setErrorMessage("");
       setRows(((data ?? []) as RpcRow[]).map((row) => ({
         siteId: row.site_id,
         siteSubtypeId: row.site_subtype_id,
@@ -50,5 +55,5 @@ export function useStationSiteProgress(enabled: boolean) {
     return () => { cancelled = true; };
   }, [enabled, refresh]);
 
-  return { rows, loading, refresh };
+  return { rows, loading, errorMessage, refresh };
 }

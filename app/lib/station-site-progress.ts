@@ -12,15 +12,16 @@ export type StationSubmissionProgress = {
   warehouseUnitCount: number;
 };
 
-export type StationSiteProgressStatus = "Belum mulai" | "Terisi sebagian" | "Lengkap";
-
 export type StationSiteProgress = {
   siteId: string;
   siteName: string;
   siteType: string;
-  status: StationSiteProgressStatus;
-  detail: string;
   warehouseMode: boolean;
+  filledCount: number;
+  totalCount: number;
+  progressPercent: number;
+  warehouseCategoryCount: number;
+  warehouseUnitCount: number;
 };
 
 function siteKey(site: StationSite) {
@@ -57,16 +58,16 @@ export function buildStationSiteProgress(
         .find((item) => item?.progressKind === "WAREHOUSE");
       const categoryCount = summary?.warehouseCategoryCount ?? 0;
       const unitCount = summary?.warehouseUnitCount ?? 0;
-      const hasRecordedInventory = categoryCount > 0 || unitCount > 0;
       return {
         siteId: site.siteId ?? siteKey(site),
         siteName: site.site,
         siteType: site.siteType,
-        status: hasRecordedInventory ? "Terisi sebagian" : "Belum mulai",
-        detail: hasRecordedInventory
-          ? `${categoryCount} kategori · ${unitCount} unit`
-          : "Belum ada kategori atau unit",
         warehouseMode: true,
+        filledCount: 0,
+        totalCount: 0,
+        progressPercent: 0,
+        warehouseCategoryCount: categoryCount,
+        warehouseUnitCount: unitCount,
       };
     }
 
@@ -74,50 +75,21 @@ export function buildStationSiteProgress(
       const summary = summariesBySubtype.get(subtypeKey(site.siteId, subtype));
       return {
         filledCount: summary?.filledCount ?? 0,
-        totalCount: summary?.totalCount ?? 0,
+        totalCount: summary?.totalCount ?? (data.barangByJenis[subtype.profile] ?? []).length,
       };
     });
-    const filledSubtypeCount = subtypeProgress.filter((summary) => summary.filledCount > 0).length;
-    const isComplete = subtypeProgress.length > 0 && subtypeProgress.every((summary) => (
-      summary.totalCount > 0 && summary.filledCount === summary.totalCount
-    ));
-    const status: StationSiteProgressStatus = isComplete
-      ? "Lengkap"
-      : filledSubtypeCount > 0
-        ? "Terisi sebagian"
-        : "Belum mulai";
-
-    if (allowedSubtypes.length > 1) {
-      return {
-        siteId: site.siteId ?? siteKey(site),
-        siteName: site.site,
-        siteType: site.siteType,
-        status,
-        detail: `${filledSubtypeCount}/${allowedSubtypes.length} subtipe sudah diisi`,
-        warehouseMode: false,
-      };
-    }
-
-    const summary = subtypeProgress[0] ?? { filledCount: 0, totalCount: 0 };
+    const filledCount = subtypeProgress.reduce((total, summary) => total + summary.filledCount, 0);
+    const totalCount = subtypeProgress.reduce((total, summary) => total + summary.totalCount, 0);
     return {
       siteId: site.siteId ?? siteKey(site),
       siteName: site.site,
       siteType: site.siteType,
-      status,
-      detail: summary.totalCount > 0
-        ? `${summary.filledCount}/${summary.totalCount} kategori`
-        : "Profil barang belum tersedia",
       warehouseMode: false,
+      filledCount,
+      totalCount,
+      progressPercent: totalCount ? Math.round((filledCount / totalCount) * 100) : 0,
+      warehouseCategoryCount: 0,
+      warehouseUnitCount: 0,
     };
   });
-}
-
-export function summarizeStationSiteProgress(rows: StationSiteProgress[]) {
-  return rows.reduce((summary, row) => {
-    summary.total += 1;
-    if (row.status === "Belum mulai") summary.notStarted += 1;
-    else if (row.status === "Terisi sebagian") summary.partial += 1;
-    else summary.complete += 1;
-    return summary;
-  }, { total: 0, notStarted: 0, partial: 0, complete: 0 });
 }

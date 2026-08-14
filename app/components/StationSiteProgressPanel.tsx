@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { buildStationSiteProgress, summarizeStationSiteProgress, type StationSubmissionProgress } from "../lib/station-site-progress";
+import { buildStationSiteProgress, type StationSubmissionProgress } from "../lib/station-site-progress";
 import type { DataSet, StationSite } from "../types/inventory";
 
 export default function StationSiteProgressPanel({
@@ -9,6 +9,7 @@ export default function StationSiteProgressPanel({
   sites,
   submissions,
   loading,
+  error,
   selectedSite,
   disabled,
   onSelectSite,
@@ -17,12 +18,12 @@ export default function StationSiteProgressPanel({
   sites: StationSite[];
   submissions: StationSubmissionProgress[];
   loading: boolean;
+  error: string;
   selectedSite: string;
   disabled: boolean;
   onSelectSite: (site: string) => void;
 }) {
   const rows = useMemo(() => buildStationSiteProgress(data, sites, submissions), [data, sites, submissions]);
-  const summary = useMemo(() => summarizeStationSiteProgress(rows), [rows]);
 
   return (
     <section className="station-site-progress" aria-labelledby="station-site-progress-title">
@@ -33,12 +34,7 @@ export default function StationSiteProgressPanel({
         </div>
         {loading && <span>Memuat...</span>}
       </div>
-      <div className="station-site-progress-stats" aria-label="Ringkasan progress site">
-        <span><strong>{summary.total}</strong>Total Site</span>
-        <span><strong>{summary.notStarted}</strong>Belum mulai</span>
-        <span><strong>{summary.partial}</strong>Terisi sebagian</span>
-        <span><strong>{summary.complete}</strong>Lengkap</span>
-      </div>
+      {error && <p className="station-site-progress-error">{error}</p>}
       <div className="station-site-progress-list">
         {rows.map((row) => (
           <button
@@ -48,7 +44,11 @@ export default function StationSiteProgressPanel({
             onClick={() => onSelectSite(row.siteName)}
           >
             <span className="station-site-progress-name"><strong>{row.siteName}</strong><small>{row.siteType}</small></span>
-            <span className="station-site-progress-state"><small>{row.detail}</small><em className={`site-progress-status ${row.status === "Lengkap" ? "complete" : row.status === "Terisi sebagian" ? "partial" : "empty"}`}>{row.status}</em></span>
+            {row.warehouseMode ? (
+              <span className="station-site-progress-state"><strong>{row.warehouseCategoryCount} kategori</strong><small>{row.warehouseUnitCount} unit</small></span>
+            ) : (
+              <span className="station-site-progress-state"><strong>{row.progressPercent}%</strong><small>{row.totalCount ? `${row.filledCount}/${row.totalCount} kategori` : "Profil belum tersedia"}</small></span>
+            )}
           </button>
         ))}
       </div>

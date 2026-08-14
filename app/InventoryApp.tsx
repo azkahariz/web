@@ -467,6 +467,7 @@ export default function InventoryApp({
   const {
     rows: stationSiteProgressRows,
     loading: stationSiteProgressLoading,
+    errorMessage: stationSiteProgressError,
     refresh: refreshStationSiteProgress,
   } = useStationSiteProgress(!isAdminEditor);
 
@@ -474,6 +475,32 @@ export default function InventoryApp({
     if (isAdminEditor || sync.status !== "saved" || !sync.lastSavedAt) return;
     void refreshStationSiteProgress();
   }, [isAdminEditor, refreshStationSiteProgress, sync.lastSavedAt, sync.status]);
+
+  const hasLocalInventory = Object.values(inventory).some((items) => items.length > 0);
+  const effectiveStationSiteProgressRows = isAdminEditor || !selectedSiteId || !selectedSubtypeId || (!sync.isEditing && !hasLocalInventory)
+    ? stationSiteProgressRows
+    : [
+      ...stationSiteProgressRows.filter((row) => row.siteId !== selectedSiteId || row.siteSubtypeId !== selectedSubtypeId),
+      warehouseMode
+        ? {
+          siteId: selectedSiteId,
+          siteSubtypeId: selectedSubtypeId,
+          filledCount: 0,
+          totalCount: 0,
+          progressKind: "WAREHOUSE" as const,
+          warehouseCategoryCount: recordedCategoryCount(inventory),
+          warehouseUnitCount: physicalUnitCount(inventory),
+        }
+        : {
+          siteId: selectedSiteId,
+          siteSubtypeId: selectedSubtypeId,
+          filledCount: profileCategories.filter((category) => inventoryCategoryIsFilled(inventory, category)).length,
+          totalCount: profileCategories.length,
+          progressKind: "EXPECTED" as const,
+          warehouseCategoryCount: 0,
+          warehouseUnitCount: 0,
+        },
+    ];
 
   useEffect(() => {
     if (!startInEditMode || !adminSubmissionId || !hydrated || autoEditStartedRef.current
@@ -820,8 +847,9 @@ export default function InventoryApp({
             <StationSiteProgressPanel
               data={data}
               sites={sites}
-              submissions={stationSiteProgressRows}
+              submissions={effectiveStationSiteProgressRows}
               loading={stationSiteProgressLoading}
+              error={stationSiteProgressError}
               selectedSite={site}
               disabled={sync.isEditing}
               onSelectSite={(nextSite) => {
