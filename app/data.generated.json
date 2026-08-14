@@ -26398,6 +26398,11 @@
                          "active":  true
                      },
                      {
+                         "brand":  "ConnexLink",
+                         "model":  "CL4490",
+                         "active":  true
+                     },
+                     {
                          "brand":  "Controller Panel Solar Cell",
                          "model":  "CMP12",
                          "productId":  "c3b94f02-5ae0-43ef-b306-54c3aae68dd1",
@@ -26629,6 +26634,21 @@
                          "brand":  "Ebmpapst",
                          "model":  "MARS Fan 8312",
                          "productId":  "c5dcaff5-8fa1-4ef7-a2c1-d8f8ce80deaa",
+                         "active":  true
+                     },
+                     {
+                         "brand":  "EKO Instrument",
+                         "model":  "EKO MS-40",
+                         "active":  true
+                     },
+                     {
+                         "brand":  "EKO Instrument",
+                         "model":  "MS-57",
+                         "active":  true
+                     },
+                     {
+                         "brand":  "EKO Instrument",
+                         "model":  "STR-21G",
                          "active":  true
                      },
                      {
@@ -26932,6 +26952,11 @@
                          "active":  true
                      },
                      {
+                         "brand":  "JDW",
+                         "model":  "JDW 10A",
+                         "active":  true
+                     },
+                     {
                          "brand":  "Jucindo Utama Mandiri",
                          "model":  "Enclosure P Series",
                          "productId":  "4c17721c-83cd-4eb7-a1c9-a036dd4b9589",
@@ -27029,8 +27054,18 @@
                      },
                      {
                          "brand":  "Kipp \u0026 Zonen",
+                         "model":  "CMP6",
+                         "active":  true
+                     },
+                     {
+                         "brand":  "Kipp \u0026 Zonen",
                          "model":  "CSD3",
                          "productId":  "716c8b23-e289-4888-b050-3724f6373883",
+                         "active":  true
+                     },
+                     {
+                         "brand":  "Kipp \u0026 Zonen",
+                         "model":  "NR-Lite 2",
                          "active":  true
                      },
                      {
@@ -27049,6 +27084,11 @@
                          "brand":  "Kipp \u0026 Zonen",
                          "model":  "Solar Radiation 3121",
                          "productId":  "9454bf42-5e77-4a01-ae77-4b9d2df9f171",
+                         "active":  true
+                     },
+                     {
+                         "brand":  "Kipp \u0026 Zonen",
+                         "model":  "SOLYS2 Sun Tracker",
                          "active":  true
                      },
                      {
@@ -27163,6 +27203,11 @@
                          "brand":  "Manvis",
                          "model":  "RJ45",
                          "productId":  "bb257df2-e1c7-4afb-9992-270624bdc256",
+                         "active":  true
+                     },
+                     {
+                         "brand":  "Maysun Solar",
+                         "model":  "MS200M-60",
                          "active":  true
                      },
                      {
