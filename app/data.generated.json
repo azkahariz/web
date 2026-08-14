@@ -45,6 +45,13 @@
                              "siteTypeActive":  true
                          },
                          {
+                             "station":  "Balai BMKG V",
+                             "site":  "Gudang Balai BMKG V",
+                             "siteType":  "Gudang",
+                             "stationActive":  true,
+                             "siteActive":  true
+                         },
+                         {
                              "station":  "BMKG Pusat",
                              "site":  "AWS Bandara Halim Perdana Kusuma",
                              "siteType":  "AWS Rekayasa",
@@ -24759,6 +24766,14 @@
                              "siteId":  "9ffcf37b-46cf-425b-bdd1-e8d14c12cfb4",
                              "siteActive":  true,
                              "siteTypeId":  "20e3dd30-2334-4155-9986-77efdc04b145",
+                             "siteTypeActive":  true
+                         },
+                         {
+                             "station":  "GAW Bukit Kototabang",
+                             "site":  "AAWS Kototabang",
+                             "siteType":  "AAWS",
+                             "stationActive":  true,
+                             "siteActive":  true,
                              "siteTypeActive":  true
                          }
                      ],
