@@ -48,8 +48,12 @@
                              "station":  "Balai BMKG V",
                              "site":  "Gudang Balai BMKG V",
                              "siteType":  "Gudang",
+                             "stationId":  "8992e480-df06-4aeb-b749-4b65e859d8e8",
                              "stationActive":  true,
-                             "siteActive":  true
+                             "siteId":  "29ee4648-f8a1-4f2a-a3a2-58f115a5cdf3",
+                             "siteActive":  true,
+                             "siteTypeId":  "da5d00b1-cd15-4b1d-8087-1057eb31c7d8",
+                             "siteTypeActive":  true
                          },
                          {
                              "station":  "BMKG Pusat",
@@ -24769,11 +24773,14 @@
                              "siteTypeActive":  true
                          },
                          {
-                             "station":  "GAW Bukit Kototabang",
+                             "station":  "Stasiun GAW Bukit Kototabang",
                              "site":  "AAWS Kototabang",
                              "siteType":  "AAWS",
+                             "stationId":  "1e54c59c-60d9-467b-a239-95f67b1b5c5a",
                              "stationActive":  true,
+                             "siteId":  "366ab72c-29b1-4eb7-a559-ad10c8b91afd",
                              "siteActive":  true,
+                             "siteTypeId":  "76a6382b-0a35-4bf9-a28c-0bc5424f7806",
                              "siteTypeActive":  true
                          }
                      ],
