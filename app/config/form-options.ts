@@ -27,8 +27,6 @@ export const MOUNTING_MATERIALS = [
   "Fiberglass",
 ] as const;
 
-export const MAINTENANCE_BUDGET_OPTIONS = ["3347", "3352"] as const;
-
 export const FIELD_DOMAIN_SITE_TYPES = {
   Meteorologi: [
     "AWOS Kategori III",

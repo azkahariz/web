@@ -3,7 +3,6 @@
 import { useState } from "react";
 import {
   DATA_INTERVAL_OPTIONS,
-  MAINTENANCE_BUDGET_OPTIONS,
   MEASUREMENT_METHOD_OPTIONS,
   OPERATIONAL_STATUS_OPTIONS,
   OWNERSHIP_STATUS_OPTIONS,
@@ -106,10 +105,7 @@ export default function SiteMetadataForm({ value, automatic, onChange, onReset }
           <label>Field/Domain<input autoComplete="off" value={automatic.fieldDomain} readOnly /></label>
           <label>UPT Pengelola<input autoComplete="off" value={automatic.uptManager} readOnly /></label>
           <label>Sumber Anggaran Pemeliharaan
-            <input autoComplete="off" list="budget-options" value={value.maintenanceBudgetSource} onChange={(event) => update("maintenanceBudgetSource", event.target.value)} placeholder="Contoh: 3347" />
-            <datalist id="budget-options">
-              {MAINTENANCE_BUDGET_OPTIONS.map((budget) => <option value={budget} key={budget} />)}
-            </datalist>
+            <input autoComplete="off" value={value.maintenanceBudgetSource} onChange={(event) => update("maintenanceBudgetSource", event.target.value)} placeholder="Contoh: 3347 atau akun anggaran lainnya" />
           </label>
           <label>Merk Pengadaan<input autoComplete="off" value={value.procurementBrand} onChange={(event) => update("procurementBrand", event.target.value)} placeholder="Contoh: LSI, Microstep" /></label>
           <label>WIGOS ID
