@@ -22981,17 +22981,6 @@
                          },
                          {
                              "station":  "Stasiun Meteorologi Sultan Hasanuddin - Maros",
-                             "site":  "AWOS All Weather Kat. 3  Hasanuddin",
-                             "siteType":  "AWOS Kategori III",
-                             "stationId":  "6b9aa698-d1f6-4eb5-9023-66f7eba90f47",
-                             "stationActive":  true,
-                             "siteId":  "43072b8d-88ac-414e-8070-315714440ae3",
-                             "siteActive":  false,
-                             "siteTypeId":  "20e3dd30-2334-4155-9986-77efdc04b145",
-                             "siteTypeActive":  true
-                         },
-                         {
-                             "station":  "Stasiun Meteorologi Sultan Hasanuddin - Maros",
                              "site":  "AWOS All Weather Kat. 3 Makassar RWY1",
                              "siteType":  "AWOS Kategori III",
                              "stationId":  "6b9aa698-d1f6-4eb5-9023-66f7eba90f47",
@@ -24510,17 +24499,6 @@
                          },
                          {
                              "station":  "Stasiun Meteorologi Wamena - Jayawijaya",
-                             "site":  "AWOS All Weather Kat. 3 Wamena - Jayawijaya",
-                             "siteType":  "AWOS Kategori III",
-                             "stationId":  "7120d270-9bd9-4b02-85d0-eba51d3fb60b",
-                             "stationActive":  true,
-                             "siteId":  "b4ac404f-5673-4d2e-8588-1127dc0d6f1d",
-                             "siteActive":  false,
-                             "siteTypeId":  "20e3dd30-2334-4155-9986-77efdc04b145",
-                             "siteTypeActive":  true
-                         },
-                         {
-                             "station":  "Stasiun Meteorologi Wamena - Jayawijaya",
                              "site":  "AWOS Vaisala Kat. 2 Wamena",
                              "siteType":  "AWOS Kategori II",
                              "stationId":  "7120d270-9bd9-4b02-85d0-eba51d3fb60b",
@@ -24677,80 +24655,110 @@
                              "station":  "Stasiun Meteorologi Mutiara Sis-Al Jufri - Palu",
                              "site":  "AWOS Coastal Kat. 2 Palu",
                              "siteType":  "AWOS Kategori II",
+                             "stationId":  "7e82bbd2-ba3d-4735-8630-33b7a83299eb",
                              "stationActive":  true,
+                             "siteId":  "41728b57-7272-491b-ac48-f2c1eefdf8aa",
                              "siteActive":  true,
+                             "siteTypeId":  "5f3381c0-8431-4d2b-babf-190261fbf8d3",
                              "siteTypeActive":  true
                          },
                          {
                              "station":  "Stasiun Meteorologi Iskandar - Kotawaringin Barat",
                              "site":  "AWOS Coastal Kat. 2 Pangkalan Bun",
                              "siteType":  "AWOS Kategori II",
+                             "stationId":  "af99c0a5-a465-4d5a-bfa2-7192bbf7d63a",
                              "stationActive":  true,
+                             "siteId":  "82546108-6ee8-4485-b058-0f187f46ce6d",
                              "siteActive":  true,
+                             "siteTypeId":  "5f3381c0-8431-4d2b-babf-190261fbf8d3",
                              "siteTypeActive":  true
                          },
                          {
                              "station":  "Stasiun Meteorologi Fransiskus Xaverius Seda - Sikka",
                              "site":  "AWOS Coastal Kat. 2 Maumere",
                              "siteType":  "AWOS Kategori II",
+                             "stationId":  "d3cf986f-67a4-4b73-99a3-6a6c722b9b50",
                              "stationActive":  true,
+                             "siteId":  "a658e68b-fe52-4184-b03e-67bfc3360071",
                              "siteActive":  true,
+                             "siteTypeId":  "5f3381c0-8431-4d2b-babf-190261fbf8d3",
                              "siteTypeActive":  true
                          },
                          {
                              "station":  "Stasiun Meteorologi I Gusti Ngurah Rai - Badung",
                              "site":  "AWOS Coastal Kat. 3 Denpasar",
                              "siteType":  "AWOS Kategori III",
+                             "stationId":  "390cb6bd-2042-4bf3-b0bd-916ab2a8103f",
                              "stationActive":  true,
+                             "siteId":  "ae59fdae-4173-4e21-9c0b-304d5574a64d",
                              "siteActive":  true,
+                             "siteTypeId":  "20e3dd30-2334-4155-9986-77efdc04b145",
                              "siteTypeActive":  true
                          },
                          {
                              "station":  "Stasiun Meteorologi Maritim Yos Soedarso - Ambon",
                              "site":  "AWOS Degreane Kat. 3 Ambon",
                              "siteType":  "AWOS Kategori III",
+                             "stationId":  "42aa33a1-8959-4342-b8e2-4238431618d4",
                              "stationActive":  true,
+                             "siteId":  "a861d007-0e7a-4d52-988c-bb85aed86cdb",
                              "siteActive":  true,
+                             "siteTypeId":  "20e3dd30-2334-4155-9986-77efdc04b145",
                              "siteTypeActive":  true
                          },
                          {
                              "station":  "Stasiun Meteorologi Sam Ratulangi - Manado",
                              "site":  "AWOS Degreane Kat. 3 Manado",
                              "siteType":  "AWOS Kategori III",
+                             "stationId":  "1c7fb756-6e4a-48ad-9ba7-45b4ed8e2995",
                              "stationActive":  true,
+                             "siteId":  "b1383080-f53a-4313-8358-64769b3ddbdb",
                              "siteActive":  true,
+                             "siteTypeId":  "20e3dd30-2334-4155-9986-77efdc04b145",
                              "siteTypeActive":  true
                          },
                          {
                              "station":  "Stasiun Meteorologi Domine Eduard Osok - Sorong",
                              "site":  "AWOS Microstep Kat. 3 Sorong",
                              "siteType":  "AWOS Kategori III",
+                             "stationId":  "4accf040-5c6d-4e86-9389-76ea221d0d67",
                              "stationActive":  true,
+                             "siteId":  "a1c421a9-59ca-4a30-903c-eb7ad77e2068",
                              "siteActive":  true,
+                             "siteTypeId":  "20e3dd30-2334-4155-9986-77efdc04b145",
                              "siteTypeActive":  true
                          },
                          {
                              "station":  "Stasiun Meteorologi Yogyakarta - Kulon Progo",
                              "site":  "AWOS Microstep Kat. 3 Yogyakarta",
                              "siteType":  "AWOS Kategori III",
+                             "stationId":  "dc5eead5-9cbf-4623-b0d5-a96afefa00d8",
                              "stationActive":  true,
+                             "siteId":  "0fa1f90f-7ef3-42ab-99b8-fb2c95fc8aaf",
                              "siteActive":  true,
+                             "siteTypeId":  "20e3dd30-2334-4155-9986-77efdc04b145",
                              "siteTypeActive":  true
                          },
                          {
                              "station":  "Stasiun Meteorologi Frans Kaisiepo - Biak Numfor",
                              "site":  "AWOS Vaisala Kat. 3 Biak",
                              "siteType":  "AWOS Kategori III",
+                             "stationId":  "54e8e6e6-27a6-4007-816a-b88258908b0b",
                              "stationActive":  true,
+                             "siteId":  "7a027ce2-76a5-4eed-8465-8c80200cc651",
                              "siteActive":  true,
+                             "siteTypeId":  "20e3dd30-2334-4155-9986-77efdc04b145",
                              "siteTypeActive":  true
                          },
                          {
                              "station":  "Stasiun Meteorologi I Gusti Ngurah Rai - Badung",
                              "site":  "AWOS Vaisala Kat. 3 Denpasar",
                              "siteType":  "AWOS Kategori III",
+                             "stationId":  "390cb6bd-2042-4bf3-b0bd-916ab2a8103f",
                              "stationActive":  true,
+                             "siteId":  "9ffcf37b-46cf-425b-bdd1-e8d14c12cfb4",
                              "siteActive":  true,
+                             "siteTypeId":  "20e3dd30-2334-4155-9986-77efdc04b145",
                              "siteTypeActive":  true
                          }
                      ],
