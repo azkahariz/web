@@ -42,6 +42,7 @@ import {
 } from "./lib/site-metadata";
 import { AWOS_KAT3_SITE_TYPE, getAllowedSiteSubtypes, getAwosKat3Family } from "./lib/site-subtypes";
 import { isWarehouseContext } from "./lib/warehouse";
+import { sortStationSites } from "./lib/station-sites";
 import SiteMetadataForm from "./SiteMetadataForm";
 import StationSiteProgressPanel from "./components/StationSiteProgressPanel";
 import type {
@@ -177,7 +178,7 @@ export default function InventoryApp({
   }, [downloadOpen]);
 
   const sites = useMemo(
-    () => data.stationSites.filter((row) => row.stationId === account.stationId),
+    () => sortStationSites(data.stationSites.filter((row) => row.stationId === account.stationId)),
     [account.stationId],
   );
   const selectedSite = sites.find((row) => row.site === site);

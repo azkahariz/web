@@ -20,6 +20,7 @@ import {
   WAREHOUSE_SITE_TYPE_ID,
   WAREHOUSE_SUBTYPE_ID,
 } from "../app/lib/warehouse.ts";
+import { sortStationSites } from "../app/lib/station-sites.ts";
 
 const generated = JSON.parse(await readFile(new URL("../app/data.generated.json", import.meta.url), "utf8"));
 const warehouseSubtype = generated.siteSubtypes.find((row) => row.siteType === "Gudang" && row.subtype === "Gudang");
@@ -57,6 +58,15 @@ test("master Gudang memakai UUID canonical dan label Gudang sebagai allowed cata
   assert.equal(generated.barangByJenis[WAREHOUSE_PROFILE].length, 128);
   assert.equal(isWarehouseContext(generated, warehouseSite, warehouseSubtype), true);
   assert.deepEqual(summarizeWarehouseInventory({}), { categoryCount: 0, unitCount: 0 });
+});
+
+test("pilihan Site diurutkan alfabetis dengan Gudang selalu paling bawah", () => {
+  const ordered = sortStationSites([
+    { station: "Uji", site: "Gudang Uji", siteType: "Gudang" },
+    { station: "Uji", site: "Zulu", siteType: "AWS" },
+    { station: "Uji", site: "alpha", siteType: "AWOS Kategori I" },
+  ]);
+  assert.deepEqual(ordered.map((site) => site.site), ["alpha", "Zulu", "Gudang Uji"]);
 });
 
 test("kategori Gudang tetap on-demand dan key kosong tidak menjadi progress palsu", () => {
