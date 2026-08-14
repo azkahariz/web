@@ -124,10 +124,10 @@ test("server merender gerbang autentikasi", async () => {
 test("data hasil CSV lengkap dan Water Level memiliki 17 kategori", async () => {
   const data = JSON.parse(await readFile(new URL("../app/data.generated.json", import.meta.url), "utf8"));
   const [stationCsv, siteSubtypeCsv, barangCsv, productCsv] = await Promise.all([
-    readFile(new URL("../../List Barang Terpasang - Nama Stasiun.csv", import.meta.url), "utf8"),
-    readFile(new URL("../../List Barang Terpasang - Jenis Site.csv", import.meta.url), "utf8"),
-    readFile(new URL("../../List Barang Terpasang - Barang.csv", import.meta.url), "utf8"),
-    readFile(new URL("../../List Barang Terpasang - products.csv", import.meta.url), "utf8"),
+    readFile(new URL("../../Nama Stasiun.csv", import.meta.url), "utf8"),
+    readFile(new URL("../../Jenis Site.csv", import.meta.url), "utf8"),
+    readFile(new URL("../../Barang.csv", import.meta.url), "utf8"),
+    readFile(new URL("../../products.csv", import.meta.url), "utf8"),
   ]);
   const stationRows = parseCsv(stationCsv);
   const siteSubtypeRows = parseCsv(siteSubtypeCsv);
@@ -138,13 +138,7 @@ test("data hasil CSV lengkap dan Water Level memiliki 17 kategori", async () => 
       .map(({ Merk: brand, Tipe: model }) => `${brand.trim()}\u001f${model.trim()}`.toLocaleLowerCase("id-ID"))
       .filter((key) => !key.startsWith("\u001f") && !key.endsWith("\u001f")),
   ).size;
-  const expectedWaterLevel = [
-    "Adaptor", "Arrester", "Boks Panel", "Data Akuisisi", "Kabel Data",
-    "Mounting Sensor Pasut", "Pengolah Data", "Penyimpanan", "Regulator",
-    "Sensor Tekanan Udara", "Sensor pasut", "Modem Komunikasi",
-    "SIstem Catu Daya Tidak Terputus", "Solar Panel", "Mounting Sensor Hujan",
-    "Proteksi Petir", "Sensor Hujan",
-  ];
+  const expectedWaterLevel = barangByJenis["Water Level"].map((row) => row["Barang Terpasang"]);
 
   const expectedStationSites = Array.from(new Map(stationRows.map((row) => [
     row.site_id || `${row["Nama Stasiun"]}\u001f${row["Nama Site"]}\u001f${row["Tipe Site"]}`,
@@ -170,6 +164,7 @@ test("data hasil CSV lengkap dan Water Level memiliki 17 kategori", async () => 
     new Set(expectedStationSites.map((row) => row.station)).size,
   );
   assert.equal(data.products.length, expectedProductCount);
+  assert.equal(expectedWaterLevel.length, 17);
   assert.deepEqual(data.barangByJenis["Water Level"], expectedWaterLevel);
   assert.ok(data.products.every((product) => product.brand.trim() && product.model.trim()));
 
@@ -220,7 +215,7 @@ test("kategori mounting memakai pilihan bahan dan tetap mendukung bahan lainnya"
     readFile(new URL("../app/lib/inventory-export.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/lib/inventory.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/config/form-options.ts", import.meta.url), "utf8"),
-    readFile(new URL("../../List Barang Terpasang - Barang.csv", import.meta.url), "utf8"),
+    readFile(new URL("../../Barang.csv", import.meta.url), "utf8"),
   ]);
   const mountingCategories = parseCsv(barangCsv).filter((row) => /^mounting\b/i.test(row["Barang Terpasang"]));
 

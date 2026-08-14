@@ -16,6 +16,14 @@ export function resolveRemoteDatabaseUrl(environment = process.env) {
   return url;
 }
 
+export function resolveLocalDatabaseUrl(environment = process.env) {
+  const url = environment.SUPABASE_LOCAL_DB_URL?.trim() || LOCAL_DATABASE_URL;
+  if (!databaseIsLocal(url)) {
+    throw new Error("Connection sync:master:local harus menunjuk database Supabase lokal.");
+  }
+  return url;
+}
+
 export function databaseIsLocal(databaseUrl) {
   return isLocalHost(new URL(databaseUrl).hostname);
 }

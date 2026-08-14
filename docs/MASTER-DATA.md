@@ -1,26 +1,28 @@
 # Master Data
 
-Terakhir diperbarui: 12 Agustus 2026. Spreadsheet/CSV adalah **source of truth**
-untuk master. Supabase menyimpan mirror operasional ber-UUID; jangan menjadikan
-Dashboard Supabase sebagai tempat edit rutin master.
+Terakhir diperbarui: 15 Agustus 2026. **Supabase production adalah authoritative
+master source of truth.** Perubahan master rutin dilakukan melalui aplikasi
+Super Admin. CSV, Spreadsheet, dan `app/data.generated.json` adalah artefak
+legacy untuk import eksplisit, referensi, development, recovery, dan backup;
+bukan sumber yang boleh menimpa master production sehari-hari.
 
 Master terdiri dari `stations`, `sites`, `site_types`, `site_subtypes`,
 `item_profiles`, `items`, mapping profil-barang, kategori produk, dan `products`.
 Kolom `active` dipakai untuk menonaktifkan record tanpa menghapusnya.
 
 ```text
-Spreadsheet -> CSV -> validate -> generated data + sync -> Supabase
+Super Admin -> Supabase -> export/backup CSV
 ```
 
 ```powershell
 npm.cmd run validate:master
-npm.cmd run sync:master
+npm.cmd run sync:master:local
 ```
 
-`validate:master` tidak mengubah database. `sync:master` menjalankan generator,
-lalu melakukan insert/update/reactivate/deactivate dalam transaction dan tidak
-melakukan hard delete. File hasil sync ditulis ke `sync-output/` untuk
-direkonsiliasi kembali ke Spreadsheet.
+`validate:master` tidak mengubah database. `sync:master` sekarang diblokir untuk
+remote secara default. `sync:master:local` hanya untuk development lokal.
+`sync:master:legacy:remote` adalah recovery/import legacy yang memerlukan opt-in
+eksplisit dan tidak boleh menjadi workflow rutin.
 
 ## UUID dan active
 
@@ -50,12 +52,14 @@ family: AllWeather, Coastal, Degreane, Microstep, atau Vaisala. Setiap family
 hanya memperoleh End Point, Mid, Station, dan TDZ miliknya. Variant yang tidak
 dikenali menghasilkan daftar kosong agar masalah master terlihat.
 
-## Produk hasil QC
+## Produk dan QC
 
-Produk baru atau koreksi canonical dari QC tersedia lebih dulu di Supabase dan
-ditandai belum sinkron Spreadsheet. Unduh CSV rekonsiliasi dari QC Produk,
-masukkan `product_id` yang sama ke sheet products, lalu validasi dan sync.
-Alias tetap berada di Supabase dan tidak perlu menjadi baris master Spreadsheet.
+Menu **Super Admin -> Produk** mengelola canonical Merk dan Tipe. Produk dapat
+ditambah, diubah, diaktifkan, atau dinonaktifkan tanpa hard delete. Produk
+nonaktif tetap tersedia untuk history lama, tetapi tidak ditawarkan pada pilihan
+baru Station User. Produk dari QC APPROVED dan target MERGED memakai tabel
+canonical yang sama. Rename menyimpan nama lama sebagai alias bila diperlukan
+untuk resolusi input lama. Export dari Supabase menjadi jalur backup/referensi.
 
 Jangan mengedit `app/data.generated.json` langsung, mengubah UUID, atau melakukan
 hard delete master.

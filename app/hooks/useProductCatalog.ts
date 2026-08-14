@@ -1,12 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import rawData from "../data.generated.json";
 import { getSupabaseBrowserClient } from "../lib/supabase/client";
-import type { DataSet, Product, ProductProposal } from "../types/inventory";
+import type { Product, ProductProposal } from "../types/inventory";
 import type { ProductAlias } from "../lib/product-qc";
-
-const generated = rawData as DataSet;
 
 type ProposalRow = {
   id: string;
@@ -78,16 +75,7 @@ export function useProductCatalog(stationId: string) {
     return () => window.clearTimeout(timer);
   }, [refresh]);
 
-  const products = useMemo(() => {
-    const merged = new Map<string, Product>();
-    for (const product of generated.products) {
-      merged.set(product.productId ?? `${product.brand}\u001f${product.model}`, product);
-    }
-    for (const product of liveProducts) {
-      merged.set(product.productId ?? `${product.brand}\u001f${product.model}`, product);
-    }
-    return [...merged.values()].sort((left, right) => `${left.brand} ${left.model}`.localeCompare(`${right.brand} ${right.model}`, "id"));
-  }, [liveProducts]);
+  const products = useMemo(() => [...liveProducts].sort((left, right) => `${left.brand} ${left.model}`.localeCompare(`${right.brand} ${right.model}`, "id")), [liveProducts]);
 
   const proposalMap = useMemo(() => new Map(proposals.map((proposal) => [proposal.id, proposal])), [proposals]);
   return { products, aliases, proposals, proposalMap, refresh };

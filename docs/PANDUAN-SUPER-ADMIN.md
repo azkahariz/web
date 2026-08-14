@@ -6,8 +6,9 @@ sebelum menjalankan tindakan yang mengubah data.
 
 ## Dashboard
 
-- **Ringkasan**: jumlah stasiun, akun, Site, submission, lock, dan status QC.
+- **Ringkasan**: jumlah stasiun, akun, Site, Produk, submission, lock, dan status QC.
 - **Stasiun & Pengisian**: kombinasi master Site/Subtipe dan submission.
+- **Produk**: master canonical Merk dan Tipe produk.
 - **Akun Stasiun**: provision, aktif/nonaktif, dan reset password.
 - **Lock Aktif**: lock yang belum melewati lima menit tanpa aktivitas.
 - **QC Produk**: pemeriksaan usulan Brand/Tipe.
@@ -107,6 +108,18 @@ version check dan tercatat dalam audit.
 
 Simpan atau kirim password baru sebelum dialog ditutup. Jangan menyimpan
 password di audit, catatan publik, atau Git.
+
+## Produk
+
+Gunakan menu **Produk** untuk mencari, mengurutkan, menambah, atau mengubah
+master canonical Merk dan Tipe. Produk dapat dinonaktifkan tanpa dihapus;
+riwayat Submission dan hasil QC tetap menunjuk UUID canonical yang sama.
+Rename menyimpan pasangan Merk/Tipe lama sebagai alias agar resolusi data lama
+tetap dapat dilakukan. Semua perubahan Produk tercatat di Audit Admin.
+
+Produk APPROVED dari QC dan target MERGED langsung memakai master yang sama.
+Station User tidak mengubah master ini secara langsung; input baru mereka tetap
+masuk sebagai proposal QC.
 
 ## Gudang pada Master dan Submission
 

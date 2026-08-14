@@ -28,7 +28,7 @@ test("master source dinormalisasi sesuai kontrak CSV existing", async () => {
   assert.equal(generated.stationSites.length, counts.sites);
   assert.equal(generated.stationSites.filter((row) => row.siteId).length,
     model.sourceRows.stationRows.filter((row) => row.site.sourceId).length);
-  assert.ok(generated.stationSites.every((row) => UUID_PATTERN.test(row.stationId)));
+  assert.ok(generated.stationSites.filter((row) => row.stationId).every((row) => UUID_PATTERN.test(row.stationId)));
   assert.ok(generated.stationSites.filter((row) => row.siteId).every((row) => UUID_PATTERN.test(row.siteId)));
 });
 

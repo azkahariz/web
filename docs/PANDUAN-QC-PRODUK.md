@@ -27,16 +27,16 @@ nama canonical yang dipakai katalog dan ekspor setelah proposal teratasi.
 - **Tolak**: wajib isi alasan. Jangan menolak hanya karena format penulisan
   belum rapi jika produk sebenarnya dapat di-merge.
 
-## Rekonsiliasi Spreadsheet
+## Hubungan dengan master Produk
 
-Produk hasil approve atau koreksi canonical tersedia operasional di Supabase,
-tetapi Spreadsheet tetap source of truth master. Dari QC Produk, unduh
-`products-qc-pending-spreadsheet.csv`, masukkan baris ke sheet `products` tanpa
-mengganti `product_id`, export CSV master, lalu jalankan validasi dan sync.
+Produk hasil approve tersedia langsung di master Supabase dan dapat dikelola
+pada **Super Admin -> Produk**. Produk MERGED menunjuk canonical product existing;
+proposal dan alias tetap disimpan sebagai history. CSV/Spreadsheet hanya untuk
+backup, export, atau import legacy eksplisit, bukan rekonsiliasi rutin yang
+menimpa master Supabase.
 
 ```powershell
-npm.cmd run validate:master
-npm.cmd run sync:master
+npm.cmd run export:master:csv:remote
 ```
 
 Jangan menghapus proposal, alias, atau UUID produk untuk memperbaiki QC.

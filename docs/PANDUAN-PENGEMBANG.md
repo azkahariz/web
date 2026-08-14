@@ -109,13 +109,15 @@ verification database hanya dijalankan bila area terkait berubah.
 
 ```powershell
 npm.cmd run validate:master
-npm.cmd run sync:master
+npm.cmd run sync:master:local
 npm.cmd run provision:station-accounts
 npm.cmd run provision:super-admin
 ```
 
-Validasi tidak menulis database. Sync memperbarui master dari Spreadsheet/CSV;
-jangan edit `app/data.generated.json` atau UUID manual. Credential baru hanya
+Validasi tidak menulis database. Supabase production adalah master authoritative.
+`sync:master:local` hanya mengimpor legacy CSV untuk development; remote legacy
+import memerlukan `npm.cmd run sync:master:legacy:remote` dan persetujuan khusus.
+Jangan edit `app/data.generated.json` atau UUID manual. Credential baru hanya
 ditulis ke `private-output/`. Provisioning tidak dipakai untuk reset data atau
 mengambil kembali password existing.
 
@@ -176,17 +178,16 @@ operasional lain. Jangan menaruh URL berisi credential di source code atau log.
 
 ### Source of truth
 
-Workflow master berjalan sebagai berikut:
+Workflow master production berjalan sebagai berikut:
 
 ```text
-CSV/Spreadsheet master -> generator -> app/data.generated.json -> Supabase master tables
-Supabase master tables -> export:master:csv -> CSV snapshot read-only
+Super Admin -> Supabase master tables -> export:master:csv -> CSV snapshot read-only
+CSV/Spreadsheet legacy -> generator/import lokal atau recovery remote eksplisit
 ```
 
-CSV/Spreadsheet adalah input master. `data.generated.json` adalah generated
-artifact yang sengaja dilacak Git. Snapshot hasil export bukan input otomatis
-dan tidak mengubah source of truth. Data submission, lock, QC, dan audit adalah
-data operasional yang terpisah.
+CSV/Spreadsheet dan `data.generated.json` adalah legacy/import/reference
+artifacts. Snapshot export bukan input otomatis dan tidak mengubah source of
+truth. Data submission, lock, QC, dan audit adalah data operasional terpisah.
 
 ### Warehouse verification
 

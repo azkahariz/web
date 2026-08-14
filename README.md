@@ -46,9 +46,9 @@ npm.cmd run check
 npm.cmd run build
 ```
 
-CSV master adalah input source; `app/data.generated.json` adalah generated
-artifact yang dilacak Git dan dipakai aplikasi; tabel master Supabase dipakai
-untuk operasi aplikasi. Untuk membaca kembali tabel master ke CSV tanpa write:
+Supabase production adalah master authoritative. CSV dan
+`app/data.generated.json` adalah legacy/import/reference artifacts. Untuk
+membaca kembali master Supabase ke CSV tanpa write:
 
 ```powershell
 npm.cmd run export:master:csv

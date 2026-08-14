@@ -29,12 +29,13 @@ migration hanya untuk menyelesaikan masalah yang dapat ditangani code/config.
 
 ## Jika mengubah master
 
-Spreadsheet adalah sumber utama. Pertahankan UUID, ubah `active` alih-alih
-delete, jalankan validasi dahulu, kemudian jalankan sync dengan hati-hati.
+Supabase production adalah sumber master utama. Gunakan Super Admin untuk
+perubahan rutin, pertahankan UUID, dan gunakan `active` alih-alih delete.
+CSV legacy hanya boleh diimpor secara eksplisit untuk recovery yang disetujui.
 
 ```powershell
 npm.cmd run validate:master
-npm.cmd run sync:master
+npm.cmd run sync:master:legacy:remote
 ```
 
 ## Jika mengubah form atau ekspor

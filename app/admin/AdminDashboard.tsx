@@ -4,6 +4,7 @@ import Link from "next/link";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import AdminBulkExport from "./AdminBulkExport";
+import AdminProducts from "./AdminProducts";
 import AdminSubmissionMonitor from "./AdminSubmissionMonitor";
 import { useAppFeedback } from "../components/AppFeedback";
 import AsyncButton from "../components/AsyncButton";
@@ -41,7 +42,7 @@ type Proposal = {
   review_note: string | null; created_at: string;
 };
 type Audit = { id: string; action: string; target_type: string; target_id: string | null; metadata: Record<string, unknown>; created_at: string };
-type Tab = "summary" | "stations" | "accounts" | "locks" | "qc" | "audit";
+type Tab = "summary" | "stations" | "products" | "accounts" | "locks" | "qc" | "audit";
 type FillingMode = "master" | "submissions";
 
 type StationFillingView = {
@@ -58,6 +59,7 @@ type StationFillingView = {
 const tabs: Array<{ id: Tab; label: string }> = [
   { id: "summary", label: "Ringkasan" },
   { id: "stations", label: "Stasiun & Pengisian" },
+  { id: "products", label: "Produk" },
   { id: "accounts", label: "Akun Stasiun" },
   { id: "locks", label: "Lock Aktif" },
   { id: "qc", label: "QC Produk" },
@@ -130,6 +132,7 @@ export default function AdminDashboard({ username }: { username: string }) {
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [productTotal, setProductTotal] = useState(0);
   const [proposals, setProposals] = useState<Proposal[]>([]);
   const [audits, setAudits] = useState<Audit[]>([]);
   const [search, setSearch] = useState("");
@@ -143,12 +146,23 @@ export default function AdminDashboard({ username }: { username: string }) {
   const [loadedAt, setLoadedAt] = useState(0);
   const [activeAction, setActiveAction] = useState<string | null>(null);
 
+  const loadQcProducts = useCallback(async () => {
+    const client = getSupabaseBrowserClient();
+    if (!client) return;
+    const result = await client.from("products").select("id, brand, model, active, source_origin, spreadsheet_synced").order("brand");
+    if (result.error) {
+      setMessage(`Gagal memuat produk QC: ${result.error.message}`);
+      return;
+    }
+    setProducts((result.data ?? []) as Product[]);
+  }, []);
+
   const refresh = useCallback(async () => {
     const client = getSupabaseBrowserClient();
     if (!client) return;
     setLoading(true);
     try {
-      const [stationRows, siteRows, siteTypeRows, subtypeRows, submissionRows, accountRows, productRows, proposalRows, auditRows] = await Promise.all([
+      const [stationRows, siteRows, siteTypeRows, subtypeRows, submissionRows, accountRows, productSummaryRows, proposalRows, auditRows] = await Promise.all([
       client.from("stations").select("id, name, active").order("name"),
       loadAllAdminRows((from, to) => client.from("sites")
         .select("id, station_id, site_type_id, name, active")
@@ -164,11 +178,11 @@ export default function AdminDashboard({ username }: { username: string }) {
         .order("id")
         .range(from, to)),
       client.from("station_accounts").select("id, station_id, username, active, updated_at").order("username"),
-      client.from("products").select("id, brand, model, active, source_origin, spreadsheet_synced").order("brand"),
+      client.rpc("admin_product_summary"),
       client.from("product_proposals").select("id, station_id, submission_id, operator_name, proposed_brand, proposed_model, normalized_brand, normalized_model, status, resolved_product_id, review_note, created_at").order("created_at", { ascending: false }),
       client.from("admin_audit_log").select("id, action, target_type, target_id, metadata, created_at").order("created_at", { ascending: false }).limit(250),
       ]);
-      const error = [stationRows, siteRows, siteTypeRows, subtypeRows, submissionRows, accountRows, productRows, proposalRows, auditRows].find((result) => result.error)?.error;
+      const error = [stationRows, siteRows, siteTypeRows, subtypeRows, submissionRows, accountRows, productSummaryRows, proposalRows, auditRows].find((result) => result.error)?.error;
       if (error) setMessage(`Gagal memuat dashboard: ${error.message}`);
       else {
         setStations((stationRows.data ?? []) as Station[]);
@@ -177,7 +191,8 @@ export default function AdminDashboard({ username }: { username: string }) {
         setSubtypes((subtypeRows.data ?? []) as Subtype[]);
         setSubmissions((submissionRows.data ?? []) as Submission[]);
         setAccounts((accountRows.data ?? []) as Account[]);
-        setProducts((productRows.data ?? []) as Product[]);
+        const productSummary = Array.isArray(productSummaryRows.data) ? productSummaryRows.data[0] : productSummaryRows.data;
+        setProductTotal(Number(productSummary?.total_count ?? 0));
         setProposals((proposalRows.data ?? []) as Proposal[]);
         setAudits((auditRows.data ?? []) as Audit[]);
       }
@@ -193,6 +208,12 @@ export default function AdminDashboard({ username }: { username: string }) {
     const timer = window.setTimeout(() => void refresh(), 0);
     return () => window.clearTimeout(timer);
   }, [refresh]);
+
+  useEffect(() => {
+    if (tab !== "qc") return;
+    const timer = window.setTimeout(() => void loadQcProducts(), 0);
+    return () => window.clearTimeout(timer);
+  }, [loadQcProducts, tab]);
 
   useEffect(() => {
     if (!credential) return;
@@ -254,6 +275,7 @@ export default function AdminDashboard({ username }: { username: string }) {
       return false;
     }
     await refresh();
+    if (tab === "qc") await loadQcProducts();
     return true;
   }
 
@@ -419,7 +441,7 @@ export default function AdminDashboard({ username }: { username: string }) {
           {tabs.map((item) => <button key={item.id} className={tab === item.id ? "active" : ""} onClick={() => navigate(item.id)}>{item.label}</button>)}
         </nav>
         <section className={`admin-content${tab === "accounts" ? " accounts-view" : ""}`}>
-          <div className="admin-heading"><div><p className="kicker">PENGELOLAAN APLIKASI</p><h2>{tabs.find((item) => item.id === tab)?.label}</h2></div>{!(tab === "stations" && fillingMode === "submissions") && <AsyncButton className="secondary-button" type="button" loading={loading} loadingText="Memuat..." onClick={() => void refresh()}>Muat ulang</AsyncButton>}</div>
+          <div className="admin-heading"><div><p className="kicker">PENGELOLAAN APLIKASI</p><h2>{tabs.find((item) => item.id === tab)?.label}</h2></div>{!(tab === "stations" && fillingMode === "submissions") && tab !== "products" && <AsyncButton className="secondary-button" type="button" loading={loading} loadingText="Memuat..." onClick={() => void refresh()}>Muat ulang</AsyncButton>}</div>
           {message && <p className="admin-message" role="status">{message}</p>}
           {loading && <p className="loading-copy">Memuat data admin...</p>}
 
@@ -427,6 +449,7 @@ export default function AdminDashboard({ username }: { username: string }) {
             <button onClick={() => navigate("stations", { fillingMode: "master" })}><strong>{stations.filter((row) => row.active).length}</strong><span>Stasiun aktif</span></button>
             <button onClick={() => navigate("accounts")}><strong>{accounts.filter((row) => row.active).length}</strong><span>Akun aktif</span></button>
             <button onClick={() => navigate("stations", { fillingMode: "master" })}><strong>{siteTypeSummary.totalCount}</strong><span>Site</span></button>
+            <button onClick={() => navigate("products")}><strong>{productTotal}</strong><span>Produk</span></button>
             <button onClick={() => navigate("stations", { fillingMode: "submissions" })}><strong>{submissions.length}</strong><span>Submission</span></button>
             <button onClick={() => navigate("locks")}><strong>{activeLocks.length}</strong><span>Lock aktif</span></button>
             <button onClick={() => navigate("qc", { qcStatus: "PENDING" })}><strong>{proposals.filter((row) => row.status === "PENDING").length}</strong><span>QC Pending</span></button>
@@ -446,6 +469,8 @@ export default function AdminDashboard({ username }: { username: string }) {
             <button role="tab" aria-selected={fillingMode === "master"} className={fillingMode === "master" ? "active" : ""} onClick={() => { setFillingMode("master"); setSearch(""); }}>Master Pengisian</button>
             <button role="tab" aria-selected={fillingMode === "submissions"} className={fillingMode === "submissions" ? "active" : ""} onClick={() => { setSubmissionMonitorMounted(true); setFillingMode("submissions"); setSearch(""); }}>Submission</button>
           </div>}
+
+          {!loading && tab === "products" && <AdminProducts onChanged={() => void refresh()} />}
 
           {!loading && searchTab && tab !== "stations" && <label className="admin-search">Cari<input autoComplete="off" value={search} onChange={(event) => setSearch(event.target.value)} placeholder={adminSearchPlaceholder(searchTab)} /></label>}
 

@@ -4,7 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 import { synchronizeMaster } from "./master/database.mjs";
-import { resolveRemoteDatabaseUrl } from "./master/database-connection.mjs";
+import { resolveLocalDatabaseUrl, resolveRemoteDatabaseUrl } from "./master/database-connection.mjs";
 import { loadMasterSource, sourceCounts, writeSyncedCsv } from "./master/source.mjs";
 
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
@@ -12,6 +12,8 @@ const projectRoot = path.dirname(scriptDirectory);
 const sourceRoot = path.dirname(projectRoot);
 const outputRoot = path.join(projectRoot, "sync-output");
 const validateOnly = process.argv.includes("--validate-only");
+const localTarget = process.argv.includes("--target=local");
+const allowLegacyRemoteImport = process.argv.includes("--allow-legacy-remote-import");
 
 const envPath = path.join(projectRoot, ".env.local");
 if (existsSync(envPath)) loadEnvFile(envPath);
@@ -58,8 +60,11 @@ try {
     console.log("\nValidation complete. Database was not changed.");
     process.exitCode = 0;
   } else {
+    if (!localTarget && !allowLegacyRemoteImport) {
+      throw new Error("Legacy import ke database remote diblokir. Gunakan npm.cmd run sync:master:local untuk development, atau npm.cmd run sync:master:legacy:remote hanya untuk recovery yang sudah disetujui.");
+    }
     generateApplicationData();
-    const databaseUrl = resolveRemoteDatabaseUrl();
+    const databaseUrl = localTarget ? resolveLocalDatabaseUrl() : resolveRemoteDatabaseUrl();
     const result = await synchronizeMaster(model, databaseUrl);
     const files = await writeSyncedCsv(model, outputRoot);
     printSyncSummary(result);
