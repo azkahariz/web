@@ -19438,6 +19438,16 @@
                              "siteTypeActive":  true
                          },
                          {
+                             "station":  "Stasiun Meteorologi Depati Parbo - Kerinci",
+                             "site":  "AWOS All Weather Kat. 1 Stamet Depati Parbo - Kerinci",
+                             "siteType":  "AWOS Kategori I",
+                             "stationActive":  true,
+                             "siteId":  "4c87ec00-0476-44c8-9571-fe7e62e8623c",
+                             "siteActive":  true,
+                             "siteTypeId":  "c7dd2a64-0691-4445-b281-de22aa52baed",
+                             "siteTypeActive":  true
+                         },
+                         {
                              "station":  "Stasiun Meteorologi Dhoho - Kediri",
                              "site":  "AWS Digi 745 Kemayoran",
                              "siteType":  "Digitalisasi Taman Alat Meteorologi",
@@ -23437,17 +23447,6 @@
                              "stationId":  "d669e931-f142-4fbe-a907-5308f72c314b",
                              "stationActive":  true,
                              "siteId":  "2fff1904-26af-49b0-9301-2a41c5300d88",
-                             "siteActive":  true,
-                             "siteTypeId":  "c7dd2a64-0691-4445-b281-de22aa52baed",
-                             "siteTypeActive":  true
-                         },
-                         {
-                             "station":  "Stasiun Meteorologi Sultan Thaha - Jambi",
-                             "site":  "AWOS All Weather Kat. 1 Stamet Depati Parbo - Kerinci",
-                             "siteType":  "AWOS Kategori I",
-                             "stationId":  "d669e931-f142-4fbe-a907-5308f72c314b",
-                             "stationActive":  true,
-                             "siteId":  "4c87ec00-0476-44c8-9571-fe7e62e8623c",
                              "siteActive":  true,
                              "siteTypeId":  "c7dd2a64-0691-4445-b281-de22aa52baed",
                              "siteTypeActive":  true
