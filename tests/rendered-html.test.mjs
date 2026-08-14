@@ -352,7 +352,7 @@ test("form metadata menyediakan seluruh pilihan operasional dan komunikasi", asy
 
   for (const label of expectedLabels) assert.match(source, new RegExp(label.replace(/[()]/g, "\\$&")));
   assert.match(formOptions, /OPERATIONAL[\s\S]*TRIAL[\s\S]*INACTIVE/);
-  assert.doesNotMatch(formOptions, /OPERATIONAL[\s\S]*TRIAL[\s\S]*INACTIVE[\s\S]*RETIRED/);
+  assert.match(formOptions, /OPERATIONAL[\s\S]*TRIAL[\s\S]*INACTIVE[\s\S]*RETIRED/);
   assert.match(formOptions, /SITE_CONDITION_OPTIONS[\s\S]*Baik[\s\S]*Rusak/);
   assert.match(formOptions, /WAREHOUSE_CONDITION_OPTIONS[\s\S]*\["Baik"\]/);
   assert.match(formOptions, /Survey Barometric[\s\S]*Lainnya/);

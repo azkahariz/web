@@ -24,8 +24,8 @@ Akses resmi aplikasi: https://aloptama-collect.vercel.app
 7. Setelah selesai, tekan **Selesai Mengedit**. Aplikasi melakukan final save
    dan melepas lock untuk session ini.
 
-Status operasional Site dapat berupa **OPERATIONAL**, **TRIAL**, atau
-**INACTIVE** sesuai data yang tersedia pada form.
+Status operasional Site dapat berupa **OPERATIONAL**, **TRIAL**, **INACTIVE**, atau
+**RETIRED** sesuai data yang tersedia pada form.
 
 Status **Tersimpan di server** berarti data sudah tersedia dari perangkat lain.
 Status **Tersimpan lokal** berarti draf masih aman di browser ini, tetapi belum

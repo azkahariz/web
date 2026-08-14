@@ -67,6 +67,7 @@ export const OPERATIONAL_STATUS_OPTIONS = [
   "OPERATIONAL",
   "TRIAL",
   "INACTIVE",
+  "RETIRED",
 ] as const;
 
 export const MEASUREMENT_METHOD_OPTIONS = [
