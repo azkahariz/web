@@ -11,6 +11,7 @@ import { getTabSessionId, OPERATOR_STORAGE_KEY, type DraftPayload } from "./lib/
 import { logoutCurrentBrowser } from "./lib/local-logout";
 import { getSupabaseBrowserClient } from "./lib/supabase/client";
 import { useServerDraft } from "./hooks/useServerDraft";
+import { useStationSiteProgress } from "./hooks/useStationSiteProgress";
 import { useProductCatalog } from "./hooks/useProductCatalog";
 import { buildAloptamaFilename, downloadText } from "./lib/download";
 import { buildInventoryCsv, buildInventoryJson } from "./lib/inventory-export";
@@ -42,6 +43,7 @@ import {
 import { AWOS_KAT3_SITE_TYPE, getAllowedSiteSubtypes, getAwosKat3Family } from "./lib/site-subtypes";
 import { isWarehouseContext } from "./lib/warehouse";
 import SiteMetadataForm from "./SiteMetadataForm";
+import StationSiteProgressPanel from "./components/StationSiteProgressPanel";
 import type {
   Condition,
   DataSet,
@@ -462,6 +464,16 @@ export default function InventoryApp({
     adminSubmissionId,
     adminMode: isAdminEditor,
   });
+  const {
+    rows: stationSiteProgressRows,
+    loading: stationSiteProgressLoading,
+    refresh: refreshStationSiteProgress,
+  } = useStationSiteProgress(!isAdminEditor);
+
+  useEffect(() => {
+    if (isAdminEditor || sync.status !== "saved" || !sync.lastSavedAt) return;
+    void refreshStationSiteProgress();
+  }, [isAdminEditor, refreshStationSiteProgress, sync.lastSavedAt, sync.status]);
 
   useEffect(() => {
     if (!startInEditMode || !adminSubmissionId || !hydrated || autoEditStartedRef.current
@@ -803,6 +815,21 @@ export default function InventoryApp({
                 ? `${profileCategories.length} kategori tersedia · ${categories.length} dipilih`
                 : `${profileCategories.length} kategori perlu diperiksa`}</span>
             </div>
+          )}
+          {!isAdminEditor && (
+            <StationSiteProgressPanel
+              data={data}
+              sites={sites}
+              submissions={stationSiteProgressRows}
+              loading={stationSiteProgressLoading}
+              selectedSite={site}
+              disabled={sync.isEditing}
+              onSelectSite={(nextSite) => {
+                setSite(nextSite);
+                setSubtype("");
+                setEditFeedback("");
+              }}
+            />
           )}
         </aside>
 
