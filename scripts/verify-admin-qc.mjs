@@ -13,9 +13,23 @@ function assert(value, message) {
 
 try {
   await sql.begin(async (tx) => {
-    const [admin] = await tx`select auth_user_id from public.super_admins where active order by created_at limit 1`;
-    assert(admin, "Super Admin aktif belum tersedia. Jalankan provision:super-admin.");
-    const [scope] = await tx`
+    let [admin] = await tx`select auth_user_id from public.super_admins where active order by created_at limit 1`;
+    if (!admin) {
+      const authUserId = randomUUID();
+      await tx`
+        insert into auth.users (
+          id, aud, role, email, encrypted_password, confirmed_at,
+          raw_app_meta_data, raw_user_meta_data, created_at, updated_at
+        ) values (
+          ${authUserId}, 'authenticated', 'authenticated', ${`admin-${authUserId}@verify.invalid`}, '', now(),
+          '{"provider":"email","providers":["email"]}'::jsonb, '{}'::jsonb, now(), now()
+        )
+      `;
+      await tx`insert into public.super_admins (auth_user_id, username) values (${authUserId}, ${`verify-admin-${authUserId}`})`;
+      admin = { auth_user_id: authUserId };
+    }
+
+    let [scope] = await tx`
       select account.auth_user_id, account.station_id, site.id as site_id, subtype.id as subtype_id
       from public.station_accounts as account
       join public.sites as site on site.station_id = account.station_id and site.active
@@ -24,12 +38,46 @@ try {
       order by account.created_at, site.name, subtype.name
       limit 1
     `;
-    const [canonical] = await tx`
+    if (!scope) {
+      const [station] = await tx`insert into public.stations (name) values (${`VERIFY QC ${randomUUID()}`}) returning id`;
+      await tx`insert into public.stations (name) values (${`VERIFY QC ADMIN ${randomUUID()}`})`;
+      const [siteType] = await tx`insert into public.site_types (name) values (${`VERIFY QC TYPE ${randomUUID()}`}) returning id`;
+      const [site] = await tx`insert into public.sites (station_id, site_type_id, name) values (${station.id}, ${siteType.id}, ${`VERIFY QC SITE ${randomUUID()}`}) returning id`;
+      const [otherSite] = await tx`insert into public.sites (station_id, site_type_id, name) values (${station.id}, ${siteType.id}, ${`VERIFY QC SITE OTHER ${randomUUID()}`}) returning id`;
+      const [subtype] = await tx`insert into public.site_subtypes (site_type_id, name) values (${siteType.id}, ${`VERIFY QC SUBTYPE ${randomUUID()}`}) returning id`;
+      const [otherSubtype] = await tx`insert into public.site_subtypes (site_type_id, name) values (${siteType.id}, ${`VERIFY QC SUBTYPE OTHER ${randomUUID()}`}) returning id`;
+      const authUserId = randomUUID();
+      await tx`
+        insert into auth.users (
+          id, aud, role, email, encrypted_password, confirmed_at,
+          raw_app_meta_data, raw_user_meta_data, created_at, updated_at
+        ) values (
+          ${authUserId}, 'authenticated', 'authenticated', ${`station-${authUserId}@verify.invalid`}, '', now(),
+          '{"provider":"email","providers":["email"]}'::jsonb, '{}'::jsonb, now(), now()
+        )
+      `;
+      await tx`insert into public.station_accounts (auth_user_id, station_id, username) values (${authUserId}, ${station.id}, ${`verify-station-${authUserId}`})`;
+      scope = {
+        auth_user_id: authUserId,
+        station_id: station.id,
+        site_id: site.id,
+        subtype_id: subtype.id,
+        other_site_id: otherSite.id,
+        other_subtype_id: otherSubtype.id,
+      };
+    }
+    let [canonical] = await tx`
       select id from public.products
       where lower(brand) = 'campbell scientific' and lower(model) = 'cr1000x' and active
       limit 1
     `;
-    assert(scope && canonical, "Scope stasiun atau produk Campbell Scientific CR1000X tidak tersedia.");
+    if (!canonical) {
+      [canonical] = await tx`
+        insert into public.products (brand, model, active, source_origin, spreadsheet_synced)
+        values ('Campbell Scientific', 'CR1000X', true, 'SPREADSHEET', true)
+        returning id
+      `;
+    }
     const stationSession = randomUUID();
     const adminSession = randomUUID();
 
@@ -81,7 +129,13 @@ try {
     const adminSaved = await tx`
       select * from public.admin_save_submission(
         ${stationOpen[0].submission_id}, ${adminSession}, ${takeover[0].version},
-        ${tx.json({ schemaVersion: 1, inventory: { adminVerifier: true } })}, 'Verifier Admin'
+        ${tx.json({
+          schemaVersion: 1,
+          inventory: {
+            adminVerifier: true,
+            Produk: Object.values(proposalIds).map((proposalId, index) => ({ id: `qc-${index}`, productProposalId: proposalId })),
+          },
+        })}, 'Verifier Admin'
       )
     `;
     assert(adminSaved[0]?.status === "saved", "Admin edit submission gagal disimpan.");
@@ -126,6 +180,115 @@ try {
     assert(liveProduct.length === 1, "Produk approved harus langsung terlihat oleh station user.");
     const rejectedRaw = await tx`select proposed_brand, proposed_model, review_note from public.product_proposals where id = ${proposalIds.reject}`;
     assert(rejectedRaw[0]?.proposed_brand === "Produk Salah" && rejectedRaw[0]?.review_note, "Reject tidak boleh menghapus raw input.");
+
+    await tx`reset role`;
+    await tx`set local role authenticated`;
+    await tx`select set_config('request.jwt.claim.sub', ${admin.auth_user_id}, true)`;
+    await tx`select public.admin_force_release_submission(${stationOpen[0].submission_id})`;
+
+    await tx`reset role`;
+    await tx`set local role authenticated`;
+    await tx`select set_config('request.jwt.claim.sub', ${scope.auth_user_id}, true)`;
+    const cleanupSession = randomUUID();
+    const cleanupOpen = await tx`select * from public.open_submission(${scope.site_id}, ${scope.subtype_id}, ${cleanupSession}, 'Verifier Cleanup')`;
+    assert(cleanupOpen[0]?.can_edit === true, "Station user gagal memperoleh lock untuk verifikasi cleanup.");
+
+    const createPending = async (brand, model, note) => {
+      const rows = await tx`select * from public.create_product_proposal(${scope.site_id}, ${scope.subtype_id}, ${brand}, ${model}, 'Verifier Cleanup', ${note})`;
+      return rows[0]?.proposal_id;
+    };
+    const singleProposalId = await createPending('Cleanup Single', `Model-${randomUUID().slice(0, 8)}`, 'cleanup-single');
+    const sharedProposalId = await createPending('Cleanup Shared', `Model-${randomUUID().slice(0, 8)}`, 'cleanup-shared');
+    assert(singleProposalId && sharedProposalId, "Proposal cleanup harus dibuat sebagai Pending.");
+
+    const firstCleanupSave = await tx`
+      select * from public.save_submission(
+        ${scope.site_id}, ${scope.subtype_id}, ${cleanupSession}, ${cleanupOpen[0].version},
+        ${tx.json({ inventory: {
+          Sensor: [{ id: 'single', productProposalId: singleProposalId }, { id: 'shared-a', productProposalId: sharedProposalId }],
+          Radio: [{ id: 'shared-b', productProposalId: sharedProposalId }],
+        } })}, 'Verifier Cleanup'
+      )
+    `;
+    assert(firstCleanupSave[0]?.status === 'saved', "Save awal cleanup gagal.");
+
+    let otherScope = scope.other_site_id
+      ? { site_id: scope.other_site_id, subtype_id: scope.other_subtype_id }
+      : null;
+    if (!otherScope) {
+      [otherScope] = await tx`
+        select site.id as site_id, subtype.id as subtype_id
+        from public.sites as site
+        join public.site_subtypes as subtype on subtype.site_type_id = site.site_type_id and subtype.active
+        where site.station_id = ${scope.station_id}
+          and site.active
+          and (site.id <> ${scope.site_id} or subtype.id <> ${scope.subtype_id})
+        order by site.name, subtype.name
+        limit 1
+      `;
+    }
+    assert(otherScope, "Scope submission kedua untuk verifikasi cleanup tidak tersedia.");
+    const otherOpen = await tx`select * from public.open_submission(${otherScope.site_id}, ${otherScope.subtype_id}, ${randomUUID()}, 'Verifier Other')`;
+    assert(otherOpen[0]?.submission_id, "Submission kedua tidak dapat dibuka.");
+    const otherProposalRows = await tx`select * from public.create_product_proposal(${otherScope.site_id}, ${otherScope.subtype_id}, 'Cleanup Other', ${`Model-${randomUUID().slice(0, 8)}`}, 'Verifier Other', 'cleanup-other')`;
+    const otherProposalId = otherProposalRows[0]?.proposal_id;
+    assert(otherProposalId, "Proposal submission lain harus dibuat.");
+
+    const secondCleanupSave = await tx`
+      select * from public.save_submission(
+        ${scope.site_id}, ${scope.subtype_id}, ${cleanupSession}, ${firstCleanupSave[0].version},
+        ${tx.json({ inventory: { Sensor: [{ id: 'shared-a', productProposalId: sharedProposalId }] } })}, 'Verifier Cleanup'
+      )
+    `;
+    assert(secondCleanupSave[0]?.status === 'saved', "Save setelah menghapus satu referensi gagal.");
+    const [afterOneDeleted] = await tx`
+      select
+        exists(select 1 from public.product_proposals where id = ${singleProposalId}) as single_exists,
+        exists(select 1 from public.product_proposals where id = ${sharedProposalId} and status = 'PENDING') as shared_exists,
+        exists(select 1 from public.product_proposals where id = ${otherProposalId} and status = 'PENDING') as other_exists
+    `;
+    assert(!afterOneDeleted.single_exists && afterOneDeleted.shared_exists && afterOneDeleted.other_exists, "Cleanup harus menghapus hanya proposal Pending yang referensinya habis pada submission sendiri.");
+
+    const thirdCleanupSave = await tx`
+      select * from public.save_submission(
+        ${scope.site_id}, ${scope.subtype_id}, ${cleanupSession}, ${secondCleanupSave[0].version},
+        ${tx.json({ inventory: { Sensor: [{ id: 'pending-local', productProposalId: 'PENDING_LOCAL' }] } })}, 'Verifier Cleanup'
+      )
+    `;
+    assert(thirdCleanupSave[0]?.status === 'saved', "Save setelah menghapus referensi terakhir gagal.");
+    const [afterLastDeleted] = await tx`
+      select
+        exists(select 1 from public.product_proposals where id = ${sharedProposalId}) as shared_exists,
+        exists(select 1 from public.product_proposals where id = ${proposalIds.approve} and status = 'APPROVED') as approved_exists,
+        exists(select 1 from public.product_proposals where id = ${proposalIds['merge-single']} and status = 'MERGED') as merged_exists,
+        exists(select 1 from public.products where id = ${approvedProductId}) as approved_product_exists,
+        exists(select 1 from public.product_aliases where source_proposal_id = ${proposalIds.approve}) as approved_alias_exists,
+        exists(select 1 from public.product_aliases where source_proposal_id = ${proposalIds['merge-single']}) as merged_alias_exists
+    `;
+    assert(!afterLastDeleted.shared_exists, "Proposal Pending harus hilang setelah referensi terakhir dihapus.");
+    assert(afterLastDeleted.approved_exists && afterLastDeleted.merged_exists, "Proposal APPROVED dan MERGED harus tetap menjadi history.");
+    assert(afterLastDeleted.approved_product_exists && afterLastDeleted.approved_alias_exists && afterLastDeleted.merged_alias_exists, "Produk canonical dan alias tidak boleh dihapus oleh cleanup.");
+
+    const retryCleanupSave = await tx`
+      select * from public.save_submission(
+        ${scope.site_id}, ${scope.subtype_id}, ${cleanupSession}, ${thirdCleanupSave[0].version},
+        ${tx.json({ inventory: { Sensor: [{ id: 'pending-local', productProposalId: 'PENDING_LOCAL' }] } })}, 'Verifier Cleanup'
+      )
+    `;
+    assert(retryCleanupSave[0]?.status === 'saved', "Retry autosave cleanup harus tetap idempotent.");
+    await tx.unsafe(`
+      do $$
+      begin
+        perform public.reconcile_pending_product_proposals(
+          '${scope.station_id}'::uuid,
+          '${cleanupOpen[0].submission_id}'::uuid,
+          '{}'::jsonb
+        );
+        raise exception 'station_cleanup_helper_was_not_blocked';
+      exception when insufficient_privilege then null;
+      end
+      $$;
+    `);
 
     throw new Error(rollbackMarker);
   });

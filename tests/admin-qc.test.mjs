@@ -35,6 +35,18 @@ test("migration menegakkan super admin, QC, alias, audit, dan admin lock di data
   assert.match(sql, /and submission\.locked_by_session_id = p_session_id/);
 });
 
+test("cleanup proposal Pending hanya berjalan setelah payload submission tersimpan", async () => {
+  const sql = await readFile(new URL("../supabase/migrations/20260814120000_pending_product_proposal_cleanup.sql", import.meta.url), "utf8");
+  assert.match(sql, /reconcile_pending_product_proposals/);
+  assert.match(sql, /entry\.value ->> 'productProposalId'/);
+  assert.match(sql, /proposal\.status = 'PENDING'/);
+  assert.match(sql, /proposal\.station_id = p_station_id/);
+  assert.match(sql, /proposal\.submission_id = p_submission_id/);
+  assert.match(sql, /perform public\.reconcile_pending_product_proposals\(v_station_id, v_submission\.id, p_payload\)/);
+  assert.match(sql, /perform public\.reconcile_pending_product_proposals\(v_submission\.station_id, v_submission\.id, p_payload\)/);
+  assert.match(sql, /revoke all on function public\.reconcile_pending_product_proposals/);
+});
+
 test("admin route memvalidasi role sebelum memakai secret dan secret tidak masuk komponen client", async () => {
   const [route, serverAdmin, dashboard, inventory] = await Promise.all([
     readFile(new URL("../app/api/admin/accounts/route.ts", import.meta.url), "utf8"),
