@@ -15,7 +15,7 @@ import { useStationSiteProgress } from "./hooks/useStationSiteProgress";
 import { useProductCatalog } from "./hooks/useProductCatalog";
 import { buildAloptamaFilename, downloadText } from "./lib/download";
 import { buildInventoryCsv, buildInventoryJson } from "./lib/inventory-export";
-import { normalizeProductText, resolveInstalledProduct, suggestProducts } from "./lib/product-qc";
+import { resolveInstalledProduct, suggestProducts } from "./lib/product-qc";
 import {
   getItemFunctionCategories,
   inventoryCategoryEntries,
@@ -108,7 +108,8 @@ export default function InventoryApp({
   const downloadRef = useRef<HTMLDivElement | null>(null);
   const autoEditStartedRef = useRef(false);
   const proposalInFlightRef = useRef(new Set<string>());
-  const productCatalog = useProductCatalog(account.stationId);
+  const productCatalog = useProductCatalog(account.stationId, productQuery);
+  const { findCanonical, refresh: refreshProductCatalog } = productCatalog;
   const isAdminEditor = adminMode || Boolean(adminSubmissionId);
 
   useEffect(() => {
@@ -242,12 +243,7 @@ export default function InventoryApp({
     && normalizeSearch(category).includes(normalizeSearch(warehouseCategoryQuery))
   ));
 
-  const visibleProducts = useMemo(() => {
-    const query = normalizeSearch(productQuery);
-    return productCatalog.products
-      .filter((product) => !query || normalizeSearch(`${product.brand} ${product.model}`).includes(query))
-      .slice(0, 60);
-  }, [productCatalog.products, productQuery]);
+  const visibleProducts = productCatalog.products;
 
   const similarProducts = useMemo(
     () => suggestProducts(customBrand, customModel, productCatalog.products, productCatalog.aliases),
@@ -525,10 +521,7 @@ export default function InventoryApp({
       for (const { category, item } of pendingItems) {
         if (proposalInFlightRef.current.has(item.id)) continue;
         proposalInFlightRef.current.add(item.id);
-        const canonical = productCatalog.products.find((product) =>
-          normalizeProductText(product.brand) === normalizeProductText(item.brand)
-          && normalizeProductText(product.model) === normalizeProductText(item.model),
-        );
+        const canonical = await findCanonical(item.brand, item.model);
         if (canonical?.productId) {
           setDrafts((current) => ({
             ...current,
@@ -565,9 +558,9 @@ export default function InventoryApp({
           proposalInFlightRef.current.delete(item.id);
         }
       }
-      if (created) void productCatalog.refresh();
+      if (created) void refreshProductCatalog();
     })();
-  }, [draftKey, inventory, operatorName, productCatalog, selectedSiteId, selectedSubtypeId, sync.canEdit]);
+  }, [draftKey, findCanonical, inventory, operatorName, refreshProductCatalog, selectedSiteId, selectedSubtypeId, sync.canEdit]);
 
   function productForDisplay(item: InstalledItem) {
     return resolveInstalledProduct(item, productCatalog.proposalMap);
@@ -772,7 +765,7 @@ export default function InventoryApp({
         <div className="dataset-facts" aria-label="Ringkasan data">
           <div><strong>{stations.length}</strong><span>stasiun</span></div>
           <div><strong>{data.stationSites.length}</strong><span>aloptama / site</span></div>
-          <div><strong>{productCatalog.products.length}</strong><span>produk</span></div>
+          <div><strong>{productCatalog.totalCount}</strong><span>produk</span></div>
         </div>
       </section>
 
@@ -945,7 +938,7 @@ export default function InventoryApp({
                         <span className="category-number">{String(categories.indexOf(category) + 1).padStart(2, "0")}</span>
                         <div className="category-name"><h4>{category}</h4><p>{entries.length ? `${unitCount} ${mountingCategory ? "bahan mounting" : "unit fisik"}` : mountingCategory ? "Belum memilih bahan" : "Belum memilih produk"}</p></div>
                         {warehouseMode && <button className="remove-category" type="button" aria-label={`Hapus kategori ${category}`} onClick={() => void removeWarehouseCategory(category)}>Hapus kategori</button>}
-                        <button className="add-product" onClick={() => { setActiveCategory(category); setProductQuery(""); setCustomMaterial(""); setCustomBrand(""); setCustomModel(""); setCustomProductNote(""); void productCatalog.refresh(); }}>
+                        <button className="add-product" onClick={() => { productCatalog.setPage(1); setActiveCategory(category); setProductQuery(""); setCustomMaterial(""); setCustomBrand(""); setCustomModel(""); setCustomProductNote(""); void productCatalog.refresh(); }}>
                           <span aria-hidden="true">＋</span> {mountingCategory ? "Pilih bahan" : "Pilih produk"}
                         </button>
                       </div>
@@ -1093,10 +1086,13 @@ export default function InventoryApp({
               <>
                 <label className="product-search">
                   <span aria-hidden="true">⌕</span>
-                  <input autoComplete="off" autoFocus value={productQuery} onChange={(event) => setProductQuery(event.target.value)} placeholder="Cari merek atau tipe produk…" />
+                  <input autoComplete="off" autoFocus value={productQuery} onChange={(event) => { productCatalog.setPage(1); setProductQuery(event.target.value); }} placeholder="Cari merek atau tipe produk…" />
                 </label>
-                <p className="search-caption">Mencari pada seluruh kolom <strong>Merk</strong> dan <strong>Tipe</strong> · menampilkan maksimal 60 hasil</p>
+                <p className="search-caption">{productCatalog.totalCount
+                  ? `Menampilkan ${(productCatalog.page - 1) * 60 + 1}–${Math.min(productCatalog.page * 60, productCatalog.totalCount)} dari ${productCatalog.totalCount} ${productQuery.trim() ? "hasil" : "produk"}`
+                  : "Produk tidak ditemukan."}</p>
                 <div className="product-results">
+                  {productCatalog.loading && <div className="no-product"><strong>Memuat produk...</strong></div>}
                   {visibleProducts.map((product) => (
                     <button key={`${product.brand}::${product.model}`} onClick={() => addProduct(product)}>
                       <span className="product-avatar">{product.brand.slice(0, 2).toUpperCase()}</span>
@@ -1104,8 +1100,9 @@ export default function InventoryApp({
                       <span className="choose-label">Pilih</span>
                     </button>
                   ))}
-                  {!visibleProducts.length && <div className="no-product"><strong>Produk tidak ditemukan</strong><span>Coba kata lain dari merek atau tipe produk.</span></div>}
+                  {!productCatalog.loading && !visibleProducts.length && <div className="no-product"><strong>Produk tidak ditemukan</strong><span>Coba kata lain dari merek atau tipe produk.</span></div>}
                 </div>
+                {productCatalog.pageCount > 1 && <div className="product-pagination" aria-label="Pagination produk picker"><button type="button" disabled={productCatalog.page <= 1 || productCatalog.loading} onClick={() => productCatalog.setPage((current) => Math.max(1, current - 1))}>Sebelumnya</button><span>Halaman {productCatalog.page} dari {productCatalog.pageCount}</span><button type="button" disabled={productCatalog.page >= productCatalog.pageCount || productCatalog.loading} onClick={() => productCatalog.setPage((current) => current + 1)}>Berikutnya</button></div>}
                 <div className="custom-product">
                   <p><strong>Produk tidak ditemukan?</strong><span>Usulkan produk baru untuk diperiksa admin.</span></p>
                   {similarProducts.length > 0 && (

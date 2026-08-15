@@ -3,10 +3,12 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 test("master Produk memakai RPC Super Admin, pagination server-side, dan guard legacy sync", async () => {
-  const [migration, route, component, submissionMonitor, submissionLib, hook, sync, packageJson] = await Promise.all([
+  const [migration, route, pickerRoute, component, inventoryApp, submissionMonitor, submissionLib, hook, sync, packageJson] = await Promise.all([
     readFile(new URL("../supabase/migrations/20260815120000_super_admin_product_management.sql", import.meta.url), "utf8"),
     readFile(new URL("../app/api/admin/products/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/products/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/admin/AdminProducts.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/InventoryApp.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/admin/AdminSubmissionMonitor.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/lib/submission-monitoring.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/hooks/useProductCatalog.ts", import.meta.url), "utf8"),
@@ -25,6 +27,12 @@ test("master Produk memakai RPC Super Admin, pagination server-side, dan guard l
   assert.match(route, /count: "exact"/);
   assert.match(route, /pageSize >= 10 && pageSize <= 1000/);
   assert.match(route, /\.range\(\(page - 1\) \* pageSize, page \* pageSize - 1\)/);
+  assert.match(pickerRoute, /\.eq\("active", true\)/);
+  assert.match(pickerRoute, /count: "exact"/);
+  assert.match(pickerRoute, /\.order\("brand"/);
+  assert.match(pickerRoute, /\.order\("model"/);
+  assert.match(pickerRoute, /PAGE_SIZE = 60/);
+  assert.match(pickerRoute, /\.range\(\(page - 1\) \* PAGE_SIZE, page \* PAGE_SIZE - 1\)/);
   assert.match(component, /Cari Merk atau Tipe/);
   assert.match(component, /pageSize/);
   assert.match(component, /fetch\(`\/api\/admin\/products/);
@@ -41,6 +49,9 @@ test("master Produk memakai RPC Super Admin, pagination server-side, dan guard l
   assert.match(component, /normalizeSubmissionPageSize/);
   assert.match(component, /onBlur=\{\(\) => applyPageSize\(pageSizeDraft\)\}/);
   assert.match(component, /pageSizeCancelRef/);
+  assert.match(inventoryApp, /product-pagination/);
+  assert.match(hook, /fetch\(`\/api\/products/);
+  assert.match(hook, /setPage/);
   assert.doesNotMatch(hook, /data\.generated\.json/);
   assert.match(sync, /allowLegacyRemoteImport/);
   assert.match(sync, /Legacy import ke database remote diblokir/);
