@@ -50,6 +50,13 @@ test("master Produk memakai RPC Super Admin, pagination server-side, dan guard l
   assert.match(component, /onBlur=\{\(\) => applyPageSize\(pageSizeDraft\)\}/);
   assert.match(component, /pageSizeCancelRef/);
   assert.match(inventoryApp, /product-pagination/);
+  assert.match(inventoryApp, /product-skeleton/);
+  assert.match(inventoryApp, /aria-busy=\{productCatalog\.loading\}/);
+  assert.match(inventoryApp, /Memperbarui/);
+  assert.match(hook, /requestSequenceRef/);
+  assert.match(hook, /displayPage/);
+  assert.match(hook, /setError\("Katalog produk gagal dimuat\."\)/);
+  assert.doesNotMatch(hook, /setLiveProducts\(\[\]\)/);
   assert.match(hook, /fetch\(`\/api\/products/);
   assert.match(hook, /setPage/);
   assert.doesNotMatch(hook, /data\.generated\.json/);

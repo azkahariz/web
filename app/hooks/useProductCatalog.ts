@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getSupabaseBrowserClient } from "../lib/supabase/client";
 import type { Product, ProductProposal } from "../types/inventory";
 import type { ProductAlias } from "../lib/product-qc";
@@ -27,13 +27,18 @@ export function useProductCatalog(stationId: string, search = "") {
   const [aliases, setAliases] = useState<ProductAlias[]>([]);
   const [proposals, setProposals] = useState<ProductProposal[]>([]);
   const [page, setPage] = useState(1);
+  const [displayPage, setDisplayPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const requestSequenceRef = useRef(0);
 
   const refresh = useCallback(async () => {
     const client = getSupabaseBrowserClient();
     if (!client) return;
     setLoading(true);
+    setError("");
+    const requestSequence = ++requestSequenceRef.current;
     const params = new URLSearchParams({ page: String(page) });
     if (search.trim()) params.set("search", search.trim());
     try {
@@ -45,8 +50,9 @@ export function useProductCatalog(stationId: string, search = "") {
         : Promise.resolve({ data: [], error: null }),
       ]);
       const productResult = await productResponse.json() as { rows?: ProductRow[]; totalCount?: number; error?: string };
-    if (!productResponse.ok) throw new Error(productResult.error || "Katalog produk gagal dimuat.");
-    setLiveProducts((productResult.rows ?? []).map((row) => ({
+      if (!productResponse.ok) throw new Error(productResult.error || "Katalog produk gagal dimuat.");
+      if (requestSequence !== requestSequenceRef.current) return;
+      setLiveProducts((productResult.rows ?? []).map((row) => ({
         productId: row.id,
         brand: row.brand,
         model: row.model,
@@ -54,7 +60,8 @@ export function useProductCatalog(stationId: string, search = "") {
         sourceOrigin: row.source_origin as Product["sourceOrigin"],
         spreadsheetSynced: row.spreadsheet_synced,
       })));
-    setTotalCount(productResult.totalCount ?? 0);
+      setTotalCount(productResult.totalCount ?? 0);
+      setDisplayPage(page);
     if (!aliasResult.error) {
       setAliases(((aliasResult.data ?? []) as AliasRow[]).map((row) => ({
         productId: row.product_id,
@@ -78,10 +85,10 @@ export function useProductCatalog(stationId: string, search = "") {
       }));
       }
     } catch {
-      setLiveProducts([]);
-      setTotalCount(0);
+      // Pertahankan snapshot sebelumnya agar refresh gagal tidak mengosongkan picker.
+      if (requestSequence === requestSequenceRef.current) setError("Katalog produk gagal dimuat.");
     } finally {
-      setLoading(false);
+      if (requestSequence === requestSequenceRef.current) setLoading(false);
     }
   }, [page, search, stationId]);
 
@@ -101,5 +108,5 @@ export function useProductCatalog(stationId: string, search = "") {
     const row = result.rows?.[0];
     return row ? { productId: row.id, brand: row.brand, model: row.model, active: row.active, sourceOrigin: row.source_origin as Product["sourceOrigin"], spreadsheetSynced: row.spreadsheet_synced } : null;
   }, []);
-  return { products, aliases, proposals, proposalMap, refresh, page, pageCount, totalCount, loading, setPage, findCanonical };
+  return { products, aliases, proposals, proposalMap, refresh, page, displayPage, pageCount, totalCount, loading, error, setPage, findCanonical };
 }

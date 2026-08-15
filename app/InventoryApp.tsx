@@ -1088,11 +1088,16 @@ export default function InventoryApp({
                   <span aria-hidden="true">⌕</span>
                   <input autoComplete="off" autoFocus value={productQuery} onChange={(event) => { productCatalog.setPage(1); setProductQuery(event.target.value); }} placeholder="Cari merek atau tipe produk…" />
                 </label>
-                <p className="search-caption">{productCatalog.totalCount
-                  ? `Menampilkan ${(productCatalog.page - 1) * 60 + 1}–${Math.min(productCatalog.page * 60, productCatalog.totalCount)} dari ${productCatalog.totalCount} ${productQuery.trim() ? "hasil" : "produk"}`
-                  : "Produk tidak ditemukan."}</p>
-                <div className="product-results">
-                  {productCatalog.loading && <div className="no-product"><strong>Memuat produk...</strong></div>}
+                <p className="search-caption product-results-caption">
+                  {productCatalog.error
+                    ? productCatalog.error
+                    : productCatalog.totalCount
+                    ? `Menampilkan ${(productCatalog.displayPage - 1) * 60 + 1}–${Math.min(productCatalog.displayPage * 60, productCatalog.totalCount)} dari ${productCatalog.totalCount} ${productQuery.trim() ? "hasil" : "produk"}`
+                    : !productCatalog.loading && "Produk tidak ditemukan."}
+                  {productCatalog.loading && productCatalog.products.length > 0 && <span className="product-refresh-status" role="status">Memperbarui...</span>}
+                </p>
+                <div className="product-results" aria-busy={productCatalog.loading}>
+                  {productCatalog.loading && !productCatalog.products.length && Array.from({ length: 7 }, (_, index) => <div className="product-skeleton" key={index}><span /><span /><span /></div>)}
                   {visibleProducts.map((product) => (
                     <button key={`${product.brand}::${product.model}`} onClick={() => addProduct(product)}>
                       <span className="product-avatar">{product.brand.slice(0, 2).toUpperCase()}</span>
@@ -1100,9 +1105,9 @@ export default function InventoryApp({
                       <span className="choose-label">Pilih</span>
                     </button>
                   ))}
-                  {!productCatalog.loading && !visibleProducts.length && <div className="no-product"><strong>Produk tidak ditemukan</strong><span>Coba kata lain dari merek atau tipe produk.</span></div>}
+                  {!productCatalog.loading && !productCatalog.error && !visibleProducts.length && <div className="no-product"><strong>Produk tidak ditemukan</strong><span>Coba kata lain dari merek atau tipe produk.</span></div>}
                 </div>
-                {productCatalog.pageCount > 1 && <div className="product-pagination" aria-label="Pagination produk picker"><button type="button" disabled={productCatalog.page <= 1 || productCatalog.loading} onClick={() => productCatalog.setPage((current) => Math.max(1, current - 1))}>Sebelumnya</button><span>Halaman {productCatalog.page} dari {productCatalog.pageCount}</span><button type="button" disabled={productCatalog.page >= productCatalog.pageCount || productCatalog.loading} onClick={() => productCatalog.setPage((current) => current + 1)}>Berikutnya</button></div>}
+                {productCatalog.pageCount > 1 && <div className="product-pagination" aria-label="Pagination produk picker"><button type="button" disabled={productCatalog.displayPage <= 1 || productCatalog.loading} onClick={() => productCatalog.setPage((current) => Math.max(1, current - 1))}>Sebelumnya</button><span>Halaman {productCatalog.displayPage} dari {productCatalog.pageCount}</span><button type="button" disabled={productCatalog.displayPage >= productCatalog.pageCount || productCatalog.loading} onClick={() => productCatalog.setPage((current) => current + 1)}>Berikutnya</button></div>}
                 <div className="custom-product">
                   <p><strong>Produk tidak ditemukan?</strong><span>Usulkan produk baru untuk diperiksa admin.</span></p>
                   {similarProducts.length > 0 && (

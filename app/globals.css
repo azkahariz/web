@@ -324,6 +324,13 @@ button[aria-busy="true"] { display: inline-flex; align-items: center; justify-co
 .product-pagination button { min-height: 34px; padding: 7px 10px; border: 1px solid #c7d5cf; border-radius: 6px; background: white; color: var(--green-deep); font-size: 10px; font-weight: 800; cursor: pointer; }
 .product-pagination button:disabled { opacity: .45; cursor: not-allowed; }
 .product-pagination span { color: var(--muted); font-size: 10px; }
+.product-results-caption { display: flex; align-items: center; gap: 8px; }
+.product-refresh-status { color: var(--muted); font-size: 10px; font-weight: 700; }
+.product-skeleton { min-height: 58px; padding: 10px 12px; display: grid; grid-template-columns: 34px 1fr 34px; align-items: center; gap: 10px; border-bottom: 1px solid #edf0ed; }
+.product-skeleton span { display: block; height: 10px; border-radius: 5px; background: linear-gradient(90deg, #e9eeeb 25%, #f5f7f5 50%, #e9eeeb 75%); background-size: 200% 100%; animation: product-skeleton-shimmer 1.2s ease-in-out infinite; }
+.product-skeleton span:first-child { width: 30px; height: 30px; border-radius: 50%; }
+.product-skeleton span:last-child { width: 28px; justify-self: end; }
+@keyframes product-skeleton-shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
 .proposal-message { margin: 9px 0 0 46px; padding: 8px 10px; border-radius: 6px; background: #fbf4e4; color: #765721; font-size: 10px; line-height: 1.45; }
 .proposal-message.is-resolved { background: var(--green-soft); color: var(--green-deep); }
 .proposal-message.is-rejected { background: #f7e6e2; color: var(--red); }
