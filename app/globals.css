@@ -367,6 +367,10 @@ button[aria-busy="true"] { display: inline-flex; align-items: center; justify-co
 .product-table table { min-width: 760px; font-size: 12px; }
 .product-table th, .product-table td { padding: 13px 14px; }
 .product-table.is-loading tbody { opacity: .62; }
+.product-dialog label + label { margin-top: 14px; }
+.product-dialog input { margin-top: 6px; }
+.product-dialog .app-dialog-actions { margin-top: 22px; }
+.page-size-error { color: var(--red); font-size: 10px; font-weight: 800; }
 .station-filling-toolbar { margin-top: 22px; display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
 .station-filling-toolbar .admin-search { margin-top: 0; }
 .admin-list { margin-top: 18px; display: flex; flex-direction: column; gap: 8px; }

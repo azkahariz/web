@@ -29,6 +29,12 @@ export default function AdminProducts({ onChanged }: { onChanged: () => void }) 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [activeAction, setActiveAction] = useState<string | null>(null);
+  const [productDialog, setProductDialog] = useState<{ mode: "create" | "edit"; productId?: string; brand: string; model: string } | null>(null);
+  const [dialogError, setDialogError] = useState("");
+  const [dialogSubmitting, setDialogSubmitting] = useState(false);
+  const [customPageSize, setCustomPageSize] = useState(false);
+  const [pageSizeDraft, setPageSizeDraft] = useState("500");
+  const [pageSizeError, setPageSizeError] = useState("");
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -80,44 +86,39 @@ export default function AdminProducts({ onChanged }: { onChanged: () => void }) 
     onChanged();
   }
 
-  async function createProduct() {
-    const brand = await feedback.prompt({ title: "Tambah produk", inputLabel: "Merk", required: true, confirmLabel: "Berikutnya" });
-    if (!brand) return;
-    const model = await feedback.prompt({ title: "Tambah produk", inputLabel: "Tipe", required: true, confirmLabel: "Simpan" });
-    if (!model) return;
-    await feedback.confirmAction({ title: "Tambah produk?", description: `${brand.trim()} - ${model.trim()}`, confirmLabel: "Tambah" }, async () => {
-      try {
-        setActiveAction("create");
-        await post({ action: "create", brand, model });
-        feedback.toast("Produk baru berhasil ditambahkan.", "success");
-        return true;
-      } catch (actionError) {
-        feedback.toast(actionError instanceof Error ? actionError.message : "Produk gagal ditambahkan.", "error");
-        return false;
-      } finally {
-        setActiveAction(null);
-      }
-    });
+  function openCreateDialog() {
+    setDialogError("");
+    setProductDialog({ mode: "create", brand: "", model: "" });
   }
 
-  async function editProduct(product: Product) {
-    const brand = await feedback.prompt({ title: "Edit produk", inputLabel: "Merk", initialValue: product.brand, required: true, confirmLabel: "Berikutnya" });
-    if (!brand) return;
-    const model = await feedback.prompt({ title: "Edit produk", inputLabel: "Tipe", initialValue: product.model, required: true, confirmLabel: "Simpan" });
-    if (!model) return;
-    await feedback.confirmAction({ title: "Simpan perubahan produk?", description: `${brand.trim()} - ${model.trim()}`, confirmLabel: "Simpan" }, async () => {
-      try {
-        setActiveAction(`edit:${product.id}`);
-        await post({ action: "update", productId: product.id, brand, model });
-        feedback.toast("Produk berhasil diperbarui.", "success");
-        return true;
-      } catch (actionError) {
-        feedback.toast(actionError instanceof Error ? actionError.message : "Produk gagal diperbarui.", "error");
-        return false;
-      } finally {
-        setActiveAction(null);
-      }
-    });
+  function openEditDialog(product: Product) {
+    setDialogError("");
+    setProductDialog({ mode: "edit", productId: product.id, brand: product.brand, model: product.model });
+  }
+
+  async function submitProductDialog() {
+    if (!productDialog || dialogSubmitting) return;
+    const brand = productDialog.brand.trim();
+    const model = productDialog.model.trim();
+    if (!brand || !model) {
+      setDialogError("Merk dan Tipe wajib diisi.");
+      return;
+    }
+    setDialogSubmitting(true);
+    setDialogError("");
+    try {
+      setActiveAction(productDialog.mode === "create" ? "create" : `edit:${productDialog.productId}`);
+      await post(productDialog.mode === "create"
+        ? { action: "create", brand, model }
+        : { action: "update", productId: productDialog.productId, brand, model });
+      feedback.toast(productDialog.mode === "create" ? "Produk baru berhasil ditambahkan." : "Produk berhasil diperbarui.", "success");
+      setProductDialog(null);
+    } catch (actionError) {
+      setDialogError(actionError instanceof Error ? actionError.message : "Aksi produk gagal diproses.");
+    } finally {
+      setDialogSubmitting(false);
+      setActiveAction(null);
+    }
   }
 
   async function setActive(product: Product) {
@@ -159,18 +160,37 @@ export default function AdminProducts({ onChanged }: { onChanged: () => void }) 
         const [field, direction] = event.target.value.split(":") as [SortField, SortDirection];
         setSortField(field); setSortDirection(direction); setPage(1);
       }}><option value="brand:asc">Merk A-Z</option><option value="brand:desc">Merk Z-A</option><option value="model:asc">Tipe A-Z</option><option value="model:desc">Tipe Z-A</option></select></label>
-      <AsyncButton className="primary-button" loading={activeAction === "create"} loadingText="Menambah..." onClick={() => void createProduct()}>Tambah Produk</AsyncButton>
+      <AsyncButton className="primary-button" loading={activeAction === "create"} loadingText="Menambah..." onClick={openCreateDialog}>Tambah Produk</AsyncButton>
       <AsyncButton className="secondary-button" loading={loading} loadingText="Memuat..." onClick={() => void load()}>Muat ulang</AsyncButton>
     </div>
     {error && <p className="admin-message" role="status">{error}</p>}
     <div className={`admin-table-wrap product-table${loading ? " is-loading" : ""}`}><table><thead><tr><th>Merk</th><th>Tipe</th><th>Status</th><th>Sumber</th><th>Aksi</th></tr></thead><tbody>
-      {rows.map((product) => <tr key={product.id}><td><strong>{product.brand}</strong></td><td>{product.model}</td><td><span className={`status-pill ${product.active ? "active" : "inactive"}`}>{product.active ? "Aktif" : "Nonaktif"}</span></td><td>{originLabel(product.source_origin)}</td><td className="table-actions"><AsyncButton loading={activeAction === `edit:${product.id}`} loadingText="Menyimpan..." onClick={() => void editProduct(product)}>Edit</AsyncButton><AsyncButton className={product.active ? "danger-inline" : undefined} loading={activeAction === `active:${product.id}`} loadingText="Menyimpan..." onClick={() => void setActive(product)}>{product.active ? "Nonaktifkan" : "Aktifkan"}</AsyncButton></td></tr>)}
+      {rows.map((product) => <tr key={product.id}><td><strong>{product.brand}</strong></td><td>{product.model}</td><td><span className={`status-pill ${product.active ? "active" : "inactive"}`}>{product.active ? "Aktif" : "Nonaktif"}</span></td><td>{originLabel(product.source_origin)}</td><td className="table-actions"><AsyncButton loading={activeAction === `edit:${product.id}`} loadingText="Menyimpan..." onClick={() => openEditDialog(product)}>Edit</AsyncButton><AsyncButton className={product.active ? "danger-inline" : undefined} loading={activeAction === `active:${product.id}`} loadingText="Menyimpan..." onClick={() => void setActive(product)}>{product.active ? "Nonaktifkan" : "Aktifkan"}</AsyncButton></td></tr>)}
       {!rows.length && <tr><td colSpan={5}>{loading ? "Memuat produk..." : "Produk tidak ditemukan."}</td></tr>}
     </tbody></table></div>
     <div className="submission-pagination" aria-label="Pagination produk">
-      <label className="page-size-control">Baris per halaman:<select value={String(pageSize)} onChange={(event) => { setPageSize(Number(event.target.value)); setPage(1); }}><option value="50">50</option><option value="100">100</option><option value="200">200</option></select></label>
+      <label className="page-size-control">Tampilkan:<select value={customPageSize ? "custom" : String(pageSize)} onChange={(event) => {
+        if (event.target.value === "custom") { setCustomPageSize(true); setPageSizeDraft(String(pageSize)); setPageSizeError(""); return; }
+        setCustomPageSize(false); setPageSizeError(""); setPageSize(Number(event.target.value)); setPage(1);
+      }}><option value="50">50</option><option value="100">100</option><option value="200">200</option><option value="400">400</option><option value="custom">Custom</option></select></label>
+      {customPageSize && <label className="page-size-control">Jumlah per halaman:<input aria-label="Jumlah per halaman" type="number" min={10} max={1000} step={1} value={pageSizeDraft} onChange={(event) => { setPageSizeDraft(event.target.value); setPageSizeError(""); }} /><button type="button" onClick={() => {
+        if (!/^\d+$/.test(pageSizeDraft)) { setPageSizeError("Masukkan bilangan bulat 10-1000."); return; }
+        const value = Number(pageSizeDraft);
+        if (value < 10 || value > 1000) { setPageSizeError("Jumlah harus antara 10 dan 1000."); return; }
+        setPageSize(value); setPage(1); setPageSizeError("");
+      }}>Terapkan</button></label>}
+      {pageSizeError && <span className="page-size-error" role="alert">{pageSizeError}</span>}
       <span>Menampilkan {firstRow}-{lastRow} dari {totalCount}</span>
       <div className="pagination-buttons"><button disabled={page <= 1 || loading} onClick={() => setPage((current) => current - 1)}>Sebelumnya</button><span>Halaman {page} dari {pageCount}</span><button disabled={page >= pageCount || loading} onClick={() => setPage((current) => current + 1)}>Berikutnya</button></div>
     </div>
+    {productDialog && <div className="app-dialog-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget && !dialogSubmitting) setProductDialog(null); }}>
+      <form className="app-dialog product-dialog" role="dialog" aria-modal="true" aria-labelledby="product-dialog-title" onSubmit={(event) => { event.preventDefault(); void submitProductDialog(); }}>
+        <h2 id="product-dialog-title">{productDialog.mode === "create" ? "Tambah Produk" : "Edit Produk"}</h2>
+        <label>Merk<input autoFocus autoComplete="off" value={productDialog.brand} onChange={(event) => { setProductDialog((current) => current ? { ...current, brand: event.target.value } : current); setDialogError(""); }} placeholder="Masukkan merk" /></label>
+        <label>Tipe<input autoComplete="off" value={productDialog.model} onChange={(event) => { setProductDialog((current) => current ? { ...current, model: event.target.value } : current); setDialogError(""); }} placeholder="Masukkan tipe" /></label>
+        {dialogError && <p className="app-dialog-error" role="alert">{dialogError}</p>}
+        <div className="app-dialog-actions"><button className="secondary-button" type="button" disabled={dialogSubmitting} onClick={() => setProductDialog(null)}>Batal</button><AsyncButton className="primary-button" type="submit" loading={dialogSubmitting} loadingText="Menyimpan...">{productDialog.mode === "create" ? "Tambah Produk" : "Simpan Perubahan"}</AsyncButton></div>
+      </form>
+    </div>}
   </section>;
 }

@@ -7,8 +7,10 @@ type RpcError = { code?: string | null };
 type ProductAction = "create" | "update" | "set-active";
 
 function productPageSize(value: string | null) {
-  const pageSize = Number.parseInt(value || "50", 10);
-  return [50, 100, 200].includes(pageSize) ? pageSize : 50;
+  const raw = value?.trim() || "50";
+  if (!/^\d+$/.test(raw)) return null;
+  const pageSize = Number(raw);
+  return Number.isInteger(pageSize) && pageSize >= 10 && pageSize <= 1000 ? pageSize : null;
 }
 
 function rpcErrorResponse(error: RpcError, fallback: string) {
@@ -38,15 +40,22 @@ export async function GET(request: Request) {
     if (error) return rpcErrorResponse(error, "Ringkasan produk gagal dimuat.");
     return NextResponse.json({ summary: Array.isArray(data) ? data[0] ?? null : data });
   }
-  const { data, error } = await auth.client.rpc("admin_list_products", {
-    p_page: Math.max(1, Number.parseInt(url.searchParams.get("page") || "1", 10) || 1),
-    p_page_size: productPageSize(url.searchParams.get("pageSize")),
-    p_search: url.searchParams.get("search")?.trim() || null,
-    p_sort_field: url.searchParams.get("sort") === "model" ? "model" : "brand",
-    p_sort_direction: url.searchParams.get("direction") === "desc" ? "desc" : "asc",
-  });
+  const pageSize = productPageSize(url.searchParams.get("pageSize"));
+  if (pageSize === null) return NextResponse.json({ error: "Jumlah per halaman harus berupa bilangan bulat 10-1000." }, { status: 400 });
+  const page = Math.max(1, Number.parseInt(url.searchParams.get("page") || "1", 10) || 1);
+  const sortField = url.searchParams.get("sort") === "model" ? "model" : "brand";
+  const sortDirection = url.searchParams.get("direction") === "desc" ? false : true;
+  const search = url.searchParams.get("search")?.trim().replace(/[(),]/g, " ") || "";
+  const { error: authorizationError } = await auth.client.rpc("admin_product_summary");
+  if (authorizationError) return rpcErrorResponse(authorizationError, "Akses daftar produk gagal divalidasi.");
+  let query = auth.client.from("products")
+    .select("id, brand, model, active, source_origin", { count: "exact" });
+  if (search) query = query.or(`brand.ilike.%${search}%,model.ilike.%${search}%`);
+  const secondarySort = sortField === "brand" ? "model" : "brand";
+  query = query.order(sortField, { ascending: sortDirection }).order(secondarySort, { ascending: true }).order("id", { ascending: true });
+  const { data, count, error } = await query.range((page - 1) * pageSize, page * pageSize - 1);
   if (error) return rpcErrorResponse(error, "Daftar produk gagal dimuat.");
-  return NextResponse.json(data);
+  return NextResponse.json({ totalCount: count ?? 0, rows: data ?? [] });
 }
 
 export async function POST(request: Request) {

@@ -20,9 +20,17 @@ test("master Produk memakai RPC Super Admin, pagination server-side, dan guard l
   assert.match(migration, /security definer[\s\S]*set search_path = ''/);
   assert.match(route, /auth\.getUser/);
   assert.match(route, /status: 403/);
+  assert.match(route, /count: "exact"/);
+  assert.match(route, /pageSize >= 10 && pageSize <= 1000/);
+  assert.match(route, /\.range\(\(page - 1\) \* pageSize, page \* pageSize - 1\)/);
   assert.match(component, /Cari Merk atau Tipe/);
   assert.match(component, /pageSize/);
   assert.match(component, /fetch\(`\/api\/admin\/products/);
+  assert.match(component, /Masukkan merk/);
+  assert.match(component, /Masukkan tipe/);
+  assert.match(component, /Simpan Perubahan/);
+  assert.doesNotMatch(component, /confirmLabel: "Berikutnya"/);
+  for (const option of ["50", "100", "200", "400", "custom"]) assert.match(component, new RegExp(`value=\\"${option}\\"`));
   assert.doesNotMatch(hook, /data\.generated\.json/);
   assert.match(sync, /allowLegacyRemoteImport/);
   assert.match(sync, /Legacy import ke database remote diblokir/);
