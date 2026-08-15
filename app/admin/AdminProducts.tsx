@@ -9,6 +9,15 @@ type Product = { id: string; brand: string; model: string; active: boolean; sour
 type Summary = { total_count: number; active_count: number; inactive_count: number };
 type SortField = "brand" | "model";
 type SortDirection = "asc" | "desc";
+type ProductUsage = {
+  rows: Array<{ stationName: string; siteName: string; siteTypeName: string; subtypeName: string; referenceCount: number }>;
+  totalCount: number;
+  stationCount: number;
+  siteCount: number;
+  referenceCount: number;
+  page: number;
+  pageSize: number;
+};
 
 function originLabel(origin: string) {
   if (origin === "QC") return "QC Produk";
@@ -36,6 +45,10 @@ export default function AdminProducts({ onChanged }: { onChanged: () => void }) 
   const [pageSizeEditing, setPageSizeEditing] = useState(false);
   const [pageSizeDraft, setPageSizeDraft] = useState(String(SUBMISSION_PAGE_SIZE));
   const pageSizeCancelRef = useRef(false);
+  const [usageProduct, setUsageProduct] = useState<Product | null>(null);
+  const [usage, setUsage] = useState<ProductUsage | null>(null);
+  const [usageLoading, setUsageLoading] = useState(false);
+  const [usageError, setUsageError] = useState("");
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -144,6 +157,28 @@ export default function AdminProducts({ onChanged }: { onChanged: () => void }) 
     });
   }
 
+  async function loadUsage(product: Product, usagePage = 1) {
+    setUsageLoading(true);
+    setUsageError("");
+    try {
+      const params = new URLSearchParams({ usageProductId: product.id, page: String(usagePage), pageSize: "50" });
+      const response = await fetch(`/api/admin/products?${params.toString()}`, { cache: "no-store" });
+      const result = await response.json() as { usage?: ProductUsage; error?: string };
+      if (!response.ok || !result.usage) throw new Error(result.error || "Penggunaan produk gagal dimuat.");
+      setUsage(result.usage);
+    } catch (usageLoadError) {
+      setUsageError(usageLoadError instanceof Error ? usageLoadError.message : "Penggunaan produk gagal dimuat.");
+    } finally {
+      setUsageLoading(false);
+    }
+  }
+
+  function openUsage(product: Product) {
+    setUsageProduct(product);
+    setUsage(null);
+    void loadUsage(product);
+  }
+
   function applyPageSize(value: string | number) {
     if (pageSizeCancelRef.current) {
       pageSizeCancelRef.current = false;
@@ -183,9 +218,9 @@ export default function AdminProducts({ onChanged }: { onChanged: () => void }) 
       <AsyncButton className="secondary-button" loading={loading} loadingText="Memuat..." onClick={() => void load()}>Muat ulang</AsyncButton>
     </div>
     {error && <p className="admin-message" role="status">{error}</p>}
-    <div className={`admin-table-wrap product-table${loading ? " is-loading" : ""}`}><table><thead><tr><th>Merk</th><th>Tipe</th><th>Status</th><th>Sumber</th><th>Aksi</th></tr></thead><tbody>
-      {rows.map((product) => <tr key={product.id}><td><strong>{product.brand}</strong></td><td>{product.model}</td><td><span className={`status-pill ${product.active ? "active" : "inactive"}`}>{product.active ? "Aktif" : "Nonaktif"}</span></td><td>{originLabel(product.source_origin)}</td><td className="table-actions"><AsyncButton loading={activeAction === `edit:${product.id}`} loadingText="Menyimpan..." onClick={() => openEditDialog(product)}>Edit</AsyncButton><AsyncButton className={product.active ? "danger-inline" : undefined} loading={activeAction === `active:${product.id}`} loadingText="Menyimpan..." onClick={() => void setActive(product)}>{product.active ? "Nonaktifkan" : "Aktifkan"}</AsyncButton></td></tr>)}
-      {!rows.length && <tr><td colSpan={5}>{loading ? "Memuat produk..." : "Produk tidak ditemukan."}</td></tr>}
+    <div className={`admin-table-wrap product-table${loading ? " is-loading" : ""}`}><table><thead><tr><th>Merk</th><th>Tipe</th><th>Status</th><th>Sumber</th><th>Penggunaan</th><th>Aksi</th></tr></thead><tbody>
+      {rows.map((product) => <tr key={product.id}><td><strong>{product.brand}</strong></td><td>{product.model}</td><td><span className={`status-pill ${product.active ? "active" : "inactive"}`}>{product.active ? "Aktif" : "Nonaktif"}</span></td><td>{originLabel(product.source_origin)}</td><td><button className="usage-link" type="button" onClick={() => openUsage(product)}>Lihat Penggunaan</button></td><td className="table-actions"><AsyncButton loading={activeAction === `edit:${product.id}`} loadingText="Menyimpan..." onClick={() => openEditDialog(product)}>Edit</AsyncButton><AsyncButton className={product.active ? "danger-inline" : undefined} loading={activeAction === `active:${product.id}`} loadingText="Menyimpan..." onClick={() => void setActive(product)}>{product.active ? "Nonaktifkan" : "Aktifkan"}</AsyncButton></td></tr>)}
+      {!rows.length && <tr><td colSpan={6}>{loading ? "Memuat produk..." : "Produk tidak ditemukan."}</td></tr>}
     </tbody></table></div>
     <div className="submission-pagination" aria-label="Pagination produk">
       <label className="page-size-control">Baris per halaman:
@@ -212,6 +247,23 @@ export default function AdminProducts({ onChanged }: { onChanged: () => void }) 
         {dialogError && <p className="app-dialog-error" role="alert">{dialogError}</p>}
         <div className="app-dialog-actions"><button className="secondary-button" type="button" disabled={dialogSubmitting} onClick={() => setProductDialog(null)}>Batal</button><AsyncButton className="primary-button" type="submit" loading={dialogSubmitting} loadingText="Menyimpan...">{productDialog.mode === "create" ? "Tambah Produk" : "Simpan Perubahan"}</AsyncButton></div>
       </form>
+    </div>}
+    {usageProduct && <div className="app-dialog-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget && !usageLoading) setUsageProduct(null); }}>
+      <section className="app-dialog product-usage-dialog" role="dialog" aria-modal="true" aria-labelledby="product-usage-title">
+        <h2 id="product-usage-title">Penggunaan Produk</h2>
+        <p className="product-usage-name"><strong>{usageProduct.brand}</strong><span>{usageProduct.model}</span></p>
+        {usageLoading && !usage && <p className="app-dialog-error" role="status">Memuat penggunaan...</p>}
+        {usageError && <p className="app-dialog-error" role="alert">{usageError}</p>}
+        {usage && <>
+          <p className="product-usage-summary">{usage.stationCount} Stasiun · {usage.siteCount} Site · {usage.referenceCount} referensi</p>
+          <div className="product-usage-list" aria-busy={usageLoading}>
+            {usage.rows.map((row) => <div key={`${row.stationName}:${row.siteName}:${row.subtypeName}`}><strong>{row.stationName}</strong><span>{row.siteName} · {row.siteTypeName} · {row.subtypeName}</span><small>{row.referenceCount} referensi</small></div>)}
+            {!usage.rows.length && <p>Produk belum dipakai pada submission aktif.</p>}
+          </div>
+          {usage.totalCount > usage.pageSize && <div className="pagination-buttons product-usage-pagination"><button disabled={usage.page <= 1 || usageLoading} onClick={() => void loadUsage(usageProduct, usage.page - 1)}>Sebelumnya</button><span>Halaman {usage.page} dari {Math.ceil(usage.totalCount / usage.pageSize)}</span><button disabled={usage.page >= Math.ceil(usage.totalCount / usage.pageSize) || usageLoading} onClick={() => void loadUsage(usageProduct, usage.page + 1)}>Berikutnya</button></div>}
+        </>}
+        <div className="app-dialog-actions"><button className="secondary-button" type="button" disabled={usageLoading} onClick={() => setUsageProduct(null)}>Tutup</button></div>
+      </section>
     </div>}
   </section>;
 }

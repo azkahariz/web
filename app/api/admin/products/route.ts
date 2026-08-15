@@ -35,6 +35,20 @@ export async function GET(request: Request) {
   const auth = await requireAuthenticatedUser(request);
   if ("response" in auth) return auth.response;
   const url = new URL(request.url);
+  const usageProductId = url.searchParams.get("usageProductId");
+  if (usageProductId) {
+    const pageSize = productPageSize(url.searchParams.get("pageSize"));
+    if (pageSize === null) return NextResponse.json({ error: "Jumlah per halaman harus berupa bilangan bulat 10-1000." }, { status: 400 });
+    const page = Math.max(1, Number.parseInt(url.searchParams.get("page") || "1", 10) || 1);
+    const { data, error } = await auth.client.rpc("admin_product_usage", {
+      p_product_id: usageProductId,
+      p_page: page,
+      p_page_size: pageSize,
+      p_search: url.searchParams.get("usageSearch")?.trim() || null,
+    });
+    if (error) return rpcErrorResponse(error, "Penggunaan produk gagal dimuat.");
+    return NextResponse.json({ usage: data });
+  }
   if (url.searchParams.get("summary") === "1") {
     const { data, error } = await auth.client.rpc("admin_product_summary");
     if (error) return rpcErrorResponse(error, "Ringkasan produk gagal dimuat.");

@@ -376,6 +376,21 @@ button[aria-busy="true"] { display: inline-flex; align-items: center; justify-co
 .product-sort select { min-height: 42px; font-size: 11px; }
 .product-toolbar .primary-button, .product-toolbar .secondary-button { min-height: 42px; }
 .product-table table { min-width: 760px; font-size: 12px; }
+.usage-link { padding: 0; border: 0; background: transparent; color: var(--green-deep); font-size: 10px; font-weight: 800; cursor: pointer; white-space: nowrap; }
+.usage-link:hover, .usage-link:focus-visible { text-decoration: underline; }
+.product-usage-dialog { width: min(680px, calc(100vw - 32px)); }
+.product-usage-name { margin: 0 0 8px; }
+.product-usage-name strong, .product-usage-name span { display: block; }
+.product-usage-name span, .product-usage-summary { color: var(--muted); font-size: 12px; }
+.product-usage-summary { margin: 0 0 14px; }
+.product-usage-list { max-height: min(48vh, 420px); overflow: auto; border-top: 1px solid var(--line); }
+.product-usage-list > div { padding: 11px 0; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 3px 12px; border-bottom: 1px solid var(--line); }
+.product-usage-list strong, .product-usage-list span { min-width: 0; }
+.product-usage-list strong { font-size: 12px; }
+.product-usage-list span { color: var(--muted); font-size: 11px; }
+.product-usage-list small { grid-column: 2; grid-row: 1 / span 2; align-self: center; color: var(--muted); font-size: 10px; white-space: nowrap; }
+.product-usage-list > p { color: var(--muted); font-size: 12px; }
+.product-usage-pagination { margin-top: 14px; justify-content: space-between; }
 .product-table th, .product-table td { padding: 13px 14px; }
 .product-table.is-loading tbody { opacity: .62; }
 .product-dialog label + label { margin-top: 14px; }
