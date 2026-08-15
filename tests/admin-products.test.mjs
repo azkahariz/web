@@ -3,10 +3,12 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 test("master Produk memakai RPC Super Admin, pagination server-side, dan guard legacy sync", async () => {
-  const [migration, route, component, hook, sync, packageJson] = await Promise.all([
+  const [migration, route, component, submissionMonitor, submissionLib, hook, sync, packageJson] = await Promise.all([
     readFile(new URL("../supabase/migrations/20260815120000_super_admin_product_management.sql", import.meta.url), "utf8"),
     readFile(new URL("../app/api/admin/products/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/admin/AdminProducts.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/admin/AdminSubmissionMonitor.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/lib/submission-monitoring.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/hooks/useProductCatalog.ts", import.meta.url), "utf8"),
     readFile(new URL("../scripts/sync-master.mjs", import.meta.url), "utf8"),
     readFile(new URL("../package.json", import.meta.url), "utf8"),
@@ -30,7 +32,15 @@ test("master Produk memakai RPC Super Admin, pagination server-side, dan guard l
   assert.match(component, /Masukkan tipe/);
   assert.match(component, /Simpan Perubahan/);
   assert.doesNotMatch(component, /confirmLabel: "Berikutnya"/);
-  for (const option of ["50", "100", "200", "400", "custom"]) assert.match(component, new RegExp(`value=\\"${option}\\"`));
+  for (const option of ["50", "100", "200", "500", "1000"]) assert.match(submissionLib, new RegExp(`\\b${option}\\b`));
+  for (const contract of ["Baris per halaman", "Menampilkan", "Sebelumnya", "Berikutnya", "Halaman", "Custom..."]) {
+    assert.match(component, new RegExp(contract.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+    assert.match(submissionMonitor, new RegExp(contract.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+  }
+  assert.match(component, /SUBMISSION_PAGE_SIZE_OPTIONS/);
+  assert.match(component, /normalizeSubmissionPageSize/);
+  assert.match(component, /onBlur=\{\(\) => applyPageSize\(pageSizeDraft\)\}/);
+  assert.match(component, /pageSizeCancelRef/);
   assert.doesNotMatch(hook, /data\.generated\.json/);
   assert.match(sync, /allowLegacyRemoteImport/);
   assert.match(sync, /Legacy import ke database remote diblokir/);

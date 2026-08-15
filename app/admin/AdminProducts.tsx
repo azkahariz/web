@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import AsyncButton from "../components/AsyncButton";
 import { useAppFeedback } from "../components/AppFeedback";
+import { normalizeSubmissionPageSize, SUBMISSION_PAGE_SIZE, SUBMISSION_PAGE_SIZE_MAX, SUBMISSION_PAGE_SIZE_MIN, SUBMISSION_PAGE_SIZE_OPTIONS } from "../lib/submission-monitoring";
 
 type Product = { id: string; brand: string; model: string; active: boolean; source_origin: string };
 type Summary = { total_count: number; active_count: number; inactive_count: number };
@@ -22,7 +23,7 @@ export default function AdminProducts({ onChanged }: { onChanged: () => void }) 
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(50);
+  const [pageSize, setPageSize] = useState(SUBMISSION_PAGE_SIZE);
   const [sortField, setSortField] = useState<SortField>("brand");
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
   const [totalCount, setTotalCount] = useState(0);
@@ -32,9 +33,9 @@ export default function AdminProducts({ onChanged }: { onChanged: () => void }) 
   const [productDialog, setProductDialog] = useState<{ mode: "create" | "edit"; productId?: string; brand: string; model: string } | null>(null);
   const [dialogError, setDialogError] = useState("");
   const [dialogSubmitting, setDialogSubmitting] = useState(false);
-  const [customPageSize, setCustomPageSize] = useState(false);
-  const [pageSizeDraft, setPageSizeDraft] = useState("500");
-  const [pageSizeError, setPageSizeError] = useState("");
+  const [pageSizeEditing, setPageSizeEditing] = useState(false);
+  const [pageSizeDraft, setPageSizeDraft] = useState(String(SUBMISSION_PAGE_SIZE));
+  const pageSizeCancelRef = useRef(false);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -143,6 +144,24 @@ export default function AdminProducts({ onChanged }: { onChanged: () => void }) 
     });
   }
 
+  function applyPageSize(value: string | number) {
+    if (pageSizeCancelRef.current) {
+      pageSizeCancelRef.current = false;
+      return;
+    }
+    const parsed = Number(value);
+    if (!Number.isInteger(parsed) || parsed < SUBMISSION_PAGE_SIZE_MIN || parsed > SUBMISSION_PAGE_SIZE_MAX) {
+      setPageSizeDraft(String(pageSize));
+      setPageSizeEditing(false);
+      feedback.toast("Baris per halaman harus 10-1000.", "warning");
+      return;
+    }
+    setPageSize(normalizeSubmissionPageSize(parsed));
+    setPageSizeDraft(String(parsed));
+    setPage(1);
+    setPageSizeEditing(false);
+  }
+
   const compactSummary = useMemo(() => [
     ["Total", summary?.total_count ?? 0],
     ["Aktif", summary?.active_count ?? 0],
@@ -169,19 +188,21 @@ export default function AdminProducts({ onChanged }: { onChanged: () => void }) 
       {!rows.length && <tr><td colSpan={5}>{loading ? "Memuat produk..." : "Produk tidak ditemukan."}</td></tr>}
     </tbody></table></div>
     <div className="submission-pagination" aria-label="Pagination produk">
-      <label className="page-size-control">Tampilkan:<select value={customPageSize ? "custom" : String(pageSize)} onChange={(event) => {
-        if (event.target.value === "custom") { setCustomPageSize(true); setPageSizeDraft(String(pageSize)); setPageSizeError(""); return; }
-        setCustomPageSize(false); setPageSizeError(""); setPageSize(Number(event.target.value)); setPage(1);
-      }}><option value="50">50</option><option value="100">100</option><option value="200">200</option><option value="400">400</option><option value="custom">Custom</option></select></label>
-      {customPageSize && <label className="page-size-control">Jumlah per halaman:<input aria-label="Jumlah per halaman" type="number" min={10} max={1000} step={1} value={pageSizeDraft} onChange={(event) => { setPageSizeDraft(event.target.value); setPageSizeError(""); }} /><button type="button" onClick={() => {
-        if (!/^\d+$/.test(pageSizeDraft)) { setPageSizeError("Masukkan bilangan bulat 10-1000."); return; }
-        const value = Number(pageSizeDraft);
-        if (value < 10 || value > 1000) { setPageSizeError("Jumlah harus antara 10 dan 1000."); return; }
-        setPageSize(value); setPage(1); setPageSizeError("");
-      }}>Terapkan</button></label>}
-      {pageSizeError && <span className="page-size-error" role="alert">{pageSizeError}</span>}
+      <label className="page-size-control">Baris per halaman:
+        {pageSizeEditing ? <input autoFocus type="number" min={SUBMISSION_PAGE_SIZE_MIN} max={SUBMISSION_PAGE_SIZE_MAX} value={pageSizeDraft} onChange={(event) => setPageSizeDraft(event.target.value)} onBlur={() => applyPageSize(pageSizeDraft)} onKeyDown={(event) => {
+          if (event.key === "Enter") { event.preventDefault(); applyPageSize(pageSizeDraft); }
+          if (event.key === "Escape") { pageSizeCancelRef.current = true; setPageSizeDraft(String(pageSize)); setPageSizeEditing(false); }
+        }} /> : <select aria-label="Baris per halaman" value={String(pageSize)} onDoubleClick={() => setPageSizeEditing(true)} onChange={(event) => {
+          if (event.target.value === "custom") setPageSizeEditing(true);
+          else applyPageSize(event.target.value);
+        }}>
+          {SUBMISSION_PAGE_SIZE_OPTIONS.map((value) => <option key={value} value={value}>{value}</option>)}
+          {!SUBMISSION_PAGE_SIZE_OPTIONS.includes(pageSize as (typeof SUBMISSION_PAGE_SIZE_OPTIONS)[number]) && <option value={pageSize}>{pageSize}</option>}
+          <option value="custom">Custom...</option>
+        </select>}
+      </label>
       <span>Menampilkan {firstRow}-{lastRow} dari {totalCount}</span>
-      <div className="pagination-buttons"><button disabled={page <= 1 || loading} onClick={() => setPage((current) => current - 1)}>Sebelumnya</button><span>Halaman {page} dari {pageCount}</span><button disabled={page >= pageCount || loading} onClick={() => setPage((current) => current + 1)}>Berikutnya</button></div>
+      <div className="pagination-buttons"><button disabled={page <= 1 || loading} onClick={() => setPage((current) => Math.max(1, current - 1))}>Sebelumnya</button><span>Halaman {page} dari {pageCount}</span><button disabled={page >= pageCount || loading} onClick={() => setPage((current) => current + 1)}>Berikutnya</button></div>
     </div>
     {productDialog && <div className="app-dialog-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget && !dialogSubmitting) setProductDialog(null); }}>
       <form className="app-dialog product-dialog" role="dialog" aria-modal="true" aria-labelledby="product-dialog-title" onSubmit={(event) => { event.preventDefault(); void submitProductDialog(); }}>
