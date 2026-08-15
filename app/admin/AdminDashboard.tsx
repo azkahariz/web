@@ -204,6 +204,15 @@ export default function AdminDashboard({ username }: { username: string }) {
     }
   }, []);
 
+  const refreshProductSummary = useCallback(async () => {
+    const client = getSupabaseBrowserClient();
+    if (!client) return;
+    const { data, error } = await client.rpc("admin_product_summary");
+    if (error) return;
+    const productSummary = Array.isArray(data) ? data[0] : data;
+    setProductTotal(Number(productSummary?.total_count ?? 0));
+  }, []);
+
   useEffect(() => {
     const timer = window.setTimeout(() => void refresh(), 0);
     return () => window.clearTimeout(timer);
@@ -470,7 +479,7 @@ export default function AdminDashboard({ username }: { username: string }) {
             <button role="tab" aria-selected={fillingMode === "submissions"} className={fillingMode === "submissions" ? "active" : ""} onClick={() => { setSubmissionMonitorMounted(true); setFillingMode("submissions"); setSearch(""); }}>Submission</button>
           </div>}
 
-          {!loading && tab === "products" && <AdminProducts onChanged={() => void refresh()} />}
+          {!loading && tab === "products" && <AdminProducts onChanged={refreshProductSummary} />}
 
           {!loading && searchTab && tab !== "stations" && <label className="admin-search">Cari<input autoComplete="off" value={search} onChange={(event) => setSearch(event.target.value)} placeholder={adminSearchPlaceholder(searchTab)} /></label>}
 

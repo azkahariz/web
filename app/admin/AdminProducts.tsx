@@ -26,7 +26,7 @@ function originLabel(origin: string) {
   return "Legacy Spreadsheet";
 }
 
-export default function AdminProducts({ onChanged }: { onChanged: () => void }) {
+export default function AdminProducts({ onChanged }: { onChanged: () => Promise<void> }) {
   const feedback = useAppFeedback();
   const [rows, setRows] = useState<Product[]>([]);
   const [summary, setSummary] = useState<Summary | null>(null);
@@ -97,7 +97,9 @@ export default function AdminProducts({ onChanged }: { onChanged: () => void }) 
       if (!listResponse.ok) throw new Error(list.error || "Daftar produk gagal dimuat.");
       if (!summaryResponse.ok) throw new Error(summaryResult.error || "Ringkasan produk gagal dimuat.");
       setRows(list.rows ?? []);
-      setTotalCount(list.totalCount ?? 0);
+      const nextTotalCount = list.totalCount ?? 0;
+      setTotalCount(nextTotalCount);
+      setPage((current) => Math.min(current, Math.max(1, Math.ceil(nextTotalCount / pageSize))));
       setSummary(summaryResult.summary ?? null);
       void loadUsageCounts(list.rows ?? []);
     } catch (loadError) {
@@ -122,7 +124,7 @@ export default function AdminProducts({ onChanged }: { onChanged: () => void }) 
     const result = await response.json() as { error?: string };
     if (!response.ok) throw new Error(result.error || "Aksi produk gagal diproses.");
     await load();
-    onChanged();
+    await onChanged();
   }
 
   function openCreateDialog() {
