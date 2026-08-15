@@ -18,6 +18,7 @@ type ProductUsage = {
   page: number;
   pageSize: number;
 };
+type ProductUsageCount = { product_id: string; reference_count: number };
 
 function originLabel(origin: string) {
   if (origin === "QC") return "QC Produk";
@@ -49,6 +50,29 @@ export default function AdminProducts({ onChanged }: { onChanged: () => void }) 
   const [usage, setUsage] = useState<ProductUsage | null>(null);
   const [usageLoading, setUsageLoading] = useState(false);
   const [usageError, setUsageError] = useState("");
+  const [usageCounts, setUsageCounts] = useState<Record<string, number>>({});
+  const [usageCountsLoading, setUsageCountsLoading] = useState(false);
+  const usageCountsRequestRef = useRef(0);
+
+  const loadUsageCounts = useCallback(async (products: Product[]) => {
+    const requestId = ++usageCountsRequestRef.current;
+    setUsageCountsLoading(products.length > 0);
+    setUsageCounts({});
+    if (!products.length) return;
+    const params = new URLSearchParams();
+    products.forEach((product) => params.append("usageCountProductId", product.id));
+    try {
+      const response = await fetch(`/api/admin/products?${params.toString()}`, { cache: "no-store" });
+      const result = await response.json() as { usageCounts?: ProductUsageCount[]; error?: string };
+      if (!response.ok) throw new Error(result.error || "Jumlah penggunaan produk gagal dimuat.");
+      if (requestId !== usageCountsRequestRef.current) return;
+      setUsageCounts(Object.fromEntries((result.usageCounts ?? []).map((count) => [count.product_id, count.reference_count])));
+    } catch (countError) {
+      if (requestId === usageCountsRequestRef.current) feedback.toast(countError instanceof Error ? countError.message : "Jumlah penggunaan produk gagal dimuat.", "warning");
+    } finally {
+      if (requestId === usageCountsRequestRef.current) setUsageCountsLoading(false);
+    }
+  }, [feedback]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -75,12 +99,13 @@ export default function AdminProducts({ onChanged }: { onChanged: () => void }) 
       setRows(list.rows ?? []);
       setTotalCount(list.totalCount ?? 0);
       setSummary(summaryResult.summary ?? null);
+      void loadUsageCounts(list.rows ?? []);
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "Daftar produk gagal dimuat.");
     } finally {
       setLoading(false);
     }
-  }, [page, pageSize, search, sortDirection, sortField]);
+  }, [loadUsageCounts, page, pageSize, search, sortDirection, sortField]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => void load(), 0);
@@ -219,7 +244,7 @@ export default function AdminProducts({ onChanged }: { onChanged: () => void }) 
     </div>
     {error && <p className="admin-message" role="status">{error}</p>}
     <div className={`admin-table-wrap product-table${loading ? " is-loading" : ""}`}><table><thead><tr><th>Merk</th><th>Tipe</th><th>Status</th><th>Sumber</th><th>Penggunaan</th><th>Aksi</th></tr></thead><tbody>
-      {rows.map((product) => <tr key={product.id}><td><strong>{product.brand}</strong></td><td>{product.model}</td><td><span className={`status-pill ${product.active ? "active" : "inactive"}`}>{product.active ? "Aktif" : "Nonaktif"}</span></td><td>{originLabel(product.source_origin)}</td><td><button className="usage-link" type="button" onClick={() => openUsage(product)}>Lihat Penggunaan</button></td><td className="table-actions"><AsyncButton loading={activeAction === `edit:${product.id}`} loadingText="Menyimpan..." onClick={() => openEditDialog(product)}>Edit</AsyncButton><AsyncButton className={product.active ? "danger-inline" : undefined} loading={activeAction === `active:${product.id}`} loadingText="Menyimpan..." onClick={() => void setActive(product)}>{product.active ? "Nonaktifkan" : "Aktifkan"}</AsyncButton></td></tr>)}
+      {rows.map((product) => <tr key={product.id}><td><strong>{product.brand}</strong></td><td>{product.model}</td><td><span className={`status-pill ${product.active ? "active" : "inactive"}`}>{product.active ? "Aktif" : "Nonaktif"}</span></td><td>{originLabel(product.source_origin)}</td><td><button className="usage-link" type="button" onClick={() => openUsage(product)}>{usageCountsLoading && usageCounts[product.id] === undefined ? "-" : `${usageCounts[product.id] ?? 0} referensi`}</button></td><td className="table-actions"><AsyncButton loading={activeAction === `edit:${product.id}`} loadingText="Menyimpan..." onClick={() => openEditDialog(product)}>Edit</AsyncButton><AsyncButton className={product.active ? "danger-inline" : undefined} loading={activeAction === `active:${product.id}`} loadingText="Menyimpan..." onClick={() => void setActive(product)}>{product.active ? "Nonaktifkan" : "Aktifkan"}</AsyncButton></td></tr>)}
       {!rows.length && <tr><td colSpan={6}>{loading ? "Memuat produk..." : "Produk tidak ditemukan."}</td></tr>}
     </tbody></table></div>
     <div className="submission-pagination" aria-label="Pagination produk">

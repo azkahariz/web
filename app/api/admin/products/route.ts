@@ -5,6 +5,7 @@ import { createSupabaseServerClient } from "../../../lib/supabase/server";
 
 type RpcError = { code?: string | null };
 type ProductAction = "create" | "update" | "set-active";
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function productPageSize(value: string | null) {
   const raw = value?.trim() || "50";
@@ -35,6 +36,12 @@ export async function GET(request: Request) {
   const auth = await requireAuthenticatedUser(request);
   if ("response" in auth) return auth.response;
   const url = new URL(request.url);
+  const usageCountProductIds = [...new Set(url.searchParams.getAll("usageCountProductId").filter((value) => UUID_PATTERN.test(value)))];
+  if (usageCountProductIds.length) {
+    const { data, error } = await auth.client.rpc("admin_product_usage_counts", { p_product_ids: usageCountProductIds });
+    if (error) return rpcErrorResponse(error, "Jumlah penggunaan produk gagal dimuat.");
+    return NextResponse.json({ usageCounts: data ?? [] });
+  }
   const usageProductId = url.searchParams.get("usageProductId");
   if (usageProductId) {
     const pageSize = productPageSize(url.searchParams.get("pageSize"));

@@ -3,9 +3,10 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 test("master Produk memakai RPC Super Admin, pagination server-side, dan guard legacy sync", async () => {
-  const [migration, usageMigration, route, pickerRoute, pickerLib, component, inventoryApp, submissionMonitor, submissionLib, hook, sync, packageJson] = await Promise.all([
+  const [migration, usageMigration, usageCountsMigration, route, pickerRoute, pickerLib, component, inventoryApp, submissionMonitor, submissionLib, hook, sync, packageJson] = await Promise.all([
     readFile(new URL("../supabase/migrations/20260815120000_super_admin_product_management.sql", import.meta.url), "utf8"),
     readFile(new URL("../supabase/migrations/20260815130000_super_admin_product_usage.sql", import.meta.url), "utf8"),
+    readFile(new URL("../supabase/migrations/20260815140000_super_admin_product_usage_counts.sql", import.meta.url), "utf8"),
     readFile(new URL("../app/api/admin/products/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/products/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/lib/product-picker.ts", import.meta.url), "utf8"),
@@ -28,6 +29,11 @@ test("master Produk memakai RPC Super Admin, pagination server-side, dan guard l
   assert.match(usageMigration, /proposal\.status in \('APPROVED', 'MERGED'\)/);
   assert.match(usageMigration, /count\(distinct site_id\)/);
   assert.match(usageMigration, /security definer[\s\S]*set search_path = ''/);
+  assert.match(usageCountsMigration, /function public\.admin_product_usage_counts/);
+  assert.match(usageCountsMigration, /require_super_admin/);
+  assert.match(usageCountsMigration, /submission\.archived_at is null/);
+  assert.match(usageCountsMigration, /proposal\.status in \('APPROVED', 'MERGED'\)/);
+  assert.match(usageCountsMigration, /security definer[\s\S]*set search_path = ''/);
   for (const action of ["PRODUCT_CREATE", "PRODUCT_UPDATE", "PRODUCT_ACTIVATE", "PRODUCT_DEACTIVATE"]) assert.match(migration, new RegExp(action));
   assert.match(migration, /source_origin in \('SPREADSHEET', 'QC', 'ADMIN'\)/);
   assert.match(migration, /normalize_product_text/);
@@ -39,6 +45,8 @@ test("master Produk memakai RPC Super Admin, pagination server-side, dan guard l
   assert.match(route, /\.range\(\(page - 1\) \* pageSize, page \* pageSize - 1\)/);
   assert.match(route, /usageProductId/);
   assert.match(route, /admin_product_usage/);
+  assert.match(route, /usageCountProductId/);
+  assert.match(route, /admin_product_usage_counts/);
   assert.match(pickerRoute, /\.eq\("active", true\)/);
   assert.match(pickerRoute, /count: "exact"/);
   assert.match(pickerRoute, /\.order\("brand"/);
@@ -62,7 +70,8 @@ test("master Produk memakai RPC Super Admin, pagination server-side, dan guard l
   assert.match(component, /normalizeSubmissionPageSize/);
   assert.match(component, /onBlur=\{\(\) => applyPageSize\(pageSizeDraft\)\}/);
   assert.match(component, /pageSizeCancelRef/);
-  assert.match(component, /Lihat Penggunaan/);
+  assert.match(component, /usageCounts/);
+  assert.match(component, /referensi/);
   assert.match(component, /Penggunaan Produk/);
   assert.match(inventoryApp, /product-pagination/);
   assert.match(inventoryApp, /product-skeleton/);

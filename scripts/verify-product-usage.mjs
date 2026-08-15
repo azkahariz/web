@@ -40,6 +40,11 @@ try {
     const [archivedSite] = await tx`insert into public.sites (station_id, site_type_id, name) values (${stationB.id}, ${awosType.id}, ${`Usage Archived Site ${suffix}`}) returning id`;
     const [productA] = await tx`insert into public.products (brand, model, active, source_origin, spreadsheet_synced) values ('Kinematrics', ${`Q330 ${suffix}`}, false, 'ADMIN', false) returning id`;
     const [productB] = await tx`insert into public.products (brand, model, active, source_origin, spreadsheet_synced) values ('Kinematrics', ${`Q330+ ${suffix}`}, true, 'ADMIN', false) returning id`;
+    const productsWithoutReferences = [];
+    for (let index = 0; index < 51; index += 1) {
+      const [product] = await tx`insert into public.products (brand, model, active, source_origin, spreadsheet_synced) values ('Usage Bulk', ${`No Reference ${suffix}-${index}`}, true, 'ADMIN', false) returning id`;
+      productsWithoutReferences.push(product.id);
+    }
     await tx`insert into public.submissions (station_id, site_id, site_subtype_id, payload) values (${stationA.id}, ${siteA.id}, ${tdz.id}, ${tx.json({ inventory: { Sensor: [{ productId: productA.id }, { productId: productA.id }] } })})`;
     const [submissionMid] = await tx`insert into public.submissions (station_id, site_id, site_subtype_id, payload) values (${stationA.id}, ${siteA.id}, ${mid.id}, ${tx.json({ inventory: { Sensor: [] } })}) returning id`;
     const [submissionB] = await tx`insert into public.submissions (station_id, site_id, site_subtype_id, payload) values (${stationB.id}, ${siteB.id}, ${tdz.id}, ${tx.json({ inventory: { Sensor: [{ productId: productA.id }, { productId: productB.id }, { productId: 'legacy-orphan-product-id' }] } })}) returning id`;
@@ -63,11 +68,18 @@ try {
     assert(usagePageTwo.data.rows.length === 2 && usagePageTwo.data.page === 2, "Pagination usage page kedua tidak benar.");
     const [usageB] = await tx`select public.admin_product_usage(${productB.id}, 1, 50, null) as data`;
     assert(usageB.data.siteCount === 1 && usageB.data.referenceCount === 1, "Usage harus berbasis UUID, bukan nama yang mirip.");
+    const usageCounts = await tx`select * from public.admin_product_usage_counts(${[productA.id, productB.id, ...productsWithoutReferences]})`;
+    const usageCountsByProductId = new Map(usageCounts.map((count) => [count.product_id, count.reference_count]));
+    assert(usageCounts.length === 53, "Bulk usage count harus mengembalikan semua UUID termasuk produk tanpa referensi.");
+    assert(usageCountsByProductId.get(productA.id) === 6, "Bulk usage count harus menghitung direct, APPROVED, MERGED, dan produk nonaktif.");
+    assert(usageCountsByProductId.get(productB.id) === 1, "Bulk usage count tidak boleh mencampur UUID produk yang mirip.");
+    assert(productsWithoutReferences.every((productId) => usageCountsByProductId.get(productId) === 0), "Produk tanpa referensi harus mengembalikan nol.");
     await tx`reset role`;
 
     await tx`set local role authenticated`;
     await tx`select set_config('request.jwt.claim.sub', ${stationAuthId}, true)`;
     await tx.unsafe(`do $$ begin perform public.admin_product_usage('${productA.id}'::uuid); raise exception 'station_product_usage_was_not_blocked'; exception when insufficient_privilege then null; end $$;`);
+    await tx.unsafe(`do $$ begin perform public.admin_product_usage_counts(array['${productA.id}'::uuid]); raise exception 'station_product_usage_counts_was_not_blocked'; exception when insufficient_privilege then null; end $$;`);
     await tx`reset role`;
     throw new Error(rollbackMarker);
   });
