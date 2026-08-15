@@ -3,10 +3,11 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 test("master Produk memakai RPC Super Admin, pagination server-side, dan guard legacy sync", async () => {
-  const [migration, route, pickerRoute, component, inventoryApp, submissionMonitor, submissionLib, hook, sync, packageJson] = await Promise.all([
+  const [migration, route, pickerRoute, pickerLib, component, inventoryApp, submissionMonitor, submissionLib, hook, sync, packageJson] = await Promise.all([
     readFile(new URL("../supabase/migrations/20260815120000_super_admin_product_management.sql", import.meta.url), "utf8"),
     readFile(new URL("../app/api/admin/products/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/products/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/lib/product-picker.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/admin/AdminProducts.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/InventoryApp.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/admin/AdminSubmissionMonitor.tsx", import.meta.url), "utf8"),
@@ -31,8 +32,9 @@ test("master Produk memakai RPC Super Admin, pagination server-side, dan guard l
   assert.match(pickerRoute, /count: "exact"/);
   assert.match(pickerRoute, /\.order\("brand"/);
   assert.match(pickerRoute, /\.order\("model"/);
-  assert.match(pickerRoute, /PAGE_SIZE = 60/);
-  assert.match(pickerRoute, /\.range\(\(page - 1\) \* PAGE_SIZE, page \* PAGE_SIZE - 1\)/);
+  assert.match(pickerRoute, /PRODUCT_PICKER_PAGE_SIZE/);
+  assert.match(pickerLib, /PRODUCT_PICKER_PAGE_SIZE = 100/);
+  assert.match(pickerRoute, /\.range\(\(page - 1\) \* PRODUCT_PICKER_PAGE_SIZE, page \* PRODUCT_PICKER_PAGE_SIZE - 1\)/);
   assert.match(component, /Cari Merk atau Tipe/);
   assert.match(component, /pageSize/);
   assert.match(component, /fetch\(`\/api\/admin\/products/);
@@ -58,6 +60,7 @@ test("master Produk memakai RPC Super Admin, pagination server-side, dan guard l
   assert.match(hook, /setError\("Katalog produk gagal dimuat\."\)/);
   assert.doesNotMatch(hook, /setLiveProducts\(\[\]\)/);
   assert.match(hook, /fetch\(`\/api\/products/);
+  assert.match(hook, /PRODUCT_PICKER_PAGE_SIZE/);
   assert.match(hook, /setPage/);
   assert.doesNotMatch(hook, /data\.generated\.json/);
   assert.match(sync, /allowLegacyRemoteImport/);

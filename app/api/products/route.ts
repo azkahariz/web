@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "../../lib/supabase/server";
-
-const PAGE_SIZE = 60;
+import { PRODUCT_PICKER_PAGE_SIZE } from "../../lib/product-picker";
 
 export async function GET(request: Request) {
   const client = await createSupabaseServerClient();
@@ -18,7 +17,7 @@ export async function GET(request: Request) {
   if (search) query = query.or(`brand.ilike.%${search}%,model.ilike.%${search}%`);
   if (brand) query = query.ilike("brand", brand);
   if (model) query = query.ilike("model", model);
-  const { data, count, error } = await query.order("brand", { ascending: true }).order("model", { ascending: true }).order("id", { ascending: true }).range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
+  const { data, count, error } = await query.order("brand", { ascending: true }).order("model", { ascending: true }).order("id", { ascending: true }).range((page - 1) * PRODUCT_PICKER_PAGE_SIZE, page * PRODUCT_PICKER_PAGE_SIZE - 1);
   if (error) return NextResponse.json({ error: "Katalog produk gagal dimuat." }, { status: 400 });
-  return NextResponse.json({ rows: data ?? [], totalCount: count ?? 0, page, pageSize: PAGE_SIZE });
+  return NextResponse.json({ rows: data ?? [], totalCount: count ?? 0, page, pageSize: PRODUCT_PICKER_PAGE_SIZE });
 }

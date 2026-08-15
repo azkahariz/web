@@ -43,6 +43,7 @@ import {
 import { AWOS_KAT3_SITE_TYPE, getAllowedSiteSubtypes, getAwosKat3Family } from "./lib/site-subtypes";
 import { isWarehouseContext } from "./lib/warehouse";
 import { sortStationSites } from "./lib/station-sites";
+import { PRODUCT_PICKER_PAGE_SIZE } from "./lib/product-picker";
 import SiteMetadataForm from "./SiteMetadataForm";
 import StationSiteProgressPanel from "./components/StationSiteProgressPanel";
 import type {
@@ -1092,7 +1093,7 @@ export default function InventoryApp({
                   {productCatalog.error
                     ? productCatalog.error
                     : productCatalog.totalCount
-                    ? `Menampilkan ${(productCatalog.displayPage - 1) * 60 + 1}–${Math.min(productCatalog.displayPage * 60, productCatalog.totalCount)} dari ${productCatalog.totalCount} ${productQuery.trim() ? "hasil" : "produk"}`
+                    ? `Menampilkan ${(productCatalog.displayPage - 1) * PRODUCT_PICKER_PAGE_SIZE + 1}–${Math.min(productCatalog.displayPage * PRODUCT_PICKER_PAGE_SIZE, productCatalog.totalCount)} dari ${productCatalog.totalCount} ${productQuery.trim() ? "hasil" : "produk"}`
                     : !productCatalog.loading && "Produk tidak ditemukan."}
                   {productCatalog.loading && productCatalog.products.length > 0 && <span className="product-refresh-status" role="status">Memperbarui...</span>}
                 </p>

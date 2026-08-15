@@ -1,0 +1,1 @@
+export const PRODUCT_PICKER_PAGE_SIZE = 100;

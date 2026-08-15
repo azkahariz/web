@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getSupabaseBrowserClient } from "../lib/supabase/client";
 import type { Product, ProductProposal } from "../types/inventory";
 import type { ProductAlias } from "../lib/product-qc";
+import { PRODUCT_PICKER_PAGE_SIZE } from "../lib/product-picker";
 
 type ProposalRow = {
   id: string;
@@ -16,7 +17,6 @@ type ProposalRow = {
 };
 type ProductRow = { id: string; brand: string; model: string; active: boolean; source_origin: string; spreadsheet_synced: boolean };
 type AliasRow = { product_id: string; brand_alias: string; model_alias: string };
-const PAGE_SIZE = 60;
 
 function one<T>(value: T | T[] | null) {
   return Array.isArray(value) ? value[0] ?? null : value;
@@ -100,7 +100,7 @@ export function useProductCatalog(stationId: string, search = "") {
   const products = useMemo(() => [...liveProducts].sort((left, right) => `${left.brand} ${left.model}`.localeCompare(`${right.brand} ${right.model}`, "id")), [liveProducts]);
 
   const proposalMap = useMemo(() => new Map(proposals.map((proposal) => [proposal.id, proposal])), [proposals]);
-  const pageCount = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+  const pageCount = Math.max(1, Math.ceil(totalCount / PRODUCT_PICKER_PAGE_SIZE));
   const findCanonical = useCallback(async (brand: string, model: string) => {
     const params = new URLSearchParams({ page: "1", brand, model });
     const response = await fetch(`/api/products?${params.toString()}`, { cache: "no-store" });
