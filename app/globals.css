@@ -390,6 +390,10 @@ button[aria-busy="true"] { display: inline-flex; align-items: center; justify-co
 .product-usage-list span { color: var(--muted); font-size: 11px; }
 .product-usage-list small { grid-column: 2; grid-row: 1 / span 2; align-self: center; color: var(--muted); font-size: 10px; white-space: nowrap; }
 .product-usage-list > p { color: var(--muted); font-size: 12px; }
+.product-usage-content { min-height: 44px; }
+.product-usage-state { display: flex; align-items: center; gap: 7px; margin: 12px 0; color: var(--muted); font-size: 12px; }
+.product-usage-spinner { width: 12px; height: 12px; flex: 0 0 12px; border: 2px solid var(--line); border-top-color: var(--muted); border-radius: 50%; animation: product-usage-spin 700ms linear infinite; }
+@keyframes product-usage-spin { to { transform: rotate(360deg); } }
 .product-usage-pagination { margin-top: 14px; justify-content: space-between; }
 .product-table th, .product-table td { padding: 13px 14px; }
 .product-table.is-loading tbody { opacity: .62; }

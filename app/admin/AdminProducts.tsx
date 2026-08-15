@@ -273,21 +273,23 @@ export default function AdminProducts({ onChanged }: { onChanged: () => void }) 
         <div className="app-dialog-actions"><button className="secondary-button" type="button" disabled={dialogSubmitting} onClick={() => setProductDialog(null)}>Batal</button><AsyncButton className="primary-button" type="submit" loading={dialogSubmitting} loadingText="Menyimpan...">{productDialog.mode === "create" ? "Tambah Produk" : "Simpan Perubahan"}</AsyncButton></div>
       </form>
     </div>}
-    {usageProduct && <div className="app-dialog-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget && !usageLoading) setUsageProduct(null); }}>
+    {usageProduct && <div className="app-dialog-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setUsageProduct(null); }}>
       <section className="app-dialog product-usage-dialog" role="dialog" aria-modal="true" aria-labelledby="product-usage-title">
         <h2 id="product-usage-title">Penggunaan Produk</h2>
         <p className="product-usage-name"><strong>{usageProduct.brand}</strong><span>{usageProduct.model}</span></p>
-        {usageLoading && !usage && <p className="app-dialog-error" role="status">Memuat penggunaan...</p>}
-        {usageError && <p className="app-dialog-error" role="alert">{usageError}</p>}
-        {usage && <>
+        <div className="product-usage-content" aria-busy={usageLoading}>
+          {usageLoading && !usage && <p className="product-usage-state" role="status"><span className="product-usage-spinner" aria-hidden="true" />Memuat penggunaan...</p>}
+          {usageError && <p className="app-dialog-error" role="alert">{usageError}</p>}
+          {usage && <>
           <p className="product-usage-summary">{usage.stationCount} Stasiun · {usage.siteCount} Site · {usage.referenceCount} referensi</p>
-          <div className="product-usage-list" aria-busy={usageLoading}>
+          <div className="product-usage-list">
             {usage.rows.map((row) => <div key={`${row.stationName}:${row.siteName}:${row.subtypeName}`}><strong>{row.stationName}</strong><span>{row.siteName} · {row.siteTypeName} · {row.subtypeName}</span><small>{row.referenceCount} referensi</small></div>)}
-            {!usage.rows.length && <p>Produk belum dipakai pada submission aktif.</p>}
+            {!usage.rows.length && <p>Produk ini belum memiliki penggunaan pada submission aktif.</p>}
           </div>
           {usage.totalCount > usage.pageSize && <div className="pagination-buttons product-usage-pagination"><button disabled={usage.page <= 1 || usageLoading} onClick={() => void loadUsage(usageProduct, usage.page - 1)}>Sebelumnya</button><span>Halaman {usage.page} dari {Math.ceil(usage.totalCount / usage.pageSize)}</span><button disabled={usage.page >= Math.ceil(usage.totalCount / usage.pageSize) || usageLoading} onClick={() => void loadUsage(usageProduct, usage.page + 1)}>Berikutnya</button></div>}
-        </>}
-        <div className="app-dialog-actions"><button className="secondary-button" type="button" disabled={usageLoading} onClick={() => setUsageProduct(null)}>Tutup</button></div>
+          </>}
+        </div>
+        <div className="app-dialog-actions"><button className="secondary-button" type="button" onClick={() => setUsageProduct(null)}>Tutup</button></div>
       </section>
     </div>}
   </section>;

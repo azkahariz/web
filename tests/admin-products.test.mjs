@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 test("master Produk memakai RPC Super Admin, pagination server-side, dan guard legacy sync", async () => {
-  const [migration, usageMigration, usageCountsMigration, route, pickerRoute, pickerLib, component, inventoryApp, submissionMonitor, submissionLib, hook, sync, packageJson] = await Promise.all([
+  const [migration, usageMigration, usageCountsMigration, route, pickerRoute, pickerLib, component, globals, inventoryApp, submissionMonitor, submissionLib, hook, sync, packageJson] = await Promise.all([
     readFile(new URL("../supabase/migrations/20260815120000_super_admin_product_management.sql", import.meta.url), "utf8"),
     readFile(new URL("../supabase/migrations/20260815130000_super_admin_product_usage.sql", import.meta.url), "utf8"),
     readFile(new URL("../supabase/migrations/20260815140000_super_admin_product_usage_counts.sql", import.meta.url), "utf8"),
@@ -11,6 +11,7 @@ test("master Produk memakai RPC Super Admin, pagination server-side, dan guard l
     readFile(new URL("../app/api/products/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/lib/product-picker.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/admin/AdminProducts.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
     readFile(new URL("../app/InventoryApp.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/admin/AdminSubmissionMonitor.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/lib/submission-monitoring.ts", import.meta.url), "utf8"),
@@ -72,6 +73,13 @@ test("master Produk memakai RPC Super Admin, pagination server-side, dan guard l
   assert.match(component, /pageSizeCancelRef/);
   assert.match(component, /usageCounts/);
   assert.match(component, /referensi/);
+  assert.match(component, /product-usage-state/);
+  assert.match(component, /product-usage-spinner/);
+  assert.doesNotMatch(component, /usageLoading && !usage && <p className="app-dialog-error"/);
+  assert.match(component, /Produk ini belum memiliki penggunaan pada submission aktif\./);
+  assert.match(component, /aria-busy=\{usageLoading\}/);
+  assert.match(globals, /\.product-usage-state[\s\S]*color: var\(--muted\)/);
+  assert.match(globals, /\.product-usage-spinner[\s\S]*animation: product-usage-spin/);
   assert.match(component, /Penggunaan Produk/);
   assert.match(inventoryApp, /product-pagination/);
   assert.match(inventoryApp, /product-skeleton/);
