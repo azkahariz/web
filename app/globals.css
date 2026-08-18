@@ -542,6 +542,7 @@ button[aria-busy="true"] { display: inline-flex; align-items: center; justify-co
   .qc-merge-options button:hover, .qc-merge-options button:focus-visible, .qc-merge-options button[aria-selected="true"] { background: var(--green-soft); }
   .qc-merge-options button strong { font-size: 12px; }
   .qc-merge-options button span, .qc-merge-message { color: var(--muted); font-size: 11px; }
+  .qc-merge-options button small { color: var(--green-deep); font-size: 9px; font-weight: 800; }
   .qc-merge-section-label { margin: 7px 8px 4px; color: var(--green-deep); font-size: 9px; font-weight: 900; text-transform: uppercase; }
   .qc-merge-message { margin: 8px; line-height: 1.45; }
 .admin-subheading { margin-top: 30px; padding-top: 22px; border-top: 1px solid var(--line); }

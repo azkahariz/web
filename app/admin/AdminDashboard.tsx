@@ -22,7 +22,7 @@ import { csvCell, downloadText } from "../lib/download";
 import { logoutCurrentBrowser } from "../lib/local-logout";
 import { summarizeSitesByType } from "../lib/admin-summary";
 import { adminViewFromSearchParam, adminViewHref, type AdminView } from "../lib/admin-navigation";
-import { recommendMergeProducts, type ProductAlias } from "../lib/product-qc";
+import { rankMergeProducts, type ProductAlias } from "../lib/product-qc";
 import type { SubmissionSummary } from "../lib/submission-monitoring";
 import { getSupabaseBrowserClient } from "../lib/supabase/client";
 
@@ -288,7 +288,7 @@ export default function AdminDashboard({ username }: { username: string }) {
   const searchTab = (tab === "stations" && fillingMode === "master") || tab === "accounts" || tab === "qc" ? tab : null;
   const selectedPendingProposals = useMemo(() => selectedProposals.map((id) => proposals.find((proposal) => proposal.id === id))
     .filter((proposal): proposal is Proposal => proposal?.status === "PENDING"), [proposals, selectedProposals]);
-  const mergeRecommendations = useMemo(() => recommendMergeProducts(
+  const mergeRecommendationRanks = useMemo(() => rankMergeProducts(
     selectedPendingProposals.map((proposal) => ({ proposedBrand: proposal.proposed_brand, proposedModel: proposal.proposed_model })),
     activeProducts,
     productAliases,
@@ -296,7 +296,7 @@ export default function AdminDashboard({ username }: { username: string }) {
   const normalizedMergeQuery = mergeProductQuery.trim().toLocaleLowerCase("id-ID");
   const mergeSearchResults = useMemo(() => !normalizedMergeQuery ? activeProducts : activeProducts.filter((product) =>
     `${product.brand} ${product.model}`.toLocaleLowerCase("id-ID").includes(normalizedMergeQuery)), [activeProducts, normalizedMergeQuery]);
-  const mergeKeyboardOptions = normalizedMergeQuery ? mergeSearchResults : [...mergeRecommendations, ...activeProducts];
+  const mergeKeyboardOptions = normalizedMergeQuery ? mergeSearchResults : [...mergeRecommendationRanks.map(({ product }) => product), ...activeProducts];
 
   function selectMergeProduct(product: Pick<Product, "id" | "brand" | "model">) {
     setMergeProductId(product.id);
@@ -603,13 +603,13 @@ export default function AdminDashboard({ username }: { username: string }) {
               />
               {mergePickerOpen && <div id="qc-merge-options" className="qc-merge-options" role="listbox">
                 {!normalizedMergeQuery && (selectedPendingProposals.length ? <>
-                  <p className="qc-merge-section-label">Disarankan</p>
-                  {mergeRecommendations.map((product, index) => <button id={`qc-merge-option-${index}`} key={`recommended:${product.id}`} type="button" role="option" aria-selected={mergeProductId === product.id} onMouseDown={(event) => event.preventDefault()} onClick={() => selectMergeProduct(product)}><strong>{product.brand}</strong><span>{product.model}</span></button>)}
-                  {!mergeRecommendations.length && <p className="qc-merge-message">Belum ada produk yang cukup mirip untuk direkomendasikan.</p>}
+                  <p className="qc-merge-section-label">{mergeRecommendationRanks[0]?.kind === "nearest" ? "Kandidat terdekat" : "Disarankan"}</p>
+                  {mergeRecommendationRanks.map((candidate, index) => <button id={`qc-merge-option-${index}`} key={`recommended:${candidate.product.id}`} type="button" role="option" aria-selected={mergeProductId === candidate.product.id} onMouseDown={(event) => event.preventDefault()} onClick={() => selectMergeProduct(candidate.product)}><strong>{candidate.product.brand}</strong><span>{candidate.product.model}</span><small>{candidate.confidence}</small></button>)}
+                  {!mergeRecommendationRanks.length && <p className="qc-merge-message">Belum ada produk yang cukup mirip untuk direkomendasikan.</p>}
                 </> : <p className="qc-merge-message">Centang usulan QC untuk melihat rekomendasi.</p>)}
                 {qcProductsLoading ? <p className="qc-merge-message">Memuat produk...</p> : <>
                   <p className="qc-merge-section-label">{normalizedMergeQuery ? "Hasil pencarian" : "Semua produk"}</p>
-                  {mergeSearchResults.map((product, index) => <button id={`qc-merge-option-${(normalizedMergeQuery ? 0 : mergeRecommendations.length) + index}`} key={product.id} type="button" role="option" aria-selected={mergeProductId === product.id} onMouseDown={(event) => event.preventDefault()} onClick={() => selectMergeProduct(product)}><strong>{product.brand}</strong><span>{product.model}</span></button>)}
+                  {mergeSearchResults.map((product, index) => <button id={`qc-merge-option-${(normalizedMergeQuery ? 0 : mergeRecommendationRanks.length) + index}`} key={product.id} type="button" role="option" aria-selected={mergeProductId === product.id} onMouseDown={(event) => event.preventDefault()} onClick={() => selectMergeProduct(product)}><strong>{product.brand}</strong><span>{product.model}</span></button>)}
                   {!mergeSearchResults.length && <p className="qc-merge-message">Produk tidak ditemukan.</p>}
                 </>}
               </div>}

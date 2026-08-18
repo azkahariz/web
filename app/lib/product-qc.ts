@@ -18,6 +18,17 @@ export type MergeRecommendationProposal = {
   proposedModel: string;
 };
 
+export type MergeRecommendationRank = {
+  product: MergeRecommendationProduct;
+  brandSimilarity: number;
+  modelSimilarity: number;
+  combinedScore: number;
+  coverage: number;
+  finalScore: number;
+  confidence: "Sangat mirip" | "Mirip" | "Kemungkinan";
+  kind: "recommended" | "nearest";
+};
+
 export function normalizeProductText(value: string) {
   return value.trim().toLocaleLowerCase("id-ID").replace(/[^a-z0-9]+/g, "");
 }
@@ -41,7 +52,17 @@ function similarity(left: string, right: string) {
   return 1 - previous[right.length] / Math.max(left.length, right.length);
 }
 
-export function recommendMergeProducts(
+function normalizeRecommendationText(value: string) {
+  return value.trim().toLocaleLowerCase("id-ID").replace(/[^a-z0-9+]+/g, "");
+}
+
+function recommendationConfidence(score: number): MergeRecommendationRank["confidence"] {
+  if (score >= 0.86) return "Sangat mirip";
+  if (score >= 0.68) return "Mirip";
+  return "Kemungkinan";
+}
+
+export function rankMergeProducts(
   proposals: MergeRecommendationProposal[],
   products: MergeRecommendationProduct[],
   aliases: ProductAlias[] = [],
@@ -56,30 +77,54 @@ export function recommendMergeProducts(
     aliasesByProduct.set(alias.productId, current);
   }
 
-  return activeProducts.map((product) => {
+  const ranked = activeProducts.map((product) => {
     const names = [{ brand: product.brand, model: product.model }, ...(aliasesByProduct.get(product.id) ?? [])];
-    const proposalScores = proposals.map((proposal) => {
-      const normalizedBrand = normalizeProductText(proposal.proposedBrand);
-      const normalizedModel = normalizeProductText(proposal.proposedModel);
-      return Math.max(...names.map((name) => {
-        const brandScore = similarity(normalizedBrand, normalizeProductText(name.brand));
-        const modelScore = similarity(normalizedModel, normalizeProductText(name.model));
-        return brandScore * 0.4 + modelScore * 0.6;
-      }));
+    const matches = proposals.map((proposal) => {
+      const normalizedBrand = normalizeRecommendationText(proposal.proposedBrand);
+      const normalizedModel = normalizeRecommendationText(proposal.proposedModel);
+      return names.map((name) => {
+        const brandSimilarity = similarity(normalizedBrand, normalizeRecommendationText(name.brand));
+        const modelSimilarity = similarity(normalizedModel, normalizeRecommendationText(name.model));
+        return { brandSimilarity, modelSimilarity, combinedScore: brandSimilarity * 0.55 + modelSimilarity * 0.45 };
+      }).sort((left, right) => right.combinedScore - left.combinedScore)[0]!;
     });
-    const average = proposalScores.reduce((total, score) => total + score, 0) / proposalScores.length;
-    const coverage = proposalScores.filter((score) => score >= 0.66).length / proposalScores.length;
-    const exactMatches = proposalScores.filter((score) => score === 1).length / proposalScores.length;
-    return { product, average, coverage, exactMatches, score: average * 0.65 + coverage * 0.25 + exactMatches * 0.1 };
-  }).filter((candidate) => candidate.average >= 0.66 && candidate.coverage > 0)
-    .sort((left, right) => right.score - left.score
-      || right.coverage - left.coverage
-      || right.average - left.average
-      || left.product.brand.localeCompare(right.product.brand, "id-ID")
-      || left.product.model.localeCompare(right.product.model, "id-ID")
-      || left.product.id.localeCompare(right.product.id))
-    .slice(0, 5)
-    .map(({ product }) => product);
+    const brandSimilarity = matches.reduce((total, match) => total + match.brandSimilarity, 0) / matches.length;
+    const modelSimilarity = matches.reduce((total, match) => total + match.modelSimilarity, 0) / matches.length;
+    const combinedScore = matches.reduce((total, match) => total + match.combinedScore, 0) / matches.length;
+    const strongest = Math.max(...matches.map((match) => match.combinedScore));
+    const coverage = matches.filter((match) => match.combinedScore >= 0.52).length / matches.length;
+    const exactCoverage = matches.filter((match) => match.brandSimilarity === 1 && match.modelSimilarity === 1).length / matches.length;
+    const finalScore = Math.min(1, combinedScore * 0.7 + strongest * 0.2 + coverage * 0.07 + exactCoverage * 0.03);
+    return { product, brandSimilarity, modelSimilarity, combinedScore, coverage, finalScore, strongest };
+  }).sort((left, right) => right.finalScore - left.finalScore
+    || right.coverage - left.coverage
+    || right.combinedScore - left.combinedScore
+    || left.product.brand.localeCompare(right.product.brand, "id-ID")
+    || left.product.model.localeCompare(right.product.model, "id-ID")
+    || left.product.id.localeCompare(right.product.id));
+
+  const enoughCoverage = proposals.length === 1 ? 1 : 0.6;
+  const recommended = ranked.filter((candidate) => candidate.finalScore >= 0.62 && candidate.coverage >= enoughCoverage);
+  const visible = recommended.length ? recommended : ranked.filter((candidate) => candidate.strongest >= 0.62 && candidate.finalScore >= 0.46);
+  const kind: MergeRecommendationRank["kind"] = recommended.length ? "recommended" : "nearest";
+  return visible.slice(0, 5).map((candidate) => ({
+    product: candidate.product,
+    brandSimilarity: candidate.brandSimilarity,
+    modelSimilarity: candidate.modelSimilarity,
+    combinedScore: candidate.combinedScore,
+    coverage: candidate.coverage,
+    finalScore: candidate.finalScore,
+    kind,
+    confidence: recommendationConfidence(candidate.finalScore),
+  }));
+}
+
+export function recommendMergeProducts(
+  proposals: MergeRecommendationProposal[],
+  products: MergeRecommendationProduct[],
+  aliases: ProductAlias[] = [],
+) {
+  return rankMergeProducts(proposals, products, aliases).map(({ product }) => product);
 }
 
 export function suggestProducts(
