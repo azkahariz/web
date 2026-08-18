@@ -133,7 +133,7 @@ export function accountMatchesAdminSearch(
 export function adminSearchPlaceholder(tab: "stations" | "accounts" | "qc") {
   if (tab === "stations") return "Cari stasiun, nama alat, tipe, atau subtipe alat...";
   if (tab === "accounts") return "Cari nama stasiun atau username...";
-  return "Cari brand, tipe produk, atau stasiun...";
+  return "Cari brand, tipe produk, stasiun, site, subtipe, atau kategori...";
 }
 
 export function siteDisplayName(siteId: string, siteById: Map<string, Pick<AdminSite, "name">>) {

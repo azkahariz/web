@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 import data from "../app/data.generated.json" with { type: "json" };
 import { hasMixedMergeProposalFamilies, normalizeProductText, rankMergeProducts, rankProductSearch, recommendStationProducts, recommendMergeProducts, resolveInstalledProduct, suggestProducts } from "../app/lib/product-qc.ts";
+import { buildQcProposalContexts, proposalCategoriesById } from "../app/lib/qc-proposal-context.ts";
 
 test("normalisasi dan suggestion mengenali variasi Campbell CR1000X tanpa auto merge", () => {
   assert.equal(normalizeProductText(" CR-1000 X "), "cr1000x");
@@ -123,6 +124,61 @@ test("pencarian dan rekomendasi Station User memakai canonical product secara br
   assert.deepEqual(modelOnly.slice(0, 2).map((candidate) => candidate.product.id), ["q330", "q330-plus"]);
   assert.equal(modelOnly[0]?.confidence, "Kemungkinan");
   assert.deepEqual(recommendStationProducts("Ban", "Ring 20", products), []);
+});
+
+test("konteks proposal QC berasal dari submission dan menduplikasi kategori secara aman", () => {
+  const sharedProposal = "proposal-shared";
+  const orphanProposal = "proposal-orphan";
+  const payload = {
+    inventory: {
+      "Sensor Suhu Udara": [
+        { productProposalId: sharedProposal, functionCategories: ["Sensor Suhu Udara", "Sensor Kelembaban Udara"] },
+        { productProposalId: sharedProposal, functionCategories: ["Sensor Suhu Udara", "Sensor Kelembaban Udara"] },
+      ],
+      "Sensor Tekanan Udara": [{ productProposalId: sharedProposal }],
+    },
+  };
+  assert.deepEqual([...proposalCategoriesById(payload).get(sharedProposal)].sort(), ["Sensor Kelembaban Udara", "Sensor Suhu Udara", "Sensor Tekanan Udara"]);
+  const contexts = buildQcProposalContexts(
+    [
+      { id: sharedProposal, submission_id: "submission-awos" },
+      { id: orphanProposal, submission_id: "submission-awos" },
+      { id: "missing", submission_id: null },
+      { id: "missing-row", submission_id: "submission-deleted" },
+      { id: "warehouse", submission_id: "submission-warehouse" },
+    ],
+    [
+      { id: "submission-awos", site_id: "site-awos", site_subtype_id: "subtype-tdz", payload },
+      { id: "submission-warehouse", site_id: "site-warehouse", site_subtype_id: "subtype-warehouse", payload: { inventory: { Persediaan: [{ productProposalId: "warehouse" }] } } },
+    ],
+    [{ id: "site-awos", name: "AWOS Kategori III Halim" }, { id: "site-warehouse", name: "Gudang BMKG Pusat" }],
+    [{ id: "subtype-tdz", name: "AWOS Kategori III TDZ" }, { id: "subtype-warehouse", name: "Gudang" }],
+  );
+  assert.deepEqual(contexts.get(sharedProposal), {
+    state: "resolved",
+    siteName: "AWOS Kategori III Halim",
+    subtypeName: "AWOS Kategori III TDZ",
+    categories: ["Sensor Kelembaban Udara", "Sensor Suhu Udara", "Sensor Tekanan Udara"],
+  });
+  assert.deepEqual(contexts.get(orphanProposal), {
+    state: "orphaned",
+    siteName: "AWOS Kategori III Halim",
+    subtypeName: "AWOS Kategori III TDZ",
+    categories: [],
+  });
+  assert.deepEqual(contexts.get("missing"), {
+    state: "missing-submission",
+    siteName: null,
+    subtypeName: null,
+    categories: [],
+  });
+  assert.deepEqual(contexts.get("missing-row"), contexts.get("missing"));
+  assert.deepEqual(contexts.get("warehouse"), {
+    state: "resolved",
+    siteName: "Gudang BMKG Pusat",
+    subtypeName: "Gudang",
+    categories: ["Persediaan"],
+  });
 });
 
 test("resolusi proposal menjaga raw input dan memakai canonical hanya setelah QC", () => {

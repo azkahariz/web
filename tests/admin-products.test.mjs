@@ -66,6 +66,16 @@ test("master Produk memakai RPC Super Admin, pagination server-side, dan guard l
   assert.match(globals, /\.product-results[^}]*overflow: visible/);
   assert.match(globals, /\.custom-product[^}]*safe-area-inset-bottom/);
   assert.match(pickerRoute, /\.range\(\(page - 1\) \* PRODUCT_PICKER_PAGE_SIZE, page \* PRODUCT_PICKER_PAGE_SIZE - 1\)/);
+  const qcContextRoute = await readFile(new URL("../app/api/admin/product-proposals/route.ts", import.meta.url), "utf8");
+  const qcContext = await readFile(new URL("../app/lib/qc-proposal-context.ts", import.meta.url), "utf8");
+  assert.match(qcContextRoute, /admin_product_summary/);
+  assert.match(qcContextRoute, /\.in\("id", submissionIds\)/);
+  assert.match(qcContextRoute, /select\("id, site_id, site_subtype_id, payload"\)/);
+  assert.match(qcContextRoute, /buildQcProposalContexts/);
+  assert.match(qcContext, /productProposalId/);
+  assert.match(qcContext, /functionCategories/);
+  assert.match(dashboard, /fetch\("\/api\/admin\/product-proposals"/);
+  assert.match(dashboard, /proposal\.context\.categories/);
   assert.match(component, /Cari Merk atau Tipe/);
   assert.match(component, /pageSize/);
   assert.match(component, /fetch\(`\/api\/admin\/products/);

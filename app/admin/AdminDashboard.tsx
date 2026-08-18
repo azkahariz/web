@@ -23,6 +23,7 @@ import { logoutCurrentBrowser } from "../lib/local-logout";
 import { summarizeSitesByType } from "../lib/admin-summary";
 import { adminViewFromSearchParam, adminViewHref, type AdminView } from "../lib/admin-navigation";
 import { hasMixedMergeProposalFamilies, rankMergeProducts, type ProductAlias } from "../lib/product-qc";
+import type { QcProposalContext } from "../lib/qc-proposal-context";
 import type { SubmissionSummary } from "../lib/submission-monitoring";
 import { getSupabaseBrowserClient } from "../lib/supabase/client";
 
@@ -45,6 +46,7 @@ type Proposal = {
   proposed_brand: string; proposed_model: string; normalized_brand: string; normalized_model: string;
   status: "PENDING" | "APPROVED" | "MERGED" | "REJECTED"; resolved_product_id: string | null;
   review_note: string | null; created_at: string;
+  context: QcProposalContext;
 };
 type Audit = { id: string; action: string; target_type: string; target_id: string | null; metadata: Record<string, unknown>; created_at: string };
 type Tab = AdminView;
@@ -75,6 +77,14 @@ function ageLabel(value: string | null, now: number) {
   if (!value) return "-";
   const minutes = Math.max(0, Math.floor((now - new Date(value).getTime()) / 60_000));
   return minutes < 1 ? "kurang dari 1 menit" : `${minutes} menit`;
+}
+
+function proposalCategoryLabel(context: QcProposalContext) {
+  if (context.state === "unavailable") return "Konteks tidak tersedia";
+  if (context.state === "missing-submission") return "Konteks submission tidak tersedia";
+  if (!context.categories.length) return "Kategori tidak ditemukan pada submission aktif";
+  const visible = context.categories.slice(0, 3);
+  return `${visible.join(" · ")}${context.categories.length > visible.length ? ` · +${context.categories.length - visible.length} lainnya` : ""}`;
 }
 
 const StationFillingCard = memo(function StationFillingCard({
@@ -184,7 +194,7 @@ export default function AdminDashboard({ username }: { username: string }) {
     if (!client) return;
     setLoading(true);
     try {
-      const [stationRows, siteRows, siteTypeRows, subtypeRows, submissionRows, accountRows, productSummaryRows, proposalRows, auditRows] = await Promise.all([
+      const [stationRows, siteRows, siteTypeRows, subtypeRows, submissionRows, accountRows, productSummaryRows, proposalResponse, auditRows] = await Promise.all([
       client.from("stations").select("id, name, active").order("name"),
       loadAllAdminRows((from, to) => client.from("sites")
         .select("id, station_id, site_type_id, name, active")
@@ -201,11 +211,12 @@ export default function AdminDashboard({ username }: { username: string }) {
         .range(from, to)),
       client.from("station_accounts").select("id, station_id, username, active, updated_at").order("username"),
       client.rpc("admin_product_summary"),
-      client.from("product_proposals").select("id, station_id, submission_id, operator_name, proposed_brand, proposed_model, normalized_brand, normalized_model, status, resolved_product_id, review_note, created_at").order("created_at", { ascending: false }),
+      fetch("/api/admin/product-proposals", { cache: "no-store" }),
       client.from("admin_audit_log").select("id, action, target_type, target_id, metadata, created_at").order("created_at", { ascending: false }).limit(250),
       ]);
-      const error = [stationRows, siteRows, siteTypeRows, subtypeRows, submissionRows, accountRows, productSummaryRows, proposalRows, auditRows].find((result) => result.error)?.error;
-      if (error) setMessage(`Gagal memuat dashboard: ${error.message}`);
+      const proposalPayload = await proposalResponse.json().catch(() => ({})) as { rows?: Proposal[]; error?: string };
+      const error = [stationRows, siteRows, siteTypeRows, subtypeRows, submissionRows, accountRows, productSummaryRows, auditRows].find((result) => result.error)?.error;
+      if (error || !proposalResponse.ok) setMessage(error ? `Gagal memuat dashboard: ${error.message}` : proposalPayload.error || "Proposal produk gagal dimuat.");
       else {
         setStations((stationRows.data ?? []) as Station[]);
         setSites((siteRows.data ?? []) as Site[]);
@@ -215,7 +226,7 @@ export default function AdminDashboard({ username }: { username: string }) {
         setAccounts((accountRows.data ?? []) as Account[]);
         const productSummary = Array.isArray(productSummaryRows.data) ? productSummaryRows.data[0] : productSummaryRows.data;
         setProductTotal(Number(productSummary?.total_count ?? 0));
-        setProposals((proposalRows.data ?? []) as Proposal[]);
+        setProposals(proposalPayload.rows ?? []);
         setAudits((auditRows.data ?? []) as Audit[]);
       }
     } catch {
@@ -284,7 +295,7 @@ export default function AdminDashboard({ username }: { username: string }) {
     && (!query || station.name.toLocaleLowerCase("id-ID").includes(query)));
   const siteTypeSummary = useMemo(() => summarizeSitesByType(sites, siteTypes), [sites, siteTypes]);
   const filteredProposals = proposals.filter((proposal) => proposal.status === qcStatus && (!query
-    || `${proposal.proposed_brand} ${proposal.proposed_model} ${stationMap.get(proposal.station_id)?.name ?? ""}`.toLocaleLowerCase("id-ID").includes(query)));
+    || `${proposal.proposed_brand} ${proposal.proposed_model} ${stationMap.get(proposal.station_id)?.name ?? ""} ${proposal.context.siteName ?? ""} ${proposal.context.subtypeName ?? ""} ${proposal.context.categories.join(" ")}`.toLocaleLowerCase("id-ID").includes(query)));
   const searchTab = (tab === "stations" && fillingMode === "master") || tab === "accounts" || tab === "qc" ? tab : null;
   const selectedPendingProposals = useMemo(() => selectedProposals.map((id) => proposals.find((proposal) => proposal.id === id))
     .filter((proposal): proposal is Proposal => proposal?.status === "PENDING"), [proposals, selectedProposals]);
@@ -618,9 +629,9 @@ export default function AdminDashboard({ username }: { username: string }) {
               </div>}
               {mixedMergeSelection && <p className="qc-merge-warning">Usulan yang dipilih tampak memiliki Merk/Tipe yang berbeda. Periksa kembali sebelum menggabungkan.</p>}
             </div><AsyncButton className="primary-button" disabled={!selectedProposals.length || !mergeProductId} loading={activeAction === "qc:merge"} loadingText={`Memproses ${selectedProposals.length} item...`} onClick={() => void runAction("qc:merge", () => merge(selectedProposals))}>Gabungkan Semua ({selectedProposals.length})</AsyncButton></div>}
-            <div className="admin-table-wrap"><table><thead><tr>{qcStatus === "PENDING" && <th>Pilih</th>}<th>Usulan Brand / Tipe</th><th>Stasiun / Operator</th><th>Tanggal</th><th>Hasil QC</th><th>Aksi</th></tr></thead><tbody>
-              {filteredProposals.map((proposal) => <tr key={proposal.id}>{qcStatus === "PENDING" && <td><input type="checkbox" checked={selectedProposals.includes(proposal.id)} onChange={(event) => setSelectedProposals((current) => event.target.checked ? [...current, proposal.id] : current.filter((id) => id !== proposal.id))} /></td>}<td><strong>{proposal.proposed_brand}</strong><small>{proposal.proposed_model}</small></td><td>{stationMap.get(proposal.station_id)?.name}<small>{proposal.operator_name || "-"}</small></td><td>{new Date(proposal.created_at).toLocaleDateString("id-ID")}</td><td>{proposal.resolved_product_id ? `${productMap.get(proposal.resolved_product_id)?.brand ?? ""} - ${productMap.get(proposal.resolved_product_id)?.model ?? ""}` : proposal.review_note || "-"}</td><td className="table-actions">{proposal.status === "PENDING" && <><button onClick={() => void approve(proposal)}>Approve Baru</button><button onClick={() => { setSelectedProposals([proposal.id]); setMessage("Pilih produk tujuan pada kotak merge."); }}>Merge</button><button className="danger-inline" onClick={() => void reject(proposal)}>Tolak</button></>}</td></tr>)}
-              {!filteredProposals.length && <tr><td colSpan={qcStatus === "PENDING" ? 6 : 5}>Tidak ada proposal pada status ini.</td></tr>}
+            <div className="admin-table-wrap qc-proposals-table"><table><thead><tr>{qcStatus === "PENDING" && <th>Pilih</th>}<th>Usulan Brand / Tipe</th><th>Stasiun / Operator</th><th>Site / Subtipe / Kategori</th><th>Tanggal</th><th>Hasil QC</th><th>Aksi</th></tr></thead><tbody>
+              {filteredProposals.map((proposal) => <tr key={proposal.id}>{qcStatus === "PENDING" && <td><input type="checkbox" checked={selectedProposals.includes(proposal.id)} onChange={(event) => setSelectedProposals((current) => event.target.checked ? [...current, proposal.id] : current.filter((id) => id !== proposal.id))} /></td>}<td><strong>{proposal.proposed_brand}</strong><small>{proposal.proposed_model}</small></td><td>{stationMap.get(proposal.station_id)?.name}<small>{proposal.operator_name || "-"}</small></td><td className="qc-proposal-context"><strong>{proposal.context.siteName ?? (proposal.context.state === "missing-submission" ? "Konteks submission tidak tersedia" : proposal.context.state === "unavailable" ? "-" : "Site tidak ditemukan")}</strong>{proposal.context.state !== "missing-submission" && proposal.context.state !== "unavailable" && <small>{proposal.context.subtypeName ?? "Subtipe tidak ditemukan"}</small>}<small title={proposal.context.categories.join(" · ") || undefined}>{proposalCategoryLabel(proposal.context)}</small></td><td>{new Date(proposal.created_at).toLocaleDateString("id-ID")}</td><td>{proposal.resolved_product_id ? `${productMap.get(proposal.resolved_product_id)?.brand ?? ""} - ${productMap.get(proposal.resolved_product_id)?.model ?? ""}` : proposal.review_note || "-"}</td><td className="table-actions">{proposal.status === "PENDING" && <><button onClick={() => void approve(proposal)}>Approve Baru</button><button onClick={() => { setSelectedProposals([proposal.id]); setMessage("Pilih produk tujuan pada kotak merge."); }}>Merge</button><button className="danger-inline" onClick={() => void reject(proposal)}>Tolak</button></>}</td></tr>)}
+              {!filteredProposals.length && <tr><td colSpan={qcStatus === "PENDING" ? 7 : 6}>Tidak ada proposal pada status ini.</td></tr>}
             </tbody></table></div>
             <div className="admin-subheading"><div><strong>Perubahan master yang perlu masuk Spreadsheet</strong><span>Produk QC baru atau koreksi canonical yang belum direkonsiliasi.</span></div></div>
             <div className="admin-table-wrap"><table><thead><tr><th>Product ID</th><th>Brand</th><th>Tipe</th><th>Sumber</th><th>Aksi</th></tr></thead><tbody>
