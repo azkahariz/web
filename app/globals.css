@@ -346,6 +346,7 @@ button[aria-busy="true"] { display: inline-flex; align-items: center; justify-co
 .admin-shell { min-height: 100vh; display: flex; flex-direction: column; background: #f3f4f1; }
 .admin-topbar { background: #fff; }
 .admin-username { color: var(--muted); font-size: 11px; font-weight: 800; }
+.admin-username small { display: block; margin-top: 2px; font-size: 9px; font-weight: 600; text-align: right; }
 .admin-layout { min-height: calc(100vh - 78px); display: grid; grid-template-columns: 230px minmax(0, 1fr); }
 .admin-nav { padding: 24px 14px; display: flex; flex-direction: column; gap: 4px; border-right: 1px solid var(--line); background: #fafbf8; }
 .admin-nav a { min-height: 42px; padding: 9px 12px; display: flex; align-items: center; border-radius: 6px; color: #53645f; font-size: 11px; font-weight: 800; text-decoration: none; }
@@ -554,6 +555,7 @@ button[aria-busy="true"] { display: inline-flex; align-items: center; justify-co
 .qc-result-cell { min-width: 190px; max-width: 300px; overflow-wrap: anywhere; }
 .qc-result-cell strong { display: block; line-height: 1.4; }
 .qc-result-note { line-height: 1.45; }
+.qc-reviewer { line-height: 1.45; }
 .admin-subheading { margin-top: 30px; padding-top: 22px; border-top: 1px solid var(--line); }
 .admin-subheading strong, .admin-subheading span { display: block; }
 .admin-subheading strong { font-size: 13px; }

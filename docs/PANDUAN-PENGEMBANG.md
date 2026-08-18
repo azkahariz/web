@@ -112,6 +112,7 @@ npm.cmd run validate:master
 npm.cmd run sync:master:local
 npm.cmd run provision:station-accounts
 npm.cmd run provision:super-admin
+npm.cmd run provision:super-admins -- --target=local
 ```
 
 Validasi tidak menulis database. Supabase production adalah master authoritative.
@@ -120,6 +121,23 @@ import memerlukan `npm.cmd run sync:master:legacy:remote` dan persetujuan khusus
 Jangan edit `app/data.generated.json` atau UUID manual. Credential baru hanya
 ditulis ke `private-output/`. Provisioning tidak dipakai untuk reset data atau
 mengambil kembali password existing.
+
+`provision:super-admins` bersifat dry-run secara default dan memproses daftar
+akun individual secara idempotent. Untuk menulis ke lokal gunakan `--apply`
+setelah migration lokal tersedia. Target remote membutuhkan pilihan eksplisit
+dan konfirmasi tambahan:
+
+```powershell
+npm.cmd run provision:super-admins -- --target=local --apply
+npm.cmd run provision:super-admins -- --target=remote --apply --confirm-production=PROVISION_SUPER_ADMINS
+```
+
+Command remote hanya dijalankan pada deployment gate yang telah disetujui.
+Password baru disimpan ke
+`private-output/super-admin-credentials.csv` yang diabaikan Git; password tidak
+dicetak ke terminal atau dokumentasi. Menjalankan ulang command tidak mereset
+password akun existing. Revokasi dilakukan dengan `active = false`, bukan
+hard-delete.
 
 ### Export master ke CSV
 

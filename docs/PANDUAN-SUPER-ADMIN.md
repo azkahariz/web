@@ -140,4 +140,11 @@ Raw input pengguna tidak dihapus. Baca [Panduan QC Produk](PANDUAN-QC-PRODUK.md)
 Audit mencatat force lock, edit admin, perubahan akun, reset password, dan
 tindakan QC. Audit tidak boleh berisi password atau secret.
 
+Setiap petugas memakai akun Super Admin individual agar nama pelaksana dapat
+ditelusuri pada hasil QC dan Audit Admin. Jangan memakai akun bersama untuk
+tindakan baru. Jika akses petugas perlu dicabut, nonaktifkan record
+`super_admins`; jangan menghapus Auth user atau history audit tanpa prosedur
+data khusus. Akun bersama existing tetap dipertahankan selama masa transisi dan
+dievaluasi terpisah setelah akun individual terverifikasi.
+
 ← [Mulai di Sini](MULAI-DI-SINI.md) | → [Troubleshooting](TROUBLESHOOTING.md)

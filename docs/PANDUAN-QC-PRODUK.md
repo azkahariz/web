@@ -1,6 +1,6 @@
 # Panduan QC Produk
 
-Terakhir diperbarui: 12 Agustus 2026. QC Produk dipakai Super Admin untuk
+Terakhir diperbarui: 18 Agustus 2026. QC Produk dipakai Super Admin untuk
 memeriksa Brand/Tipe yang tidak ditemukan Station User.
 
 Contoh: pengguna menulis `Campbel | CR 1000 X`, sedangkan master sudah memiliki
@@ -26,6 +26,22 @@ nama canonical yang dipakai katalog dan ekspor setelah proposal teratasi.
   produk tujuan. Periksa seluruh proposal sebelum konfirmasi.
 - **Tolak**: wajib isi alasan. Jangan menolak hanya karena format penulisan
   belum rapi jika produk sebenarnya dapat di-merge.
+
+## Beberapa Admin bekerja bersamaan
+
+Gunakan akun Super Admin masing-masing dan jangan berbagi password. Admin dapat
+memproses proposal berbeda secara bersamaan. Setiap perubahan dikunci secara
+atomik pada proposal yang diproses, bukan pada seluruh antrean QC.
+
+Jika proposal yang sama lebih dulu diproses Admin lain, tindakan kedua tidak
+menimpa hasil pertama. Aplikasi menampilkan status dan nama reviewer terbaru,
+lalu memuat ulang antrean QC tanpa menghapus pencarian, tab, atau pilihan lain.
+Untuk bulk merge, proposal yang masih PENDING tetap diproses dan proposal yang
+sudah berubah dilewati serta dilaporkan.
+
+Tab APPROVED, MERGED, dan REJECTED menampilkan reviewer bila identitasnya
+tersedia. History lama yang dibuat akun bersama tetap tercatat sebagai akun
+lama dan tidak diubah menjadi identitas personal tanpa bukti.
 
 ## Hubungan dengan master Produk
 

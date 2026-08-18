@@ -14,5 +14,10 @@ export default async function AdminPage() {
     .eq("active", true)
     .maybeSingle();
   if (!admin) redirect("/");
-  return <AdminDashboard username={admin.username} />;
+  const { data: identity } = await supabase
+    .from("super_admins")
+    .select("display_name")
+    .eq("id", admin.id)
+    .maybeSingle();
+  return <AdminDashboard username={admin.username} displayName={identity?.display_name?.trim() || admin.username} />;
 }

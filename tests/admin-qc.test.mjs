@@ -269,3 +269,36 @@ test("hasil QC menampilkan note APPROVED/MERGED tanpa mengubah fallback REJECTED
   assert.match(dashboard, /proposal\.resolved_product_id \? <><strong>/);
   assert.match(dashboard, /: proposal\.review_note \|\| "-"/);
 });
+
+test("QC multi-admin memakai RPC atomik dan revalidation terarah", async () => {
+  const dashboard = await readFile(new URL("../app/admin/AdminDashboard.tsx", import.meta.url), "utf8");
+  const route = await readFile(new URL("../app/api/admin/product-proposals/route.ts", import.meta.url), "utf8");
+  const migration = await readFile(new URL("../supabase/migrations/20260818120000_multi_super_admin_qc.sql", import.meta.url), "utf8");
+  assert.match(migration, /add column if not exists display_name text/);
+  assert.match(migration, /admin_approve_product_proposal_v2/);
+  assert.match(migration, /admin_merge_product_proposals_v2/);
+  assert.match(migration, /admin_reject_product_proposal_v2/);
+  assert.match(migration, /order by proposal\.id\s+for update/);
+  assert.match(migration, /when jsonb_array_length\(v_conflicts\) > 0 then 'partial'/);
+  assert.match(migration, /reviewerDisplayName/);
+  assert.match(dashboard, /refreshQcProposals/);
+  assert.match(dashboard, /Proposal ini sudah diproses/);
+  assert.match(dashboard, /setSelectedProposals\(\(current\) => current\.filter/);
+  assert.match(dashboard, /Diproses oleh \{proposal\.reviewer\.displayName\}/);
+  assert.match(route, /reviewed_by, reviewed_at/);
+  assert.match(route, /displayName: admin\.display_name\?\.trim\(\) \|\| admin\.username/);
+});
+
+test("provisioning Super Admin individual aman, idempotent, dan private", async () => {
+  const script = await readFile(new URL("../scripts/provision-super-admins.mjs", import.meta.url), "utf8");
+  const gitignore = await readFile(new URL("../.gitignore", import.meta.url), "utf8");
+  for (const username of ["malik", "haryas", "hendri", "agha", "imam", "ofan", "rachel", "rafi", "simon", "vian", "yogas", "eko"]) {
+    assert.match(script, new RegExp(`\\["${username}",`));
+  }
+  assert.match(script, /--confirm-production=PROVISION_SUPER_ADMINS/);
+  assert.match(script, /if \(!apply\)/);
+  assert.match(script, /auth\.admin\.createUser/);
+  assert.match(script, /private-output.*super-admin-credentials\.csv/s);
+  assert.match(gitignore, /\/private-output\//);
+  assert.doesNotMatch(script, /@bmkg\.go\.id/);
+});

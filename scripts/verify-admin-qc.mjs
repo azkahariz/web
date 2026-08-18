@@ -28,6 +28,24 @@ try {
       await tx`insert into public.super_admins (auth_user_id, username) values (${authUserId}, ${`verify-admin-${authUserId}`})`;
       admin = { auth_user_id: authUserId };
     }
+    const secondAdminAuthId = randomUUID();
+    await tx`
+      insert into auth.users (
+        id, aud, role, email, encrypted_password, confirmed_at,
+        raw_app_meta_data, raw_user_meta_data, created_at, updated_at
+      ) values (
+        ${secondAdminAuthId}, 'authenticated', 'authenticated', ${`admin-b-${secondAdminAuthId}@verify.invalid`}, '', now(),
+        '{"provider":"email","providers":["email"]}'::jsonb, '{}'::jsonb, now(), now()
+      )
+    `;
+    await tx`insert into public.super_admins (auth_user_id, username, display_name) values (${secondAdminAuthId}, ${`verify-admin-b-${secondAdminAuthId}`}, 'Verifier Admin B')`;
+    await tx`update public.super_admins set active = false where auth_user_id = ${secondAdminAuthId}`;
+    await tx`set local role authenticated`;
+    await tx`select set_config('request.jwt.claim.sub', ${secondAdminAuthId}, true)`;
+    const inactiveAdminFlag = await tx`select public.is_super_admin() as allowed`;
+    assert(inactiveAdminFlag[0]?.allowed === false, "Super Admin inactive harus ditolak.");
+    await tx`reset role`;
+    await tx`update public.super_admins set active = true where auth_user_id = ${secondAdminAuthId}`;
 
     let [scope] = await tx`
       select account.auth_user_id, account.station_id, site.id as site_id, subtype.id as subtype_id
@@ -172,6 +190,68 @@ try {
     for (const action of ["FORCE_RELEASE_LOCK", "FORCE_TAKEOVER_LOCK", "QC_MERGE", "QC_BULK_MERGE", "QC_APPROVE", "QC_REJECT"]) {
       assert(actions.has(action), `Audit ${action} tidak ditemukan.`);
     }
+
+    await tx`reset role`;
+    await tx`set local role authenticated`;
+    await tx`select set_config('request.jwt.claim.sub', ${scope.auth_user_id}, true)`;
+    const concurrencyKeys = ["different-a", "different-b", "same", "bulk-conflict", "bulk-safe"];
+    const concurrencyProposalIds = {};
+    for (const key of concurrencyKeys) {
+      const rows = await tx`select * from public.create_product_proposal(${scope.site_id}, ${scope.subtype_id}, ${`Concurrency ${key}`}, ${`Model ${key}`}, 'Verifier Concurrency', ${key})`;
+      concurrencyProposalIds[key] = rows[0].proposal_id;
+    }
+
+    await tx`reset role`;
+    await tx`set local role authenticated`;
+    await tx`select set_config('request.jwt.claim.sub', ${admin.auth_user_id}, true)`;
+    const differentA = await tx`select public.admin_approve_product_proposal_v2(${concurrencyProposalIds["different-a"]}, 'Concurrency Canonical A', 'Model A', null) as result`;
+    assert(differentA[0]?.result?.outcome === "processed", "Admin A harus dapat memproses Proposal A.");
+
+    await tx`reset role`;
+    await tx`set local role authenticated`;
+    await tx`select set_config('request.jwt.claim.sub', ${secondAdminAuthId}, true)`;
+    const differentB = await tx`select public.admin_merge_product_proposals_v2(array[${concurrencyProposalIds["different-b"]}]::uuid[], ${canonical.id}, null) as result`;
+    assert(differentB[0]?.result?.outcome === "processed", "Admin B harus dapat memproses Proposal B dari snapshot lama.");
+
+    await tx`reset role`;
+    await tx`set local role authenticated`;
+    await tx`select set_config('request.jwt.claim.sub', ${admin.auth_user_id}, true)`;
+    const sameFirst = await tx`select public.admin_reject_product_proposal_v2(${concurrencyProposalIds.same}, 'Ditolak Admin A') as result`;
+    assert(sameFirst[0]?.result?.outcome === "processed", "Action pertama pada proposal sama harus berhasil.");
+    const bulkConflictFirst = await tx`select public.admin_reject_product_proposal_v2(${concurrencyProposalIds["bulk-conflict"]}, 'Diproses lebih dulu') as result`;
+    assert(bulkConflictFirst[0]?.result?.outcome === "processed", "Fixture konflik bulk gagal disiapkan.");
+
+    await tx`reset role`;
+    await tx`set local role authenticated`;
+    await tx`select set_config('request.jwt.claim.sub', ${secondAdminAuthId}, true)`;
+    const sameSecond = await tx`select public.admin_approve_product_proposal_v2(${concurrencyProposalIds.same}, 'Tidak Boleh Dibuat', 'Tidak Boleh Dibuat', null) as result`;
+    assert(sameSecond[0]?.result?.outcome === "conflict", "Action kedua pada proposal sama harus conflict.");
+    assert(sameSecond[0]?.result?.conflicts?.[0]?.currentStatus === "REJECTED", "Conflict harus membawa status server terbaru.");
+    assert(sameSecond[0]?.result?.conflicts?.[0]?.reviewerAuthUserId === admin.auth_user_id, "Conflict harus membawa UUID reviewer pertama.");
+    const bulkPartial = await tx`select public.admin_merge_product_proposals_v2(array[${concurrencyProposalIds["bulk-conflict"]}, ${concurrencyProposalIds["bulk-safe"]}]::uuid[], ${canonical.id}, 'Partial merge') as result`;
+    assert(bulkPartial[0]?.result?.outcome === "partial", "Bulk dengan satu konflik harus menghasilkan partial.");
+    assert(bulkPartial[0]?.result?.processedCount === 1 && bulkPartial[0]?.result?.conflicts?.length === 1, "Bulk partial harus memproses hanya proposal Pending.");
+
+    const [concurrencyState] = await tx`
+      select
+        (select status from public.product_proposals where id = ${concurrencyProposalIds.same}) as same_status,
+        (select reviewed_by from public.product_proposals where id = ${concurrencyProposalIds.same}) as same_reviewer,
+        (select status from public.product_proposals where id = ${concurrencyProposalIds["bulk-conflict"]}) as conflict_status,
+        (select status from public.product_proposals where id = ${concurrencyProposalIds["bulk-safe"]}) as safe_status,
+        exists(select 1 from public.products where brand = 'Tidak Boleh Dibuat') as losing_product_exists
+    `;
+    assert(concurrencyState.same_status === "REJECTED" && concurrencyState.same_reviewer === admin.auth_user_id, "Admin B tidak boleh menimpa hasil Admin A.");
+    assert(concurrencyState.conflict_status === "REJECTED" && concurrencyState.safe_status === "MERGED", "Bulk partial tidak boleh menimpa proposal konflik.");
+    assert(!concurrencyState.losing_product_exists, "Conflict approve tidak boleh membuat canonical product.");
+
+    const actorAudits = await tx`
+      select admin_auth_user_id, action, target_id, metadata
+      from public.admin_audit_log
+      where target_id = ${concurrencyProposalIds["different-a"]}
+         or (action in ('QC_MERGE', 'QC_BULK_MERGE') and metadata->'proposal_ids' ? ${concurrencyProposalIds["different-b"]}::text)
+    `;
+    assert(actorAudits.some((row) => row.action === "QC_APPROVE" && row.admin_auth_user_id === admin.auth_user_id), "Audit approve harus mencatat Admin A.");
+    assert(actorAudits.some((row) => row.action === "QC_MERGE" && row.admin_auth_user_id === secondAdminAuthId), "Audit merge harus mencatat Admin B.");
 
     await tx`reset role`;
     await tx`set local role authenticated`;

@@ -22,6 +22,7 @@
     "export:master": "npm run export:master:csv",
     "provision:station-accounts": "node --env-file-if-exists=.env.local scripts/provision-station-accounts.mjs",
     "provision:super-admin": "node --env-file-if-exists=.env.local scripts/provision-super-admin.mjs",
+    "provision:super-admins": "node --env-file-if-exists=.env.local scripts/provision-super-admins.mjs",
     "verify:auth-autosave": "node --env-file-if-exists=.env.local scripts/verify-auth-autosave.mjs",
     "verify:admin-qc": "node --env-file-if-exists=.env.local scripts/verify-admin-qc.mjs",
     "verify:admin-products": "node --env-file-if-exists=.env.local scripts/verify-admin-products.mjs",

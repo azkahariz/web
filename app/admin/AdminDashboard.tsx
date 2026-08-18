@@ -45,10 +45,27 @@ type Proposal = {
   id: string; station_id: string; submission_id: string | null; operator_name: string | null;
   proposed_brand: string; proposed_model: string; normalized_brand: string; normalized_model: string;
   status: "PENDING" | "APPROVED" | "MERGED" | "REJECTED"; resolved_product_id: string | null;
-  review_note: string | null; created_at: string;
+  reviewed_by: string | null; reviewed_at: string | null; review_note: string | null; created_at: string;
+  reviewer: { username: string; displayName: string } | null;
   context: QcProposalContext;
 };
-type Audit = { id: string; action: string; target_type: string; target_id: string | null; metadata: Record<string, unknown>; created_at: string };
+type Audit = { id: string; admin_auth_user_id: string; action: string; target_type: string; target_id: string | null; metadata: Record<string, unknown>; created_at: string };
+type AdminIdentity = { auth_user_id: string; username: string; display_name?: string | null };
+type QcConflict = {
+  proposalId: string;
+  currentStatus: Proposal["status"] | "NOT_FOUND";
+  reviewerAuthUserId: string | null;
+  reviewerDisplayName: string | null;
+  reviewedAt: string | null;
+};
+type QcMutationResult = {
+  outcome: "processed" | "partial" | "conflict";
+  action: Proposal["status"];
+  productId?: string;
+  processedProposalIds: string[];
+  processedCount: number;
+  conflicts: QcConflict[];
+};
 type Tab = AdminView;
 type FillingMode = "master" | "submissions";
 
@@ -133,7 +150,7 @@ const StationFillingCard = memo(function StationFillingCard({
   && previous.busyAction === next.busyAction
 ));
 
-export default function AdminDashboard({ username }: { username: string }) {
+export default function AdminDashboard({ username, displayName }: { username: string; displayName: string }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const feedback = useAppFeedback();
@@ -153,6 +170,7 @@ export default function AdminDashboard({ username }: { username: string }) {
   const [productTotal, setProductTotal] = useState(0);
   const [proposals, setProposals] = useState<Proposal[]>([]);
   const [audits, setAudits] = useState<Audit[]>([]);
+  const [adminIdentities, setAdminIdentities] = useState<AdminIdentity[]>([]);
   const [search, setSearch] = useState("");
   const [qcStatus, setQcStatus] = useState<Proposal["status"]>("PENDING");
   const [selectedProposals, setSelectedProposals] = useState<string[]>([]);
@@ -189,6 +207,17 @@ export default function AdminDashboard({ username }: { username: string }) {
     }
   }, []);
 
+  const refreshQcProposals = useCallback(async () => {
+    const response = await fetch("/api/admin/product-proposals", { cache: "no-store" });
+    const payload = await response.json().catch(() => ({})) as { rows?: Proposal[]; error?: string };
+    if (!response.ok) {
+      setMessage(payload.error || "Proposal produk gagal dimuat.");
+      return false;
+    }
+    setProposals(payload.rows ?? []);
+    return true;
+  }, []);
+
   const refresh = useCallback(async () => {
     const client = getSupabaseBrowserClient();
     if (!client) return;
@@ -212,8 +241,16 @@ export default function AdminDashboard({ username }: { username: string }) {
       client.from("station_accounts").select("id, station_id, username, active, updated_at").order("username"),
       client.rpc("admin_product_summary"),
       fetch("/api/admin/product-proposals", { cache: "no-store" }),
-      client.from("admin_audit_log").select("id, action, target_type, target_id, metadata, created_at").order("created_at", { ascending: false }).limit(250),
+      client.from("admin_audit_log").select("id, admin_auth_user_id, action, target_type, target_id, metadata, created_at").order("created_at", { ascending: false }).limit(250),
       ]);
+      let adminIdentityResult = await client.from("super_admins")
+        .select("auth_user_id, username, display_name")
+        .order("username");
+      if (adminIdentityResult.error) {
+        adminIdentityResult = await client.from("super_admins")
+          .select("auth_user_id, username")
+          .order("username");
+      }
       const proposalPayload = await proposalResponse.json().catch(() => ({})) as { rows?: Proposal[]; error?: string };
       const error = [stationRows, siteRows, siteTypeRows, subtypeRows, submissionRows, accountRows, productSummaryRows, auditRows].find((result) => result.error)?.error;
       if (error || !proposalResponse.ok) setMessage(error ? `Gagal memuat dashboard: ${error.message}` : proposalPayload.error || "Proposal produk gagal dimuat.");
@@ -228,6 +265,7 @@ export default function AdminDashboard({ username }: { username: string }) {
         setProductTotal(Number(productSummary?.total_count ?? 0));
         setProposals(proposalPayload.rows ?? []);
         setAudits((auditRows.data ?? []) as Audit[]);
+        setAdminIdentities((adminIdentityResult.data ?? []) as AdminIdentity[]);
       }
     } catch {
       setMessage("Gagal memuat dashboard. Periksa koneksi lalu muat ulang.");
@@ -274,6 +312,10 @@ export default function AdminDashboard({ username }: { username: string }) {
   const subtypeMap = useMemo(() => new Map(subtypes.map((subtype) => [subtype.id, subtype])), [subtypes]);
   const accountByStation = useMemo(() => new Map(accounts.map((account) => [account.station_id, account])), [accounts]);
   const productMap = useMemo(() => new Map(products.map((product) => [product.id, product])), [products]);
+  const adminIdentityMap = useMemo(() => new Map(adminIdentities.map((admin) => [admin.auth_user_id, {
+    username: admin.username,
+    displayName: admin.display_name?.trim() || admin.username,
+  }])), [adminIdentities]);
   const activeProducts = useMemo(() => products.filter((product) => product.active), [products]);
   const activeLocks = submissions.filter((submission) => submission.locked_by_session_id && submission.lock_last_activity_at
     && new Date(submission.lock_last_activity_at).getTime() >= loadedAt - 5 * 60_000);
@@ -360,6 +402,39 @@ export default function AdminDashboard({ username }: { username: string }) {
     return true;
   }
 
+  function qcConflictMessage(conflict: QcConflict | undefined) {
+    if (!conflict) return "Proposal sudah diproses Admin lain.";
+    const actor = conflict.reviewerDisplayName ? ` oleh ${conflict.reviewerDisplayName}` : " oleh Admin lain";
+    const status = conflict.currentStatus === "NOT_FOUND" ? "tidak lagi tersedia" : `sebagai ${conflict.currentStatus}`;
+    return `Proposal ini sudah diproses${actor} ${status}.`;
+  }
+
+  async function qcRpc(name: string, args: Record<string, unknown>) {
+    const client = getSupabaseBrowserClient();
+    if (!client) return null;
+    setMessage("");
+    const { data, error } = await client.rpc(name, args);
+    if (error) {
+      setMessage(error.message);
+      return null;
+    }
+    const result = data as QcMutationResult;
+    const completedIds = new Set([
+      ...result.processedProposalIds,
+      ...result.conflicts.map((conflict) => conflict.proposalId),
+    ]);
+    setSelectedProposals((current) => current.filter((id) => !completedIds.has(id)));
+    await refreshQcProposals();
+    if (result.conflicts.length) {
+      const conflictMessage = result.conflicts.length === 1
+        ? qcConflictMessage(result.conflicts[0])
+        : `${result.conflicts.length} proposal dilewati karena sudah diproses Admin lain.`;
+      if (result.processedCount === 0) feedback.toast(conflictMessage, "error");
+      else feedback.toast(`${result.processedCount} proposal berhasil. ${conflictMessage}`, "success");
+    }
+    return result;
+  }
+
   async function forceRelease(id: string) {
     await feedback.confirmAction({
       title: "Paksa lepas lock?",
@@ -381,9 +456,12 @@ export default function AdminDashboard({ username }: { username: string }) {
     const note = await feedback.prompt({ title: "Catatan pemeriksaan", inputLabel: "Catatan (opsional)", confirmLabel: "Berikutnya" });
     if (note === null) return;
     await feedback.confirmAction({ title: "Setujui produk baru?", description: `${brand} - ${model}`, confirmLabel: "Setujui" }, async () => {
-      const ok = await rpc("admin_approve_product_proposal", { p_proposal_id: proposal.id, p_canonical_brand: brand, p_canonical_model: model, p_review_note: note || null });
-      if (ok) feedback.toast("Proposal disetujui sebagai produk baru.", "success");
-      return ok;
+      const result = await qcRpc("admin_approve_product_proposal_v2", { p_proposal_id: proposal.id, p_canonical_brand: brand, p_canonical_model: model, p_review_note: note || null });
+      if (result?.outcome === "processed") {
+        await Promise.all([loadQcProducts(), refreshProductSummary()]);
+        feedback.toast("Proposal disetujui sebagai produk baru.", "success");
+      }
+      return result?.outcome === "processed";
     });
   }
 
@@ -397,12 +475,11 @@ export default function AdminDashboard({ username }: { username: string }) {
     const note = await feedback.prompt({ title: "Catatan merge", inputLabel: "Catatan (opsional)", confirmLabel: "Berikutnya" });
     if (note === null) return;
     await feedback.confirmAction({ title: "Gabungkan proposal?", description: `${ids.length} proposal akan digabungkan ke ${target.brand} - ${target.model}.`, confirmLabel: "Gabungkan" }, async () => {
-      const ok = await rpc("admin_merge_product_proposals", { p_proposal_ids: ids, p_product_id: mergeProductId, p_review_note: note || null });
-      if (ok) {
-        setSelectedProposals([]);
-        feedback.toast(`${ids.length} proposal berhasil digabungkan.`, "success");
+      const result = await qcRpc("admin_merge_product_proposals_v2", { p_proposal_ids: ids, p_product_id: mergeProductId, p_review_note: note || null });
+      if (result?.outcome === "processed") {
+        feedback.toast(`${result.processedCount} proposal berhasil digabungkan.`, "success");
       }
-      return ok;
+      return Boolean(result && result.processedCount > 0);
     });
   }
 
@@ -410,9 +487,9 @@ export default function AdminDashboard({ username }: { username: string }) {
     const reason = await feedback.prompt({ title: "Tolak proposal", description: "Raw input tetap disimpan.", inputLabel: "Alasan penolakan", required: true, confirmLabel: "Berikutnya", danger: true });
     if (!reason) return;
     await feedback.confirmAction({ title: "Konfirmasi penolakan", description: reason, confirmLabel: "Tolak", danger: true }, async () => {
-      const ok = await rpc("admin_reject_product_proposal", { p_proposal_id: proposal.id, p_review_note: reason });
-      if (ok) feedback.toast("Proposal ditolak.", "success");
-      return ok;
+      const result = await qcRpc("admin_reject_product_proposal_v2", { p_proposal_id: proposal.id, p_review_note: reason });
+      if (result?.outcome === "processed") feedback.toast("Proposal ditolak.", "success");
+      return result?.outcome === "processed";
     });
   }
 
@@ -515,7 +592,7 @@ export default function AdminDashboard({ username }: { username: string }) {
     <main className="admin-shell">
       <header className="topbar admin-topbar">
         <div className="brand-lockup"><div className="brand-mark">AC</div><div><p className="eyebrow">SUPER ADMIN</p><h1>Aloptama Collect</h1></div></div>
-        <div className="account-actions"><span className="admin-username">{username}</span><Link className="logout-button" href="/admin/panduan">Panduan Super Admin</Link><button className="logout-button" onClick={logout}>Keluar</button></div>
+        <div className="account-actions"><span className="admin-username">{displayName}{displayName !== username && <small>{username}</small>}</span><Link className="logout-button" href="/admin/panduan">Panduan Super Admin</Link><button className="logout-button" onClick={logout}>Keluar</button></div>
       </header>
       <div className="admin-layout">
         <nav className="admin-nav" aria-label="Menu admin">
@@ -630,7 +707,7 @@ export default function AdminDashboard({ username }: { username: string }) {
               {mixedMergeSelection && <p className="qc-merge-warning">Usulan yang dipilih tampak memiliki Merk/Tipe yang berbeda. Periksa kembali sebelum menggabungkan.</p>}
             </div><AsyncButton className="primary-button" disabled={!selectedProposals.length || !mergeProductId} loading={activeAction === "qc:merge"} loadingText={`Memproses ${selectedProposals.length} item...`} onClick={() => void runAction("qc:merge", () => merge(selectedProposals))}>Gabungkan Semua ({selectedProposals.length})</AsyncButton></div>}
             <div className="admin-table-wrap qc-proposals-table"><table><thead><tr>{qcStatus === "PENDING" && <th>Pilih</th>}<th>Usulan Brand / Tipe</th><th>Stasiun / Operator</th><th>Site / Subtipe / Kategori</th><th>Tanggal</th><th>Hasil QC</th><th>Aksi</th></tr></thead><tbody>
-              {filteredProposals.map((proposal) => <tr key={proposal.id}>{qcStatus === "PENDING" && <td><input type="checkbox" checked={selectedProposals.includes(proposal.id)} onChange={(event) => setSelectedProposals((current) => event.target.checked ? [...current, proposal.id] : current.filter((id) => id !== proposal.id))} /></td>}<td><strong>{proposal.proposed_brand}</strong><small>{proposal.proposed_model}</small></td><td>{stationMap.get(proposal.station_id)?.name}<small>{proposal.operator_name || "-"}</small></td><td className="qc-proposal-context"><strong>{proposal.context.siteName ?? (proposal.context.state === "missing-submission" ? "Konteks submission tidak tersedia" : proposal.context.state === "unavailable" ? "-" : "Site tidak ditemukan")}</strong>{proposal.context.state !== "missing-submission" && proposal.context.state !== "unavailable" && <small>{proposal.context.subtypeName ?? "Subtipe tidak ditemukan"}</small>}<small title={proposal.context.categories.join(" · ") || undefined}>{proposalCategoryLabel(proposal.context)}</small></td><td>{new Date(proposal.created_at).toLocaleDateString("id-ID")}</td><td className="qc-result-cell">{proposal.resolved_product_id ? <><strong>{`${productMap.get(proposal.resolved_product_id)?.brand ?? ""} - ${productMap.get(proposal.resolved_product_id)?.model ?? ""}`}</strong>{proposal.review_note?.trim() && <small className="qc-result-note">Catatan: {proposal.review_note}</small>}</> : proposal.review_note || "-"}</td><td className="table-actions">{proposal.status === "PENDING" && <><button onClick={() => void approve(proposal)}>Approve Baru</button><button onClick={() => { setSelectedProposals([proposal.id]); setMessage("Pilih produk tujuan pada kotak merge."); }}>Merge</button><button className="danger-inline" onClick={() => void reject(proposal)}>Tolak</button></>}</td></tr>)}
+              {filteredProposals.map((proposal) => <tr key={proposal.id}>{qcStatus === "PENDING" && <td><input type="checkbox" checked={selectedProposals.includes(proposal.id)} onChange={(event) => setSelectedProposals((current) => event.target.checked ? [...current, proposal.id] : current.filter((id) => id !== proposal.id))} /></td>}<td><strong>{proposal.proposed_brand}</strong><small>{proposal.proposed_model}</small></td><td>{stationMap.get(proposal.station_id)?.name}<small>{proposal.operator_name || "-"}</small></td><td className="qc-proposal-context"><strong>{proposal.context.siteName ?? (proposal.context.state === "missing-submission" ? "Konteks submission tidak tersedia" : proposal.context.state === "unavailable" ? "-" : "Site tidak ditemukan")}</strong>{proposal.context.state !== "missing-submission" && proposal.context.state !== "unavailable" && <small>{proposal.context.subtypeName ?? "Subtipe tidak ditemukan"}</small>}<small title={proposal.context.categories.join(" · ") || undefined}>{proposalCategoryLabel(proposal.context)}</small></td><td>{new Date(proposal.created_at).toLocaleDateString("id-ID")}</td><td className="qc-result-cell">{proposal.resolved_product_id ? <><strong>{`${productMap.get(proposal.resolved_product_id)?.brand ?? ""} - ${productMap.get(proposal.resolved_product_id)?.model ?? ""}`}</strong>{proposal.review_note?.trim() && <small className="qc-result-note">Catatan: {proposal.review_note}</small>}</> : proposal.review_note || "-"}{proposal.status !== "PENDING" && proposal.reviewer && <small className="qc-reviewer">Diproses oleh {proposal.reviewer.displayName}{proposal.reviewed_at ? ` · ${new Date(proposal.reviewed_at).toLocaleString("id-ID")}` : ""}</small>}</td><td className="table-actions">{proposal.status === "PENDING" && <><button onClick={() => void approve(proposal)}>Approve Baru</button><button onClick={() => { setSelectedProposals([proposal.id]); setMessage("Pilih produk tujuan pada kotak merge."); }}>Merge</button><button className="danger-inline" onClick={() => void reject(proposal)}>Tolak</button></>}</td></tr>)}
               {!filteredProposals.length && <tr><td colSpan={qcStatus === "PENDING" ? 7 : 6}>Tidak ada proposal pada status ini.</td></tr>}
             </tbody></table></div>
             <div className="admin-subheading"><div><strong>Perubahan master yang perlu masuk Spreadsheet</strong><span>Produk QC baru atau koreksi canonical yang belum direkonsiliasi.</span></div></div>
@@ -640,7 +717,7 @@ export default function AdminDashboard({ username }: { username: string }) {
             </tbody></table></div>
           </>}
 
-          {!loading && tab === "audit" && <div className="admin-table-wrap"><table><thead><tr><th>Waktu</th><th>Aksi</th><th>Target</th><th>Metadata</th></tr></thead><tbody>{audits.map((audit) => <tr key={audit.id}><td>{new Date(audit.created_at).toLocaleString("id-ID")}</td><td><span className="status-pill">{audit.action}</span></td><td>{audit.target_type}<small>{audit.target_id?.slice(0, 8) ?? "-"}</small></td><td><code>{JSON.stringify(audit.metadata)}</code></td></tr>)}</tbody></table></div>}
+          {!loading && tab === "audit" && <div className="admin-table-wrap"><table><thead><tr><th>Waktu</th><th>Admin</th><th>Aksi</th><th>Target</th><th>Metadata</th></tr></thead><tbody>{audits.map((audit) => { const actor = adminIdentityMap.get(audit.admin_auth_user_id); return <tr key={audit.id}><td>{new Date(audit.created_at).toLocaleString("id-ID")}</td><td>{actor?.displayName ?? audit.admin_auth_user_id.slice(0, 8)}{actor && actor.displayName !== actor.username && <small>{actor.username}</small>}</td><td><span className="status-pill">{audit.action}</span></td><td>{audit.target_type}<small>{audit.target_id?.slice(0, 8) ?? "-"}</small></td><td><code>{JSON.stringify(audit.metadata)}</code></td></tr>; })}</tbody></table></div>}
         </section>
       </div>
       {credential && (

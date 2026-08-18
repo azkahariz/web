@@ -13,12 +13,15 @@ type ProposalRow = {
   normalized_model: string;
   status: "PENDING" | "APPROVED" | "MERGED" | "REJECTED";
   resolved_product_id: string | null;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
   review_note: string | null;
   created_at: string;
 };
 
 type SubmissionRow = { id: string; site_id: string; site_subtype_id: string; payload: unknown };
 type NamedRow = { id: string; name: string };
+type AdminIdentityRow = { auth_user_id: string; username: string; display_name?: string | null };
 
 function errorResponse(code: string | undefined, fallback: string) {
   if (code === "42501") return NextResponse.json({ error: "Akses Super Admin diperlukan." }, { status: 403 });
@@ -36,7 +39,7 @@ export async function GET() {
   if (authorizationError) return errorResponse(authorizationError.code, "Akses QC Produk gagal divalidasi.");
 
   const { data: proposalData, error: proposalError } = await client.from("product_proposals")
-    .select("id, station_id, submission_id, operator_name, proposed_brand, proposed_model, normalized_brand, normalized_model, status, resolved_product_id, review_note, created_at")
+    .select("id, station_id, submission_id, operator_name, proposed_brand, proposed_model, normalized_brand, normalized_model, status, resolved_product_id, reviewed_by, reviewed_at, review_note, created_at")
     .order("created_at", { ascending: false });
   if (proposalError) return errorResponse(proposalError.code, "Proposal produk gagal dimuat.");
 
@@ -49,13 +52,23 @@ export async function GET() {
   const submissions = (submissionData ?? []) as SubmissionRow[];
   const siteIds = [...new Set(submissions.map((submission) => submission.site_id))];
   const subtypeIds = [...new Set(submissions.map((submission) => submission.site_subtype_id))];
-  const [siteResult, subtypeResult] = submissionError ? [{ data: [], error: null }, { data: [], error: null }] : await Promise.all([
+  const reviewerIds = [...new Set(proposals.map((proposal) => proposal.reviewed_by).filter((id): id is string => Boolean(id)))];
+  const [siteResult, subtypeResult, adminResult] = submissionError ? [{ data: [], error: null }, { data: [], error: null }, { data: [], error: null }] : await Promise.all([
     siteIds.length ? client.from("sites").select("id, name").in("id", siteIds) : Promise.resolve({ data: [], error: null }),
     subtypeIds.length ? client.from("site_subtypes").select("id, name").in("id", subtypeIds) : Promise.resolve({ data: [], error: null }),
+    reviewerIds.length ? client.from("super_admins").select("auth_user_id, username, display_name").in("auth_user_id", reviewerIds) : Promise.resolve({ data: [], error: null }),
   ]);
   const contextUnavailable = Boolean(submissionError || siteResult.error || subtypeResult.error);
   const contexts = contextUnavailable
     ? new Map(proposals.map((proposal) => [proposal.id, { state: "unavailable" as const, siteName: null, subtypeName: null, categories: [] }]))
     : buildQcProposalContexts(proposals, submissions, (siteResult.data ?? []) as NamedRow[], (subtypeResult.data ?? []) as NamedRow[]);
-  return NextResponse.json({ rows: proposals.map((proposal) => ({ ...proposal, context: contexts.get(proposal.id) })) });
+  const adminByAuthUser = new Map(((adminResult.data ?? []) as AdminIdentityRow[]).map((admin) => [admin.auth_user_id, {
+    username: admin.username,
+    displayName: admin.display_name?.trim() || admin.username,
+  }]));
+  return NextResponse.json({ rows: proposals.map((proposal) => ({
+    ...proposal,
+    reviewer: proposal.reviewed_by ? adminByAuthUser.get(proposal.reviewed_by) ?? null : null,
+    context: contexts.get(proposal.id),
+  })) });
 }
