@@ -545,6 +545,7 @@ button[aria-busy="true"] { display: inline-flex; align-items: center; justify-co
   .qc-merge-options button small { color: var(--green-deep); font-size: 9px; font-weight: 800; }
   .qc-merge-section-label { margin: 7px 8px 4px; color: var(--green-deep); font-size: 9px; font-weight: 900; text-transform: uppercase; }
   .qc-merge-message { margin: 8px; line-height: 1.45; }
+  .qc-merge-warning { margin: 7px 2px 0; color: var(--muted); font-size: 10px; line-height: 1.45; }
 .admin-subheading { margin-top: 30px; padding-top: 22px; border-top: 1px solid var(--line); }
 .admin-subheading strong, .admin-subheading span { display: block; }
 .admin-subheading strong { font-size: 13px; }

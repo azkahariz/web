@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 import data from "../app/data.generated.json" with { type: "json" };
-import { normalizeProductText, rankMergeProducts, recommendMergeProducts, resolveInstalledProduct, suggestProducts } from "../app/lib/product-qc.ts";
+import { hasMixedMergeProposalFamilies, normalizeProductText, rankMergeProducts, recommendMergeProducts, resolveInstalledProduct, suggestProducts } from "../app/lib/product-qc.ts";
 
 test("normalisasi dan suggestion mengenali variasi Campbell CR1000X tanpa auto merge", () => {
   assert.equal(normalizeProductText(" CR-1000 X "), "cr1000x");
@@ -52,6 +52,46 @@ test("ranking merge QC tahan variasi format dan satu proposal noisy", () => {
   assert.equal(noisySelection[0]?.product.id, "young");
   assert.ok(noisySelection[0].coverage >= 2 / 3);
   assert.deepEqual(rankMergeProducts([{ proposedBrand: "Ban kendaraan", proposedModel: "Ring 20" }], products), []);
+});
+
+test("ranking merge QC memprioritaskan keluarga merk daripada model exact beda merk", () => {
+  const products = [
+    { id: "vaisala-110", brand: "Vaisala", model: "HMP110", active: true },
+    { id: "vaisala-155", brand: "Vaisala", model: "HMP155", active: true },
+    { id: "campbell-155", brand: "Campbell", model: "HMP155", active: true },
+    { id: "young-05103", brand: "R. M. Young", model: "05103", active: true },
+    { id: "campbell-05103", brand: "Campbell", model: "05103", active: true },
+  ];
+  const vaisala = rankMergeProducts([{ proposedBrand: "Vaisala", proposedModel: "HMP155" }], products);
+  assert.equal(vaisala[0]?.product.id, "vaisala-155");
+  const vaisalaFamilyIndex = vaisala.findIndex((candidate) => candidate.product.id === "vaisala-110");
+  const campbellModelIndex = vaisala.findIndex((candidate) => candidate.product.id === "campbell-155");
+  assert.ok(campbellModelIndex < 0 || vaisalaFamilyIndex < campbellModelIndex);
+  assert.equal(rankMergeProducts([{ proposedBrand: "Vaisalla", proposedModel: "HMP155" }], products)[0]?.product.id, "vaisala-155");
+  assert.equal(rankMergeProducts([{ proposedBrand: "RM Young", proposedModel: "WindMonitor" }], [{ id: "young", brand: "R. M. Young", model: "Wind Monitor", active: true }])[0]?.confidence, "Sangat mirip");
+  const young = rankMergeProducts([{ proposedBrand: "RM Young", proposedModel: "05103" }], products);
+  const youngFamilyIndex = young.findIndex((candidate) => candidate.product.id === "young-05103");
+  const campbellNumberIndex = young.findIndex((candidate) => candidate.product.id === "campbell-05103");
+  assert.ok(campbellNumberIndex < 0 || youngFamilyIndex < campbellNumberIndex);
+  const mixed = rankMergeProducts([
+    { proposedBrand: "Vaisala", proposedModel: "HMP155" },
+    { proposedBrand: "Vaisala", proposedModel: "HMP110" },
+    { proposedBrand: "Campbell", proposedModel: "CR1000X" },
+  ], products);
+  assert.notEqual(mixed[0]?.confidence, "Sangat mirip");
+  assert.equal(hasMixedMergeProposalFamilies([
+    { proposedBrand: "Vaisala", proposedModel: "HMP155" },
+    { proposedBrand: "Vaisala", proposedModel: "HMP110" },
+    { proposedBrand: "Campbell", proposedModel: "CR1000X" },
+  ]), true);
+  assert.equal(hasMixedMergeProposalFamilies([
+    { proposedBrand: "RM Young", proposedModel: "Wind Monitor" },
+    { proposedBrand: "R.M Young", proposedModel: "WindMonitor" },
+  ]), false);
+  assert.equal(hasMixedMergeProposalFamilies([
+    { proposedBrand: "Vaisala", proposedModel: "HMP155" },
+    { proposedBrand: "Vaisala", proposedModel: "WXT530" },
+  ]), true);
 });
 
 test("resolusi proposal menjaga raw input dan memakai canonical hanya setelah QC", () => {
@@ -129,6 +169,7 @@ test("QC merge picker memakai checkbox sebagai konteks rekomendasi dan tetap men
   assert.match(dashboard, /Pilih produk existing tujuan merge/);
   assert.match(dashboard, /role="combobox"/);
   assert.match(dashboard, /Kandidat terdekat/);
+  assert.match(dashboard, /hasMixedMergeProposalFamilies/);
   assert.match(dashboard, /p_product_id: mergeProductId/);
   assert.match(dashboard, /setSelectedProposals\(\[proposal\.id\]\)/);
 });

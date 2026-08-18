@@ -25,6 +25,7 @@ export type MergeRecommendationRank = {
   combinedScore: number;
   coverage: number;
   finalScore: number;
+  brandFamilyCoverage: number;
   confidence: "Sangat mirip" | "Mirip" | "Kemungkinan";
   kind: "recommended" | "nearest";
 };
@@ -56,10 +57,40 @@ function normalizeRecommendationText(value: string) {
   return value.trim().toLocaleLowerCase("id-ID").replace(/[^a-z0-9+]+/g, "");
 }
 
-function recommendationConfidence(score: number): MergeRecommendationRank["confidence"] {
-  if (score >= 0.86) return "Sangat mirip";
-  if (score >= 0.68) return "Mirip";
+const BRAND_FAMILY_THRESHOLD = 0.72;
+const PARTIAL_BRAND_THRESHOLD = 0.52;
+const MODEL_FAMILY_THRESHOLD = 0.42;
+
+function recommendationConfidence(score: number, coverage: number, brandFamilyCoverage: number): MergeRecommendationRank["confidence"] {
+  if (score >= 0.86 && coverage >= 0.8 && brandFamilyCoverage >= 0.8) return "Sangat mirip";
+  if (score >= 0.64 && coverage >= 0.5) return "Mirip";
   return "Kemungkinan";
+}
+
+function recommendationMatchScore(brandSimilarity: number, modelSimilarity: number) {
+  if (brandSimilarity >= BRAND_FAMILY_THRESHOLD) {
+    return Math.min(1, brandSimilarity * 0.74 + modelSimilarity * 0.26 + 0.08);
+  }
+  if (brandSimilarity >= PARTIAL_BRAND_THRESHOLD) {
+    return brandSimilarity * 0.7 + modelSimilarity * 0.2;
+  }
+  // Exact model may remain a last-resort fallback, but cannot outrank a plausible brand family.
+  return Math.max(0, brandSimilarity * 0.25 + modelSimilarity * 0.35 - 0.15);
+}
+
+export function hasMixedMergeProposalFamilies(proposals: MergeRecommendationProposal[]) {
+  if (proposals.length < 2) return false;
+  let comparisons = 0;
+  let mismatches = 0;
+  for (let left = 0; left < proposals.length; left += 1) {
+    for (let right = left + 1; right < proposals.length; right += 1) {
+      comparisons += 1;
+      const brandSimilarity = similarity(normalizeRecommendationText(proposals[left].proposedBrand), normalizeRecommendationText(proposals[right].proposedBrand));
+      const modelSimilarity = similarity(normalizeRecommendationText(proposals[left].proposedModel), normalizeRecommendationText(proposals[right].proposedModel));
+      if (brandSimilarity < PARTIAL_BRAND_THRESHOLD || modelSimilarity < MODEL_FAMILY_THRESHOLD) mismatches += 1;
+    }
+  }
+  return mismatches / comparisons >= 0.5;
 }
 
 export function rankMergeProducts(
@@ -85,17 +116,19 @@ export function rankMergeProducts(
       return names.map((name) => {
         const brandSimilarity = similarity(normalizedBrand, normalizeRecommendationText(name.brand));
         const modelSimilarity = similarity(normalizedModel, normalizeRecommendationText(name.model));
-        return { brandSimilarity, modelSimilarity, combinedScore: brandSimilarity * 0.55 + modelSimilarity * 0.45 };
+        return { brandSimilarity, modelSimilarity, combinedScore: recommendationMatchScore(brandSimilarity, modelSimilarity) };
       }).sort((left, right) => right.combinedScore - left.combinedScore)[0]!;
     });
     const brandSimilarity = matches.reduce((total, match) => total + match.brandSimilarity, 0) / matches.length;
     const modelSimilarity = matches.reduce((total, match) => total + match.modelSimilarity, 0) / matches.length;
     const combinedScore = matches.reduce((total, match) => total + match.combinedScore, 0) / matches.length;
     const strongest = Math.max(...matches.map((match) => match.combinedScore));
-    const coverage = matches.filter((match) => match.combinedScore >= 0.52).length / matches.length;
+    const coverage = matches.filter((match) => match.combinedScore >= 0.58).length / matches.length;
+    const brandFamilyCoverage = matches.filter((match) => match.brandSimilarity >= BRAND_FAMILY_THRESHOLD).length / matches.length;
+    const modelExactCoverage = matches.filter((match) => match.modelSimilarity === 1).length / matches.length;
     const exactCoverage = matches.filter((match) => match.brandSimilarity === 1 && match.modelSimilarity === 1).length / matches.length;
-    const finalScore = Math.min(1, combinedScore * 0.7 + strongest * 0.2 + coverage * 0.07 + exactCoverage * 0.03);
-    return { product, brandSimilarity, modelSimilarity, combinedScore, coverage, finalScore, strongest };
+    const finalScore = Math.min(1, combinedScore * 0.6 + strongest * 0.15 + coverage * 0.1 + brandFamilyCoverage * 0.12 + exactCoverage * 0.03);
+    return { product, brandSimilarity, modelSimilarity, combinedScore, coverage, brandFamilyCoverage, modelExactCoverage, finalScore, strongest };
   }).sort((left, right) => right.finalScore - left.finalScore
     || right.coverage - left.coverage
     || right.combinedScore - left.combinedScore
@@ -104,8 +137,12 @@ export function rankMergeProducts(
     || left.product.id.localeCompare(right.product.id));
 
   const enoughCoverage = proposals.length === 1 ? 1 : 0.6;
-  const recommended = ranked.filter((candidate) => candidate.finalScore >= 0.62 && candidate.coverage >= enoughCoverage);
-  const visible = recommended.length ? recommended : ranked.filter((candidate) => candidate.strongest >= 0.62 && candidate.finalScore >= 0.46);
+  const recommended = ranked.filter((candidate) => candidate.finalScore >= 0.64
+    && candidate.coverage >= enoughCoverage
+    && candidate.brandFamilyCoverage >= enoughCoverage);
+  const visible = recommended.length ? recommended : ranked.filter((candidate) => candidate.finalScore >= 0.42
+    && candidate.strongest >= 0.58
+    && (candidate.brandFamilyCoverage > 0 || candidate.modelExactCoverage >= enoughCoverage));
   const kind: MergeRecommendationRank["kind"] = recommended.length ? "recommended" : "nearest";
   return visible.slice(0, 5).map((candidate) => ({
     product: candidate.product,
@@ -113,9 +150,10 @@ export function rankMergeProducts(
     modelSimilarity: candidate.modelSimilarity,
     combinedScore: candidate.combinedScore,
     coverage: candidate.coverage,
+    brandFamilyCoverage: candidate.brandFamilyCoverage,
     finalScore: candidate.finalScore,
     kind,
-    confidence: recommendationConfidence(candidate.finalScore),
+    confidence: recommendationConfidence(candidate.finalScore, candidate.coverage, candidate.brandFamilyCoverage),
   }));
 }
 

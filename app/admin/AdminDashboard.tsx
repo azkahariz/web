@@ -22,7 +22,7 @@ import { csvCell, downloadText } from "../lib/download";
 import { logoutCurrentBrowser } from "../lib/local-logout";
 import { summarizeSitesByType } from "../lib/admin-summary";
 import { adminViewFromSearchParam, adminViewHref, type AdminView } from "../lib/admin-navigation";
-import { rankMergeProducts, type ProductAlias } from "../lib/product-qc";
+import { hasMixedMergeProposalFamilies, rankMergeProducts, type ProductAlias } from "../lib/product-qc";
 import type { SubmissionSummary } from "../lib/submission-monitoring";
 import { getSupabaseBrowserClient } from "../lib/supabase/client";
 
@@ -293,6 +293,9 @@ export default function AdminDashboard({ username }: { username: string }) {
     activeProducts,
     productAliases,
   ), [activeProducts, productAliases, selectedPendingProposals]);
+  const mixedMergeSelection = useMemo(() => hasMixedMergeProposalFamilies(
+    selectedPendingProposals.map((proposal) => ({ proposedBrand: proposal.proposed_brand, proposedModel: proposal.proposed_model })),
+  ), [selectedPendingProposals]);
   const normalizedMergeQuery = mergeProductQuery.trim().toLocaleLowerCase("id-ID");
   const mergeSearchResults = useMemo(() => !normalizedMergeQuery ? activeProducts : activeProducts.filter((product) =>
     `${product.brand} ${product.model}`.toLocaleLowerCase("id-ID").includes(normalizedMergeQuery)), [activeProducts, normalizedMergeQuery]);
@@ -613,6 +616,7 @@ export default function AdminDashboard({ username }: { username: string }) {
                   {!mergeSearchResults.length && <p className="qc-merge-message">Produk tidak ditemukan.</p>}
                 </>}
               </div>}
+              {mixedMergeSelection && <p className="qc-merge-warning">Usulan yang dipilih tampak memiliki Merk/Tipe yang berbeda. Periksa kembali sebelum menggabungkan.</p>}
             </div><AsyncButton className="primary-button" disabled={!selectedProposals.length || !mergeProductId} loading={activeAction === "qc:merge"} loadingText={`Memproses ${selectedProposals.length} item...`} onClick={() => void runAction("qc:merge", () => merge(selectedProposals))}>Gabungkan Semua ({selectedProposals.length})</AsyncButton></div>}
             <div className="admin-table-wrap"><table><thead><tr>{qcStatus === "PENDING" && <th>Pilih</th>}<th>Usulan Brand / Tipe</th><th>Stasiun / Operator</th><th>Tanggal</th><th>Hasil QC</th><th>Aksi</th></tr></thead><tbody>
               {filteredProposals.map((proposal) => <tr key={proposal.id}>{qcStatus === "PENDING" && <td><input type="checkbox" checked={selectedProposals.includes(proposal.id)} onChange={(event) => setSelectedProposals((current) => event.target.checked ? [...current, proposal.id] : current.filter((id) => id !== proposal.id))} /></td>}<td><strong>{proposal.proposed_brand}</strong><small>{proposal.proposed_model}</small></td><td>{stationMap.get(proposal.station_id)?.name}<small>{proposal.operator_name || "-"}</small></td><td>{new Date(proposal.created_at).toLocaleDateString("id-ID")}</td><td>{proposal.resolved_product_id ? `${productMap.get(proposal.resolved_product_id)?.brand ?? ""} - ${productMap.get(proposal.resolved_product_id)?.model ?? ""}` : proposal.review_note || "-"}</td><td className="table-actions">{proposal.status === "PENDING" && <><button onClick={() => void approve(proposal)}>Approve Baru</button><button onClick={() => { setSelectedProposals([proposal.id]); setMessage("Pilih produk tujuan pada kotak merge."); }}>Merge</button><button className="danger-inline" onClick={() => void reject(proposal)}>Tolak</button></>}</td></tr>)}
