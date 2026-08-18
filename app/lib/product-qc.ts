@@ -6,6 +6,18 @@ export type ProductAlias = {
   model: string;
 };
 
+export type MergeRecommendationProduct = {
+  id: string;
+  brand: string;
+  model: string;
+  active: boolean;
+};
+
+export type MergeRecommendationProposal = {
+  proposedBrand: string;
+  proposedModel: string;
+};
+
 export function normalizeProductText(value: string) {
   return value.trim().toLocaleLowerCase("id-ID").replace(/[^a-z0-9]+/g, "");
 }
@@ -27,6 +39,47 @@ function similarity(left: string, right: string) {
     previous.splice(0, previous.length, ...current);
   }
   return 1 - previous[right.length] / Math.max(left.length, right.length);
+}
+
+export function recommendMergeProducts(
+  proposals: MergeRecommendationProposal[],
+  products: MergeRecommendationProduct[],
+  aliases: ProductAlias[] = [],
+) {
+  if (!proposals.length) return [];
+
+  const activeProducts = products.filter((product) => product.active);
+  const aliasesByProduct = new Map<string, ProductAlias[]>();
+  for (const alias of aliases) {
+    const current = aliasesByProduct.get(alias.productId) ?? [];
+    current.push(alias);
+    aliasesByProduct.set(alias.productId, current);
+  }
+
+  return activeProducts.map((product) => {
+    const names = [{ brand: product.brand, model: product.model }, ...(aliasesByProduct.get(product.id) ?? [])];
+    const proposalScores = proposals.map((proposal) => {
+      const normalizedBrand = normalizeProductText(proposal.proposedBrand);
+      const normalizedModel = normalizeProductText(proposal.proposedModel);
+      return Math.max(...names.map((name) => {
+        const brandScore = similarity(normalizedBrand, normalizeProductText(name.brand));
+        const modelScore = similarity(normalizedModel, normalizeProductText(name.model));
+        return brandScore * 0.4 + modelScore * 0.6;
+      }));
+    });
+    const average = proposalScores.reduce((total, score) => total + score, 0) / proposalScores.length;
+    const coverage = proposalScores.filter((score) => score >= 0.66).length / proposalScores.length;
+    const exactMatches = proposalScores.filter((score) => score === 1).length / proposalScores.length;
+    return { product, average, coverage, exactMatches, score: average * 0.65 + coverage * 0.25 + exactMatches * 0.1 };
+  }).filter((candidate) => candidate.average >= 0.66 && candidate.coverage > 0)
+    .sort((left, right) => right.score - left.score
+      || right.coverage - left.coverage
+      || right.average - left.average
+      || left.product.brand.localeCompare(right.product.brand, "id-ID")
+      || left.product.model.localeCompare(right.product.model, "id-ID")
+      || left.product.id.localeCompare(right.product.id))
+    .slice(0, 5)
+    .map(({ product }) => product);
 }
 
 export function suggestProducts(

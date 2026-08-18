@@ -2,13 +2,35 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 import data from "../app/data.generated.json" with { type: "json" };
-import { normalizeProductText, resolveInstalledProduct, suggestProducts } from "../app/lib/product-qc.ts";
+import { normalizeProductText, recommendMergeProducts, resolveInstalledProduct, suggestProducts } from "../app/lib/product-qc.ts";
 
 test("normalisasi dan suggestion mengenali variasi Campbell CR1000X tanpa auto merge", () => {
   assert.equal(normalizeProductText(" CR-1000 X "), "cr1000x");
   const suggestions = suggestProducts("Campbel", "CR 1000 X", data.products);
   assert.equal(suggestions[0]?.brand, "Campbell Scientific");
   assert.equal(suggestions[0]?.model, "CR1000X");
+});
+
+test("rekomendasi merge QC memakai seluruh proposal checkbox secara deterministic", () => {
+  const products = [
+    { id: "young", brand: "R. M. Young", model: "Wind Monitor", active: true },
+    { id: "vaisala", brand: "Vaisala", model: "HMP155", active: true },
+    { id: "weak", brand: "Morningstar", model: "TS-M-2", active: true },
+    { id: "q330", brand: "Kinematrics", model: "Kinematrics Q330", active: true },
+    { id: "q330-plus", brand: "Kinematrics", model: "Kinematrics Q330+", active: true },
+  ];
+  assert.deepEqual(recommendMergeProducts([], products), []);
+  assert.equal(recommendMergeProducts([{ proposedBrand: "Vaisalla", proposedModel: "HMP155" }], products)[0]?.id, "vaisala");
+  const aggregate = recommendMergeProducts([
+    { proposedBrand: "RM Young", proposedModel: "Wind Monitor" },
+    { proposedBrand: "R.M Young", proposedModel: "Wind Monitor" },
+    { proposedBrand: "R M Young", proposedModel: "Wind Monitor" },
+  ], products);
+  assert.equal(aggregate[0]?.id, "young");
+  assert.ok(aggregate.length <= 5);
+  assert.ok(!aggregate.some((product) => product.id === "weak"));
+  const q330 = recommendMergeProducts([{ proposedBrand: "Kinematrics", proposedModel: "Kinematrics Q330" }], products);
+  assert.deepEqual(new Set(q330.filter((product) => product.id.startsWith("q330")).map((product) => product.id)), new Set(["q330", "q330-plus"]));
 });
 
 test("resolusi proposal menjaga raw input dan memakai canonical hanya setelah QC", () => {
@@ -76,4 +98,15 @@ test("station product proposal dan admin QC tetap mempertahankan format export l
   assert.match(exportSource, /"Stasiun"[\s\S]*"Merk"[\s\S]*"Tipe Produk"/);
   assert.match(databaseSync, /function spreadsheetProductValues/);
   assert.match(databaseSync, /function shouldWarnForMissingProduct/);
+});
+
+test("QC merge picker memakai checkbox sebagai konteks rekomendasi dan tetap menyimpan UUID canonical", async () => {
+  const dashboard = await readFile(new URL("../app/admin/AdminDashboard.tsx", import.meta.url), "utf8");
+  assert.match(dashboard, /selectedPendingProposals/);
+  assert.match(dashboard, /recommendMergeProducts/);
+  assert.match(dashboard, /Centang usulan QC untuk melihat rekomendasi\./);
+  assert.match(dashboard, /Pilih produk existing tujuan merge/);
+  assert.match(dashboard, /role="combobox"/);
+  assert.match(dashboard, /p_product_id: mergeProductId/);
+  assert.match(dashboard, /setSelectedProposals\(\[proposal\.id\]\)/);
 });
