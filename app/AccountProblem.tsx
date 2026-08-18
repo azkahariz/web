@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { logoutCurrentBrowser } from "./lib/local-logout";
 import { getSupabaseBrowserClient } from "./lib/supabase/client";
+import FooterAttribution from "./components/FooterAttribution";
 
 export default function AccountProblem({ message }: { message: string }) {
   const router = useRouter();
@@ -17,6 +18,6 @@ export default function AccountProblem({ message }: { message: string }) {
       <h1>Akun stasiun belum siap</h1>
       <p>{message}</p>
       <button className="secondary-button" onClick={logout}>Keluar</button>
-    </section></main>
+    </section><FooterAttribution /></main>
   );
 }

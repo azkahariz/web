@@ -9,6 +9,7 @@ import AdminSubmissionMonitor from "./AdminSubmissionMonitor";
 import { useAppFeedback } from "../components/AppFeedback";
 import AsyncButton from "../components/AsyncButton";
 import EyeIcon from "../components/EyeIcon";
+import FooterAttribution from "../components/FooterAttribution";
 import { downloadAdminInventory } from "../lib/admin-export";
 import {
   accountMatchesAdminSearch,
@@ -568,6 +569,7 @@ export default function AdminDashboard({ username }: { username: string }) {
           </section>
         </div>
       )}
+      <FooterAttribution />
     </main>
   );
 }

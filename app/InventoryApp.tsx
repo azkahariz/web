@@ -46,6 +46,7 @@ import { sortStationSites } from "./lib/station-sites";
 import { PRODUCT_PICKER_PAGE_SIZE } from "./lib/product-picker";
 import SiteMetadataForm from "./SiteMetadataForm";
 import StationSiteProgressPanel from "./components/StationSiteProgressPanel";
+import FooterAttribution from "./components/FooterAttribution";
 import type {
   Condition,
   DataSet,
@@ -1133,6 +1134,7 @@ export default function InventoryApp({
           </section>
         </div>
       )}
+      <FooterAttribution />
     </main>
   );
 }

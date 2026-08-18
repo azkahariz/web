@@ -312,6 +312,22 @@ test("panduan ringkas tersedia untuk Station User dan Super Admin", async () => 
   assert.match(adminGuide, /super_admins/);
 });
 
+test("footer attribution memakai link eksternal yang aman pada layout utama", async () => {
+  const [footer, stationApp, adminDashboard, login, accountProblem] = await Promise.all([
+    readFile(new URL("../app/components/FooterAttribution.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/InventoryApp.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/admin/AdminDashboard.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/LoginForm.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/AccountProblem.tsx", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(footer, /Aplikasi ini dikembangkan oleh/);
+  assert.match(footer, /href="https:\/\/azkahariz\.com\/"/);
+  assert.match(footer, /target="_blank"/);
+  assert.match(footer, /rel="noopener noreferrer"/);
+  for (const source of [stationApp, adminDashboard, login, accountProblem]) assert.match(source, /FooterAttribution/);
+});
+
 test("Vercel adalah deployment resmi dengan build Next.js native", async () => {
   const [packageText, readme, developerGuide, productionSop] = await Promise.all([
     readFile(new URL("../package.json", import.meta.url), "utf8"),

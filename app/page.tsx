@@ -4,6 +4,7 @@ import rawData from "./data.generated.json";
 import AccountProblem from "./AccountProblem";
 import InventoryApp from "./InventoryApp";
 import LoginForm from "./LoginForm";
+import FooterAttribution from "./components/FooterAttribution";
 import { getPublicSupabaseConfig } from "./lib/supabase/config";
 import { createSupabaseServerClient } from "./lib/supabase/server";
 import type { DataSet } from "./types/inventory";
@@ -21,7 +22,7 @@ export default async function Home() {
       <main className="auth-shell"><section className="auth-panel config-panel">
         <h1>Konfigurasi Supabase belum tersedia</h1>
         <p>Isi <code>NEXT_PUBLIC_SUPABASE_URL</code> dan <code>NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY</code> pada environment lokal atau Vercel.</p>
-      </section></main>
+      </section><FooterAttribution /></main>
     );
   }
   const supabase = await createSupabaseServerClient();

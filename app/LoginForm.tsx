@@ -6,6 +6,7 @@ import { stationEmailForUsername } from "./lib/auth";
 import { getSupabaseBrowserClient } from "./lib/supabase/client";
 import EyeIcon from "./components/EyeIcon";
 import AsyncButton from "./components/AsyncButton";
+import FooterAttribution from "./components/FooterAttribution";
 
 export default function LoginForm() {
   const router = useRouter();
@@ -75,6 +76,7 @@ export default function LoginForm() {
           <AsyncButton className="primary-button" type="submit" loading={submitting} loadingText="Memverifikasi...">Masuk</AsyncButton>
         </form>
       </section>
+      <FooterAttribution />
     </main>
   );
 }
