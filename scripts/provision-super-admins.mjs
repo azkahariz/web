@@ -49,6 +49,10 @@ if (!url || !secretKey) {
 const client = createClient(url, secretKey, {
   auth: { autoRefreshToken: false, persistSession: false },
 });
+const credentialFilename = target === "remote"
+  ? "super-admin-credentials-production.csv"
+  : "super-admin-credentials.csv";
+const credentialRelativePath = `private-output/${credentialFilename}`;
 
 async function listAuthUsers() {
   const users = [];
@@ -144,7 +148,7 @@ for (const [username, displayName] of accounts) {
 
 if (apply && credentials.length) {
   const outputDirectory = path.join(projectRoot, "private-output");
-  const outputPath = path.join(outputDirectory, "super-admin-credentials.csv");
+  const outputPath = path.join(outputDirectory, credentialFilename);
   await mkdir(outputDirectory, { recursive: true });
   let previousRows = "";
   try {
@@ -165,5 +169,5 @@ console.log(`Create: ${created}`);
 console.log(`Link existing Auth user: ${linked}`);
 console.log(`Update display name: ${updated}`);
 if (apply && credentials.length) {
-  console.log("Credential baru tersimpan di private-output/super-admin-credentials.csv.");
+  console.log(`Credential baru tersimpan di ${credentialRelativePath}.`);
 }

@@ -299,7 +299,9 @@ test("provisioning Super Admin individual aman, idempotent, dan private", async 
   assert.match(script, /if \(!apply\)/);
   assert.match(script, /adminWithDisplayName\.error\?\.code === "42703"/);
   assert.match(script, /auth\.admin\.createUser/);
-  assert.match(script, /private-output.*super-admin-credentials\.csv/s);
+  assert.match(script, /target === "remote"[\s\S]*super-admin-credentials-production\.csv/);
+  assert.match(script, /super-admin-credentials\.csv/);
+  assert.match(script, /super-admin-credentials-production\.csv/);
   assert.match(gitignore, /\/private-output\//);
   assert.doesNotMatch(script, /@bmkg\.go\.id/);
 });
