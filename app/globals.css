@@ -551,6 +551,9 @@ button[aria-busy="true"] { display: inline-flex; align-items: center; justify-co
 .qc-proposals-table table { min-width: 1080px; }
 .qc-proposal-context { min-width: 205px; max-width: 300px; overflow-wrap: anywhere; }
 .qc-proposal-context strong { display: block; line-height: 1.4; }
+.qc-result-cell { min-width: 190px; max-width: 300px; overflow-wrap: anywhere; }
+.qc-result-cell strong { display: block; line-height: 1.4; }
+.qc-result-note { line-height: 1.45; }
 .admin-subheading { margin-top: 30px; padding-top: 22px; border-top: 1px solid var(--line); }
 .admin-subheading strong, .admin-subheading span { display: block; }
 .admin-subheading strong { font-size: 13px; }

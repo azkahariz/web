@@ -260,3 +260,12 @@ test("QC merge picker memakai checkbox sebagai konteks rekomendasi dan tetap men
   assert.match(dashboard, /p_product_id: mergeProductId/);
   assert.match(dashboard, /setSelectedProposals\(\[proposal\.id\]\)/);
 });
+
+test("hasil QC menampilkan note APPROVED/MERGED tanpa mengubah fallback REJECTED", async () => {
+  const dashboard = await readFile(new URL("../app/admin/AdminDashboard.tsx", import.meta.url), "utf8");
+  assert.match(dashboard, /className="qc-result-cell"/);
+  assert.match(dashboard, /proposal\.review_note\?\.trim\(\)/);
+  assert.match(dashboard, /Catatan: \{proposal\.review_note\}/);
+  assert.match(dashboard, /proposal\.resolved_product_id \? <><strong>/);
+  assert.match(dashboard, /: proposal\.review_note \|\| "-"/);
+});
