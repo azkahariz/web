@@ -313,12 +313,13 @@ test("panduan ringkas tersedia untuk Station User dan Super Admin", async () => 
 });
 
 test("footer attribution memakai link eksternal yang aman pada layout utama", async () => {
-  const [footer, stationApp, adminDashboard, login, accountProblem] = await Promise.all([
+  const [footer, stationApp, adminDashboard, login, accountProblem, styles] = await Promise.all([
     readFile(new URL("../app/components/FooterAttribution.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/InventoryApp.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/admin/AdminDashboard.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/LoginForm.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/AccountProblem.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
   ]);
 
   assert.match(footer, /Aplikasi ini dikembangkan oleh/);
@@ -326,6 +327,9 @@ test("footer attribution memakai link eksternal yang aman pada layout utama", as
   assert.match(footer, /target="_blank"/);
   assert.match(footer, /rel="noopener noreferrer"/);
   for (const source of [stationApp, adminDashboard, login, accountProblem]) assert.match(source, /FooterAttribution/);
+  assert.match(styles, /\.auth-shell \{[^}]*display: flex;[^}]*justify-content: center/);
+  assert.match(styles, /\.auth-shell > \.footer-attribution \{[^}]*margin-top: 14px/);
+  assert.doesNotMatch(styles, /\.auth-shell \{[^}]*grid-template-rows/);
 });
 
 test("Vercel adalah deployment resmi dengan build Next.js native", async () => {
