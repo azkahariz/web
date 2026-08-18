@@ -30,6 +30,11 @@ export type MergeRecommendationRank = {
   kind: "recommended" | "nearest";
 };
 
+export type ProductSearchRank = {
+  product: MergeRecommendationProduct;
+  score: number;
+};
+
 export function normalizeProductText(value: string) {
   return value.trim().toLocaleLowerCase("id-ID").replace(/[^a-z0-9]+/g, "");
 }
@@ -55,6 +60,58 @@ function similarity(left: string, right: string) {
 
 function normalizeRecommendationText(value: string) {
   return value.trim().toLocaleLowerCase("id-ID").replace(/[^a-z0-9+]+/g, "");
+}
+
+function productSearchTokens(value: string) {
+  return value.toLocaleLowerCase("id-ID").split(/[^a-z0-9+]+/).filter((token) => token.length >= 2);
+}
+
+function searchVariantScore(query: string, tokens: string[], brand: string, model: string) {
+  const normalizedBrand = normalizeRecommendationText(brand);
+  const normalizedModel = normalizeRecommendationText(model);
+  const combined = `${normalizedBrand}${normalizedModel}`;
+  const matchedTokens = tokens.filter((token) => normalizedBrand.includes(token) || normalizedModel.includes(token));
+  const tokenCoverage = tokens.length ? matchedTokens.length / tokens.length : 0;
+  const exactBrand = query === normalizedBrand;
+  const exactModel = query === normalizedModel;
+  const exactCombined = query === combined;
+  const contains = combined.includes(query) || query.includes(normalizedBrand) || query.includes(normalizedModel);
+  const fuzzy = Math.max(similarity(query, normalizedBrand), similarity(query, normalizedModel), similarity(query, combined));
+  const plausible = exactBrand || exactModel || exactCombined || contains || tokenCoverage >= 0.5 || (query.length >= 4 && fuzzy >= 0.78);
+  if (!plausible) return 0;
+
+  const brandTokenMatch = tokens.some((token) => normalizedBrand === token || normalizedBrand.includes(token));
+  return (exactBrand ? 1.2 : 0)
+    + (exactModel ? 1.1 : 0)
+    + (exactCombined ? 1.3 : 0)
+    + (brandTokenMatch ? 0.55 : 0)
+    + tokenCoverage * 0.7
+    + (contains ? 0.35 : 0)
+    + fuzzy * 0.2;
+}
+
+export function rankProductSearch(
+  queryValue: string,
+  products: MergeRecommendationProduct[],
+  aliases: ProductAlias[] = [],
+) {
+  const query = normalizeRecommendationText(queryValue);
+  const tokens = productSearchTokens(queryValue);
+  if (query.length < 2) return [];
+  const aliasesByProduct = new Map<string, ProductAlias[]>();
+  for (const alias of aliases) {
+    const current = aliasesByProduct.get(alias.productId) ?? [];
+    current.push(alias);
+    aliasesByProduct.set(alias.productId, current);
+  }
+  return products.filter((product) => product.active).map((product) => {
+    const variants = [{ brand: product.brand, model: product.model }, ...(aliasesByProduct.get(product.id) ?? [])];
+    return { product, score: Math.max(...variants.map((variant) => searchVariantScore(query, tokens, variant.brand, variant.model))) };
+  }).filter((candidate) => candidate.score > 0)
+    .sort((left, right) => right.score - left.score
+      || left.product.brand.localeCompare(right.product.brand, "id-ID")
+      || left.product.model.localeCompare(right.product.model, "id-ID")
+      || left.product.id.localeCompare(right.product.id));
 }
 
 const BRAND_FAMILY_THRESHOLD = 0.72;
@@ -155,6 +212,16 @@ export function rankMergeProducts(
     kind,
     confidence: recommendationConfidence(candidate.finalScore, candidate.coverage, candidate.brandFamilyCoverage),
   }));
+}
+
+export function recommendStationProducts(
+  brand: string,
+  model: string,
+  products: MergeRecommendationProduct[],
+  aliases: ProductAlias[] = [],
+) {
+  if (normalizeRecommendationText(brand).length < 2 && normalizeRecommendationText(model).length < 3) return [];
+  return rankMergeProducts([{ proposedBrand: brand, proposedModel: model }], products, aliases);
 }
 
 export function recommendMergeProducts(

@@ -266,7 +266,8 @@ test("produk di luar daftar dapat ditambahkan dengan brand dan tipe", async () =
   const source = await readFile(new URL("../app/InventoryApp.tsx", import.meta.url), "utf8");
   assert.match(source, /function addCustomProduct/);
   assert.match(source, />Brand<input[\s\S]*>Tipe<input/);
-  assert.match(source, />Usulkan produk baru</);
+  assert.match(source, /"Usulkan produk baru"/);
+  assert.match(source, /Tetap usulkan produk baru/);
 });
 
 test("metadata Aloptama tersimpan per site dan memakai nilai lokasi otomatis", async () => {

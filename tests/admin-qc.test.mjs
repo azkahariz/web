@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 import data from "../app/data.generated.json" with { type: "json" };
-import { hasMixedMergeProposalFamilies, normalizeProductText, rankMergeProducts, recommendMergeProducts, resolveInstalledProduct, suggestProducts } from "../app/lib/product-qc.ts";
+import { hasMixedMergeProposalFamilies, normalizeProductText, rankMergeProducts, rankProductSearch, recommendStationProducts, recommendMergeProducts, resolveInstalledProduct, suggestProducts } from "../app/lib/product-qc.ts";
 
 test("normalisasi dan suggestion mengenali variasi Campbell CR1000X tanpa auto merge", () => {
   assert.equal(normalizeProductText(" CR-1000 X "), "cr1000x");
@@ -92,6 +92,31 @@ test("ranking merge QC memprioritaskan keluarga merk daripada model exact beda m
     { proposedBrand: "Vaisala", proposedModel: "HMP155" },
     { proposedBrand: "Vaisala", proposedModel: "WXT530" },
   ]), true);
+});
+
+test("pencarian dan rekomendasi Station User memakai canonical product secara brand-aware", () => {
+  const products = [
+    { id: "apc-20", brand: "APC", model: "SRTG20KXLI UPS 20 KVA", active: true },
+    { id: "vaisala-155", brand: "Vaisala", model: "HMP155", active: true },
+    { id: "vaisala-110", brand: "Vaisala", model: "HMP110", active: true },
+    { id: "campbell-155", brand: "Campbell", model: "HMP155", active: true },
+    { id: "young", brand: "R. M. Young", model: "Wind Monitor", active: true },
+    { id: "q330", brand: "Kinematrics", model: "Q330", active: true },
+    { id: "q330-plus", brand: "Kinematrics", model: "Q330+", active: true },
+  ];
+  assert.equal(rankProductSearch("APC UPS 20 KVA", products)[0]?.product.id, "apc-20");
+  assert.equal(rankProductSearch("Vaisalla HMP155", products)[0]?.product.id, "vaisala-155");
+  assert.equal(rankProductSearch("RMYoung", products)[0]?.product.id, "young");
+  assert.equal(rankProductSearch("WindMonitor", products)[0]?.product.id, "young");
+  const q330 = rankProductSearch("Q330", products).map((candidate) => candidate.product.id);
+  assert.deepEqual(q330.slice(0, 2), ["q330", "q330-plus"]);
+  const recommendations = recommendStationProducts("Vaisalla", "HMP155", products);
+  assert.equal(recommendations[0]?.product.id, "vaisala-155");
+  assert.ok(recommendations.length <= 5);
+  const vaisalaIndex = recommendations.findIndex((candidate) => candidate.product.id === "vaisala-110");
+  const campbellIndex = recommendations.findIndex((candidate) => candidate.product.id === "campbell-155");
+  assert.ok(campbellIndex < 0 || vaisalaIndex < campbellIndex);
+  assert.deepEqual(recommendStationProducts("Ban", "Ring 20", products), []);
 });
 
 test("resolusi proposal menjaga raw input dan memakai canonical hanya setelah QC", () => {

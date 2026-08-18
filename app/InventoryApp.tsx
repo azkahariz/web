@@ -15,7 +15,7 @@ import { useStationSiteProgress } from "./hooks/useStationSiteProgress";
 import { useProductCatalog } from "./hooks/useProductCatalog";
 import { buildAloptamaFilename, downloadText } from "./lib/download";
 import { buildInventoryCsv, buildInventoryJson } from "./lib/inventory-export";
-import { resolveInstalledProduct, suggestProducts } from "./lib/product-qc";
+import { resolveInstalledProduct } from "./lib/product-qc";
 import {
   getItemFunctionCategories,
   inventoryCategoryEntries,
@@ -110,7 +110,7 @@ export default function InventoryApp({
   const downloadRef = useRef<HTMLDivElement | null>(null);
   const autoEditStartedRef = useRef(false);
   const proposalInFlightRef = useRef(new Set<string>());
-  const productCatalog = useProductCatalog(account.stationId, productQuery);
+  const productCatalog = useProductCatalog(account.stationId, productQuery, customBrand, customModel);
   const { findCanonical, refresh: refreshProductCatalog } = productCatalog;
   const isAdminEditor = adminMode || Boolean(adminSubmissionId);
 
@@ -247,11 +247,6 @@ export default function InventoryApp({
 
   const visibleProducts = productCatalog.products;
 
-  const similarProducts = useMemo(
-    () => suggestProducts(customBrand, customModel, productCatalog.products, productCatalog.aliases),
-    [customBrand, customModel, productCatalog.aliases, productCatalog.products],
-  );
-
   function setInventory(next: Inventory) {
     setDrafts((current) => ({ ...current, [draftKey]: next }));
   }
@@ -280,6 +275,14 @@ export default function InventoryApp({
     });
     setActiveCategory(null);
     setProductQuery("");
+  }
+
+  function chooseRecommendedProduct(product: Product) {
+    addProduct(product);
+    setCustomBrand("");
+    setCustomModel("");
+    setCustomProductNote("");
+    feedback.toast("Produk existing dipilih. Usulan baru tidak dibuat.", "success");
   }
 
   async function addCustomProduct() {
@@ -1112,21 +1115,25 @@ export default function InventoryApp({
                 {productCatalog.pageCount > 1 && <div className="product-pagination" aria-label="Pagination produk picker"><button type="button" disabled={productCatalog.displayPage <= 1 || productCatalog.loading} onClick={() => productCatalog.setPage((current) => Math.max(1, current - 1))}>Sebelumnya</button><span>Halaman {productCatalog.displayPage} dari {productCatalog.pageCount}</span><button type="button" disabled={productCatalog.displayPage >= productCatalog.pageCount || productCatalog.loading} onClick={() => productCatalog.setPage((current) => current + 1)}>Berikutnya</button></div>}
                 <div className="custom-product">
                   <p><strong>Produk tidak ditemukan?</strong><span>Usulkan produk baru untuk diperiksa admin.</span></p>
-                  {similarProducts.length > 0 && (
+                  {productCatalog.recommendationLoading && <div className="similar-products" aria-busy="true"><span className="similar-products-loading" role="status">Mencari produk serupa...</span></div>}
+                  {!productCatalog.recommendationLoading && productCatalog.recommendationError && <div className="similar-products"><span className="similar-products-error">{productCatalog.recommendationError}</span></div>}
+                  {productCatalog.recommendations.length > 0 && (
                     <div className="similar-products">
-                      <strong>Apakah yang Anda maksud salah satu produk berikut?</strong>
-                      {similarProducts.map((product) => (
-                        <button key={product.productId ?? `${product.brand}:${product.model}`} onClick={() => addProduct(product)}>
+                      <strong>Mungkin produk yang Anda cari sudah tersedia</strong>
+                      {productCatalog.recommendations.some((product) => product.confidence === "Sangat mirip") && <span className="similar-products-note">Produk yang sangat mirip sudah tersedia. Periksa sebelum mengajukan produk baru.</span>}
+                      {productCatalog.recommendations.map((product) => (
+                        <button key={product.productId ?? `${product.brand}:${product.model}`} onClick={() => chooseRecommendedProduct(product)}>
                           {product.brand} — {product.model}
+                          <small>{product.confidence} - Pilih produk ini</small>
                         </button>
                       ))}
                     </div>
                   )}
-                  <div>
+                  <div className="custom-product-fields">
                     <label>Brand<input autoComplete="off" value={customBrand} onChange={(event) => setCustomBrand(event.target.value)} placeholder="Nama brand" /></label>
                     <label>Tipe<input autoComplete="off" value={customModel} onChange={(event) => setCustomModel(event.target.value)} placeholder="Tipe / model produk" /></label>
                     <label>Catatan<input autoComplete="off" value={customProductNote} onChange={(event) => setCustomProductNote(event.target.value)} placeholder="Opsional" /></label>
-                    <button disabled={!customBrand.trim() || !customModel.trim()} onClick={() => void addCustomProduct()}>Usulkan produk baru</button>
+                    <button disabled={!customBrand.trim() || !customModel.trim()} onClick={() => void addCustomProduct()}>{productCatalog.recommendations.length ? "Tetap usulkan produk baru" : "Usulkan produk baru"}</button>
                   </div>
                 </div>
               </>

@@ -50,6 +50,10 @@ test("master Produk memakai RPC Super Admin, pagination server-side, dan guard l
   assert.match(route, /usageCountProductId/);
   assert.match(route, /admin_product_usage_counts/);
   assert.match(pickerRoute, /\.eq\("active", true\)/);
+  assert.match(pickerRoute, /mode === "search"/);
+  assert.match(pickerRoute, /mode === "recommend"/);
+  assert.match(pickerRoute, /rankProductSearch/);
+  assert.match(pickerRoute, /recommendStationProducts/);
   assert.match(pickerRoute, /count: "exact"/);
   assert.match(pickerRoute, /\.order\("brand"/);
   assert.match(pickerRoute, /\.order\("model"/);
@@ -91,7 +95,12 @@ test("master Produk memakai RPC Super Admin, pagination server-side, dan guard l
   assert.match(inventoryApp, /product-skeleton/);
   assert.match(inventoryApp, /aria-busy=\{productCatalog\.loading\}/);
   assert.match(inventoryApp, /Memperbarui/);
+  assert.match(inventoryApp, /Mungkin produk yang Anda cari sudah tersedia/);
+  assert.match(inventoryApp, /Tetap usulkan produk baru/);
+  assert.match(inventoryApp, /chooseRecommendedProduct/);
   assert.match(hook, /requestSequenceRef/);
+  assert.match(hook, /recommendationSequenceRef/);
+  assert.match(hook, /mode: "recommend"/);
   assert.match(hook, /displayPage/);
   assert.match(hook, /setError\("Katalog produk gagal dimuat\."\)/);
   assert.doesNotMatch(hook, /setLiveProducts\(\[\]\)/);
@@ -99,6 +108,7 @@ test("master Produk memakai RPC Super Admin, pagination server-side, dan guard l
   assert.match(hook, /PRODUCT_PICKER_PAGE_SIZE/);
   assert.match(hook, /setPage/);
   assert.doesNotMatch(hook, /data\.generated\.json/);
+  assert.doesNotMatch(hook, /product_aliases/);
   assert.match(sync, /allowLegacyRemoteImport/);
   assert.match(sync, /Legacy import ke database remote diblokir/);
   assert.match(packageJson, /sync:master:local/);
