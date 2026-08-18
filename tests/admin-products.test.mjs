@@ -59,6 +59,12 @@ test("master Produk memakai RPC Super Admin, pagination server-side, dan guard l
   assert.match(pickerRoute, /\.order\("model"/);
   assert.match(pickerRoute, /PRODUCT_PICKER_PAGE_SIZE/);
   assert.match(pickerLib, /PRODUCT_PICKER_PAGE_SIZE = 100/);
+  assert.match(hook, /setTimeout\(async \(\) => \{/);
+  assert.match(hook, /\}, 300\)/);
+  assert.match(hook, /recommendationSequenceRef/);
+  assert.match(globals, /\.product-drawer[^}]*overflow-y: auto/);
+  assert.match(globals, /\.product-results[^}]*overflow: visible/);
+  assert.match(globals, /\.custom-product[^}]*safe-area-inset-bottom/);
   assert.match(pickerRoute, /\.range\(\(page - 1\) \* PRODUCT_PICKER_PAGE_SIZE, page \* PRODUCT_PICKER_PAGE_SIZE - 1\)/);
   assert.match(component, /Cari Merk atau Tipe/);
   assert.match(component, /pageSize/);

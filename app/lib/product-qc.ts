@@ -220,8 +220,51 @@ export function recommendStationProducts(
   products: MergeRecommendationProduct[],
   aliases: ProductAlias[] = [],
 ) {
-  if (normalizeRecommendationText(brand).length < 2 && normalizeRecommendationText(model).length < 3) return [];
-  return rankMergeProducts([{ proposedBrand: brand, proposedModel: model }], products, aliases);
+  const normalizedBrand = normalizeRecommendationText(brand);
+  const normalizedModel = normalizeRecommendationText(model);
+  if (normalizedBrand.length < 2 && normalizedModel.length < 2) return [];
+
+  // A complete Brand + Tipe pair can use the stricter QC merge ranking. For a
+  // partial entry, the missing signal must not be treated as a mismatch.
+  if (normalizedBrand && normalizedModel) {
+    return rankMergeProducts([{ proposedBrand: brand, proposedModel: model }], products, aliases);
+  }
+
+  const aliasesByProduct = new Map<string, ProductAlias[]>();
+  for (const alias of aliases) {
+    const current = aliasesByProduct.get(alias.productId) ?? [];
+    current.push(alias);
+    aliasesByProduct.set(alias.productId, current);
+  }
+
+  const isBrandOnly = Boolean(normalizedBrand);
+  const signal = isBrandOnly ? normalizedBrand : normalizedModel;
+  const threshold = isBrandOnly ? PARTIAL_BRAND_THRESHOLD : MODEL_FAMILY_THRESHOLD;
+  return products.filter((product) => product.active).map((product) => {
+    const names = [{ brand: product.brand, model: product.model }, ...(aliasesByProduct.get(product.id) ?? [])];
+    const score = Math.max(...names.map((name) => similarity(
+      signal,
+      normalizeRecommendationText(isBrandOnly ? name.brand : name.model),
+    )));
+    return { product, score };
+  }).filter((candidate) => candidate.score >= threshold)
+    .sort((left, right) => right.score - left.score
+      || left.product.brand.localeCompare(right.product.brand, "id-ID")
+      || left.product.model.localeCompare(right.product.model, "id-ID")
+      || left.product.id.localeCompare(right.product.id))
+    .slice(0, 5)
+    .map((candidate) => ({
+      product: candidate.product,
+      brandSimilarity: isBrandOnly ? candidate.score : 0,
+      modelSimilarity: isBrandOnly ? 0 : candidate.score,
+      combinedScore: candidate.score,
+      coverage: 1,
+      brandFamilyCoverage: isBrandOnly && candidate.score >= BRAND_FAMILY_THRESHOLD ? 1 : 0,
+      finalScore: candidate.score,
+      // A partial input cannot establish a full product identity.
+      confidence: "Kemungkinan" as const,
+      kind: candidate.score >= BRAND_FAMILY_THRESHOLD ? "recommended" as const : "nearest" as const,
+    }));
 }
 
 export function recommendMergeProducts(

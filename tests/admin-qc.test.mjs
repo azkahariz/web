@@ -116,6 +116,12 @@ test("pencarian dan rekomendasi Station User memakai canonical product secara br
   const vaisalaIndex = recommendations.findIndex((candidate) => candidate.product.id === "vaisala-110");
   const campbellIndex = recommendations.findIndex((candidate) => candidate.product.id === "campbell-155");
   assert.ok(campbellIndex < 0 || vaisalaIndex < campbellIndex);
+  const brandOnly = recommendStationProducts("APC", "", products);
+  assert.equal(brandOnly[0]?.product.id, "apc-20");
+  assert.equal(brandOnly[0]?.confidence, "Kemungkinan");
+  const modelOnly = recommendStationProducts("", "Q330", products);
+  assert.deepEqual(modelOnly.slice(0, 2).map((candidate) => candidate.product.id), ["q330", "q330-plus"]);
+  assert.equal(modelOnly[0]?.confidence, "Kemungkinan");
   assert.deepEqual(recommendStationProducts("Ban", "Ring 20", products), []);
 });
 

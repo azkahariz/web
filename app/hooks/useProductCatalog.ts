@@ -98,7 +98,7 @@ export function useProductCatalog(stationId: string, search = "", recommendation
   useEffect(() => {
     const brand = recommendationBrand.trim();
     const model = recommendationModel.trim();
-    if (brand.replace(/[^a-z0-9]/gi, "").length < 2 && model.replace(/[^a-z0-9]/gi, "").length < 3) {
+    if (brand.replace(/[^a-z0-9+]/gi, "").length < 2 && model.replace(/[^a-z0-9+]/gi, "").length < 2) {
       recommendationSequenceRef.current += 1;
       const clearTimer = window.setTimeout(() => {
         setRecommendations([]);
