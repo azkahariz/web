@@ -69,13 +69,17 @@ function csvCell(value) {
   return /[",\r\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
 }
 
-const [{ data: adminRows, error: adminError }, authUsers] = await Promise.all([
+const [adminWithDisplayName, authUsers] = await Promise.all([
   client.from("super_admins").select("id, auth_user_id, username, display_name, active"),
   listAuthUsers(),
 ]);
-if (adminError) throw adminError;
+const adminResult = adminWithDisplayName.error?.code === "42703"
+  ? await client.from("super_admins").select("id, auth_user_id, username, active")
+  : adminWithDisplayName;
+if (adminResult.error) throw adminResult.error;
+const adminRows = adminResult.data ?? [];
 
-const adminByUsername = new Map((adminRows ?? []).map((admin) => [admin.username.trim().toLowerCase(), admin]));
+const adminByUsername = new Map(adminRows.map((admin) => [admin.username.trim().toLowerCase(), admin]));
 const authByEmail = new Map(authUsers.map((user) => [user.email?.trim().toLowerCase(), user]));
 const credentials = [];
 let created = 0;

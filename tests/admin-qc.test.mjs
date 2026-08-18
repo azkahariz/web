@@ -297,6 +297,7 @@ test("provisioning Super Admin individual aman, idempotent, dan private", async 
   }
   assert.match(script, /--confirm-production=PROVISION_SUPER_ADMINS/);
   assert.match(script, /if \(!apply\)/);
+  assert.match(script, /adminWithDisplayName\.error\?\.code === "42703"/);
   assert.match(script, /auth\.admin\.createUser/);
   assert.match(script, /private-output.*super-admin-credentials\.csv/s);
   assert.match(gitignore, /\/private-output\//);

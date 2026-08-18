@@ -18,7 +18,7 @@ try {
       const authUserId = randomUUID();
       await tx`
         insert into auth.users (
-          id, aud, role, email, encrypted_password, confirmed_at,
+          id, aud, role, email, encrypted_password, email_confirmed_at,
           raw_app_meta_data, raw_user_meta_data, created_at, updated_at
         ) values (
           ${authUserId}, 'authenticated', 'authenticated', ${`admin-${authUserId}@verify.invalid`}, '', now(),
@@ -31,7 +31,7 @@ try {
     const secondAdminAuthId = randomUUID();
     await tx`
       insert into auth.users (
-        id, aud, role, email, encrypted_password, confirmed_at,
+        id, aud, role, email, encrypted_password, email_confirmed_at,
         raw_app_meta_data, raw_user_meta_data, created_at, updated_at
       ) values (
         ${secondAdminAuthId}, 'authenticated', 'authenticated', ${`admin-b-${secondAdminAuthId}@verify.invalid`}, '', now(),
@@ -67,7 +67,7 @@ try {
       const authUserId = randomUUID();
       await tx`
         insert into auth.users (
-          id, aud, role, email, encrypted_password, confirmed_at,
+          id, aud, role, email, encrypted_password, email_confirmed_at,
           raw_app_meta_data, raw_user_meta_data, created_at, updated_at
         ) values (
           ${authUserId}, 'authenticated', 'authenticated', ${`station-${authUserId}@verify.invalid`}, '', now(),
