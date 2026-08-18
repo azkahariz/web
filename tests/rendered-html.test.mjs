@@ -6,6 +6,7 @@ import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { after, before, test } from "node:test";
 import { EMPTY_SITE_METADATA, resolveFieldDomain, siteMetadataCsvValues } from "../app/lib/site-metadata.ts";
+import { adminViewFromSearchParam, adminViewHref } from "../app/lib/admin-navigation.ts";
 
 const projectRoot = fileURLToPath(new URL("..", import.meta.url));
 let server;
@@ -310,6 +311,22 @@ test("panduan ringkas tersedia untuk Station User dan Super Admin", async () => 
   assert.match(adminDashboard, /href="\/admin\/panduan">Panduan Super Admin</);
   assert.match(adminGuide, /createSupabaseServerClient/);
   assert.match(adminGuide, /super_admins/);
+});
+
+test("sidebar Super Admin memakai URL view sebagai sumber navigasi", async () => {
+  const [dashboard, styles] = await Promise.all([
+    readFile(new URL("../app/admin/AdminDashboard.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
+  ]);
+
+  assert.equal(adminViewHref("products"), "/admin?view=products");
+  assert.equal(adminViewFromSearchParam("qc"), "qc");
+  assert.equal(adminViewFromSearchParam("unknown"), "summary");
+  assert.match(dashboard, /useSearchParams\(\)/);
+  assert.match(dashboard, /<Link key=\{item\.id\} href=\{adminViewHref\(item\.id\)\}/);
+  assert.match(dashboard, /aria-current=\{tab === item\.id \? "page" : undefined\}/);
+  assert.match(styles, /\.admin-nav a \{/);
+  assert.doesNotMatch(styles, /\.admin-nav button \{/);
 });
 
 test("footer attribution memakai link eksternal yang aman pada layout utama", async () => {

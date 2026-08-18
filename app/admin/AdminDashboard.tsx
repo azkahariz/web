@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import AdminBulkExport from "./AdminBulkExport";
 import AdminProducts from "./AdminProducts";
 import AdminSubmissionMonitor from "./AdminSubmissionMonitor";
@@ -21,6 +21,7 @@ import {
 import { csvCell, downloadText } from "../lib/download";
 import { logoutCurrentBrowser } from "../lib/local-logout";
 import { summarizeSitesByType } from "../lib/admin-summary";
+import { adminViewFromSearchParam, adminViewHref, type AdminView } from "../lib/admin-navigation";
 import type { SubmissionSummary } from "../lib/submission-monitoring";
 import { getSupabaseBrowserClient } from "../lib/supabase/client";
 
@@ -43,7 +44,7 @@ type Proposal = {
   review_note: string | null; created_at: string;
 };
 type Audit = { id: string; action: string; target_type: string; target_id: string | null; metadata: Record<string, unknown>; created_at: string };
-type Tab = "summary" | "stations" | "products" | "accounts" | "locks" | "qc" | "audit";
+type Tab = AdminView;
 type FillingMode = "master" | "submissions";
 
 type StationFillingView = {
@@ -121,8 +122,9 @@ const StationFillingCard = memo(function StationFillingCard({
 
 export default function AdminDashboard({ username }: { username: string }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const feedback = useAppFeedback();
-  const [tab, setTab] = useState<Tab>("summary");
+  const tab = adminViewFromSearchParam(searchParams.get("view"));
   const [fillingMode, setFillingMode] = useState<FillingMode>("master");
   const [expandedStationId, setExpandedStationId] = useState<string | null>(null);
   const [submissionMonitorMounted, setSubmissionMonitorMounted] = useState(false);
@@ -421,7 +423,7 @@ export default function AdminDashboard({ username }: { username: string }) {
   }
 
   function navigate(nextTab: Tab, options?: { fillingMode?: FillingMode; qcStatus?: Proposal["status"] }) {
-    setTab(nextTab);
+    router.push(adminViewHref(nextTab));
     setSearch("");
     if (options?.fillingMode) {
       setFillingMode(options.fillingMode);
@@ -448,7 +450,7 @@ export default function AdminDashboard({ username }: { username: string }) {
       </header>
       <div className="admin-layout">
         <nav className="admin-nav" aria-label="Menu admin">
-          {tabs.map((item) => <button key={item.id} className={tab === item.id ? "active" : ""} onClick={() => navigate(item.id)}>{item.label}</button>)}
+          {tabs.map((item) => <Link key={item.id} href={adminViewHref(item.id)} className={tab === item.id ? "active" : ""} aria-current={tab === item.id ? "page" : undefined}>{item.label}</Link>)}
         </nav>
         <section className={`admin-content${tab === "accounts" ? " accounts-view" : ""}`}>
           <div className="admin-heading"><div><p className="kicker">PENGELOLAAN APLIKASI</p><h2>{tabs.find((item) => item.id === tab)?.label}</h2></div>{!(tab === "stations" && fillingMode === "submissions") && tab !== "products" && <AsyncButton className="secondary-button" type="button" loading={loading} loadingText="Memuat..." onClick={() => void refresh()}>Muat ulang</AsyncButton>}</div>

@@ -346,8 +346,9 @@ button[aria-busy="true"] { display: inline-flex; align-items: center; justify-co
 .admin-username { color: var(--muted); font-size: 11px; font-weight: 800; }
 .admin-layout { min-height: calc(100vh - 78px); display: grid; grid-template-columns: 230px minmax(0, 1fr); }
 .admin-nav { padding: 24px 14px; display: flex; flex-direction: column; gap: 4px; border-right: 1px solid var(--line); background: #fafbf8; }
-.admin-nav button { min-height: 42px; padding: 9px 12px; border: 0; border-radius: 6px; background: transparent; text-align: left; color: #53645f; font-size: 11px; font-weight: 800; cursor: pointer; }
-.admin-nav button:hover, .admin-nav button.active { background: var(--green-soft); color: var(--green-deep); }
+.admin-nav a { min-height: 42px; padding: 9px 12px; display: flex; align-items: center; border-radius: 6px; color: #53645f; font-size: 11px; font-weight: 800; text-decoration: none; }
+.admin-nav a:hover, .admin-nav a.active { background: var(--green-soft); color: var(--green-deep); }
+.admin-nav a:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
 .admin-content { min-width: 0; padding: 32px clamp(18px, 4vw, 50px) 60px; }
 .admin-heading { display: flex; align-items: center; justify-content: space-between; gap: 18px; }
 .admin-heading h2 { margin: 5px 0 0; font: 500 31px/1.15 Georgia, serif; }
@@ -568,7 +569,7 @@ button[aria-busy="true"] { display: inline-flex; align-items: center; justify-co
   .metadata-grid .wide-unit-field { grid-column: 1 / -1; }
   .admin-layout { grid-template-columns: 1fr; }
   .admin-nav { padding: 10px 14px; flex-direction: row; overflow-x: auto; border-right: 0; border-bottom: 1px solid var(--line); }
-  .admin-nav button { flex: 0 0 auto; }
+  .admin-nav a { flex: 0 0 auto; }
   .admin-stats { grid-template-columns: repeat(2, minmax(130px, 1fr)); }
   .submission-toolbar { grid-template-columns: 1fr; align-items: stretch; }
   .submission-filter-grid { grid-template-columns: 1fr 1fr; }
