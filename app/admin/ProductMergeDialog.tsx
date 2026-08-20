@@ -5,6 +5,7 @@ import AsyncButton from "../components/AsyncButton";
 import { useAppFeedback } from "../components/AppFeedback";
 
 type Product = { id: string; brand: string; model: string; active: boolean; source_origin: string };
+type MergeRecommendation = Product & { confidence: "Sangat mirip" | "Mirip" | "Kemungkinan"; kind: "recommended" | "nearest"; reason: string };
 type MergePlan = {
   status: string;
   preflightToken?: string;
@@ -28,6 +29,9 @@ export default function ProductMergeDialog({ source, onClose, onMerged }: {
   const [query, setQuery] = useState("");
   const [targets, setTargets] = useState<Product[]>([]);
   const [targetsLoading, setTargetsLoading] = useState(true);
+  const [recommendations, setRecommendations] = useState<MergeRecommendation[]>([]);
+  const [recommendationsLoading, setRecommendationsLoading] = useState(true);
+  const [recommendationsError, setRecommendationsError] = useState("");
   const [target, setTarget] = useState<Product | null>(null);
   const [plan, setPlan] = useState<MergePlan | null>(null);
   const [message, setMessage] = useState("");
@@ -35,6 +39,18 @@ export default function ProductMergeDialog({ source, onClose, onMerged }: {
   const [executing, setExecuting] = useState(false);
   const requestIdRef = useRef(0);
   const queryRef = useRef("");
+
+  useEffect(() => {
+    const params = new URLSearchParams({ recommendationSourceId: source.id });
+    void fetch(`/api/admin/products?${params.toString()}`, { cache: "no-store" })
+      .then(async (response) => {
+        const result = await response.json() as { recommendations?: MergeRecommendation[]; error?: string };
+        if (!response.ok) throw new Error(result.error || "Rekomendasi Produk tujuan gagal dimuat.");
+        setRecommendations(result.recommendations ?? []);
+      })
+      .catch(() => setRecommendationsError("Rekomendasi tidak dapat dimuat. Cari Produk tujuan secara manual."))
+      .finally(() => setRecommendationsLoading(false));
+  }, [source.id]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -115,16 +131,26 @@ export default function ProductMergeDialog({ source, onClose, onMerged }: {
     }
   }
 
+  const recommendationIds = new Set(recommendations.map((recommendation) => recommendation.id));
+  const visibleTargets = query ? targets : targets.filter((candidate) => !recommendationIds.has(candidate.id));
+
   return <div className="app-dialog-backdrop product-move-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget && !executing) onClose(); }}>
     <section className="app-dialog product-move-dialog product-merge-dialog" role="dialog" aria-modal="true" aria-labelledby="product-merge-title">
       <h2 id="product-merge-title">Gabungkan Produk</h2>
       <p className="product-move-source"><small>Produk sumber</small><strong>{source.brand}</strong><span>{source.model}</span></p>
       <div className="product-move-content">
-        <label className="admin-search">Cari Produk tujuan<input autoFocus autoComplete="off" value={queryInput} onChange={(event) => { setQueryInput(event.target.value); setTarget(null); setPlan(null); setMessage(""); }} placeholder="Cari Merk atau Tipe" /></label>
+        <section className="product-merge-recommendations" aria-labelledby="product-merge-recommendations-title" aria-busy={recommendationsLoading}>
+          <h3 id="product-merge-recommendations-title">Rekomendasi Produk Tujuan</h3>
+          {recommendationsLoading && <p className="product-usage-state" role="status"><span className="product-usage-spinner" aria-hidden="true" />Mencari Produk yang mirip...</p>}
+          {!recommendationsLoading && recommendations.map((recommendation) => <button key={recommendation.id} type="button" className={target?.id === recommendation.id ? "is-selected" : ""} aria-pressed={target?.id === recommendation.id} onClick={() => void runPreflight(recommendation)}><span><strong>{recommendation.brand}</strong><small>{recommendation.model}</small><em>{recommendation.reason}</em></span><b>{target?.id === recommendation.id ? "Dipilih" : "Pilih"}</b></button>)}
+          {!recommendationsLoading && !recommendations.length && !recommendationsError && <p className="product-merge-recommendation-empty">Belum ada rekomendasi yang cukup mirip. Cari Produk tujuan secara manual.</p>}
+          {recommendationsError && <p className="product-merge-recommendation-empty">{recommendationsError}</p>}
+        </section>
+        <label className="admin-search product-merge-manual-search">Cari Produk lain<input autoFocus autoComplete="off" value={queryInput} onChange={(event) => { setQueryInput(event.target.value); setTarget(null); setPlan(null); setMessage(""); }} placeholder="Cari Merk atau Tipe" /></label>
         {targetsLoading && <p className="product-usage-state" role="status"><span className="product-usage-spinner" aria-hidden="true" />Memuat Produk tujuan...</p>}
         {!targetsLoading && <div className="product-move-targets" aria-label="Produk tujuan">
-          {targets.map((product) => <button key={product.id} type="button" className={target?.id === product.id ? "is-selected" : ""} onClick={() => void runPreflight(product)}><strong>{product.brand}</strong><span>{product.model}</span></button>)}
-          {!targets.length && <p>Produk aktif tidak ditemukan.</p>}
+          {visibleTargets.map((product) => <button key={product.id} type="button" className={target?.id === product.id ? "is-selected" : ""} onClick={() => void runPreflight(product)}><strong>{product.brand}</strong><span>{product.model}</span></button>)}
+          {!visibleTargets.length && <p>{query ? "Produk aktif tidak ditemukan." : "Produk aktif lainnya tidak tersedia pada halaman ini."}</p>}
         </div>}
         {preflightLoading && <p className="product-usage-state" role="status"><span className="product-usage-spinner" aria-hidden="true" />Memeriksa dependency terbaru...</p>}
         {plan?.status === "ready" && plan.target && <div className="product-move-plan product-merge-plan">

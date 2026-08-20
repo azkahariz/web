@@ -2,11 +2,14 @@ import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 import { getPublicSupabaseConfig } from "../../../lib/supabase/config";
 import { createSupabaseServerClient } from "../../../lib/supabase/server";
+import { rankProductMergeTargets, productMergeRecommendationReason } from "../../../lib/product-merge-recommendations";
+import type { ProductAlias } from "../../../lib/product-qc";
 
 type RpcError = { code?: string | null };
 type ProductAction = "create" | "update" | "set-active";
 type ProductRow = { id: string; brand: string; model: string; active: boolean; source_origin: string };
 type CanonicalRow = { product_id: string; canonical_product_id: string; brand: string; model: string };
+type AliasRow = { product_id: string; brand_alias: string; model_alias: string };
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function productPageSize(value: string | null) {
@@ -71,9 +74,59 @@ export async function GET(request: Request) {
   const search = url.searchParams.get("search")?.trim().replace(/[(),]/g, " ") || "";
   const activeOnly = url.searchParams.get("activeOnly") === "1";
   const excludeProductId = url.searchParams.get("excludeProductId");
+  const recommendationSourceId = url.searchParams.get("recommendationSourceId");
   if (excludeProductId && !UUID_PATTERN.test(excludeProductId)) return NextResponse.json({ error: "ID produk yang dikecualikan tidak valid." }, { status: 400 });
+  if (recommendationSourceId && !UUID_PATTERN.test(recommendationSourceId)) return NextResponse.json({ error: "ID produk sumber tidak valid." }, { status: 400 });
   const { error: authorizationError } = await auth.client.rpc("admin_product_summary");
   if (authorizationError) return rpcErrorResponse(authorizationError, "Akses daftar produk gagal divalidasi.");
+  if (recommendationSourceId) {
+    const loadProducts = async () => {
+      const rows: ProductRow[] = [];
+      for (let from = 0; ; from += 1000) {
+        const result = await auth.client.from("products")
+          .select("id, brand, model, active, source_origin")
+          .eq("active", true)
+          .range(from, from + 999);
+        if (result.error) throw result.error;
+        rows.push(...((result.data ?? []) as ProductRow[]));
+        if ((result.data?.length ?? 0) < 1000) break;
+      }
+      return rows;
+    };
+    const loadAliases = async () => {
+      const rows: AliasRow[] = [];
+      for (let from = 0; ; from += 1000) {
+        const result = await auth.client.from("product_aliases")
+          .select("product_id, brand_alias, model_alias")
+          .range(from, from + 999);
+        if (result.error) throw result.error;
+        rows.push(...((result.data ?? []) as AliasRow[]));
+        if ((result.data?.length ?? 0) < 1000) break;
+      }
+      return rows;
+    };
+    try {
+      const [sourceResult, candidates, aliasRows] = await Promise.all([
+        auth.client.from("products").select("id, brand, model, active, source_origin").eq("id", recommendationSourceId).maybeSingle(),
+        loadProducts(),
+        loadAliases(),
+      ]);
+      if (sourceResult.error) return rpcErrorResponse(sourceResult.error, "Produk sumber gagal dimuat.");
+      if (!sourceResult.data) return NextResponse.json({ error: "Produk sumber tidak ditemukan." }, { status: 404 });
+      const aliases: ProductAlias[] = aliasRows.map((alias) => ({ productId: alias.product_id, brand: alias.brand_alias, model: alias.model_alias }));
+      const recommendations = rankProductMergeTargets(sourceResult.data, candidates, aliases).slice(0, 3);
+      return NextResponse.json({
+        recommendations: recommendations.map((candidate) => ({
+          ...candidate.product,
+          confidence: candidate.confidence,
+          kind: candidate.kind,
+          reason: productMergeRecommendationReason(candidate),
+        })),
+      });
+    } catch {
+      return NextResponse.json({ error: "Rekomendasi Produk tujuan gagal dimuat." }, { status: 400 });
+    }
+  }
   let query = auth.client.from("products")
     .select("id, brand, model, active, source_origin", { count: "exact" });
   if (activeOnly) query = query.eq("active", true);

@@ -454,6 +454,20 @@ button[aria-busy="true"] { display: inline-flex; align-items: center; justify-co
 .product-move-source span, .product-move-plan span { color: var(--muted); font-size: 12px; }
 .product-move-content { min-height: 0; flex: 1 1 auto; overflow-y: auto; padding-right: 2px; }
 .product-move-content .admin-search { margin-top: 0; }
+.product-merge-recommendations { margin-bottom: 16px; }
+.product-merge-recommendations h3 { margin: 0 0 8px; color: var(--ink); font-size: 11px; letter-spacing: 0; }
+.product-merge-recommendations > button { width: 100%; padding: 10px; display: flex; align-items: center; justify-content: space-between; gap: 12px; border: 1px solid var(--line); border-radius: 6px; background: white; color: inherit; text-align: left; cursor: pointer; }
+.product-merge-recommendations > button + button { margin-top: 6px; }
+.product-merge-recommendations > button:hover, .product-merge-recommendations > button.is-selected { border-color: var(--green); background: var(--green-soft); }
+.product-merge-recommendations > button:focus-visible { outline: 2px solid var(--green-deep); outline-offset: 2px; }
+.product-merge-recommendations > button > span { min-width: 0; display: grid; gap: 2px; }
+.product-merge-recommendations strong, .product-merge-recommendations small, .product-merge-recommendations em { min-width: 0; overflow-wrap: anywhere; }
+.product-merge-recommendations strong { font-size: 12px; }
+.product-merge-recommendations small { color: var(--ink); font-size: 11px; }
+.product-merge-recommendations em { color: var(--muted); font-size: 9px; font-style: normal; }
+.product-merge-recommendations b { flex: 0 0 auto; color: var(--green-deep); font-size: 10px; }
+.product-merge-recommendation-empty { margin: 6px 0 0; color: var(--muted); font-size: 11px; line-height: 1.45; }
+.product-merge-manual-search { padding-top: 12px; border-top: 1px solid var(--line); }
 .product-move-targets { margin-top: 10px; border-top: 1px solid var(--line); }
 .product-move-targets button { width: 100%; padding: 10px 8px; display: grid; gap: 2px; border: 0; border-bottom: 1px solid var(--line); background: white; color: inherit; text-align: left; cursor: pointer; }
 .product-move-targets button:hover, .product-move-targets button.is-selected { background: var(--green-soft); }
