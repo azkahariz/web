@@ -103,7 +103,7 @@ test("master Produk memakai RPC Super Admin, pagination server-side, dan guard l
   assert.match(component, /product-usage-spinner/);
   assert.doesNotMatch(component, /usageLoading && !usage && <p className="app-dialog-error"/);
   assert.match(component, /Produk ini belum memiliki penggunaan pada submission aktif\./);
-  assert.match(component, /aria-busy=\{usageLoading\}/);
+  assert.match(component, /aria-busy=\{usageLoading \|\| dependenciesLoading \|\| referencesLoading\}/);
   assert.match(globals, /\.product-usage-state[\s\S]*color: var\(--muted\)/);
   assert.match(globals, /\.product-usage-spinner[\s\S]*animation: product-usage-spin/);
   assert.match(component, /Penggunaan Produk/);

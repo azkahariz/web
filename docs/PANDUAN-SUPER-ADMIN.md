@@ -14,6 +14,15 @@ sebelum menjalankan tindakan yang mengubah data.
 - **QC Produk**: pemeriksaan usulan Brand/Tipe.
 - **Audit Admin**: rekam tindakan administrasi yang berisiko.
 
+### Dependency Produk
+
+Klik **N referensi** pada Produk untuk membuka detail read-only: direct reference
+current dan arsip, riwayat QC yang sudah resolved, alias, serta lock editor yang
+masih aktif. Nilai `0 referensi` bukan jaminan produk aman dihapus karena masih
+mungkin memiliki alias, riwayat QC, atau referensi arsip. Pemindahan, merge, dan
+penghapusan Produk belum tersedia; fitur tersebut akan memakai preflight ini pada
+tahap berikutnya.
+
 ## Stasiun dan Pengisian
 
 Halaman ini mempunyai dua tab:

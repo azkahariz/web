@@ -19,6 +19,39 @@ type ProductUsage = {
   pageSize: number;
 };
 type ProductUsageCount = { product_id: string; reference_count: number };
+type ProductDependencies = {
+  product: { id: string; brand: string; model: string; active: boolean; sourceOrigin: string };
+  preflight: {
+    currentDirectReferenceCount: number;
+    currentSiteCount: number;
+    currentSubmissionCount: number;
+    archivedDirectReferenceCount: number;
+    resolvedQcProposalCount: number;
+    approvedQcCount: number;
+    mergedQcCount: number;
+    aliasCount: number;
+    activeLockCount: number;
+  };
+  qcProposals: Array<{ proposalId: string; proposedBrand: string; proposedModel: string; status: "APPROVED" | "MERGED"; reviewerName: string | null; reviewedAt: string | null; reviewNote: string | null }>;
+  aliases: Array<{ aliasId: string; brand: string; model: string; sourceProposalId: string | null }>;
+};
+type ProductReference = {
+  submissionId: string;
+  expectedSubmissionVersion: number;
+  stationName: string;
+  siteName: string;
+  siteTypeName: string;
+  siteSubtypeName: string;
+  categoryName: string;
+  functionCategories: string[];
+  itemId: string | null;
+  unitCount: number;
+  archivedAt: string | null;
+  activeLock: boolean;
+  lockOwnerDisplayName: string | null;
+};
+type ProductReferences = { rows: ProductReference[]; totalCount: number; page: number; pageSize: number };
+type DependencyTab = "summary" | "references" | "qc" | "aliases";
 
 function originLabel(origin: string) {
   if (origin === "QC") return "QC Produk";
@@ -53,6 +86,13 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
   const [usageCounts, setUsageCounts] = useState<Record<string, number>>({});
   const [usageCountsLoading, setUsageCountsLoading] = useState(false);
   const usageCountsRequestRef = useRef(0);
+  const [dependencies, setDependencies] = useState<ProductDependencies | null>(null);
+  const [dependenciesLoading, setDependenciesLoading] = useState(false);
+  const [dependenciesError, setDependenciesError] = useState("");
+  const [dependencyTab, setDependencyTab] = useState<DependencyTab>("summary");
+  const [references, setReferences] = useState<ProductReferences | null>(null);
+  const [referencesLoading, setReferencesLoading] = useState(false);
+  const [referencePageSize, setReferencePageSize] = useState(50);
 
   const loadUsageCounts = useCallback(async (products: Product[]) => {
     const requestId = ++usageCountsRequestRef.current;
@@ -200,10 +240,51 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
     }
   }
 
+  async function loadDependencies(product: Product) {
+    setDependenciesLoading(true);
+    setDependenciesError("");
+    try {
+      const response = await fetch(`/api/admin/products/${product.id}/dependencies`, { cache: "no-store" });
+      const result = await response.json() as { dependencies?: ProductDependencies; error?: string };
+      if (!response.ok || !result.dependencies) throw new Error(result.error || "Dependency produk gagal dimuat.");
+      setDependencies(result.dependencies);
+    } catch (dependencyError) {
+      setDependenciesError(dependencyError instanceof Error ? dependencyError.message : "Dependency produk gagal dimuat.");
+    } finally {
+      setDependenciesLoading(false);
+    }
+  }
+
+  async function loadReferences(product: Product, referencePage = 1, nextPageSize = referencePageSize) {
+    setReferencesLoading(true);
+    try {
+      const params = new URLSearchParams({ page: String(referencePage), pageSize: String(nextPageSize) });
+      const response = await fetch(`/api/admin/products/${product.id}/references?${params.toString()}`, { cache: "no-store" });
+      const result = await response.json() as { references?: ProductReferences; error?: string };
+      if (!response.ok || !result.references) throw new Error(result.error || "Referensi produk gagal dimuat.");
+      setReferences(result.references);
+    } catch (referenceError) {
+      setDependenciesError(referenceError instanceof Error ? referenceError.message : "Referensi produk gagal dimuat.");
+    } finally {
+      setReferencesLoading(false);
+    }
+  }
+
   function openUsage(product: Product) {
     setUsageProduct(product);
     setUsage(null);
+    setDependencies(null);
+    setDependenciesError("");
+    setReferences(null);
+    setDependencyTab("summary");
+    setReferencePageSize(50);
     void loadUsage(product);
+    void loadDependencies(product);
+  }
+
+  function selectDependencyTab(tab: DependencyTab) {
+    setDependencyTab(tab);
+    if (tab === "references" && usageProduct && !references && !referencesLoading) void loadReferences(usageProduct, 1);
   }
 
   function applyPageSize(value: string | number) {
@@ -278,10 +359,22 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
     {usageProduct && <div className="app-dialog-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setUsageProduct(null); }}>
       <section className="app-dialog product-usage-dialog" role="dialog" aria-modal="true" aria-labelledby="product-usage-title">
         <h2 id="product-usage-title">Penggunaan Produk</h2>
-        <p className="product-usage-name"><strong>{usageProduct.brand}</strong><span>{usageProduct.model}</span></p>
-        <div className="product-usage-content" aria-busy={usageLoading}>
-          {usageLoading && !usage && <p className="product-usage-state" role="status"><span className="product-usage-spinner" aria-hidden="true" />Memuat penggunaan...</p>}
+        <p className="product-usage-name"><strong>{usageProduct.brand}</strong><span>{usageProduct.model}</span>{dependencies && <small>{dependencies.product.active ? "Aktif" : "Nonaktif"} · {originLabel(dependencies.product.sourceOrigin)}</small>}</p>
+        <div className="product-dependency-tabs" role="tablist" aria-label="Detail dependency produk">
+          {[['summary', 'Dependency'], ['references', 'Referensi'], ['qc', 'QC History'], ['aliases', 'Alias']].map(([tab, label]) => <button key={tab} type="button" role="tab" aria-selected={dependencyTab === tab} className={dependencyTab === tab ? "is-active" : ""} onClick={() => selectDependencyTab(tab as DependencyTab)}>{label}</button>)}
+        </div>
+        <div className="product-usage-content" aria-busy={usageLoading || dependenciesLoading || referencesLoading}>
+          {dependencyTab === "summary" && <>
+          {dependenciesLoading && <p className="product-usage-state" role="status"><span className="product-usage-spinner" aria-hidden="true" />Memuat dependency produk...</p>}
+          {usageLoading && !usage && !dependenciesLoading && <p className="product-usage-state" role="status"><span className="product-usage-spinner" aria-hidden="true" />Memuat penggunaan...</p>}
           {usageError && <p className="app-dialog-error" role="alert">{usageError}</p>}
+          {dependenciesError && <p className="app-dialog-error" role="alert">{dependenciesError}</p>}
+          {dependencies && <>
+            <div className="product-dependency-summary">
+              <span><small>Direct current</small><strong>{dependencies.preflight.currentDirectReferenceCount}</strong></span><span><small>Site current</small><strong>{dependencies.preflight.currentSiteCount}</strong></span><span><small>Submission current</small><strong>{dependencies.preflight.currentSubmissionCount}</strong></span><span><small>QC resolved</small><strong>{dependencies.preflight.resolvedQcProposalCount}</strong></span><span><small>Alias</small><strong>{dependencies.preflight.aliasCount}</strong></span><span><small>Arsip</small><strong>{dependencies.preflight.archivedDirectReferenceCount}</strong></span>
+            </div>
+            {dependencies.preflight.activeLockCount > 0 && <p className="product-dependency-lock">{dependencies.preflight.activeLockCount} Submission referensi sedang diedit.</p>}
+          </>}
           {usage && <>
           <p className="product-usage-summary">{usage.stationCount} Stasiun · {usage.siteCount} Site · {usage.referenceCount} referensi</p>
           <div className="product-usage-list">
@@ -290,6 +383,14 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
           </div>
           {usage.totalCount > usage.pageSize && <div className="pagination-buttons product-usage-pagination"><button disabled={usage.page <= 1 || usageLoading} onClick={() => void loadUsage(usageProduct, usage.page - 1)}>Sebelumnya</button><span>Halaman {usage.page} dari {Math.ceil(usage.totalCount / usage.pageSize)}</span><button disabled={usage.page >= Math.ceil(usage.totalCount / usage.pageSize) || usageLoading} onClick={() => void loadUsage(usageProduct, usage.page + 1)}>Berikutnya</button></div>}
           </>}
+          </>}
+          {dependencyTab === "references" && <>
+            {!references && referencesLoading && <p className="product-usage-state" role="status"><span className="product-usage-spinner" aria-hidden="true" />Memuat referensi...</p>}
+            {dependenciesError && <p className="app-dialog-error" role="alert">{dependenciesError}</p>}
+            {references && <><div className="product-reference-toolbar"><span>Menampilkan {(references.page - 1) * references.pageSize + (references.totalCount ? 1 : 0)}-{Math.min(references.page * references.pageSize, references.totalCount)} dari {references.totalCount} direct reference</span><label>Baris<select value={referencePageSize} onChange={(event) => { const next = Number(event.target.value); setReferencePageSize(next); void loadReferences(usageProduct, 1, next); }}><option value="50">50</option><option value="100">100</option><option value="200">200</option></select></label></div><div className="product-reference-list">{references.rows.map((row) => <div key={`${row.submissionId}:${row.itemId ?? "legacy"}`}><strong>{row.stationName}</strong><span>{row.siteName} · {row.siteTypeName} · {row.siteSubtypeName}</span><small>{row.functionCategories.join(" · ")} · {row.unitCount} unit</small>{row.activeLock && <em>Sedang diedit{row.lockOwnerDisplayName ? `: ${row.lockOwnerDisplayName}` : ""}</em>}{row.archivedAt && <em>Diarsipkan</em>}</div>)}{!references.rows.length && <p>Belum ada direct reference pada scope ini.</p>}</div>{references.totalCount > references.pageSize && <div className="pagination-buttons product-usage-pagination"><button disabled={references.page <= 1 || referencesLoading} onClick={() => void loadReferences(usageProduct, references.page - 1)}>Sebelumnya</button><span>Halaman {references.page} dari {Math.ceil(references.totalCount / references.pageSize)}</span><button disabled={references.page >= Math.ceil(references.totalCount / references.pageSize) || referencesLoading} onClick={() => void loadReferences(usageProduct, references.page + 1)}>Berikutnya</button></div>}</>}
+          </>}
+          {dependencyTab === "qc" && <div className="product-reference-list">{dependenciesLoading && <p className="product-usage-state" role="status"><span className="product-usage-spinner" aria-hidden="true" />Memuat QC history...</p>}{dependencies?.qcProposals.map((proposal) => <div key={proposal.proposalId}><strong>{proposal.proposedBrand} · {proposal.proposedModel}</strong><span>{proposal.status}{proposal.reviewerName ? ` · ${proposal.reviewerName}` : ""}</span>{proposal.reviewNote && <small>Catatan: {proposal.reviewNote}</small>}</div>)}{dependencies && !dependencies.qcProposals.length && <p>Belum ada proposal QC yang resolved ke produk ini.</p>}</div>}
+          {dependencyTab === "aliases" && <div className="product-reference-list">{dependenciesLoading && <p className="product-usage-state" role="status"><span className="product-usage-spinner" aria-hidden="true" />Memuat alias...</p>}{dependencies?.aliases.map((alias) => <div key={alias.aliasId}><strong>{alias.brand}</strong><span>{alias.model}</span>{alias.sourceProposalId && <small>Asal proposal QC</small>}</div>)}{dependencies && !dependencies.aliases.length && <p>Produk ini belum memiliki alias.</p>}</div>}
         </div>
         <div className="app-dialog-actions"><button className="secondary-button" type="button" onClick={() => setUsageProduct(null)}>Tutup</button></div>
       </section>
