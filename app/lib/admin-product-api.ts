@@ -68,6 +68,14 @@ export function productMergeConflictMessage(status: string) {
   return "Merge Produk tidak dapat dilanjutkan karena kondisi data sudah berubah.";
 }
 
+export function productDeleteConflictMessage(status: string) {
+  if (status === "state_changed") return "Produk tidak dapat dihapus karena datanya telah berubah. Muat ulang informasi Produk dan periksa keterkaitannya kembali.";
+  if (status === "already_deleted" || status === "not_found") return "Produk sudah tidak tersedia atau telah dihapus sebelumnya.";
+  if (status === "database_dependency") return "Produk masih memiliki keterkaitan database yang harus dipertahankan. Muat ulang informasi Produk sebelum mencoba kembali.";
+  if (status === "blocked") return "Produk belum memenuhi syarat untuk dihapus permanen.";
+  return "Produk tidak dapat dihapus permanen karena kondisi datanya sudah berubah.";
+}
+
 export async function requireProductDependencyClient(request: Request): Promise<{ client: SupabaseClient } | { response: NextResponse }> {
   const bearer = request.headers.get("authorization")?.match(/^Bearer\s+(.+)$/i)?.[1];
   const config = getPublicSupabaseConfig();
