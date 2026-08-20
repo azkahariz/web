@@ -5,6 +5,8 @@ import { createSupabaseServerClient } from "../../../lib/supabase/server";
 
 type RpcError = { code?: string | null };
 type ProductAction = "create" | "update" | "set-active";
+type ProductRow = { id: string; brand: string; model: string; active: boolean; source_origin: string };
+type CanonicalRow = { product_id: string; canonical_product_id: string; brand: string; model: string };
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function productPageSize(value: string | null) {
@@ -81,7 +83,23 @@ export async function GET(request: Request) {
   query = query.order(sortField, { ascending: sortDirection }).order(secondarySort, { ascending: true }).order("id", { ascending: true });
   const { data, count, error } = await query.range((page - 1) * pageSize, page * pageSize - 1);
   if (error) return rpcErrorResponse(error, "Daftar produk gagal dimuat.");
-  return NextResponse.json({ totalCount: count ?? 0, rows: data ?? [] });
+  const rows = (data ?? []) as ProductRow[];
+  if (!activeOnly && rows.length) {
+    const canonicalResult = await auth.client.rpc("resolve_canonical_products", { p_product_ids: rows.map((row) => row.id) });
+    if (!canonicalResult.error) {
+      const canonicalById = new Map(((canonicalResult.data ?? []) as CanonicalRow[]).map((row) => [row.product_id, row]));
+      return NextResponse.json({
+        totalCount: count ?? 0,
+        rows: rows.map((row) => {
+          const canonical = canonicalById.get(row.id);
+          return canonical && canonical.canonical_product_id !== row.id
+            ? { ...row, merged_into_product_id: canonical.canonical_product_id, merged_target: { id: canonical.canonical_product_id, brand: canonical.brand, model: canonical.model } }
+            : row;
+        }),
+      });
+    }
+  }
+  return NextResponse.json({ totalCount: count ?? 0, rows });
 }
 
 export async function POST(request: Request) {

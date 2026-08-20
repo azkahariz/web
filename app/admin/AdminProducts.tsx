@@ -6,8 +6,9 @@ import { useAppFeedback } from "../components/AppFeedback";
 import { clearProductReferenceSelection, getCurrentPageSelectionState, isProductReferenceSelectable, productReferenceSelectionKey, toggleCurrentPageSelection } from "../lib/product-reference-selection";
 import { normalizeSubmissionPageSize, SUBMISSION_PAGE_SIZE, SUBMISSION_PAGE_SIZE_MAX, SUBMISSION_PAGE_SIZE_MIN, SUBMISSION_PAGE_SIZE_OPTIONS } from "../lib/submission-monitoring";
 import ProductReferenceMoveDialog, { type MoveReferenceIdentity } from "./ProductReferenceMoveDialog";
+import ProductMergeDialog from "./ProductMergeDialog";
 
-type Product = { id: string; brand: string; model: string; active: boolean; source_origin: string };
+type Product = { id: string; brand: string; model: string; active: boolean; source_origin: string; merged_into_product_id?: string; merged_target?: { id: string; brand: string; model: string } };
 type Summary = { total_count: number; active_count: number; inactive_count: number };
 type SortField = "brand" | "model";
 type SortDirection = "asc" | "desc";
@@ -22,7 +23,7 @@ type ProductUsage = {
 };
 type ProductUsageCount = { product_id: string; reference_count: number };
 type ProductDependencies = {
-  product: { id: string; brand: string; model: string; active: boolean; sourceOrigin: string };
+  product: { id: string; brand: string; model: string; active: boolean; sourceOrigin: string; mergedIntoProduct?: { id: string; brand: string; model: string; active: boolean } | null };
   preflight: {
     currentDirectReferenceCount: number;
     currentSiteCount: number;
@@ -136,6 +137,7 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
   const [dependencyPageSize, setDependencyPageSize] = useState(50);
   const [selectedReferences, setSelectedReferences] = useState<Map<string, ProductReference>>(new Map());
   const [moveDialogOpen, setMoveDialogOpen] = useState(false);
+  const [mergeProduct, setMergeProduct] = useState<Product | null>(null);
 
   const loadUsageCounts = useCallback(async (products: Product[]) => {
     const requestId = ++usageCountsRequestRef.current;
@@ -363,6 +365,12 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
     await Promise.all([loadReferences(usageProduct, 1, 50), loadDependencies(usageProduct), loadUsage(usageProduct, 1, dependencyPageSize), load(), onChanged()]);
   }
 
+  async function completeProductMerge() {
+    setMergeProduct(null);
+    setUsageProduct(null);
+    await Promise.all([load(), onChanged()]);
+  }
+
   const selectedMoveReferences = useMemo(() => [...selectedReferences.values()].flatMap((reference): MoveReferenceIdentity[] => reference.itemId ? [{
     submissionId: reference.submissionId,
     expectedSubmissionVersion: reference.expectedSubmissionVersion,
@@ -409,7 +417,7 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
     </div>
     {error && <p className="admin-message" role="status">{error}</p>}
     <div className={`admin-table-wrap product-table${loading ? " is-loading" : ""}`}><table><thead><tr><th>Merk</th><th>Tipe</th><th>Status</th><th>Sumber</th><th>Penggunaan</th><th>Aksi</th></tr></thead><tbody>
-      {rows.map((product) => <tr key={product.id}><td><strong>{product.brand}</strong></td><td>{product.model}</td><td><span className={`status-pill ${product.active ? "active" : "inactive"}`}>{product.active ? "Aktif" : "Nonaktif"}</span></td><td>{originLabel(product.source_origin)}</td><td><button className="usage-link" type="button" onClick={() => openUsage(product)}>{usageCountsLoading && usageCounts[product.id] === undefined ? "-" : `${usageCounts[product.id] ?? 0} referensi`}</button></td><td className="table-actions"><AsyncButton loading={activeAction === `edit:${product.id}`} loadingText="Menyimpan..." onClick={() => openEditDialog(product)}>Edit</AsyncButton><AsyncButton className={product.active ? "danger-inline" : undefined} loading={activeAction === `active:${product.id}`} loadingText="Menyimpan..." onClick={() => void setActive(product)}>{product.active ? "Nonaktifkan" : "Aktifkan"}</AsyncButton></td></tr>)}
+      {rows.map((product) => <tr key={product.id}><td><strong>{product.brand}</strong>{product.merged_target && <small className="product-merged-target">Ke {product.merged_target.brand} · {product.merged_target.model}</small>}</td><td>{product.model}</td><td><span className={`status-pill ${product.merged_into_product_id ? "merged" : product.active ? "active" : "inactive"}`}>{product.merged_into_product_id ? "Digabungkan" : product.active ? "Aktif" : "Nonaktif"}</span></td><td>{originLabel(product.source_origin)}</td><td><button className="usage-link" type="button" onClick={() => openUsage(product)}>{usageCountsLoading && usageCounts[product.id] === undefined ? "-" : `${usageCounts[product.id] ?? 0} referensi`}</button></td><td className="table-actions">{product.merged_into_product_id ? <button type="button" onClick={() => openUsage(product)}>Lihat Riwayat</button> : <><AsyncButton loading={activeAction === `edit:${product.id}`} loadingText="Menyimpan..." onClick={() => openEditDialog(product)}>Edit</AsyncButton><AsyncButton className={product.active ? "danger-inline" : undefined} loading={activeAction === `active:${product.id}`} loadingText="Menyimpan..." onClick={() => void setActive(product)}>{product.active ? "Nonaktifkan" : "Aktifkan"}</AsyncButton><button className="product-merge-action" type="button" onClick={() => setMergeProduct(product)}>Gabungkan</button></>}</td></tr>)}
       {!rows.length && <tr><td colSpan={6}>{loading ? "Memuat produk..." : "Produk tidak ditemukan."}</td></tr>}
     </tbody></table></div>
     <div className="submission-pagination" aria-label="Pagination produk">
@@ -441,7 +449,8 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
     {usageProduct && <div className="app-dialog-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setUsageProduct(null); }}>
       <section className="app-dialog product-usage-dialog" role="dialog" aria-modal="true" aria-labelledby="product-usage-title">
         <h2 id="product-usage-title">Penggunaan Produk</h2>
-        <p className="product-usage-name"><strong>{usageProduct.brand}</strong><span>{usageProduct.model}</span>{dependencies && <small>{dependencies.product.active ? "Aktif" : "Nonaktif"} · {originLabel(dependencies.product.sourceOrigin)}</small>}</p>
+        <p className="product-usage-name"><strong>{usageProduct.brand}</strong><span>{usageProduct.model}</span>{dependencies && <small>{dependencies.product.mergedIntoProduct ? "Digabungkan" : dependencies.product.active ? "Aktif" : "Nonaktif"} · {originLabel(dependencies.product.sourceOrigin)}</small>}</p>
+        {dependencies?.product.mergedIntoProduct && <p className="product-merged-notice">Produk ini telah digabungkan ke <strong>{dependencies.product.mergedIntoProduct.brand}</strong> · {dependencies.product.mergedIntoProduct.model}</p>}
         <div className="product-dependency-tabs" role="tablist" aria-label="Detail dependency produk">
           {[['summary', 'Dependency'], ['references', 'Referensi'], ['qc', 'QC History'], ['aliases', 'Alias']].map(([tab, label]) => <button key={tab} type="button" role="tab" aria-selected={dependencyTab === tab} className={dependencyTab === tab ? "is-active" : ""} onClick={() => selectDependencyTab(tab as DependencyTab)}>{label}</button>)}
         </div>
@@ -501,5 +510,6 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
       </section>
     </div>}
     {usageProduct && moveDialogOpen && selectedMoveReferences.length > 0 && <ProductReferenceMoveDialog source={usageProduct} references={selectedMoveReferences} onClose={() => setMoveDialogOpen(false)} onMoved={completeReferenceMove} />}
+    {mergeProduct && <ProductMergeDialog source={mergeProduct} onClose={() => setMergeProduct(null)} onMerged={completeProductMerge} />}
   </section>;
 }

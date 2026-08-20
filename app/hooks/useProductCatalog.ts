@@ -16,6 +16,7 @@ type ProposalRow = {
 };
 type ProductRow = { id: string; brand: string; model: string; active: boolean; source_origin: string; spreadsheet_synced: boolean };
 type RecommendationRow = ProductRow & { confidence: "Sangat mirip" | "Mirip" | "Kemungkinan" };
+type CanonicalResolution = { product_id: string; canonical_product_id: string; brand: string; model: string };
 export type ProductRecommendation = Product & { confidence: RecommendationRow["confidence"] };
 
 function one<T>(value: T | T[] | null) {
@@ -56,6 +57,20 @@ export function useProductCatalog(stationId: string, search = "", recommendation
       ]);
       const productResult = await productResponse.json() as { rows?: ProductRow[]; totalCount?: number; error?: string };
       if (!productResponse.ok) throw new Error(productResult.error || "Katalog produk gagal dimuat.");
+      const proposalRows = (proposalResult.data ?? []) as ProposalRow[];
+      const resolvedIds = [...new Set(proposalRows.flatMap((row) => row.resolved_product_id ? [row.resolved_product_id] : []))];
+      let canonicalById = new Map<string, CanonicalResolution>();
+      if (!proposalResult.error && resolvedIds.length) {
+        const batches = Array.from({ length: Math.ceil(resolvedIds.length / 100) }, (_, index) => resolvedIds.slice(index * 100, (index + 1) * 100));
+        const resolutions = await Promise.all(batches.map(async (ids) => {
+          const resolutionParams = new URLSearchParams();
+          ids.forEach((id) => resolutionParams.append("resolveProductId", id));
+          const response = await fetch(`/api/products?${resolutionParams.toString()}`, { cache: "no-store" });
+          const result = await response.json() as { resolutions?: CanonicalResolution[] };
+          return response.ok ? result.resolutions ?? [] : [];
+        }));
+        canonicalById = new Map(resolutions.flat().map((row) => [row.product_id, row]));
+      }
       if (requestSequence !== requestSequenceRef.current) return;
       setLiveProducts((productResult.rows ?? []).map((row) => ({
         productId: row.id,
@@ -68,19 +83,20 @@ export function useProductCatalog(stationId: string, search = "", recommendation
       setTotalCount(productResult.totalCount ?? 0);
       setDisplayPage(page);
       if (!proposalResult.error) {
-      setProposals(((proposalResult.data ?? []) as ProposalRow[]).map((row) => {
-        const resolved = one(row.resolved_product);
-        return {
-          id: row.id,
-          proposedBrand: row.proposed_brand,
-          proposedModel: row.proposed_model,
-          status: row.status,
-          resolvedProductId: row.resolved_product_id ?? undefined,
-          resolvedBrand: resolved?.brand,
-          resolvedModel: resolved?.model,
-          reviewNote: row.review_note ?? undefined,
-        };
-      }));
+        setProposals(proposalRows.map((row) => {
+          const resolved = one(row.resolved_product);
+          const canonical = row.resolved_product_id ? canonicalById.get(row.resolved_product_id) : undefined;
+          return {
+            id: row.id,
+            proposedBrand: row.proposed_brand,
+            proposedModel: row.proposed_model,
+            status: row.status,
+            resolvedProductId: canonical?.canonical_product_id ?? row.resolved_product_id ?? undefined,
+            resolvedBrand: canonical?.brand ?? resolved?.brand,
+            resolvedModel: canonical?.model ?? resolved?.model,
+            reviewNote: row.review_note ?? undefined,
+          };
+        }));
       }
     } catch {
       // Pertahankan snapshot sebelumnya agar refresh gagal tidak mengosongkan picker.

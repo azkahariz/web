@@ -5,6 +5,7 @@ import { rankProductSearch, recommendStationProducts, type ProductAlias } from "
 
 type ProductRow = { id: string; brand: string; model: string; active: boolean; source_origin: string; spreadsheet_synced: boolean };
 type AliasRow = { product_id: string; brand_alias: string; model_alias: string };
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function catalogRows(rows: ProductRow[]) {
   return rows.map((row) => ({ id: row.id, brand: row.brand, model: row.model, active: row.active }));
@@ -20,6 +21,14 @@ export async function GET(request: Request) {
   const { data: userData, error: authError } = await client.auth.getUser();
   if (authError || !userData.user) return NextResponse.json({ error: "Belum login." }, { status: 401 });
   const url = new URL(request.url);
+  const resolveProductIds = [...new Set(url.searchParams.getAll("resolveProductId").filter((value) => UUID_PATTERN.test(value)))];
+  if (resolveProductIds.length) {
+    const canonicalResult = await client.rpc("resolve_canonical_products", { p_product_ids: resolveProductIds });
+    if (!canonicalResult.error) return NextResponse.json({ resolutions: canonicalResult.data ?? [] });
+    const fallback = await client.from("products").select("id, brand, model").in("id", resolveProductIds);
+    if (fallback.error) return NextResponse.json({ error: "Produk tujuan gagal dimuat." }, { status: 400 });
+    return NextResponse.json({ resolutions: (fallback.data ?? []).map((row) => ({ product_id: row.id, canonical_product_id: row.id, brand: row.brand, model: row.model })) });
+  }
   const rawPage = Number.parseInt(url.searchParams.get("page") || "1", 10);
   const page = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
   const search = url.searchParams.get("search")?.trim().replace(/[(),]/g, " ") || "";

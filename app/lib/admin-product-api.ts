@@ -47,6 +47,27 @@ export function productMoveConflictMessage(status: string) {
   return "Pilihan referensi tidak valid atau sudah berubah.";
 }
 
+export function parseProductMergeRequest(body: unknown, requireToken = false): { targetProductId: string; preflightToken?: string } | null {
+  if (!body || typeof body !== "object") return null;
+  const value = body as { targetProductId?: unknown; preflightToken?: unknown };
+  if (typeof value.targetProductId !== "string" || !PRODUCT_UUID_PATTERN.test(value.targetProductId)) return null;
+  if (requireToken && (typeof value.preflightToken !== "string" || !value.preflightToken.trim())) return null;
+  if (value.preflightToken !== undefined && typeof value.preflightToken !== "string") return null;
+  return { targetProductId: value.targetProductId, preflightToken: value.preflightToken?.trim() };
+}
+
+export function productMergeConflictMessage(status: string) {
+  if (status === "active_lock") return "Sebagian Submission sedang diedit. Selesaikan pengisian atau tunggu lock kedaluwarsa sebelum menggabungkan Produk.";
+  if (status === "state_changed") return "Data berubah setelah preflight. Tidak ada data yang diubah. Periksa kembali dampak merge.";
+  if (status === "alias_collision") return "Salah satu nama atau alias Produk sumber sudah dimiliki Produk lain. Merge dibatalkan agar resolusi nama tidak ambigu.";
+  if (status === "target_inactive") return "Produk tujuan sudah tidak aktif. Pilih Produk tujuan aktif lain.";
+  if (status === "same_product") return "Produk tujuan harus berbeda dari Produk sumber.";
+  if (status === "merge_cycle") return "Produk tujuan membentuk alur penggabungan yang berulang dan tidak dapat digunakan.";
+  if (status === "source_already_merged") return "Produk sumber sudah digabungkan sebelumnya.";
+  if (status === "source_not_found" || status === "target_not_found") return "Produk sumber atau tujuan tidak lagi tersedia.";
+  return "Merge Produk tidak dapat dilanjutkan karena kondisi data sudah berubah.";
+}
+
 export async function requireProductDependencyClient(request: Request): Promise<{ client: SupabaseClient } | { response: NextResponse }> {
   const bearer = request.headers.get("authorization")?.match(/^Bearer\s+(.+)$/i)?.[1];
   const config = getPublicSupabaseConfig();

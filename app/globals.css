@@ -468,6 +468,13 @@ button[aria-busy="true"] { display: inline-flex; align-items: center; justify-co
 .product-move-plan dt { color: var(--muted); font-size: 9px; }
 .product-move-plan dd { margin: 3px 0 0; color: var(--green-deep); font: 600 17px/1 Georgia, serif; }
 .product-move-plan .product-move-warning { color: var(--muted); font-size: 10px; line-height: 1.45; }
+.product-merge-plan dl { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.product-merge-plan .product-merge-warning { padding: 9px; border-left: 3px solid #b96b3f; background: #fbf6ee; color: #6d4935; }
+.product-merge-resolved { display: block; margin-top: 8px; color: var(--muted); font-size: 10px; text-transform: none; }
+.product-merged-target { display: block; margin-top: 4px; color: var(--muted); font-size: 9px; font-weight: 500; }
+.product-merged-notice { margin: 0 0 10px; padding: 8px 10px; border-left: 3px solid var(--green); background: var(--green-soft); color: var(--muted); font-size: 11px; }
+.table-actions .product-merge-action { border-color: #d8b995; color: #7a4e22; background: #fffaf2; }
+.table-actions .product-merge-action:hover { border-color: #b87b3e; background: #fbf1e3; }
 .product-move-conflict { margin: 12px 0 0; padding: 9px 10px; border: 1px solid #e8ddb9; border-radius: 6px; background: #fbf7e9; color: #725715; font-size: 11px; line-height: 1.45; }
 .product-move-dialog .app-dialog-actions { flex: 0 0 auto; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); }
 .product-usage-dialog .app-dialog-actions { flex: 0 0 auto; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); }
@@ -523,6 +530,7 @@ button[aria-busy="true"] { display: inline-flex; align-items: center; justify-co
 .status-pill { padding: 4px 7px; display: inline-block; border-radius: 999px; background: #edf0ec; color: #425650; font-size: 8px; font-weight: 900; }
 .status-pill.active { background: #dff0e7; color: #28684e; }
 .status-pill.inactive { background: #f5e2df; color: #9a4439; }
+.status-pill.merged { background: #e7ece9; color: #38524a; }
 .status-pill.pending { background: #f8edcf; color: #846220; }
 .qc-toolbar { margin-top: 20px; display: flex; align-items: center; justify-content: space-between; gap: 14px; }
 .status-tabs { display: flex; gap: 4px; flex-wrap: wrap; }
@@ -670,7 +678,7 @@ button[aria-busy="true"] { display: inline-flex; align-items: center; justify-co
   .product-reference-selection-actions { grid-column: 1 / -1; justify-content: flex-start; flex-wrap: wrap; }
   .product-reference-check-all span { white-space: normal; }
   .product-dependency-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .product-move-plan dl { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .product-move-plan dl, .product-merge-plan dl { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .topbar { min-height: 66px; padding: 12px 16px; }
   .guide-header { min-height: 66px; padding: 12px 16px; }
   .guide-header .logout-button { width: auto; }
