@@ -388,9 +388,10 @@ button[aria-busy="true"] { display: inline-flex; align-items: center; justify-co
 .product-table table { min-width: 760px; font-size: 12px; }
 .usage-link { padding: 0; border: 0; background: transparent; color: var(--green-deep); font-size: 10px; font-weight: 800; cursor: pointer; white-space: nowrap; }
 .usage-link:hover, .usage-link:focus-visible { text-decoration: underline; }
-.product-usage-dialog { width: min(680px, calc(100vw - 32px)); }
+.product-usage-dialog { width: min(680px, calc(100vw - 32px)); max-height: calc(100vh - 36px); display: flex; flex-direction: column; overflow: hidden; }
 .product-usage-name { margin: 0 0 8px; }
 .product-usage-name strong, .product-usage-name span { display: block; }
+.product-usage-name small { display: block; margin-top: 4px; color: var(--muted); font-size: 10px; }
 .product-usage-name span, .product-usage-summary { color: var(--muted); font-size: 12px; }
 .product-usage-summary { margin: 0 0 14px; }
 .product-dependency-tabs { display: flex; gap: 4px; margin: 14px 0; border-bottom: 1px solid var(--line); overflow-x: auto; }
@@ -402,27 +403,28 @@ button[aria-busy="true"] { display: inline-flex; align-items: center; justify-co
 .product-dependency-summary small { color: var(--muted); font-size: 9px; font-weight: 800; text-transform: uppercase; }
 .product-dependency-summary strong { margin-top: 7px; color: var(--green-deep); font: 600 18px/1 Georgia, serif; }
 .product-dependency-lock { margin: 0 0 12px; color: var(--muted); font-size: 11px; }
-.product-usage-list { max-height: min(48vh, 420px); overflow: auto; border-top: 1px solid var(--line); }
+.product-usage-list { border-top: 1px solid var(--line); }
 .product-usage-list > div { padding: 11px 0; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 3px 12px; border-bottom: 1px solid var(--line); }
 .product-usage-list strong, .product-usage-list span { min-width: 0; }
 .product-usage-list strong { font-size: 12px; }
 .product-usage-list span { color: var(--muted); font-size: 11px; }
 .product-usage-list small { grid-column: 2; grid-row: 1 / span 2; align-self: center; color: var(--muted); font-size: 10px; white-space: nowrap; }
 .product-usage-list > p { color: var(--muted); font-size: 12px; }
-.product-usage-content { min-height: 44px; }
+.product-usage-content { min-height: 0; flex: 1 1 auto; overflow-y: auto; overflow-x: hidden; }
 .product-usage-state { display: flex; align-items: center; gap: 7px; margin: 12px 0; color: var(--muted); font-size: 12px; }
 .product-usage-spinner { width: 12px; height: 12px; flex: 0 0 12px; border: 2px solid var(--line); border-top-color: var(--muted); border-radius: 50%; animation: product-usage-spin 700ms linear infinite; }
 @keyframes product-usage-spin { to { transform: rotate(360deg); } }
-.product-usage-pagination { margin-top: 14px; justify-content: space-between; }
+.product-usage-pagination { position: sticky; bottom: 0; z-index: 1; margin-top: 10px; padding: 8px 0 2px; justify-content: space-between; border-top: 1px solid var(--line); background: white; }
 .product-reference-toolbar { margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; gap: 10px; color: var(--muted); font-size: 11px; }
 .product-reference-toolbar label { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
 .product-reference-toolbar select { min-height: 31px; padding: 4px 7px; font-size: 11px; }
-.product-reference-list { max-height: min(48vh, 420px); overflow: auto; border-top: 1px solid var(--line); }
+.product-reference-list { border-top: 1px solid var(--line); }
 .product-reference-list > div { padding: 11px 0; display: grid; gap: 3px; border-bottom: 1px solid var(--line); }
 .product-reference-list strong { font-size: 12px; }
 .product-reference-list span, .product-reference-list small { color: var(--muted); font-size: 11px; }
 .product-reference-list em { width: fit-content; padding: 2px 6px; border-radius: 4px; background: #f7f1df; color: #725715; font-size: 10px; font-style: normal; font-weight: 800; }
 .product-reference-list > p { color: var(--muted); font-size: 12px; }
+.product-usage-dialog .app-dialog-actions { flex: 0 0 auto; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); }
 .product-table th, .product-table td { padding: 13px 14px; }
 .product-table.is-loading tbody { opacity: .62; }
 .product-dialog label + label { margin-top: 14px; }
