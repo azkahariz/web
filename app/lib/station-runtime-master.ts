@@ -1,6 +1,6 @@
 import type { MasterDataReferences, SiteSubtype, StationRuntimeMaster, StationSite } from "../types/inventory";
 
-type RuntimeRpcPayload = {
+export type StationRuntimeMasterPayload = {
   station?: { id?: string; name?: string };
   sites?: Array<{ id?: string; stationId?: string; name?: string; siteTypeId?: string; siteTypeName?: string }>;
   siteSubtypes?: Array<{ id?: string; siteTypeId?: string; siteTypeName?: string; name?: string; profileId?: string; profileName?: string }>;
@@ -15,7 +15,7 @@ function required(value: string | undefined, label: string) {
 }
 
 export function parseStationRuntimeMaster(payload: unknown): StationRuntimeMaster {
-  const source = payload as RuntimeRpcPayload | null;
+  const source = payload as StationRuntimeMasterPayload | null;
   const station = source?.station;
   const stationId = required(station?.id, "ID stasiun");
   const stationName = required(station?.name, "nama stasiun");

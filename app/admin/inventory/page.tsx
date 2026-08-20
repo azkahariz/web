@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import InventoryApp from "../../InventoryApp";
-import { adminInventoryMaster } from "../../lib/admin-inventory-master";
+import { loadAdminRuntimeMaster } from "../../lib/admin-inventory-master";
 import { getAllowedSiteSubtypes } from "../../lib/site-subtypes";
 import { createSupabaseServerClient } from "../../lib/supabase/server";
 
@@ -19,26 +19,24 @@ export default async function AdminInventoryPage({ searchParams }: {
     .eq("active", true)
     .maybeSingle();
   if (!admin) redirect("/");
-  const { data: site } = await supabase.from("sites").select("id, station_id, site_type_id, name").eq("id", siteId).maybeSingle();
-  if (!site) notFound();
-  const [{ data: station }, { data: siteType }, { data: siteTypeSubtypes }] = await Promise.all([
-    supabase.from("stations").select("name").eq("id", site.station_id).maybeSingle(),
-    supabase.from("site_types").select("name").eq("id", site.site_type_id).maybeSingle(),
-    supabase.from("site_subtypes").select("id, site_type_id, name").eq("site_type_id", site.site_type_id),
-  ]);
-  if (!station || !siteType) notFound();
+  const { data: site } = await supabase.from("sites").select("id, station_id, site_type_id, name, active").eq("id", siteId).maybeSingle();
+  if (!site?.active) notFound();
+  const runtimeMaster = await loadAdminRuntimeMaster(supabase, site.station_id).catch(() => null);
+  if (!runtimeMaster) notFound();
+  const runtimeSite = runtimeMaster.stationSites.find((row) => row.siteId === site.id);
+  if (!runtimeSite) notFound();
   const subtype = getAllowedSiteSubtypes({
-    siteName: site.name,
-    siteTypeName: siteType.name,
-    siteSubtypes: siteTypeSubtypes ?? [],
-    getSubtypeName: (row) => row.name,
-  }).find((row) => row.id === subtypeId);
+    siteName: runtimeSite.site,
+    siteTypeName: runtimeSite.siteType,
+    siteSubtypes: runtimeMaster.siteSubtypes.filter((row) => row.siteTypeId === runtimeSite.siteTypeId),
+    getSubtypeName: (row) => row.subtype,
+  }).find((row) => row.subtypeId === subtypeId);
   if (!subtype) notFound();
   return <InventoryApp
-    account={{ id: admin.id, stationId: site.station_id, stationName: station.name, username: admin.username }}
+    account={{ id: admin.id, stationId: runtimeMaster.station.id, stationName: runtimeMaster.station.name, username: admin.username }}
     adminMode
-    runtimeMaster={adminInventoryMaster(site.station_id, station.name)}
-    initialSite={site.name}
-    initialSubtype={subtype.name}
+    runtimeMaster={runtimeMaster}
+    initialSiteId={runtimeSite.siteId}
+    initialSubtypeId={subtype.subtypeId}
   />;
 }

@@ -68,16 +68,16 @@ export default function InventoryApp({
   adminSubmissionId,
   adminMode = false,
   startInEditMode = false,
-  initialSite = "",
-  initialSubtype = "",
+  initialSiteId = "",
+  initialSubtypeId = "",
   runtimeMaster,
 }: {
   account: StationAccount;
   adminSubmissionId?: string;
   adminMode?: boolean;
   startInEditMode?: boolean;
-  initialSite?: string;
-  initialSubtype?: string;
+  initialSiteId?: string;
+  initialSubtypeId?: string;
   runtimeMaster: StationRuntimeMaster;
 }) {
   const data = runtimeMaster;
@@ -86,8 +86,8 @@ export default function InventoryApp({
   const stations = [runtimeMaster.station.name];
   const mode = "site" as SourceMode;
   const station = account.stationName;
-  const [site, setSite] = useState(() => data.stationSites.find((row) => row.site === initialSite)?.siteId ?? "");
-  const [subtype, setSubtype] = useState(() => data.siteSubtypes.find((row) => row.subtype === initialSubtype)?.subtypeId ?? "");
+  const [site, setSite] = useState(() => data.stationSites.some((row) => row.siteId === initialSiteId) ? initialSiteId : "");
+  const [subtype, setSubtype] = useState(() => data.siteSubtypes.some((row) => row.subtypeId === initialSubtypeId) ? initialSubtypeId : "");
   const templateProfile = "";
   const [categoryQuery, setCategoryQuery] = useState("");
   const [warehouseCategoryPickerOpen, setWarehouseCategoryPickerOpen] = useState(false);

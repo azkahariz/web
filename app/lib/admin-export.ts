@@ -1,9 +1,8 @@
 "use client";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
-import rawData from "../data.generated.json";
-import type { DataSet, InstalledItem, ProductProposal } from "../types/inventory";
-import { buildStationFillingView, loadAllAdminRows, type AdminSite, type AdminSiteType, type AdminStation, type AdminSubtype } from "./admin-view";
+import type { InstalledItem, ProductProposal, StationRuntimeMaster } from "../types/inventory";
+import { buildStationFillingView, loadAllAdminRows, type AdminSite, type AdminSiteType, type AdminSubtype } from "./admin-view";
 import { buildAdminExportPlan, type AdminExportScope } from "./admin-export-plan";
 import { downloadBlob, downloadText } from "./download";
 import { buildInventoryCsv, createDefaultDraftPayload } from "./inventory-export";
@@ -11,8 +10,6 @@ import { resolveInstalledProduct } from "./product-qc";
 import type { DraftPayload } from "./server-draft";
 import { inventoryCategoryNames } from "./category-functions";
 import { isWarehouseContext } from "./warehouse";
-
-const generated = rawData as DataSet;
 
 type SubmissionRow = {
   id: string;
@@ -52,35 +49,35 @@ function proposalMap(rows: ProposalRow[]) {
   }));
 }
 
-function exportDefinition(siteId: string, siteSubtypeId: string) {
-  const site = generated.stationSites.find((row) => row.siteId === siteId);
-  const subtype = generated.siteSubtypes.find((row) => row.subtypeId === siteSubtypeId);
+async function loadAdminRuntimeMaster(stationId: string): Promise<StationRuntimeMaster> {
+  const response = await fetch(`/api/admin/runtime-master?stationId=${encodeURIComponent(stationId)}`, { cache: "no-store" });
+  const payload = await response.json().catch(() => ({})) as { master?: StationRuntimeMaster; error?: string };
+  if (!response.ok || !payload.master) throw new Error(payload.error || "Master runtime Admin gagal dimuat.");
+  return payload.master;
+}
+
+function exportDefinition(master: StationRuntimeMaster, siteId: string, siteSubtypeId: string) {
+  const site = master.stationSites.find((row) => row.siteId === siteId);
+  const subtype = master.siteSubtypes.find((row) => row.subtypeId === siteSubtypeId);
   if (!site || !subtype) throw new Error("Definisi master export tidak ditemukan pada build aplikasi.");
   return {
     profile: subtype.profile,
-    categories: generated.barangByJenis[subtype.profile] ?? [],
+    categories: master.barangByJenis[subtype.profile] ?? [],
     warehouseMode: isWarehouseContext(site, subtype),
   };
 }
 
 export async function downloadAdminInventory({
   client,
-  station,
-  sites,
-  siteTypes,
-  subtypes,
   scope,
   submissionId,
 }: {
   client: SupabaseClient;
-  station: AdminStation;
-  sites: AdminSite[];
-  siteTypes: AdminSiteType[];
-  subtypes: AdminSubtype[];
   scope: AdminExportScope;
   submissionId?: string;
 }) {
-  const [submissionResult, proposalResult] = await Promise.all([
+  const [runtimeMaster, submissionResult, proposalResult] = await Promise.all([
+    loadAdminRuntimeMaster(scope.stationId),
     loadAllAdminRows((from, to) => {
       let query = client.from("submissions")
         .select("id, station_id, site_id, site_subtype_id, payload")
@@ -102,10 +99,26 @@ export async function downloadAdminInventory({
 
   const submissions = (submissionResult.data ?? []) as SubmissionRow[];
   const proposals = proposalMap((proposalResult.data ?? []) as ProposalRow[]);
-  const view = buildStationFillingView(scope.stationId, sites, siteTypes, subtypes, submissions);
-  const plan = buildAdminExportPlan(station, view.rows, scope);
+  const sites: AdminSite[] = runtimeMaster.stationSites.map((site) => ({
+    id: site.siteId ?? "",
+    station_id: site.stationId ?? runtimeMaster.station.id,
+    site_type_id: site.siteTypeId ?? "",
+    name: site.site,
+  }));
+  const siteTypes: AdminSiteType[] = [...new Map(runtimeMaster.stationSites.map((site) => [site.siteTypeId, {
+    id: site.siteTypeId ?? "",
+    name: site.siteType,
+  }])).values()];
+  const subtypes: AdminSubtype[] = runtimeMaster.siteSubtypes.map((subtype) => ({
+    id: subtype.subtypeId ?? "",
+    site_type_id: subtype.siteTypeId ?? "",
+    name: subtype.subtype,
+  }));
+  const runtimeStation = { id: runtimeMaster.station.id, name: runtimeMaster.station.name };
+  const view = buildStationFillingView(runtimeMaster.station.id, sites, siteTypes, subtypes, submissions);
+  const plan = buildAdminExportPlan(runtimeStation, view.rows, scope);
   const files = plan.entries.map((row) => {
-    const definition = exportDefinition(row.site.id, row.subtype!.id);
+    const definition = exportDefinition(runtimeMaster, row.site.id, row.subtype!.id);
     const payload = row.submission?.payload && "schemaVersion" in row.submission.payload
       ? row.submission.payload as DraftPayload
       : createDefaultDraftPayload(scope.stationId, row.site.id, row.subtype!.id);
@@ -120,7 +133,7 @@ export async function downloadAdminInventory({
     return {
       filename: row.filename,
       csv: buildInventoryCsv({
-        stationName: station.name,
+        stationName: runtimeMaster.station.name,
         siteName: row.site.name,
         siteTypeName: row.siteType?.name ?? "Belum terpetakan",
         subtypeName: row.subtype!.name,

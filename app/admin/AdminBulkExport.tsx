@@ -37,10 +37,6 @@ export default function AdminBulkExport({ stations, sites, siteTypes, subtypes, 
     try {
       const result = await downloadAdminInventory({
         client,
-        station,
-        sites,
-        siteTypes,
-        subtypes,
         scope: {
           stationId,
           siteId: siteId || undefined,

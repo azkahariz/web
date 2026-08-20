@@ -214,10 +214,10 @@ test("navigasi client-side dari Submission menghydrate payload server pada rende
   assert.match(hook, /client\.rpc\("admin_get_submission_state", \{ p_submission_id: adminSubmissionId \}\)/);
   assert.match(hook, /if \(choice\.payload\) onRemotePayload\(choice\.payload\)/);
 
-  assert.match(inventory, /find\(\(row\) => row\.site === initialSite\)\?\.siteId/);
-  assert.match(inventory, /find\(\(row\) => row\.subtype === initialSubtype\)\?\.subtypeId/);
+  assert.match(inventory, /row\.siteId === initialSiteId/);
+  assert.match(inventory, /row\.subtypeId === initialSubtypeId/);
   assert.match(submissionPage, /<InventoryApp[\s\S]*key=\{submission\.id\}/);
-  assert.doesNotMatch(inventory, /setSite\(initialSite\)|setSubtype\(initialSubtype\)/);
+  assert.doesNotMatch(inventory, /initialSite\?\:|initialSubtype\?\:/);
 });
 
 test("format ekspor lama tetap tersedia", async () => {

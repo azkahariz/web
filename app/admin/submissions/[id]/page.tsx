@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import InventoryApp from "../../../InventoryApp";
-import { adminInventoryMaster } from "../../../lib/admin-inventory-master";
+import { loadAdminRuntimeMaster } from "../../../lib/admin-inventory-master";
 import { createSupabaseServerClient } from "../../../lib/supabase/server";
 
 export default async function AdminSubmissionPage({ params, searchParams }: {
@@ -27,21 +27,19 @@ export default async function AdminSubmissionPage({ params, searchParams }: {
     .eq("id", id)
     .maybeSingle();
   if (!submission) notFound();
-  const [{ data: station }, { data: site }, { data: subtype }] = await Promise.all([
-    supabase.from("stations").select("name").eq("id", submission.station_id).single(),
-    supabase.from("sites").select("name").eq("id", submission.site_id).single(),
-    supabase.from("site_subtypes").select("name").eq("id", submission.site_subtype_id).single(),
-  ]);
-  if (!station || !site || !subtype) notFound();
+  const runtimeMaster = await loadAdminRuntimeMaster(supabase, submission.station_id).catch(() => null);
+  if (!runtimeMaster) notFound();
+  const runtimeSite = runtimeMaster.stationSites.find((row) => row.siteId === submission.site_id);
+  if (!runtimeSite) notFound();
 
   return <InventoryApp
     key={submission.id}
-    account={{ id: admin.id, stationId: submission.station_id, stationName: station.name, username: admin.username }}
+    account={{ id: admin.id, stationId: runtimeMaster.station.id, stationName: runtimeMaster.station.name, username: admin.username }}
     adminSubmissionId={submission.id}
     adminMode
-    runtimeMaster={adminInventoryMaster(submission.station_id, station.name)}
+    runtimeMaster={runtimeMaster}
     startInEditMode={edit === "1"}
-    initialSite={site.name}
-    initialSubtype={subtype.name}
+    initialSiteId={runtimeSite.siteId}
+    initialSubtypeId={submission.site_subtype_id}
   />;
 }

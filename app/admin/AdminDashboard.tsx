@@ -544,10 +544,6 @@ export default function AdminDashboard({ username, displayName }: { username: st
     try {
       const result = await downloadAdminInventory({
         client,
-        station,
-        sites,
-        siteTypes,
-        subtypes,
         scope: { stationId: station.id, siteId: site.id, siteSubtypeId: subtype.id },
         submissionId,
       });
