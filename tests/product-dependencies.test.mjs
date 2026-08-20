@@ -43,7 +43,7 @@ test("Product dependency preflight tetap read-only, beridentitas stabil, dan han
   assert.match(component, /label="referensi"/);
   assert.match(component, /setDependencyPageSize/);
   assert.match(component, /setReferencePageSize/);
-  assert.doesNotMatch(component, /Pindahkan Referensi|Merge Product|Split Product|Hapus Produk/);
+  assert.doesNotMatch(component, /Merge Product|Split Product|Hapus Produk/);
   assert.match(component, /product-usage-dialog/);
   assert.match(component, /product-usage-pagination/);
   assert.match(component, /Belum ada referensi pada scope ini/);

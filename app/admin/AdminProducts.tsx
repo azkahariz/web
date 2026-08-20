@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import AsyncButton from "../components/AsyncButton";
 import { useAppFeedback } from "../components/AppFeedback";
 import { normalizeSubmissionPageSize, SUBMISSION_PAGE_SIZE, SUBMISSION_PAGE_SIZE_MAX, SUBMISSION_PAGE_SIZE_MIN, SUBMISSION_PAGE_SIZE_OPTIONS } from "../lib/submission-monitoring";
+import ProductReferenceMoveDialog, { type MoveReferenceIdentity } from "./ProductReferenceMoveDialog";
 
 type Product = { id: string; brand: string; model: string; active: boolean; source_origin: string };
 type Summary = { total_count: number; active_count: number; inactive_count: number };
@@ -81,6 +82,10 @@ function originLabel(origin: string) {
   return "Legacy Spreadsheet";
 }
 
+function productReferenceKey(reference: Pick<ProductReference, "submissionId" | "expectedSubmissionVersion" | "itemId">) {
+  return `${reference.submissionId}:${reference.expectedSubmissionVersion}:${reference.itemId ?? ""}`;
+}
+
 export default function AdminProducts({ onChanged }: { onChanged: () => Promise<void> }) {
   const feedback = useAppFeedback();
   const [rows, setRows] = useState<Product[]>([]);
@@ -117,6 +122,8 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
   const [referencePageSize, setReferencePageSize] = useState(50);
   const [dependencyPage, setDependencyPage] = useState(1);
   const [dependencyPageSize, setDependencyPageSize] = useState(50);
+  const [selectedReferences, setSelectedReferences] = useState<Map<string, ProductReference>>(new Map());
+  const [moveDialogOpen, setMoveDialogOpen] = useState(false);
 
   const loadUsageCounts = useCallback(async (products: Product[]) => {
     const requestId = ++usageCountsRequestRef.current;
@@ -304,6 +311,8 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
     setReferencePageSize(50);
     setDependencyPage(1);
     setDependencyPageSize(50);
+    setSelectedReferences(new Map());
+    setMoveDialogOpen(false);
     void loadUsage(product);
     void loadDependencies(product);
   }
@@ -318,6 +327,30 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
     setDependencyPage(1);
     if (usageProduct) void loadUsage(usageProduct, 1, nextPageSize);
   }
+
+  function toggleReference(reference: ProductReference) {
+    const key = productReferenceKey(reference);
+    setSelectedReferences((current) => {
+      const next = new Map(current);
+      if (next.has(key)) next.delete(key);
+      else next.set(key, reference);
+      return next;
+    });
+  }
+
+  async function completeReferenceMove() {
+    if (!usageProduct) return;
+    setSelectedReferences(new Map());
+    setMoveDialogOpen(false);
+    setReferencePageSize(50);
+    await Promise.all([loadReferences(usageProduct, 1, 50), loadDependencies(usageProduct), loadUsage(usageProduct, 1, dependencyPageSize), load(), onChanged()]);
+  }
+
+  const selectedMoveReferences = useMemo(() => [...selectedReferences.values()].flatMap((reference): MoveReferenceIdentity[] => reference.itemId ? [{
+    submissionId: reference.submissionId,
+    expectedSubmissionVersion: reference.expectedSubmissionVersion,
+    itemId: reference.itemId,
+  }] : []), [selectedReferences]);
 
   function applyPageSize(value: string | number) {
     if (pageSizeCancelRef.current) {
@@ -424,13 +457,23 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
           {dependencyTab === "references" && <>
             {!references && referencesLoading && <p className="product-usage-state" role="status"><span className="product-usage-spinner" aria-hidden="true" />Memuat referensi...</p>}
             {dependenciesError && <p className="app-dialog-error" role="alert">{dependenciesError}</p>}
-            {references && <><DependencyPagination page={references.page} pageSize={referencePageSize} total={references.totalCount} loading={referencesLoading} label="referensi" onPage={(nextPage) => void loadReferences(usageProduct, nextPage, referencePageSize)} onPageSize={(nextPageSize) => { setReferencePageSize(nextPageSize); void loadReferences(usageProduct, 1, nextPageSize); }} /><div className="product-reference-list">{references.rows.map((row) => <div key={`${row.submissionId}:${row.itemId ?? "legacy"}`}><strong>{row.stationName}</strong><span>{row.siteName} · {row.siteTypeName} · {row.siteSubtypeName}</span><small>{row.functionCategories.join(" · ")} · {row.unitCount} unit</small>{row.activeLock && <em>Sedang diedit{row.lockOwnerDisplayName ? `: ${row.lockOwnerDisplayName}` : ""}</em>}{row.archivedAt && <em>Diarsipkan</em>}</div>)}{!references.rows.length && <p>Belum ada referensi pada scope ini.</p>}</div></>}
+            {references && <><DependencyPagination page={references.page} pageSize={referencePageSize} total={references.totalCount} loading={referencesLoading} label="referensi" onPage={(nextPage) => void loadReferences(usageProduct, nextPage, referencePageSize)} onPageSize={(nextPageSize) => { setReferencePageSize(nextPageSize); void loadReferences(usageProduct, 1, nextPageSize); }} />
+              <div className="product-reference-selection-toolbar"><span>{selectedReferences.size} item dipilih</span><button className="primary-button" type="button" disabled={!selectedReferences.size} onClick={() => setMoveDialogOpen(true)}>Pindahkan Referensi</button></div>
+              <div className="product-reference-list">{references.rows.map((row) => {
+                const eligible = Boolean(row.itemId && !row.archivedAt && !row.activeLock);
+                const key = productReferenceKey(row);
+                return <div className={`product-reference-row${selectedReferences.has(key) ? " is-selected" : ""}`} key={key}>
+                  <label className="product-reference-check"><input type="checkbox" aria-label={`Pilih referensi ${row.stationName} ${row.siteName}`} checked={selectedReferences.has(key)} disabled={!eligible} onChange={() => toggleReference(row)} /></label>
+                  <div><strong>{row.stationName}</strong><span>{row.siteName} · {row.siteTypeName} · {row.siteSubtypeName}</span><small>Submission v{row.expectedSubmissionVersion} · {[row.categoryName, ...row.functionCategories].filter(Boolean).join(" · ")} · {row.unitCount} unit</small>{row.activeLock && <em>Sedang diedit{row.lockOwnerDisplayName ? `: ${row.lockOwnerDisplayName}` : ""}</em>}{row.archivedAt && <em>Diarsipkan</em>}</div>
+                </div>;
+              })}{!references.rows.length && <p>Belum ada referensi pada scope ini.</p>}</div></>}
           </>}
           {dependencyTab === "qc" && <div className="product-reference-list">{dependenciesLoading && <p className="product-usage-state" role="status"><span className="product-usage-spinner" aria-hidden="true" />Memuat QC history...</p>}{dependencies?.qcProposals.map((proposal) => <div key={proposal.proposalId}><strong>{proposal.proposedBrand} · {proposal.proposedModel}</strong><span>{proposal.status}{proposal.reviewerName ? ` · ${proposal.reviewerName}` : ""}</span>{proposal.reviewNote && <small>Catatan: {proposal.reviewNote}</small>}</div>)}{dependencies && !dependencies.qcProposals.length && <p>Belum ada proposal QC yang resolved ke produk ini.</p>}</div>}
           {dependencyTab === "aliases" && <div className="product-reference-list">{dependenciesLoading && <p className="product-usage-state" role="status"><span className="product-usage-spinner" aria-hidden="true" />Memuat alias...</p>}{dependencies?.aliases.map((alias) => <div key={alias.aliasId}><strong>{alias.brand}</strong><span>{alias.model}</span>{alias.sourceProposalId && <small>Asal proposal QC</small>}</div>)}{dependencies && !dependencies.aliases.length && <p>Produk ini belum memiliki alias.</p>}</div>}
         </div>
-        <div className="app-dialog-actions"><button className="secondary-button" type="button" onClick={() => setUsageProduct(null)}>Tutup</button></div>
+        <div className="app-dialog-actions"><button className="secondary-button" type="button" onClick={() => { setUsageProduct(null); setSelectedReferences(new Map()); }}>Tutup</button></div>
       </section>
     </div>}
+    {usageProduct && moveDialogOpen && selectedMoveReferences.length > 0 && <ProductReferenceMoveDialog source={usageProduct} references={selectedMoveReferences} onClose={() => setMoveDialogOpen(false)} onMoved={completeReferenceMove} />}
   </section>;
 }

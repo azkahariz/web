@@ -430,6 +430,38 @@ button[aria-busy="true"] { display: inline-flex; align-items: center; justify-co
 .product-reference-list span, .product-reference-list small { color: var(--muted); font-size: 11px; }
 .product-reference-list em { width: fit-content; padding: 2px 6px; border-radius: 4px; background: #f7f1df; color: #725715; font-size: 10px; font-style: normal; font-weight: 800; }
 .product-reference-list > p { color: var(--muted); font-size: 12px; }
+.product-reference-selection-toolbar { margin: 0 0 8px; padding: 8px 0; display: flex; align-items: center; justify-content: space-between; gap: 10px; border-bottom: 1px solid var(--line); }
+.product-reference-selection-toolbar span { color: var(--muted); font-size: 11px; }
+.product-reference-selection-toolbar button { width: auto; min-height: 34px; padding: 7px 11px; }
+.product-reference-list > .product-reference-row { grid-template-columns: auto minmax(0, 1fr); gap: 10px; }
+.product-reference-row.is-selected { background: #f5faf7; }
+.product-reference-check { padding-top: 2px; }
+.product-reference-check input { width: 16px; height: 16px; accent-color: var(--green-deep); }
+.product-reference-row > div { min-width: 0; display: grid; gap: 3px; }
+.product-move-backdrop { z-index: 300; }
+.app-dialog.product-move-dialog { width: min(620px, calc(100vw - 32px)); max-height: calc(100vh - 36px); display: flex; flex-direction: column; overflow: hidden; }
+.product-move-source { margin: 0 0 12px; }
+.product-move-source small, .product-move-source strong, .product-move-source span { display: block; }
+.product-move-source small, .product-move-plan small { color: var(--muted); font-size: 9px; font-weight: 800; text-transform: uppercase; }
+.product-move-source span, .product-move-plan span { color: var(--muted); font-size: 12px; }
+.product-move-content { min-height: 0; flex: 1 1 auto; overflow-y: auto; padding-right: 2px; }
+.product-move-content .admin-search { margin-top: 0; }
+.product-move-targets { margin-top: 10px; border-top: 1px solid var(--line); }
+.product-move-targets button { width: 100%; padding: 10px 8px; display: grid; gap: 2px; border: 0; border-bottom: 1px solid var(--line); background: white; color: inherit; text-align: left; cursor: pointer; }
+.product-move-targets button:hover, .product-move-targets button.is-selected { background: var(--green-soft); }
+.product-move-targets button:focus-visible { outline: 2px solid var(--green-deep); outline-offset: -2px; }
+.product-move-targets strong { font-size: 12px; }
+.product-move-targets span, .product-move-targets p { color: var(--muted); font-size: 11px; }
+.product-move-plan { margin-top: 14px; padding: 12px; border: 1px solid var(--line); border-radius: 6px; background: #fbfdfb; }
+.product-move-plan > p { margin: 0; }
+.product-move-plan > p strong, .product-move-plan > p span { display: block; }
+.product-move-plan dl { margin: 12px 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.product-move-plan dl > div { padding: 7px; border: 1px solid var(--line); border-radius: 5px; background: white; }
+.product-move-plan dt { color: var(--muted); font-size: 9px; }
+.product-move-plan dd { margin: 3px 0 0; color: var(--green-deep); font: 600 17px/1 Georgia, serif; }
+.product-move-plan .product-move-warning { color: var(--muted); font-size: 10px; line-height: 1.45; }
+.product-move-conflict { margin: 12px 0 0; padding: 9px 10px; border: 1px solid #e8ddb9; border-radius: 6px; background: #fbf7e9; color: #725715; font-size: 11px; line-height: 1.45; }
+.product-move-dialog .app-dialog-actions { flex: 0 0 auto; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); }
 .product-usage-dialog .app-dialog-actions { flex: 0 0 auto; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); }
 .product-table th, .product-table td { padding: 13px 14px; }
 .product-table.is-loading tbody { opacity: .62; }
@@ -626,6 +658,7 @@ button[aria-busy="true"] { display: inline-flex; align-items: center; justify-co
 
 @media (max-width: 620px) {
   .product-dependency-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .product-move-plan dl { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .topbar { min-height: 66px; padding: 12px 16px; }
   .guide-header { min-height: 66px; padding: 12px 16px; }
   .guide-header .logout-button { width: auto; }

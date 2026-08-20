@@ -5,12 +5,46 @@ import { createSupabaseServerClient } from "./supabase/server";
 
 type RpcError = { code?: string | null };
 
+export type ProductMoveReference = {
+  submissionId: string;
+  expectedSubmissionVersion: number;
+  itemId: string;
+};
+
 export const PRODUCT_UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export function productDependencyRpcError(error: RpcError, fallback: string) {
   if (error.code === "42501") return NextResponse.json({ error: "Akses Super Admin diperlukan." }, { status: 403 });
   if (error.code === "P0002") return NextResponse.json({ error: "Produk tidak ditemukan." }, { status: 404 });
   return NextResponse.json({ error: fallback }, { status: 400 });
+}
+
+export function parseProductMoveRequest(body: unknown): { targetProductId: string; references: ProductMoveReference[] } | null {
+  if (!body || typeof body !== "object") return null;
+  const value = body as { targetProductId?: unknown; references?: unknown };
+  if (typeof value.targetProductId !== "string" || !PRODUCT_UUID_PATTERN.test(value.targetProductId)) return null;
+  if (!Array.isArray(value.references) || value.references.length === 0 || value.references.length > 500) return null;
+  const references = value.references.map((reference) => {
+    if (!reference || typeof reference !== "object") return null;
+    const row = reference as { submissionId?: unknown; expectedSubmissionVersion?: unknown; itemId?: unknown };
+    if (typeof row.submissionId !== "string" || !PRODUCT_UUID_PATTERN.test(row.submissionId)) return null;
+    if (!Number.isInteger(row.expectedSubmissionVersion) || Number(row.expectedSubmissionVersion) < 0) return null;
+    if (typeof row.itemId !== "string" || !row.itemId.trim() || row.itemId.length > 200) return null;
+    return { submissionId: row.submissionId, expectedSubmissionVersion: Number(row.expectedSubmissionVersion), itemId: row.itemId.trim() };
+  });
+  if (references.some((reference) => reference === null)) return null;
+  return { targetProductId: value.targetProductId, references: references as ProductMoveReference[] };
+}
+
+export function productMoveConflictMessage(status: string) {
+  if (status === "version_conflict") return "Data berubah sejak referensi dipilih. Tidak ada referensi yang dipindahkan. Muat ulang data lalu pilih kembali.";
+  if (status === "active_lock") return "Sebagian data sedang diedit. Tidak ada referensi yang dipindahkan. Coba kembali setelah proses pengisian selesai.";
+  if (status === "missing_item" || status === "source_mismatch" || status === "ambiguous_item" || status === "unsupported_reference") return "Referensi sudah berubah atau tidak dapat dipindahkan. Tidak ada data yang dipindahkan. Muat ulang daftar referensi.";
+  if (status === "archived_submission") return "Submission sudah diarsipkan. Referensi arsip tidak dapat dipindahkan.";
+  if (status === "target_inactive") return "Produk tujuan sudah tidak aktif. Pilih Produk tujuan lain.";
+  if (status === "same_product") return "Produk tujuan harus berbeda dari Produk sumber.";
+  if (status === "source_not_found" || status === "target_not_found" || status === "submission_not_found") return "Produk atau Submission tidak lagi tersedia.";
+  return "Pilihan referensi tidak valid atau sudah berubah.";
 }
 
 export async function requireProductDependencyClient(request: Request): Promise<{ client: SupabaseClient } | { response: NextResponse }> {

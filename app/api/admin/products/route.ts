@@ -67,10 +67,15 @@ export async function GET(request: Request) {
   const sortField = url.searchParams.get("sort") === "model" ? "model" : "brand";
   const sortDirection = url.searchParams.get("direction") === "desc" ? false : true;
   const search = url.searchParams.get("search")?.trim().replace(/[(),]/g, " ") || "";
+  const activeOnly = url.searchParams.get("activeOnly") === "1";
+  const excludeProductId = url.searchParams.get("excludeProductId");
+  if (excludeProductId && !UUID_PATTERN.test(excludeProductId)) return NextResponse.json({ error: "ID produk yang dikecualikan tidak valid." }, { status: 400 });
   const { error: authorizationError } = await auth.client.rpc("admin_product_summary");
   if (authorizationError) return rpcErrorResponse(authorizationError, "Akses daftar produk gagal divalidasi.");
   let query = auth.client.from("products")
     .select("id, brand, model, active, source_origin", { count: "exact" });
+  if (activeOnly) query = query.eq("active", true);
+  if (excludeProductId) query = query.neq("id", excludeProductId);
   if (search) query = query.or(`brand.ilike.%${search}%,model.ilike.%${search}%`);
   const secondarySort = sortField === "brand" ? "model" : "brand";
   query = query.order(sortField, { ascending: sortDirection }).order(secondarySort, { ascending: true }).order("id", { ascending: true });
