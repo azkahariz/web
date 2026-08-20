@@ -1,5 +1,73 @@
 -- Phase 4: dependency-aware, irreversible deletion for inactive orphan Products.
 
+create or replace function public.submission_direct_product_ids(p_payload jsonb)
+returns table (product_id uuid)
+language sql
+immutable
+set search_path = ''
+as $$
+  select distinct (item.value ->> 'productId')::uuid
+  from jsonb_each(
+    case when jsonb_typeof(coalesce(p_payload, '{}'::jsonb) -> 'inventory') = 'object'
+      then p_payload -> 'inventory' else '{}'::jsonb end
+  ) as category(key, value)
+  cross join lateral jsonb_array_elements(
+    case when jsonb_typeof(category.value) = 'array' then category.value else '[]'::jsonb end
+  ) as item(value)
+  where coalesce(item.value ->> 'productId', '')
+    ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$';
+$$;
+
+create or replace function public.guard_submission_product_references()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_previous_payload jsonb := '{}'::jsonb;
+  v_product_id uuid;
+begin
+  if tg_op = 'UPDATE' then
+    if new.payload is not distinct from old.payload then
+      return new;
+    end if;
+    v_previous_payload := old.payload;
+  end if;
+
+  -- A Product already present in OLD cannot race with an eligible delete because
+  -- the delete validation still sees that persisted reference. Only newly added
+  -- IDs need a Product row lock and existence check.
+  for v_product_id in
+    select candidate.product_id
+    from public.submission_direct_product_ids(new.payload) as candidate
+    where not exists (
+      select 1
+      from public.submission_direct_product_ids(v_previous_payload) as previous
+      where previous.product_id = candidate.product_id
+    )
+    order by candidate.product_id
+  loop
+    perform product.id
+    from public.products as product
+    where product.id = v_product_id
+    for key share;
+
+    if not found then
+      raise exception 'Product reference is no longer available.'
+        using errcode = '23503',
+          detail = format('Product %s was deleted before the Submission could be saved.', v_product_id);
+    end if;
+  end loop;
+
+  return new;
+end;
+$$;
+
+create trigger submissions_guard_product_references
+before insert or update of payload on public.submissions
+for each row execute function public.guard_submission_product_references();
+
 create or replace function public.product_delete_validation(p_product_id uuid)
 returns jsonb
 language plpgsql
@@ -199,11 +267,9 @@ declare
 begin
   v_admin_id := public.require_super_admin();
 
-  -- Match the Product Merge lock order, then block JSONB Submission writes while
-  -- the authoritative dependency scan and deletion complete.
+  -- Keep the Product Merge table-lock order. Submission writers coordinate by
+  -- taking a Product row KEY SHARE lock only for newly added JSON references.
   lock table public.products in share row exclusive mode;
-  lock table public.product_aliases in share row exclusive mode;
-  lock table public.submissions in share row exclusive mode;
 
   select * into v_product
   from public.products as product
@@ -273,6 +339,8 @@ begin
 end;
 $$;
 
+revoke all on function public.submission_direct_product_ids(jsonb) from public, anon, authenticated;
+revoke all on function public.guard_submission_product_references() from public, anon, authenticated;
 revoke all on function public.product_delete_validation(uuid) from public, anon, authenticated;
 revoke all on function public.admin_product_delete_preflight(uuid) from public, anon;
 revoke all on function public.admin_delete_product(uuid, text) from public, anon;
@@ -282,6 +350,8 @@ grant execute on function public.admin_delete_product(uuid, text) to authenticat
 
 comment on function public.product_delete_validation(uuid) is
   'Internal dependency scan for irreversible deletion of an inactive orphan Product.';
+comment on function public.guard_submission_product_references() is
+  'Serializes newly added Submission JSON Product references with Product deletion without locking unrelated Submission rows.';
 comment on function public.admin_product_delete_preflight(uuid) is
   'Read-only Super Admin preflight for dependency-aware permanent Product deletion.';
 comment on function public.admin_delete_product(uuid, text) is

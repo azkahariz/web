@@ -36,8 +36,14 @@ test("Product delete memakai dependency preflight, DB revalidation, dan confirma
   assert.match(migration, /qc_history/);
   assert.match(migration, /aliases/);
   assert.match(migration, /lock table public\.products in share row exclusive mode/);
-  assert.match(migration, /lock table public\.product_aliases in share row exclusive mode/);
-  assert.match(migration, /lock table public\.submissions in share row exclusive mode/);
+  assert.doesNotMatch(migration, /lock table public\.product_aliases/);
+  assert.doesNotMatch(migration, /lock table public\.submissions/);
+  assert.match(migration, /function public\.submission_direct_product_ids/);
+  assert.match(migration, /function public\.guard_submission_product_references/);
+  assert.match(migration, /create trigger submissions_guard_product_references/);
+  assert.match(migration, /before insert or update of payload on public\.submissions/);
+  assert.match(migration, /for key share/);
+  assert.match(migration, /errcode = '23503'/);
   assert.match(migration, /where product\.id = p_product_id[\s\S]*for update/);
   assert.ok((migration.match(/product_delete_validation\(p_product_id\)/g) ?? []).length >= 2, "Execute harus mengulang validation setelah lock.");
   assert.match(migration, /p_preflight_token <> v_plan ->> 'preflightToken'/);

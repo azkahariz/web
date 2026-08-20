@@ -30,7 +30,7 @@
     "verify:product-dependencies": "node --env-file-if-exists=.env.local scripts/verify-product-dependencies.mjs",
     "verify:product-reference-move": "node --env-file-if-exists=.env.local scripts/verify-product-reference-move.mjs",
     "verify:product-merge": "node --env-file-if-exists=.env.local scripts/verify-product-merge.mjs",
-    "verify:product-delete": "node --env-file-if-exists=.env.local scripts/verify-product-delete.mjs",
+    "verify:product-delete": "node --env-file-if-exists=.env.local scripts/verify-product-delete.mjs && node --env-file-if-exists=.env.local scripts/verify-product-delete-concurrency.mjs",
     "verify:admin-submissions": "node --env-file-if-exists=.env.local scripts/verify-admin-submissions.mjs",
     "remediate:cengkareng-awos-subtypes": "node --env-file-if-exists=.env.local scripts/remediate-cengkareng-awos-subtypes.mjs",
     "verify:cengkareng-awos-remediation": "node scripts/verify-cengkareng-awos-remediation.mjs",
