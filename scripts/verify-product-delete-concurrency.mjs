@@ -17,6 +17,9 @@ const stationUserId = randomUUID();
 let fixture;
 let adminTransactionOpen = false;
 let writerTransactionOpen = false;
+let largePayloadTimingMs = 0;
+let largePayloadItemCount = 0;
+let largePayloadDistinctProducts = 0;
 
 const sleep = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 
@@ -24,6 +27,14 @@ async function asAdmin(client, callback) {
   return client.begin(async (tx) => {
     await tx`set local role authenticated`;
     await tx`select set_config('request.jwt.claim.sub', ${adminId}, true)`;
+    return callback(tx);
+  });
+}
+
+async function asStation(client, callback) {
+  return client.begin(async (tx) => {
+    await tx`set local role authenticated`;
+    await tx`select set_config('request.jwt.claim.sub', ${stationUserId}, true)`;
     return callback(tx);
   });
 }
@@ -124,6 +135,160 @@ try {
   const sourceProductId = await createProduct("Merge Source");
   fixture.productIds = [targetProductId, unrelatedProductId, sourceProductId];
 
+  // The extraction helper is deliberately tolerant: only valid direct UUIDs
+  // participate, while proposal-only, null, empty, missing, and legacy strings
+  // remain the responsibility of their existing workflow/layer.
+  const stressProductIds = [targetProductId, unrelatedProductId, sourceProductId];
+  for (let index = 4; index <= 12; index += 1) {
+    const productId = await createProduct(`Stress ${index}`);
+    stressProductIds.push(productId);
+    fixture.productIds.push(productId);
+  }
+  const stressItems = Array.from({ length: 360 }, (_, index) => ({
+    id: `stress-${index}`,
+    productId: stressProductIds[(stressProductIds.length - 1) - (index % stressProductIds.length)],
+    units: [],
+  }));
+  const tolerantItems = [
+    { id: "proposal-only", productProposalId: randomUUID() },
+    { id: "null-product", productId: null },
+    { id: "empty-product", productId: "" },
+    { id: "missing-product" },
+    { id: "legacy-product", productId: "legacy-orphan-product-id" },
+  ];
+  const largePayload = {
+    schemaVersion: 1,
+    inventory: {
+      Sensor: [...stressItems, ...tolerantItems],
+      Pendukung: [],
+      LegacyObject: { ignored: true },
+    },
+    customLegacyField: { retained: true },
+  };
+  const extracted = await observerSql`
+    select product_id
+    from public.submission_direct_product_ids(${observerSql.json(largePayload)})
+    order by product_id
+  `;
+  assert.deepEqual(
+    extracted.map((row) => row.product_id),
+    [...stressProductIds].sort(),
+    "Helper harus dedupe UUID valid dan mengurutkan lock set secara deterministik.",
+  );
+  const largePayloadStartedAt = performance.now();
+  await observerSql`
+    update public.submissions set payload = ${observerSql.json(largePayload)}, version = version + 1
+    where id = ${fixture.submissionB}
+  `;
+  largePayloadTimingMs = performance.now() - largePayloadStartedAt;
+  largePayloadItemCount = stressItems.length + tolerantItems.length;
+  largePayloadDistinctProducts = extracted.length;
+
+  const [pendingProposal] = await observerSql`
+    insert into public.product_proposals (
+      station_id, submission_id, created_by_auth_user, proposed_brand, proposed_model,
+      normalized_brand, normalized_model, status
+    ) values (${fixture.stationId}, ${fixture.submissionB}, ${stationUserId},
+      'Delete concurrency', 'Proposal only', ${`deleteconcurrency${suffix}`}, 'proposalonly', 'PENDING')
+    returning id
+  `;
+  const proposalOnlyPayload = {
+    inventory: {
+      Sensor: [
+        { id: "proposal-only", productProposalId: pendingProposal.id, units: [] },
+        { id: "null-product", productId: null },
+        { id: "empty-product", productId: "" },
+        { id: "missing-product" },
+        { id: "legacy-product", productId: "legacy-orphan-product-id" },
+      ],
+      EmptyCategory: [],
+      LegacyObject: { ignored: true },
+    },
+  };
+  await observerSql`
+    update public.submissions set payload = ${observerSql.json(proposalOnlyPayload)}, version = version + 1
+    where id = ${fixture.submissionB}
+  `;
+  await observerSql`
+    update public.submissions set payload = ${observerSql.json({ inventory: null })}, version = version + 1
+    where id = ${fixture.submissionB}
+  `;
+  await observerSql`
+    update public.submissions set payload = ${observerSql.json({ inventory: {} })}, version = version + 1
+    where id = ${fixture.submissionB}
+  `;
+
+  // Existing references remain valid based on row existence, not picker state.
+  // Inactive and merged Products must survive unrelated metadata edits.
+  const inactiveProductId = await createProduct("Inactive Existing Reference");
+  const mergedTargetId = await createProduct("Merged Target");
+  const mergedSourceId = await createProduct("Merged Historical Source");
+  fixture.productIds.push(inactiveProductId, mergedTargetId, mergedSourceId);
+  await observerSql`
+    update public.products set merged_into_product_id = ${mergedTargetId}
+    where id = ${mergedSourceId}
+  `;
+  const inactivePayload = {
+    inventory: { Sensor: [{ id: "inactive-existing", productId: inactiveProductId, notes: "before" }] },
+  };
+  await observerSql`
+    update public.submissions set payload = ${observerSql.json(inactivePayload)}, version = version + 1
+    where id = ${fixture.submissionA}
+  `;
+  inactivePayload.inventory.Sensor[0].notes = "after";
+  const stationSessionId = randomUUID();
+  await asStation(observerSql, async (tx) => {
+    const [opened] = await tx`
+      select * from public.open_submission(
+        ${fixture.siteIds[0]}, ${fixture.subtypeId}, ${stationSessionId}, 'Trigger audit station'
+      )
+    `;
+    assert.equal(opened.can_edit, true);
+    const [saved] = await tx`
+      select * from public.save_submission(
+        ${fixture.siteIds[0]}, ${fixture.subtypeId}, ${stationSessionId}, ${opened.version},
+        ${tx.json(inactivePayload)}, 'Trigger audit station'
+      )
+    `;
+    assert.equal(saved.status, "saved", "Station autosave harus menerima existing inactive Product.");
+    assert.equal((await tx`
+      select public.release_submission_lock(${fixture.siteIds[0]}, ${fixture.subtypeId}, ${stationSessionId}) as released
+    `)[0].released, true);
+  });
+  const [inactiveSaved] = await observerSql`
+    select payload #>> '{inventory,Sensor,0,notes}' as notes
+    from public.submissions where id = ${fixture.submissionA}
+  `;
+  assert.equal(inactiveSaved.notes, "after");
+
+  const mergedPayload = {
+    inventory: { Sensor: [{ id: "merged-existing", productId: mergedSourceId, condition: "Baik" }] },
+  };
+  await observerSql`
+    update public.submissions set payload = ${observerSql.json(mergedPayload)}, version = version + 1
+    where id = ${fixture.submissionA}
+  `;
+  mergedPayload.inventory.Sensor[0].condition = "Rusak ringan";
+  await observerSql`
+    update public.submissions set payload = ${observerSql.json(mergedPayload)}, version = version + 1
+    where id = ${fixture.submissionA}
+  `;
+  const [mergedSaved] = await observerSql`
+    select payload #>> '{inventory,Sensor,0,condition}' as condition
+    from public.submissions where id = ${fixture.submissionA}
+  `;
+  assert.equal(mergedSaved.condition, "Rusak ringan");
+
+  // A non-payload heartbeat cannot fire an UPDATE OF payload trigger.
+  await observerSql`
+    update public.submissions set lock_operator_name = 'Trigger audit'
+    where id = ${fixture.submissionA}
+  `;
+  await observerSql`
+    update public.submissions set payload = ${observerSql.json({ inventory: { Sensor: [] } })}, version = version + 1
+    where id in (${fixture.submissionA}, ${fixture.submissionB})
+  `;
+
   // The Product-table lock retained for Phase 3 ordering must not block an
   // unrelated Submission payload update guarded by another Product row.
   await adminSql.unsafe("begin");
@@ -204,6 +369,50 @@ try {
   `;
   assert.equal(dangling.count, 0);
 
+  // A persisted reference means Delete is already ineligible. An autosave that
+  // retains that inactive Product while changing metadata must not wait on or
+  // fail against the Product row lock because no new UUID is introduced.
+  const existingReferenceProductId = await createProduct("Existing Reference Autosave");
+  fixture.productIds.push(existingReferenceProductId);
+  const existingReferencePayload = {
+    inventory: { Sensor: [{ id: "existing-reference", productId: existingReferenceProductId, serialNumber: "OLD" }] },
+  };
+  await observerSql`
+    update public.submissions set payload = ${observerSql.json(existingReferencePayload)}, version = version + 1
+    where id = ${fixture.submissionA}
+  `;
+  const existingReferencePlan = await preflight(existingReferenceProductId);
+  assert.equal(existingReferencePlan.status, "blocked");
+  await adminSql.unsafe("begin");
+  adminTransactionOpen = true;
+  try {
+    await adminSql.unsafe("lock table public.products in share row exclusive mode");
+    await adminSql`select id from public.products where id = ${existingReferenceProductId} for update`;
+    existingReferencePayload.inventory.Sensor[0].serialNumber = "NEW";
+    await writerSql.unsafe("begin");
+    writerTransactionOpen = true;
+    try {
+      await writerSql.unsafe("set local lock_timeout = '700ms'");
+      const result = await writerSql`
+        update public.submissions set payload = ${writerSql.json(existingReferencePayload)}, version = version + 1
+        where id = ${fixture.submissionA}
+      `;
+      assert.equal(result.count, 1, "Autosave existing reference harus tetap berjalan.");
+      await writerSql.unsafe("commit");
+      writerTransactionOpen = false;
+    } finally {
+      if (writerTransactionOpen) {
+        await writerSql.unsafe("rollback");
+        writerTransactionOpen = false;
+      }
+    }
+    const [blockedPlan] = await adminSql`select public.product_delete_validation(${existingReferenceProductId}) as data`;
+    assert.equal(blockedPlan.data.status, "blocked");
+  } finally {
+    await adminSql.unsafe("rollback");
+    adminTransactionOpen = false;
+  }
+
   await expectProductRowConflict(
     "Alias FK harus serialize dengan Product row Delete.",
     targetProductId,
@@ -261,4 +470,7 @@ try {
   await observerSql.end({ timeout: 5 });
 }
 
-console.log("Verifikasi concurrency delete Product lulus; autosave unrelated berjalan, writer relevant terserialisasi, dan FK alias/QC/merge tetap aman.");
+console.log(
+  `Verifikasi concurrency delete Product lulus; autosave unrelated/existing-reference berjalan, writer relevant terserialisasi, `
+  + `payload ${largePayloadItemCount} item/${largePayloadDistinctProducts} Product distinct diproses lokal dalam ${largePayloadTimingMs.toFixed(1)} ms, dan FK alias/QC/merge tetap aman.`,
+);

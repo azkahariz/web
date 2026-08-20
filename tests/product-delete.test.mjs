@@ -44,6 +44,15 @@ test("Product delete memakai dependency preflight, DB revalidation, dan confirma
   assert.match(migration, /before insert or update of payload on public\.submissions/);
   assert.match(migration, /for key share/);
   assert.match(migration, /errcode = '23503'/);
+  const guardFunction = migration.slice(
+    migration.indexOf("create or replace function public.guard_submission_product_references"),
+    migration.indexOf("create trigger submissions_guard_product_references"),
+  );
+  assert.match(guardFunction, /new\.payload is not distinct from old\.payload/);
+  assert.match(guardFunction, /submission_direct_product_ids\(new\.payload\)/);
+  assert.match(guardFunction, /submission_direct_product_ids\(v_previous_payload\)/);
+  assert.match(guardFunction, /order by candidate\.product_id/);
+  assert.doesNotMatch(guardFunction, /\.active|merged_into_product_id|productProposalId/);
   assert.match(migration, /where product\.id = p_product_id[\s\S]*for update/);
   assert.ok((migration.match(/product_delete_validation\(p_product_id\)/g) ?? []).length >= 2, "Execute harus mengulang validation setelah lock.");
   assert.match(migration, /p_preflight_token <> v_plan ->> 'preflightToken'/);
@@ -86,4 +95,5 @@ test("Product delete memakai dependency preflight, DB revalidation, dan confirma
   assert.match(css, /\.product-delete-dialog/);
   assert.match(css, /\.product-delete-blocked/);
   assert.match(packageJson, /verify:product-delete/);
+  assert.match(packageJson, /verify:product-delete-concurrency/);
 });
