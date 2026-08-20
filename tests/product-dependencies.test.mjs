@@ -37,6 +37,11 @@ test("Product dependency preflight tetap read-only, beridentitas stabil, dan han
   for (const text of ["Dependency", "Referensi", "QC History", "Alias", "Direct current", "QC resolved", "Sedang diedit"]) assert.match(component, new RegExp(text));
   assert.match(component, /expectedSubmissionVersion/);
   assert.match(component, /referencePageSize/);
+  assert.match(component, /function DependencyPagination/);
+  assert.match(component, /label="Site"/);
+  assert.match(component, /label="direct reference"/);
+  assert.match(component, /setDependencyPageSize/);
+  assert.match(component, /setReferencePageSize/);
   assert.doesNotMatch(component, /Pindahkan Referensi|Merge Product|Split Product|Hapus Produk/);
   assert.match(packageJson, /verify:product-dependencies/);
 });

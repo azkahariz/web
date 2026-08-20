@@ -52,6 +52,28 @@ type ProductReference = {
 };
 type ProductReferences = { rows: ProductReference[]; totalCount: number; page: number; pageSize: number };
 type DependencyTab = "summary" | "references" | "qc" | "aliases";
+type DependencyPaginationProps = {
+  page: number;
+  pageSize: number;
+  total: number;
+  loading: boolean;
+  label: string;
+  onPage: (page: number) => void;
+  onPageSize: (pageSize: number) => void;
+};
+
+function DependencyPagination({ page, pageSize, total, loading, label, onPage, onPageSize }: DependencyPaginationProps) {
+  const pages = Math.max(1, Math.ceil(total / pageSize));
+  const first = total ? (page - 1) * pageSize + 1 : 0;
+  const last = Math.min(page * pageSize, total);
+  return <>
+    <div className="product-reference-toolbar">
+      <span>Menampilkan {first}–{last} dari {total} {label}</span>
+      <label>Baris<select value={pageSize} onChange={(event) => onPageSize(Number(event.target.value))}><option value={50}>50</option><option value={100}>100</option><option value={200}>200</option></select></label>
+    </div>
+    {pages > 1 && <div className="pagination-buttons product-usage-pagination"><button disabled={page <= 1 || loading} onClick={() => onPage(page - 1)}>Sebelumnya</button><span>Halaman {page} dari {pages}</span><button disabled={page >= pages || loading} onClick={() => onPage(page + 1)}>Berikutnya</button></div>}
+  </>;
+}
 
 function originLabel(origin: string) {
   if (origin === "QC") return "QC Produk";
@@ -93,6 +115,8 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
   const [references, setReferences] = useState<ProductReferences | null>(null);
   const [referencesLoading, setReferencesLoading] = useState(false);
   const [referencePageSize, setReferencePageSize] = useState(50);
+  const [dependencyPage, setDependencyPage] = useState(1);
+  const [dependencyPageSize, setDependencyPageSize] = useState(50);
 
   const loadUsageCounts = useCallback(async (products: Product[]) => {
     const requestId = ++usageCountsRequestRef.current;
@@ -224,11 +248,11 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
     });
   }
 
-  async function loadUsage(product: Product, usagePage = 1) {
+  async function loadUsage(product: Product, usagePage = 1, usagePageSize = dependencyPageSize) {
     setUsageLoading(true);
     setUsageError("");
     try {
-      const params = new URLSearchParams({ usageProductId: product.id, page: String(usagePage), pageSize: "50" });
+      const params = new URLSearchParams({ usageProductId: product.id, page: String(usagePage), pageSize: String(usagePageSize) });
       const response = await fetch(`/api/admin/products?${params.toString()}`, { cache: "no-store" });
       const result = await response.json() as { usage?: ProductUsage; error?: string };
       if (!response.ok || !result.usage) throw new Error(result.error || "Penggunaan produk gagal dimuat.");
@@ -278,6 +302,8 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
     setReferences(null);
     setDependencyTab("summary");
     setReferencePageSize(50);
+    setDependencyPage(1);
+    setDependencyPageSize(50);
     void loadUsage(product);
     void loadDependencies(product);
   }
@@ -285,6 +311,12 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
   function selectDependencyTab(tab: DependencyTab) {
     setDependencyTab(tab);
     if (tab === "references" && usageProduct && !references && !referencesLoading) void loadReferences(usageProduct, 1);
+  }
+
+  function changeDependencyPageSize(nextPageSize: number) {
+    setDependencyPageSize(nextPageSize);
+    setDependencyPage(1);
+    if (usageProduct) void loadUsage(usageProduct, 1, nextPageSize);
   }
 
   function applyPageSize(value: string | number) {
@@ -377,17 +409,17 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
           </>}
           {usage && <>
           <p className="product-usage-summary">{usage.stationCount} Stasiun · {usage.siteCount} Site · {usage.referenceCount} referensi</p>
+          <DependencyPagination page={dependencyPage} pageSize={dependencyPageSize} total={usage.totalCount} loading={usageLoading} label="Site" onPage={(nextPage) => { setDependencyPage(nextPage); void loadUsage(usageProduct, nextPage, dependencyPageSize); }} onPageSize={changeDependencyPageSize} />
           <div className="product-usage-list">
             {usage.rows.map((row) => <div key={`${row.stationName}:${row.siteName}:${row.subtypeName}`}><strong>{row.stationName}</strong><span>{row.siteName} · {row.siteTypeName} · {row.subtypeName}</span><small>{row.referenceCount} referensi</small></div>)}
             {!usage.rows.length && <p>Produk ini belum memiliki penggunaan pada submission aktif.</p>}
           </div>
-          {usage.totalCount > usage.pageSize && <div className="pagination-buttons product-usage-pagination"><button disabled={usage.page <= 1 || usageLoading} onClick={() => void loadUsage(usageProduct, usage.page - 1)}>Sebelumnya</button><span>Halaman {usage.page} dari {Math.ceil(usage.totalCount / usage.pageSize)}</span><button disabled={usage.page >= Math.ceil(usage.totalCount / usage.pageSize) || usageLoading} onClick={() => void loadUsage(usageProduct, usage.page + 1)}>Berikutnya</button></div>}
           </>}
           </>}
           {dependencyTab === "references" && <>
             {!references && referencesLoading && <p className="product-usage-state" role="status"><span className="product-usage-spinner" aria-hidden="true" />Memuat referensi...</p>}
             {dependenciesError && <p className="app-dialog-error" role="alert">{dependenciesError}</p>}
-            {references && <><div className="product-reference-toolbar"><span>Menampilkan {(references.page - 1) * references.pageSize + (references.totalCount ? 1 : 0)}-{Math.min(references.page * references.pageSize, references.totalCount)} dari {references.totalCount} direct reference</span><label>Baris<select value={referencePageSize} onChange={(event) => { const next = Number(event.target.value); setReferencePageSize(next); void loadReferences(usageProduct, 1, next); }}><option value="50">50</option><option value="100">100</option><option value="200">200</option></select></label></div><div className="product-reference-list">{references.rows.map((row) => <div key={`${row.submissionId}:${row.itemId ?? "legacy"}`}><strong>{row.stationName}</strong><span>{row.siteName} · {row.siteTypeName} · {row.siteSubtypeName}</span><small>{row.functionCategories.join(" · ")} · {row.unitCount} unit</small>{row.activeLock && <em>Sedang diedit{row.lockOwnerDisplayName ? `: ${row.lockOwnerDisplayName}` : ""}</em>}{row.archivedAt && <em>Diarsipkan</em>}</div>)}{!references.rows.length && <p>Belum ada direct reference pada scope ini.</p>}</div>{references.totalCount > references.pageSize && <div className="pagination-buttons product-usage-pagination"><button disabled={references.page <= 1 || referencesLoading} onClick={() => void loadReferences(usageProduct, references.page - 1)}>Sebelumnya</button><span>Halaman {references.page} dari {Math.ceil(references.totalCount / references.pageSize)}</span><button disabled={references.page >= Math.ceil(references.totalCount / references.pageSize) || referencesLoading} onClick={() => void loadReferences(usageProduct, references.page + 1)}>Berikutnya</button></div>}</>}
+            {references && <><DependencyPagination page={references.page} pageSize={referencePageSize} total={references.totalCount} loading={referencesLoading} label="direct reference" onPage={(nextPage) => void loadReferences(usageProduct, nextPage, referencePageSize)} onPageSize={(nextPageSize) => { setReferencePageSize(nextPageSize); void loadReferences(usageProduct, 1, nextPageSize); }} /><div className="product-reference-list">{references.rows.map((row) => <div key={`${row.submissionId}:${row.itemId ?? "legacy"}`}><strong>{row.stationName}</strong><span>{row.siteName} · {row.siteTypeName} · {row.siteSubtypeName}</span><small>{row.functionCategories.join(" · ")} · {row.unitCount} unit</small>{row.activeLock && <em>Sedang diedit{row.lockOwnerDisplayName ? `: ${row.lockOwnerDisplayName}` : ""}</em>}{row.archivedAt && <em>Diarsipkan</em>}</div>)}{!references.rows.length && <p>Belum ada direct reference pada scope ini.</p>}</div></>}
           </>}
           {dependencyTab === "qc" && <div className="product-reference-list">{dependenciesLoading && <p className="product-usage-state" role="status"><span className="product-usage-spinner" aria-hidden="true" />Memuat QC history...</p>}{dependencies?.qcProposals.map((proposal) => <div key={proposal.proposalId}><strong>{proposal.proposedBrand} · {proposal.proposedModel}</strong><span>{proposal.status}{proposal.reviewerName ? ` · ${proposal.reviewerName}` : ""}</span>{proposal.reviewNote && <small>Catatan: {proposal.reviewNote}</small>}</div>)}{dependencies && !dependencies.qcProposals.length && <p>Belum ada proposal QC yang resolved ke produk ini.</p>}</div>}
           {dependencyTab === "aliases" && <div className="product-reference-list">{dependenciesLoading && <p className="product-usage-state" role="status"><span className="product-usage-spinner" aria-hidden="true" />Memuat alias...</p>}{dependencies?.aliases.map((alias) => <div key={alias.aliasId}><strong>{alias.brand}</strong><span>{alias.model}</span>{alias.sourceProposalId && <small>Asal proposal QC</small>}</div>)}{dependencies && !dependencies.aliases.length && <p>Produk ini belum memiliki alias.</p>}</div>}
