@@ -49,11 +49,15 @@ test("Product reference move memakai preflight atomik dan hanya mengubah direct 
   assert.match(productsRoute, /activeOnly/);
   assert.match(productsRoute, /excludeProductId/);
 
-  assert.match(component, /productReferenceKey/);
+  assert.match(component, /productReferenceSelectionKey/);
   assert.match(component, /submissionId.*expectedSubmissionVersion.*itemId/s);
   assert.match(component, /selectedReferences/);
   assert.match(component, /Pindahkan Referensi/);
-  assert.match(component, /!row\.archivedAt && !row\.activeLock/);
+  assert.match(component, /isProductReferenceSelectable/);
+  assert.match(component, /CurrentPageReferenceCheckbox/);
+  assert.match(component, /indeterminate/);
+  assert.match(component, /Pilih semua referensi di halaman ini/);
+  assert.match(component, /Batalkan semua/);
   assert.match(component, /Submission v\{row\.expectedSubmissionVersion\}/);
   assert.match(component, /row\.categoryName/);
   assert.match(dialog, /activeOnly: "1"/);

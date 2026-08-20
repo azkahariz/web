@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import AsyncButton from "../components/AsyncButton";
 import { useAppFeedback } from "../components/AppFeedback";
+import { clearProductReferenceSelection, getCurrentPageSelectionState, isProductReferenceSelectable, productReferenceSelectionKey, toggleCurrentPageSelection } from "../lib/product-reference-selection";
 import { normalizeSubmissionPageSize, SUBMISSION_PAGE_SIZE, SUBMISSION_PAGE_SIZE_MAX, SUBMISSION_PAGE_SIZE_MIN, SUBMISSION_PAGE_SIZE_OPTIONS } from "../lib/submission-monitoring";
 import ProductReferenceMoveDialog, { type MoveReferenceIdentity } from "./ProductReferenceMoveDialog";
 
@@ -82,8 +83,17 @@ function originLabel(origin: string) {
   return "Legacy Spreadsheet";
 }
 
-function productReferenceKey(reference: Pick<ProductReference, "submissionId" | "expectedSubmissionVersion" | "itemId">) {
-  return `${reference.submissionId}:${reference.expectedSubmissionVersion}:${reference.itemId ?? ""}`;
+function CurrentPageReferenceCheckbox({ checked, indeterminate, disabled, onChange }: { checked: boolean; indeterminate: boolean; disabled: boolean; onChange: () => void }) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const label = disabled ? "Tidak ada referensi yang dapat dipilih di halaman ini" : checked ? "Batalkan pilihan referensi di halaman ini" : "Pilih semua referensi di halaman ini";
+
+  useEffect(() => {
+    if (inputRef.current) inputRef.current.indeterminate = indeterminate;
+  }, [indeterminate]);
+
+  return <label className="product-reference-check product-reference-check-all" title={label}>
+    <input ref={inputRef} type="checkbox" aria-label={label} checked={checked} disabled={disabled} onChange={onChange} />
+  </label>;
 }
 
 export default function AdminProducts({ onChanged }: { onChanged: () => Promise<void> }) {
@@ -329,7 +339,7 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
   }
 
   function toggleReference(reference: ProductReference) {
-    const key = productReferenceKey(reference);
+    const key = productReferenceSelectionKey(reference);
     setSelectedReferences((current) => {
       const next = new Map(current);
       if (next.has(key)) next.delete(key);
@@ -337,6 +347,11 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
       return next;
     });
   }
+
+  const referencePageSelection = useMemo(
+    () => getCurrentPageSelectionState(references?.rows ?? [], selectedReferences),
+    [references, selectedReferences],
+  );
 
   async function completeReferenceMove() {
     if (!usageProduct) return;
@@ -458,10 +473,20 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
             {!references && referencesLoading && <p className="product-usage-state" role="status"><span className="product-usage-spinner" aria-hidden="true" />Memuat referensi...</p>}
             {dependenciesError && <p className="app-dialog-error" role="alert">{dependenciesError}</p>}
             {references && <><DependencyPagination page={references.page} pageSize={referencePageSize} total={references.totalCount} loading={referencesLoading} label="referensi" onPage={(nextPage) => void loadReferences(usageProduct, nextPage, referencePageSize)} onPageSize={(nextPageSize) => { setReferencePageSize(nextPageSize); void loadReferences(usageProduct, 1, nextPageSize); }} />
-              <div className="product-reference-selection-toolbar"><span>{selectedReferences.size} item dipilih</span><button className="primary-button" type="button" disabled={!selectedReferences.size} onClick={() => setMoveDialogOpen(true)}>Pindahkan Referensi</button></div>
+              <div className="product-reference-selection-toolbar">
+                <CurrentPageReferenceCheckbox checked={referencePageSelection.checked} indeterminate={referencePageSelection.indeterminate} disabled={referencePageSelection.disabled} onChange={() => setSelectedReferences((current) => toggleCurrentPageSelection(references.rows, current))} />
+                <div className="product-reference-selection-summary">
+                  <span>{referencePageSelection.disabled ? "Tidak ada referensi yang dapat dipilih di halaman ini" : "Pilih semua di halaman ini"}</span>
+                  {selectedReferences.size > 0 && <strong>{selectedReferences.size} item dipilih</strong>}
+                </div>
+                <div className="product-reference-selection-actions">
+                  {selectedReferences.size > 0 && <button className="product-reference-clear-selection" type="button" onClick={() => setSelectedReferences(clearProductReferenceSelection())}>Batalkan semua</button>}
+                  <button className="primary-button" type="button" disabled={!selectedReferences.size} onClick={() => setMoveDialogOpen(true)}>Pindahkan Referensi</button>
+                </div>
+              </div>
               <div className="product-reference-list">{references.rows.map((row) => {
-                const eligible = Boolean(row.itemId && !row.archivedAt && !row.activeLock);
-                const key = productReferenceKey(row);
+                const eligible = isProductReferenceSelectable(row);
+                const key = productReferenceSelectionKey(row);
                 return <div className={`product-reference-row${selectedReferences.has(key) ? " is-selected" : ""}`} key={key}>
                   <label className="product-reference-check"><input type="checkbox" aria-label={`Pilih referensi ${row.stationName} ${row.siteName}`} checked={selectedReferences.has(key)} disabled={!eligible} onChange={() => toggleReference(row)} /></label>
                   <div><strong>{row.stationName}</strong><span>{row.siteName} · {row.siteTypeName} · {row.siteSubtypeName}</span><small>Submission v{row.expectedSubmissionVersion} · {[row.categoryName, ...row.functionCategories].filter(Boolean).join(" · ")} · {row.unitCount} unit</small>{row.activeLock && <em>Sedang diedit{row.lockOwnerDisplayName ? `: ${row.lockOwnerDisplayName}` : ""}</em>}{row.archivedAt && <em>Diarsipkan</em>}</div>
