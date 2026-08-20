@@ -28,6 +28,8 @@
     "verify:admin-products": "node --env-file-if-exists=.env.local scripts/verify-admin-products.mjs",
     "verify:product-usage": "node --env-file-if-exists=.env.local scripts/verify-product-usage.mjs",
     "verify:admin-submissions": "node --env-file-if-exists=.env.local scripts/verify-admin-submissions.mjs",
+    "remediate:cengkareng-awos-subtypes": "node --env-file-if-exists=.env.local scripts/remediate-cengkareng-awos-subtypes.mjs",
+    "verify:cengkareng-awos-remediation": "node scripts/verify-cengkareng-awos-remediation.mjs",
     "verify:warehouse": "node scripts/verify-warehouse.mjs",
     "verify:admin-api": "node --env-file-if-exists=.env.local scripts/verify-admin-api.mjs",
     "verify:station-runtime-master": "node --experimental-strip-types scripts/verify-station-runtime-master.mjs"
