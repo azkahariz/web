@@ -3,16 +3,20 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import AsyncButton from "../components/AsyncButton";
 import { useAppFeedback } from "../components/AppFeedback";
+import {
+  productSourceLabel,
+  type AdminProductSortDirection,
+  type AdminProductSortField,
+  type AdminProductStatusFilter,
+} from "../lib/admin-product-list";
 import { clearProductReferenceSelection, getCurrentPageSelectionState, isProductReferenceSelectable, productReferenceSelectionKey, toggleCurrentPageSelection } from "../lib/product-reference-selection";
 import { normalizeSubmissionPageSize, SUBMISSION_PAGE_SIZE, SUBMISSION_PAGE_SIZE_MAX, SUBMISSION_PAGE_SIZE_MIN, SUBMISSION_PAGE_SIZE_OPTIONS } from "../lib/submission-monitoring";
 import ProductReferenceMoveDialog, { type MoveReferenceIdentity } from "./ProductReferenceMoveDialog";
 import ProductMergeDialog from "./ProductMergeDialog";
 import ProductDeleteDialog from "./ProductDeleteDialog";
 
-type Product = { id: string; brand: string; model: string; active: boolean; source_origin: string; merged_into_product_id?: string; merged_target?: { id: string; brand: string; model: string } };
+type Product = { id: string; brand: string; model: string; active: boolean; source_origin: string; usage_count: number; merged_into_product_id?: string; merged_target?: { id: string; brand: string; model: string } };
 type Summary = { total_count: number; active_count: number; inactive_count: number };
-type SortField = "brand" | "model";
-type SortDirection = "asc" | "desc";
 type ProductUsage = {
   rows: Array<{ stationName: string; siteName: string; siteTypeName: string; subtypeName: string; referenceCount: number }>;
   totalCount: number;
@@ -22,7 +26,6 @@ type ProductUsage = {
   page: number;
   pageSize: number;
 };
-type ProductUsageCount = { product_id: string; reference_count: number };
 type ProductDependencies = {
   product: { id: string; brand: string; model: string; active: boolean; sourceOrigin: string; mergedIntoProduct?: { id: string; brand: string; model: string; active: boolean } | null };
   preflight: {
@@ -79,12 +82,6 @@ function DependencyPagination({ page, pageSize, total, loading, label, onPage, o
   </>;
 }
 
-function originLabel(origin: string) {
-  if (origin === "QC") return "QC Produk";
-  if (origin === "ADMIN") return "Admin";
-  return "Legacy Spreadsheet";
-}
-
 function CurrentPageReferenceCheckbox({ checked, indeterminate, disabled, onChange }: { checked: boolean; indeterminate: boolean; disabled: boolean; onChange: () => void }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const label = disabled ? "Tidak ada referensi yang dapat dipilih di halaman ini" : checked ? "Batalkan pilihan referensi di halaman ini" : "Pilih semua referensi di halaman ini";
@@ -108,8 +105,11 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(SUBMISSION_PAGE_SIZE);
-  const [sortField, setSortField] = useState<SortField>("brand");
-  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
+  const [statusFilter, setStatusFilter] = useState<AdminProductStatusFilter>("active");
+  const [sourceFilter, setSourceFilter] = useState("");
+  const [sourceOptions, setSourceOptions] = useState<string[]>([]);
+  const [sortField, setSortField] = useState<AdminProductSortField>("brand");
+  const [sortDirection, setSortDirection] = useState<AdminProductSortDirection>("asc");
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -124,9 +124,6 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
   const [usage, setUsage] = useState<ProductUsage | null>(null);
   const [usageLoading, setUsageLoading] = useState(false);
   const [usageError, setUsageError] = useState("");
-  const [usageCounts, setUsageCounts] = useState<Record<string, number>>({});
-  const [usageCountsLoading, setUsageCountsLoading] = useState(false);
-  const usageCountsRequestRef = useRef(0);
   const [dependencies, setDependencies] = useState<ProductDependencies | null>(null);
   const [dependenciesLoading, setDependenciesLoading] = useState(false);
   const [dependenciesError, setDependenciesError] = useState("");
@@ -141,26 +138,6 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
   const [mergeProduct, setMergeProduct] = useState<Product | null>(null);
   const [deleteProduct, setDeleteProduct] = useState<Product | null>(null);
 
-  const loadUsageCounts = useCallback(async (products: Product[]) => {
-    const requestId = ++usageCountsRequestRef.current;
-    setUsageCountsLoading(products.length > 0);
-    setUsageCounts({});
-    if (!products.length) return;
-    const params = new URLSearchParams();
-    products.forEach((product) => params.append("usageCountProductId", product.id));
-    try {
-      const response = await fetch(`/api/admin/products?${params.toString()}`, { cache: "no-store" });
-      const result = await response.json() as { usageCounts?: ProductUsageCount[]; error?: string };
-      if (!response.ok) throw new Error(result.error || "Jumlah penggunaan produk gagal dimuat.");
-      if (requestId !== usageCountsRequestRef.current) return;
-      setUsageCounts(Object.fromEntries((result.usageCounts ?? []).map((count) => [count.product_id, count.reference_count])));
-    } catch (countError) {
-      if (requestId === usageCountsRequestRef.current) feedback.toast(countError instanceof Error ? countError.message : "Jumlah penggunaan produk gagal dimuat.", "warning");
-    } finally {
-      if (requestId === usageCountsRequestRef.current) setUsageCountsLoading(false);
-    }
-  }, [feedback]);
-
   useEffect(() => {
     const timer = window.setTimeout(() => {
       setSearch(searchInput.trim());
@@ -169,11 +146,35 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
     return () => window.clearTimeout(timer);
   }, [searchInput]);
 
+  useEffect(() => {
+    const controller = new AbortController();
+    async function loadSourceOptions() {
+      try {
+        const response = await fetch("/api/admin/products?sources=1", { cache: "no-store", signal: controller.signal });
+        const result = await response.json() as { sources?: string[]; error?: string };
+        if (!response.ok) throw new Error(result.error || "Pilihan sumber produk gagal dimuat.");
+        setSourceOptions(result.sources ?? []);
+      } catch (sourceError) {
+        if (sourceError instanceof DOMException && sourceError.name === "AbortError") return;
+        setError(sourceError instanceof Error ? sourceError.message : "Pilihan sumber produk gagal dimuat.");
+      }
+    }
+    void loadSourceOptions();
+    return () => controller.abort();
+  }, []);
+
   const load = useCallback(async () => {
     setLoading(true);
     setError("");
-    const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize), sort: sortField, direction: sortDirection });
+    const params = new URLSearchParams({
+      page: String(page),
+      pageSize: String(pageSize),
+      status: statusFilter,
+      sort: sortField,
+      direction: sortDirection,
+    });
     if (search) params.set("search", search);
+    if (sourceFilter) params.set("source", sourceFilter);
     try {
       const [listResponse, summaryResponse] = await Promise.all([
         fetch(`/api/admin/products?${params.toString()}`, { cache: "no-store" }),
@@ -188,13 +189,12 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
       setTotalCount(nextTotalCount);
       setPage((current) => Math.min(current, Math.max(1, Math.ceil(nextTotalCount / pageSize))));
       setSummary(summaryResult.summary ?? null);
-      void loadUsageCounts(list.rows ?? []);
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "Daftar produk gagal dimuat.");
     } finally {
       setLoading(false);
     }
-  }, [loadUsageCounts, page, pageSize, search, sortDirection, sortField]);
+  }, [page, pageSize, search, sortDirection, sortField, sourceFilter, statusFilter]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => void load(), 0);
@@ -204,7 +204,15 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
   const pageCount = Math.max(1, Math.ceil(totalCount / pageSize));
   const firstRow = totalCount ? (page - 1) * pageSize + 1 : 0;
   const lastRow = Math.min(page * pageSize, totalCount);
-  const sortValue = `${sortField}:${sortDirection}`;
+
+  function changeSort(field: AdminProductSortField) {
+    setPage(1);
+    if (sortField === field) setSortDirection((current) => current === "asc" ? "desc" : "asc");
+    else {
+      setSortField(field);
+      setSortDirection("asc");
+    }
+  }
 
   async function post(body: Record<string, unknown>) {
     const response = await fetch("/api/admin/products", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
@@ -420,18 +428,31 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
       {compactSummary.map(([label, count]) => <div key={String(label)}><span>{label}</span><strong>{count}</strong></div>)}
     </div>
     <div className="product-toolbar">
-      <label className="admin-search">Cari Merk atau Tipe<input autoComplete="off" value={searchInput} onChange={(event) => setSearchInput(event.target.value)} placeholder="Cari Merk atau Tipe" /></label>
-      <label className="product-sort">Urutkan<select value={sortValue} onChange={(event) => {
-        const [field, direction] = event.target.value.split(":") as [SortField, SortDirection];
-        setSortField(field); setSortDirection(direction); setPage(1);
-      }}><option value="brand:asc">Merk A-Z</option><option value="brand:desc">Merk Z-A</option><option value="model:asc">Tipe A-Z</option><option value="model:desc">Tipe Z-A</option></select></label>
-      <AsyncButton className="primary-button" loading={activeAction === "create"} loadingText="Menambah..." onClick={openCreateDialog}>Tambah Produk</AsyncButton>
-      <AsyncButton className="secondary-button" loading={loading} loadingText="Memuat..." onClick={() => void load()}>Muat ulang</AsyncButton>
+      <label className="admin-search">Cari Merk atau Tipe<input autoComplete="off" value={searchInput} onChange={(event) => setSearchInput(event.target.value)} placeholder="Cari Merk atau Tipe..." /></label>
+      <div className="product-filter-grid">
+        <label>Status<select value={statusFilter} onChange={(event) => { setStatusFilter(event.target.value as AdminProductStatusFilter); setPage(1); }}><option value="active">Aktif</option><option value="inactive">Nonaktif</option><option value="merged">Digabungkan</option><option value="all">Semua status</option></select></label>
+        <label>Sumber<select value={sourceFilter} onChange={(event) => { setSourceFilter(event.target.value); setPage(1); }}><option value="">Semua sumber</option>{sourceOptions.map((source) => <option key={source} value={source}>{productSourceLabel(source)}</option>)}</select></label>
+      </div>
+      <div className="product-toolbar-actions">
+        <AsyncButton className="primary-button" loading={activeAction === "create"} loadingText="Menambah..." onClick={openCreateDialog}>Tambah Produk</AsyncButton>
+        <AsyncButton className="secondary-button" loading={loading} loadingText="Memuat..." onClick={() => void load()}>Muat ulang</AsyncButton>
+      </div>
     </div>
     {error && <p className="admin-message" role="status">{error}</p>}
-    <div className={`admin-table-wrap product-table${loading ? " is-loading" : ""}`}><table><thead><tr><th>Merk</th><th>Tipe</th><th>Status</th><th>Sumber</th><th>Penggunaan</th><th>Aksi</th></tr></thead><tbody>
-      {rows.map((product) => <tr key={product.id}><td><strong>{product.brand}</strong>{product.merged_target && <small className="product-merged-target">Ke {product.merged_target.brand} · {product.merged_target.model}</small>}</td><td>{product.model}</td><td><span className={`status-pill ${product.merged_into_product_id ? "merged" : product.active ? "active" : "inactive"}`}>{product.merged_into_product_id ? "Digabungkan" : product.active ? "Aktif" : "Nonaktif"}</span></td><td>{originLabel(product.source_origin)}</td><td><button className="usage-link" type="button" onClick={() => openUsage(product)}>{usageCountsLoading && usageCounts[product.id] === undefined ? "-" : `${usageCounts[product.id] ?? 0} referensi`}</button></td><td className="table-actions">{product.merged_into_product_id ? <button type="button" onClick={() => openUsage(product)}>Lihat Riwayat</button> : <><AsyncButton loading={activeAction === `edit:${product.id}`} loadingText="Menyimpan..." onClick={() => openEditDialog(product)}>Edit</AsyncButton><AsyncButton className={product.active ? "danger-inline" : undefined} loading={activeAction === `active:${product.id}`} loadingText="Menyimpan..." onClick={() => void setActive(product)}>{product.active ? "Nonaktifkan" : "Aktifkan"}</AsyncButton><button className="product-merge-action" type="button" onClick={() => setMergeProduct(product)}>Gabungkan</button><button className="product-delete-action" type="button" disabled={product.active} title={product.active ? "Nonaktifkan Produk terlebih dahulu sebelum menghapus permanen." : "Periksa keterkaitan dan hapus Produk permanen"} onClick={() => setDeleteProduct(product)}>Hapus Permanen</button></>}</td></tr>)}
-      {!rows.length && <tr><td colSpan={6}>{loading ? "Memuat produk..." : "Produk tidak ditemukan."}</td></tr>}
+    <div className={`admin-table-wrap product-table${loading ? " is-loading" : ""}`} aria-busy={loading}><table><thead><tr>
+      {([
+        ["brand", "Merk"],
+        ["model", "Tipe"],
+        ["status", "Status"],
+        ["source", "Sumber"],
+        ["usage", "Penggunaan"],
+      ] as const).map(([field, label]) => <th key={field} aria-sort={sortField === field ? (sortDirection === "asc" ? "ascending" : "descending") : "none"}>
+        <button className="sortable-header" type="button" onClick={() => changeSort(field)}>{label}<span aria-hidden="true">{sortField === field ? (sortDirection === "asc" ? "\u25B2" : "\u25BC") : ""}</span></button>
+      </th>)}
+      <th>Aksi</th>
+    </tr></thead><tbody>
+      {rows.map((product) => <tr key={product.id}><td><strong>{product.brand}</strong>{product.merged_target && <small className="product-merged-target">Ke {product.merged_target.brand} · {product.merged_target.model}</small>}</td><td>{product.model}</td><td><span className={`status-pill ${product.merged_into_product_id ? "merged" : product.active ? "active" : "inactive"}`}>{product.merged_into_product_id ? "Digabungkan" : product.active ? "Aktif" : "Nonaktif"}</span></td><td>{productSourceLabel(product.source_origin)}</td><td><button className="usage-link" type="button" onClick={() => openUsage(product)}>{product.usage_count ?? 0} referensi</button></td><td className="table-actions">{product.merged_into_product_id ? <button type="button" onClick={() => openUsage(product)}>Lihat Riwayat</button> : <><AsyncButton loading={activeAction === `edit:${product.id}`} loadingText="Menyimpan..." onClick={() => openEditDialog(product)}>Edit</AsyncButton><AsyncButton className={product.active ? "danger-inline" : undefined} loading={activeAction === `active:${product.id}`} loadingText="Menyimpan..." onClick={() => void setActive(product)}>{product.active ? "Nonaktifkan" : "Aktifkan"}</AsyncButton><button className="product-merge-action" type="button" onClick={() => setMergeProduct(product)}>Gabungkan</button><button className="product-delete-action" type="button" disabled={product.active} title={product.active ? "Nonaktifkan Produk terlebih dahulu sebelum menghapus permanen." : "Periksa keterkaitan dan hapus Produk permanen"} onClick={() => setDeleteProduct(product)}>Hapus Permanen</button></>}</td></tr>)}
+      {!rows.length && <tr><td colSpan={6}>{loading ? "Memuat produk..." : "Tidak ada Produk yang sesuai dengan filter."}</td></tr>}
     </tbody></table></div>
     <div className="submission-pagination" aria-label="Pagination produk">
       <label className="page-size-control">Baris per halaman:
@@ -462,7 +483,7 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
     {usageProduct && <div className="app-dialog-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setUsageProduct(null); }}>
       <section className="app-dialog product-usage-dialog" role="dialog" aria-modal="true" aria-labelledby="product-usage-title">
         <h2 id="product-usage-title">Penggunaan Produk</h2>
-        <p className="product-usage-name"><strong>{usageProduct.brand}</strong><span>{usageProduct.model}</span>{dependencies && <small>{dependencies.product.mergedIntoProduct ? "Digabungkan" : dependencies.product.active ? "Aktif" : "Nonaktif"} · {originLabel(dependencies.product.sourceOrigin)}</small>}</p>
+        <p className="product-usage-name"><strong>{usageProduct.brand}</strong><span>{usageProduct.model}</span>{dependencies && <small>{dependencies.product.mergedIntoProduct ? "Digabungkan" : dependencies.product.active ? "Aktif" : "Nonaktif"} · {productSourceLabel(dependencies.product.sourceOrigin)}</small>}</p>
         {dependencies?.product.mergedIntoProduct && <p className="product-merged-notice">Produk ini telah digabungkan ke <strong>{dependencies.product.mergedIntoProduct.brand}</strong> · {dependencies.product.mergedIntoProduct.model}</p>}
         <div className="product-dependency-tabs" role="tablist" aria-label="Detail dependency produk">
           {[['summary', 'Dependency'], ['references', 'Referensi'], ['qc', 'QC History'], ['aliases', 'Alias']].map(([tab, label]) => <button key={tab} type="button" role="tab" aria-selected={dependencyTab === tab} className={dependencyTab === tab ? "is-active" : ""} onClick={() => selectDependencyTab(tab as DependencyTab)}>{label}</button>)}

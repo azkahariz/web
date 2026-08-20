@@ -1,13 +1,68 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
+import {
+  filterAdminProducts,
+  normalizeProductSortDirection,
+  normalizeProductSortField,
+  normalizeProductStatusFilter,
+  prepareAdminProductPage,
+  productSourceLabel,
+  sortAdminProducts,
+} from "../app/lib/admin-product-list.ts";
 
-test("master Produk memakai RPC Super Admin, pagination server-side, dan guard legacy sync", async () => {
-  const [migration, usageMigration, usageCountsMigration, route, pickerRoute, pickerLib, component, dashboard, globals, inventoryApp, submissionMonitor, submissionLib, hook, sync, packageJson] = await Promise.all([
+const productRows = [
+  { id: "a", brand: "Vaisala", model: "WXT536", active: true, source_origin: "SPREADSHEET", merged_into_product_id: null, usage_count: 12 },
+  { id: "b", brand: "Campbell", model: "CR1000", active: true, source_origin: "ADMIN", merged_into_product_id: null, usage_count: 2 },
+  { id: "c", brand: "Kipp", model: "CMP11", active: false, source_origin: "QC", merged_into_product_id: null, usage_count: 7 },
+  { id: "d", brand: "Campbell", model: "CR6", active: false, source_origin: "ADMIN", merged_into_product_id: "b", usage_count: 1 },
+];
+
+test("filter Produk membedakan status aktif, nonaktif, digabungkan, sumber, dan pencarian", () => {
+  assert.deepEqual(filterAdminProducts(productRows).map((row) => row.id), ["a", "b"]);
+  assert.deepEqual(filterAdminProducts(productRows, { status: "inactive" }).map((row) => row.id), ["c"]);
+  assert.deepEqual(filterAdminProducts(productRows, { status: "merged" }).map((row) => row.id), ["d"]);
+  assert.deepEqual(filterAdminProducts(productRows, { status: "all" }).map((row) => row.id), ["a", "b", "c", "d"]);
+  assert.deepEqual(filterAdminProducts(productRows, { status: "all", source: "ADMIN" }).map((row) => row.id), ["b", "d"]);
+  assert.deepEqual(filterAdminProducts(productRows, { status: "active", source: "ADMIN", search: "cr1000" }).map((row) => row.id), ["b"]);
+});
+
+test("sorting Produk stabil, case-insensitive, dan Penggunaan numerik", () => {
+  assert.deepEqual(sortAdminProducts(productRows, "brand", "asc").map((row) => row.id), ["d", "b", "c", "a"]);
+  assert.deepEqual(sortAdminProducts(productRows, "model", "desc").map((row) => row.id), ["a", "b", "d", "c"]);
+  assert.deepEqual(sortAdminProducts(productRows, "usage", "asc").map((row) => row.id), ["d", "b", "c", "a"]);
+  assert.deepEqual(sortAdminProducts(productRows, "usage", "desc").map((row) => row.id), ["a", "c", "b", "d"]);
+  assert.deepEqual(sortAdminProducts(productRows, "status", "asc").map((row) => row.id), ["b", "a", "d", "c"]);
+  assert.deepEqual(sortAdminProducts(productRows, "source", "asc").map((row) => row.id), ["d", "b", "a", "c"]);
+});
+
+test("filter dan sorting Produk diterapkan sebelum pagination server-side", () => {
+  const result = prepareAdminProductPage(productRows, { status: "all", source: "ADMIN", sort: "usage", direction: "desc", page: 2, pageSize: 1 });
+  assert.equal(result.totalCount, 2);
+  assert.deepEqual(result.rows.map((row) => row.id), ["d"]);
+  assert.equal(result.page, 2);
+  assert.equal(result.pageSize, 1);
+});
+
+test("parameter Product list memakai allowlist dan label sumber manusiawi", () => {
+  assert.equal(normalizeProductStatusFilter("unknown"), "active");
+  assert.equal(normalizeProductStatusFilter("merged"), "merged");
+  assert.equal(normalizeProductSortField("usage"), "usage");
+  assert.equal(normalizeProductSortField("unknown"), "brand");
+  assert.equal(normalizeProductSortDirection("desc"), "desc");
+  assert.equal(normalizeProductSortDirection("sideways"), "asc");
+  assert.equal(productSourceLabel("SPREADSHEET"), "Legacy Spreadsheet");
+  assert.equal(productSourceLabel("QC"), "QC Produk");
+  assert.equal(productSourceLabel("IMPORT_LAMA"), "IMPORT_LAMA");
+});
+
+test("master Produk memakai RPC Super Admin, filter/sorting server-side, dan guard legacy sync", async () => {
+  const [migration, usageMigration, usageCountsMigration, route, listLib, pickerRoute, pickerLib, component, dashboard, globals, inventoryApp, submissionMonitor, submissionLib, hook, sync, packageJson] = await Promise.all([
     readFile(new URL("../supabase/migrations/20260815120000_super_admin_product_management.sql", import.meta.url), "utf8"),
     readFile(new URL("../supabase/migrations/20260815130000_super_admin_product_usage.sql", import.meta.url), "utf8"),
     readFile(new URL("../supabase/migrations/20260815140000_super_admin_product_usage_counts.sql", import.meta.url), "utf8"),
     readFile(new URL("../app/api/admin/products/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/lib/admin-product-list.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/products/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/lib/product-picker.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/admin/AdminProducts.tsx", import.meta.url), "utf8"),
@@ -42,9 +97,21 @@ test("master Produk memakai RPC Super Admin, pagination server-side, dan guard l
   assert.match(migration, /security definer[\s\S]*set search_path = ''/);
   assert.match(route, /auth\.getUser/);
   assert.match(route, /status: 403/);
-  assert.match(route, /count: "exact"/);
   assert.match(route, /pageSize >= 10 && pageSize <= 1000/);
-  assert.match(route, /\.range\(\(page - 1\) \* pageSize, page \* pageSize - 1\)/);
+  assert.match(route, /normalizeProductStatusFilter/);
+  assert.match(route, /normalizeProductSortField/);
+  assert.match(route, /normalizeProductSortDirection/);
+  assert.match(route, /prepareAdminProductPage/);
+  assert.match(route, /admin_product_usage_counts/);
+  assert.match(route, /const shouldLoadUsageCounts = !activeOnly \|\| sortField === "usage"/);
+  assert.match(route, /matchingRows\.map\(\(row\) => row\.id\)/);
+  assert.match(route, /search, status, source, sort: sortField, direction: sortDirection, page, pageSize/);
+  assert.match(route, /searchParams\.get\("sources"\) === "1"/);
+  assert.match(route, /productSourceLabel/);
+  assert.match(listLib, /type AdminProductStatusFilter = "active" \| "inactive" \| "merged" \| "all"/);
+  assert.match(listLib, /field === "usage"/);
+  assert.match(listLib, /const filtered = filterAdminProducts/);
+  assert.match(listLib, /const sorted = sortAdminProducts/);
   assert.match(route, /usageProductId/);
   assert.match(route, /admin_product_usage/);
   assert.match(route, /usageCountProductId/);
@@ -77,6 +144,16 @@ test("master Produk memakai RPC Super Admin, pagination server-side, dan guard l
   assert.match(dashboard, /fetch\("\/api\/admin\/product-proposals"/);
   assert.match(dashboard, /proposal\.context\.categories/);
   assert.match(component, /Cari Merk atau Tipe/);
+  assert.match(component, /statusFilter/);
+  assert.match(component, /sourceFilter/);
+  assert.match(component, /Semua status/);
+  assert.match(component, /Semua sumber/);
+  assert.match(component, /className="sortable-header"/);
+  assert.match(component, /aria-sort=/);
+  assert.match(component, /changeSort\(field\)/);
+  assert.match(component, /status: statusFilter/);
+  assert.match(component, /params\.set\("source", sourceFilter\)/);
+  assert.doesNotMatch(component, />Urutkan<select/);
   assert.match(component, /pageSize/);
   assert.match(component, /fetch\(`\/api\/admin\/products/);
   assert.match(component, /Masukkan merk/);
@@ -97,7 +174,8 @@ test("master Produk memakai RPC Super Admin, pagination server-side, dan guard l
   assert.match(dashboard, /refreshProductSummary/);
   assert.match(dashboard, /<AdminProducts onChanged=\{refreshProductSummary\}/);
   assert.doesNotMatch(dashboard, /<AdminProducts onChanged=\{\(\) => void refresh\(\)\}/);
-  assert.match(component, /usageCounts/);
+  assert.match(component, /product\.usage_count \?\? 0/);
+  assert.doesNotMatch(component, /loadUsageCounts/);
   assert.match(component, /referensi/);
   assert.match(component, /product-usage-state/);
   assert.match(component, /product-usage-spinner/);

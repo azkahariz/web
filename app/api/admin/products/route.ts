@@ -2,12 +2,20 @@ import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 import { getPublicSupabaseConfig } from "../../../lib/supabase/config";
 import { createSupabaseServerClient } from "../../../lib/supabase/server";
+import {
+  normalizeProductSortDirection,
+  normalizeProductSortField,
+  normalizeProductStatusFilter,
+  prepareAdminProductPage,
+  productSourceLabel,
+  type AdminProductListRow,
+} from "../../../lib/admin-product-list";
 import { rankProductMergeTargets, productMergeRecommendationReason } from "../../../lib/product-merge-recommendations";
 import type { ProductAlias } from "../../../lib/product-qc";
 
 type RpcError = { code?: string | null };
 type ProductAction = "create" | "update" | "set-active";
-type ProductRow = { id: string; brand: string; model: string; active: boolean; source_origin: string };
+type ProductRow = AdminProductListRow;
 type CanonicalRow = { product_id: string; canonical_product_id: string; brand: string; model: string };
 type AliasRow = { product_id: string; brand_alias: string; model_alias: string };
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -66,13 +74,28 @@ export async function GET(request: Request) {
     if (error) return rpcErrorResponse(error, "Ringkasan produk gagal dimuat.");
     return NextResponse.json({ summary: Array.isArray(data) ? data[0] ?? null : data });
   }
+  if (url.searchParams.get("sources") === "1") {
+    const { error: authorizationError } = await auth.client.rpc("admin_product_summary");
+    if (authorizationError) return rpcErrorResponse(authorizationError, "Akses sumber produk gagal divalidasi.");
+    const values: string[] = [];
+    for (let from = 0; ; from += 1000) {
+      const result = await auth.client.from("products").select("source_origin").order("source_origin").range(from, from + 999);
+      if (result.error) return rpcErrorResponse(result.error, "Sumber produk gagal dimuat.");
+      values.push(...(result.data ?? []).map((row) => row.source_origin));
+      if ((result.data?.length ?? 0) < 1000) break;
+    }
+    const sources = [...new Set(values)].sort((left, right) => productSourceLabel(left).localeCompare(productSourceLabel(right), "id", { sensitivity: "base" }));
+    return NextResponse.json({ sources });
+  }
   const pageSize = productPageSize(url.searchParams.get("pageSize"));
   if (pageSize === null) return NextResponse.json({ error: "Jumlah per halaman harus berupa bilangan bulat 10-1000." }, { status: 400 });
   const page = Math.max(1, Number.parseInt(url.searchParams.get("page") || "1", 10) || 1);
-  const sortField = url.searchParams.get("sort") === "model" ? "model" : "brand";
-  const sortDirection = url.searchParams.get("direction") === "desc" ? false : true;
+  const sortField = normalizeProductSortField(url.searchParams.get("sort"));
+  const sortDirection = normalizeProductSortDirection(url.searchParams.get("direction"));
   const search = url.searchParams.get("search")?.trim().replace(/[(),]/g, " ") || "";
   const activeOnly = url.searchParams.get("activeOnly") === "1";
+  const status = activeOnly ? "active" : normalizeProductStatusFilter(url.searchParams.get("status"));
+  const source = url.searchParams.get("source")?.trim() || "";
   const excludeProductId = url.searchParams.get("excludeProductId");
   const recommendationSourceId = url.searchParams.get("recommendationSourceId");
   if (excludeProductId && !UUID_PATTERN.test(excludeProductId)) return NextResponse.json({ error: "ID produk yang dikecualikan tidak valid." }, { status: 400 });
@@ -127,23 +150,40 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Rekomendasi Produk tujuan gagal dimuat." }, { status: 400 });
     }
   }
-  let query = auth.client.from("products")
-    .select("id, brand, model, active, source_origin", { count: "exact" });
-  if (activeOnly) query = query.eq("active", true);
-  if (excludeProductId) query = query.neq("id", excludeProductId);
-  if (search) query = query.or(`brand.ilike.%${search}%,model.ilike.%${search}%`);
-  const secondarySort = sortField === "brand" ? "model" : "brand";
-  query = query.order(sortField, { ascending: sortDirection }).order(secondarySort, { ascending: true }).order("id", { ascending: true });
-  const { data, count, error } = await query.range((page - 1) * pageSize, page * pageSize - 1);
-  if (error) return rpcErrorResponse(error, "Daftar produk gagal dimuat.");
-  const rows = (data ?? []) as ProductRow[];
-  if (!activeOnly && rows.length) {
-    const canonicalResult = await auth.client.rpc("resolve_canonical_products", { p_product_ids: rows.map((row) => row.id) });
+  const matchingRows: ProductRow[] = [];
+  for (let from = 0; ; from += 1000) {
+    let query = auth.client.from("products")
+      .select("id, brand, model, active, source_origin, merged_into_product_id");
+    if (status === "active") query = query.eq("active", true).is("merged_into_product_id", null);
+    if (status === "inactive") query = query.eq("active", false).is("merged_into_product_id", null);
+    if (status === "merged") query = query.not("merged_into_product_id", "is", null);
+    if (source) query = query.eq("source_origin", source);
+    if (excludeProductId) query = query.neq("id", excludeProductId);
+    if (search) query = query.or(`brand.ilike.%${search}%,model.ilike.%${search}%`);
+    const result = await query.order("id").range(from, from + 999);
+    if (result.error) return rpcErrorResponse(result.error, "Daftar produk gagal dimuat.");
+    matchingRows.push(...((result.data ?? []) as ProductRow[]));
+    if ((result.data?.length ?? 0) < 1000) break;
+  }
+
+  const shouldLoadUsageCounts = !activeOnly || sortField === "usage";
+  const usageResult = matchingRows.length && shouldLoadUsageCounts
+    ? await auth.client.rpc("admin_product_usage_counts", { p_product_ids: matchingRows.map((row) => row.id) })
+    : { data: [], error: null };
+  if (usageResult.error) return rpcErrorResponse(usageResult.error, "Jumlah penggunaan produk gagal dimuat.");
+  const usageById = new Map(((usageResult.data ?? []) as Array<{ product_id: string; reference_count: number }>).map((row) => [row.product_id, row.reference_count]));
+  const prepared = prepareAdminProductPage(
+    matchingRows.map((row) => ({ ...row, usage_count: usageById.get(row.id) ?? 0 })),
+    { search, status, source, sort: sortField, direction: sortDirection, page, pageSize },
+  );
+
+  if (!activeOnly && prepared.rows.length) {
+    const canonicalResult = await auth.client.rpc("resolve_canonical_products", { p_product_ids: prepared.rows.map((row) => row.id) });
     if (!canonicalResult.error) {
       const canonicalById = new Map(((canonicalResult.data ?? []) as CanonicalRow[]).map((row) => [row.product_id, row]));
       return NextResponse.json({
-        totalCount: count ?? 0,
-        rows: rows.map((row) => {
+        ...prepared,
+        rows: prepared.rows.map((row) => {
           const canonical = canonicalById.get(row.id);
           return canonical && canonical.canonical_product_id !== row.id
             ? { ...row, merged_into_product_id: canonical.canonical_product_id, merged_target: { id: canonical.canonical_product_id, brand: canonical.brand, model: canonical.model } }
@@ -152,7 +192,7 @@ export async function GET(request: Request) {
       });
     }
   }
-  return NextResponse.json({ totalCount: count ?? 0, rows });
+  return NextResponse.json(prepared);
 }
 
 export async function POST(request: Request) {
