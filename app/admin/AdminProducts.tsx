@@ -86,6 +86,7 @@ function originLabel(origin: string) {
 function CurrentPageReferenceCheckbox({ checked, indeterminate, disabled, onChange }: { checked: boolean; indeterminate: boolean; disabled: boolean; onChange: () => void }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const label = disabled ? "Tidak ada referensi yang dapat dipilih di halaman ini" : checked ? "Batalkan pilihan referensi di halaman ini" : "Pilih semua referensi di halaman ini";
+  const visibleLabel = disabled ? "Tidak ada referensi yang dapat dipilih di halaman ini" : "Pilih semua di halaman ini";
 
   useEffect(() => {
     if (inputRef.current) inputRef.current.indeterminate = indeterminate;
@@ -93,6 +94,7 @@ function CurrentPageReferenceCheckbox({ checked, indeterminate, disabled, onChan
 
   return <label className="product-reference-check product-reference-check-all" title={label}>
     <input ref={inputRef} type="checkbox" aria-label={label} checked={checked} disabled={disabled} onChange={onChange} />
+    <span>{visibleLabel}</span>
   </label>;
 }
 
@@ -476,7 +478,6 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
               <div className="product-reference-selection-toolbar">
                 <CurrentPageReferenceCheckbox checked={referencePageSelection.checked} indeterminate={referencePageSelection.indeterminate} disabled={referencePageSelection.disabled} onChange={() => setSelectedReferences((current) => toggleCurrentPageSelection(references.rows, current))} />
                 <div className="product-reference-selection-summary">
-                  <span>{referencePageSelection.disabled ? "Tidak ada referensi yang dapat dipilih di halaman ini" : "Pilih semua di halaman ini"}</span>
                   {selectedReferences.size > 0 && <strong>{selectedReferences.size} item dipilih</strong>}
                 </div>
                 <div className="product-reference-selection-actions">
