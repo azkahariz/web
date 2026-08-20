@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAppFeedback } from "./components/AppFeedback";
 import { getConditionOptions, MOUNTING_MATERIALS } from "./config/form-options";
-import rawData from "./data.generated.json";
 import { loadLocalDraft, saveLocalDraft } from "./lib/draft-storage";
 import { getTabSessionId, OPERATOR_STORAGE_KEY, type DraftPayload } from "./lib/server-draft";
 import { logoutCurrentBrowser } from "./lib/local-logout";
@@ -49,7 +48,6 @@ import StationSiteProgressPanel from "./components/StationSiteProgressPanel";
 import FooterAttribution from "./components/FooterAttribution";
 import type {
   Condition,
-  DataSet,
   DraftContexts,
   Drafts,
   InstalledItem,
@@ -57,12 +55,12 @@ import type {
   Product,
   SiteMetadataDrafts,
   SourceMode,
+  StationRuntimeMaster,
   UnitDetail,
 } from "./types/inventory";
 import type { SiteMetadata } from "./types/site-metadata";
 import type { StationAccount } from "./lib/auth";
 
-const data = rawData as DataSet;
 const EMPTY_CATEGORIES: string[] = [];
 
 export default function InventoryApp({
@@ -72,6 +70,7 @@ export default function InventoryApp({
   startInEditMode = false,
   initialSite = "",
   initialSubtype = "",
+  runtimeMaster,
 }: {
   account: StationAccount;
   adminSubmissionId?: string;
@@ -79,17 +78,16 @@ export default function InventoryApp({
   startInEditMode?: boolean;
   initialSite?: string;
   initialSubtype?: string;
+  runtimeMaster: StationRuntimeMaster;
 }) {
+  const data = runtimeMaster;
   const feedback = useAppFeedback();
   const router = useRouter();
-  const stations = useMemo(
-    () => Array.from(new Set(data.stationSites.map((row) => row.station))).sort((a, b) => a.localeCompare(b, "id")),
-    [],
-  );
+  const stations = [runtimeMaster.station.name];
   const mode = "site" as SourceMode;
   const station = account.stationName;
-  const [site, setSite] = useState(initialSite);
-  const [subtype, setSubtype] = useState(initialSubtype);
+  const [site, setSite] = useState(() => data.stationSites.find((row) => row.site === initialSite)?.siteId ?? "");
+  const [subtype, setSubtype] = useState(() => data.siteSubtypes.find((row) => row.subtype === initialSubtype)?.subtypeId ?? "");
   const templateProfile = "";
   const [categoryQuery, setCategoryQuery] = useState("");
   const [warehouseCategoryPickerOpen, setWarehouseCategoryPickerOpen] = useState(false);
@@ -118,14 +116,16 @@ export default function InventoryApp({
     const timer = window.setTimeout(() => {
       try {
         const parsed = loadLocalDraft();
-        if (parsed && !isAdminEditor) {
-          if (parsed.station === station) {
-            setSite(parsed.site ?? "");
-            setSubtype(parsed.subtype ?? "");
+        if (parsed?.version === 2 && !isAdminEditor) {
+          if (parsed.stationId === account.stationId
+            && data.stationSites.some((row) => row.siteId === parsed.siteId)
+            && data.siteSubtypes.some((row) => row.subtypeId === parsed.subtypeId)) {
+            setSite(parsed.siteId ?? "");
+            setSubtype(parsed.subtypeId ?? "");
+            setDrafts(parsed.drafts ?? {});
+            setDraftContexts(parsed.draftContexts ?? {});
+            setSiteMetadataDrafts(parsed.siteMetadataDrafts ?? {});
           }
-          setDrafts(parsed.drafts ?? {});
-          setDraftContexts(parsed.draftContexts ?? {});
-          setSiteMetadataDrafts(parsed.siteMetadataDrafts ?? {});
         }
         setOperatorName(isAdminEditor ? account.username : localStorage.getItem(OPERATOR_STORAGE_KEY) ?? "");
       } catch {
@@ -135,12 +135,12 @@ export default function InventoryApp({
       }
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [account.username, isAdminEditor, station]);
+  }, [account.stationId, account.username, data.siteSubtypes, data.stationSites, isAdminEditor]);
 
   useEffect(() => {
     if (!hydrated || isAdminEditor) return;
-    saveLocalDraft({ mode, station, site, subtype, templateProfile, drafts, draftContexts, siteMetadataDrafts });
-  }, [mode, station, site, subtype, templateProfile, drafts, draftContexts, siteMetadataDrafts, hydrated, isAdminEditor]);
+    saveLocalDraft({ version: 2, mode, stationId: account.stationId, siteId: site, subtypeId: subtype, station, site, subtype, templateProfile, drafts, draftContexts, siteMetadataDrafts });
+  }, [account.stationId, mode, station, site, subtype, templateProfile, drafts, draftContexts, siteMetadataDrafts, hydrated, isAdminEditor]);
 
   useEffect(() => {
     if (hydrated && !isAdminEditor) localStorage.setItem(OPERATOR_STORAGE_KEY, operatorName);
@@ -182,12 +182,12 @@ export default function InventoryApp({
 
   const sites = useMemo(
     () => sortStationSites(data.stationSites.filter((row) => row.stationId === account.stationId)),
-    [account.stationId],
+    [account.stationId, data.stationSites],
   );
-  const selectedSite = sites.find((row) => row.site === site);
+  const selectedSite = sites.find((row) => row.siteId === site);
   const allSubtypeOptions = useMemo(
     () => data.siteSubtypes.filter((row) => row.siteType === selectedSite?.siteType),
-    [selectedSite],
+    [data.siteSubtypes, selectedSite],
   );
   const kat3Family = selectedSite?.siteType === AWOS_KAT3_SITE_TYPE
     ? getAwosKat3Family(selectedSite.site)
@@ -198,35 +198,37 @@ export default function InventoryApp({
     siteSubtypes: allSubtypeOptions,
     getSubtypeName: (row) => row.subtype,
   }) : [];
-  const subtypes = subtypeOptions.map((row) => row.subtype);
+  const subtypes = subtypeOptions.map((row) => row.subtypeId ?? "");
 
   const currentSubtype = subtypes.length === 1 ? subtypes[0] : subtypes.includes(subtype) ? subtype : "";
-  const selectedSubtype = subtypeOptions.find((row) => row.subtype === currentSubtype);
+  const selectedSubtype = subtypeOptions.find((row) => row.subtypeId === currentSubtype);
+  const legacySubtypeIds = selectedSite?.siteId ? data.legacySubmissionSubtypeIdsBySite[selectedSite.siteId] ?? [] : [];
+  const remediationRequired = Boolean(selectedSite && legacySubtypeIds.some((id) => !subtypeOptions.some((row) => row.subtypeId === id)));
   const profile = mode === "template" ? templateProfile : selectedSubtype?.profile ?? "";
   const profileCategories = data.barangByJenis[profile] ?? EMPTY_CATEGORIES;
-  const warehouseMode = isWarehouseContext(data, selectedSite, selectedSubtype);
+  const warehouseMode = isWarehouseContext(selectedSite, selectedSubtype);
   const conditionOptions = getConditionOptions(warehouseMode);
   const draftKey = mode === "template"
     ? `template::${profile}`
-    : `site::${station}::${site}::${currentSubtype}`;
+    : `site::${account.stationId}::${selectedSite?.siteId ?? ""}::${selectedSubtype?.subtypeId ?? ""}`;
   const inventory = useMemo(() => drafts[draftKey] ?? {}, [draftKey, drafts]);
-  const categoryIds = useMemo(() => itemIdByName(data.master), []);
+  const categoryIds = useMemo(() => itemIdByName(data.master), [data.master]);
   const warehouseCategories = useMemo(() => {
     const allowed = new Set(profileCategories);
     return inventoryCategoryNames(inventory).filter((category) => allowed.has(category));
   }, [inventory, profileCategories]);
   const categories = warehouseMode ? warehouseCategories : profileCategories;
-  const metadataKey = `site-metadata::${station}::${site}`;
+  const metadataKey = `site-metadata::${account.stationId}::${selectedSite?.siteId ?? ""}`;
   const siteMetadata = useMemo(() => ({ ...EMPTY_SITE_METADATA, ...(siteMetadataDrafts[metadataKey] ?? {}) }), [metadataKey, siteMetadataDrafts]);
   const automaticMetadata = {
     stationName: station,
-    siteName: site,
+    siteName: selectedSite?.site ?? "",
     equipmentType: selectedSite?.siteType ?? "",
     fieldDomain: resolveFieldDomain(selectedSite?.siteType ?? ""),
     uptManager: station,
   };
   const runwayAzimuth = draftContexts[draftKey]?.runwayAzimuth ?? "";
-  const acceptsRunwayAzimuth = /(?:TDZ|End Point)$/i.test(currentSubtype);
+  const acceptsRunwayAzimuth = /(?:TDZ|End Point)$/i.test(selectedSubtype?.subtype ?? "");
   const filledCount = profileCategories.filter((category) => inventoryCategoryIsFilled(inventory, category)).length;
   const totalUnits = physicalUnitCount(inventory);
   const warehouseRecordedCategories = recordedCategoryCount(inventory);
@@ -578,7 +580,7 @@ export default function InventoryApp({
   }
 
   function persistLocalNow() {
-    saveLocalDraft({ mode, station, site, subtype, templateProfile, drafts, draftContexts, siteMetadataDrafts });
+    saveLocalDraft({ version: 2, mode, stationId: account.stationId, siteId: site, subtypeId: subtype, station, site, subtype, templateProfile, drafts, draftContexts, siteMetadataDrafts });
   }
 
   async function startEditing() {
@@ -603,6 +605,7 @@ export default function InventoryApp({
       router.replace(`/admin/submissions/${result.submissionId}?edit=1`);
       return;
     }
+    if (remediationRequired) return;
     if (!isAdminEditor && !operatorName.trim()) {
       setEditFeedback("Isi Nama operator sebelum mulai mengedit.");
       return;
@@ -664,16 +667,16 @@ export default function InventoryApp({
     if (!serverPayload || !selectedSite) return;
     const payload = buildInventoryJson({
       stationName: station,
-      siteName: site,
+      siteName: selectedSite.site,
       siteTypeName: selectedSite.siteType,
-      subtypeName: currentSubtype,
+      subtypeName: selectedSubtype?.subtype ?? "",
       profile,
       categories,
       payload: serverPayload,
       warehouseMode,
       resolveItem: productForExport,
     });
-    const filename = buildAloptamaFilename(station, site, currentSubtype, "json");
+    const filename = buildAloptamaFilename(station, selectedSite.site, selectedSubtype?.subtype ?? "", "json");
     downloadText(filename, JSON.stringify(payload, null, 2), "application/json");
   }
 
@@ -683,16 +686,16 @@ export default function InventoryApp({
     if (!serverPayload || !selectedSite) return;
     const csv = buildInventoryCsv({
       stationName: station,
-      siteName: site,
+      siteName: selectedSite.site,
       siteTypeName: selectedSite.siteType,
-      subtypeName: currentSubtype,
+      subtypeName: selectedSubtype?.subtype ?? "",
       profile,
       categories,
       payload: serverPayload,
       warehouseMode,
       resolveItem: productForExport,
     });
-    const filename = buildAloptamaFilename(station, site, currentSubtype, "csv");
+    const filename = buildAloptamaFilename(station, selectedSite.site, selectedSubtype?.subtype ?? "", "csv");
     downloadText(filename, csv, "text/csv;charset=utf-8");
   }
 
@@ -791,14 +794,14 @@ export default function InventoryApp({
               <label className="field-label" htmlFor="site-select">Aloptama / Site</label>
               <select id="site-select" value={site} disabled={!station || sync.isEditing} onChange={(event) => { setSite(event.target.value); setSubtype(""); setEditFeedback(""); }}>
                 <option value="">{station ? "Pilih site" : "Pilih stasiun dahulu"}</option>
-                {sites.map((row) => <option key={`${row.site}-${row.siteType}`} value={row.site}>{row.site}</option>)}
+                {sites.map((row) => <option key={row.siteId} value={row.siteId}>{row.site}</option>)}
               </select>
               {selectedSite && <p className="field-hint">Tipe site: <strong>{selectedSite.siteType}</strong></p>}
 
               <label className="field-label" htmlFor="subtype-select">Subtipe site</label>
               <select id="subtype-select" value={currentSubtype} disabled={!site || !subtypes.length || sync.isEditing} onChange={(event) => { setSubtype(event.target.value); setEditFeedback(""); }}>
                 <option value="">{site ? "Pilih subtipe" : "Pilih site dahulu"}</option>
-                {subtypes.map((name) => <option key={name} value={name}>{name}</option>)}
+                {subtypeOptions.map((row) => <option key={row.subtypeId} value={row.subtypeId}>{row.subtype}</option>)}
               </select>
               {kat3Family && <p className="field-hint">Pilihan dibatasi untuk AWOS Kat. 3 <strong>{kat3Family}</strong>.</p>}
               {selectedSite?.siteType === AWOS_KAT3_SITE_TYPE && !kat3Family && <p className="warning-copy">Variant AWOS Kategori III belum terpetakan. Hubungi pengelola master data.</p>}
@@ -821,7 +824,8 @@ export default function InventoryApp({
                 </>
               )}
 
-              {locationReady && (
+              {remediationRequired && <div className="field-hint">Konfigurasi Site sedang diperbarui. Pengisian sementara tidak dapat dilakukan. <button type="button" className="secondary-button" onClick={() => router.refresh()}>Muat ulang</button></div>}
+              {locationReady && !remediationRequired && (
                 <div className="edit-start-block">
                   <button className="primary-button" disabled={sync.isEditing || sync.status === "opening"} onClick={startEditing}>
                     {isAdminEditor ? "Edit sebagai Admin" : hasLocalDraft || sync.hasServerDraft ? "Edit Data" : "Mulai Pengisian"}
@@ -844,15 +848,15 @@ export default function InventoryApp({
           )}
           {!isAdminEditor && (
             <StationSiteProgressPanel
-              data={data}
+              master={data}
               sites={sites}
               submissions={effectiveStationSiteProgressRows}
               loading={stationSiteProgressLoading}
               error={stationSiteProgressError}
-              selectedSite={site}
+              selectedSite={selectedSiteId}
               disabled={sync.isEditing}
-              onSelectSite={(nextSite) => {
-                setSite(nextSite);
+              onSelectSite={(nextSiteId) => {
+                setSite(nextSiteId);
                 setSubtype("");
                 setEditFeedback("");
               }}
@@ -882,7 +886,7 @@ export default function InventoryApp({
             </div>
           )}
           <fieldset className="editing-surface" disabled={locationReady && !sync.canEdit} onInputCapture={sync.touchActivity} onChangeCapture={sync.touchActivity}>
-          {mode === "site" && selectedSite && !warehouseMode && (
+          {mode === "site" && selectedSite && !warehouseMode && !remediationRequired && (
             <SiteMetadataForm
               value={siteMetadata}
               automatic={automaticMetadata}
@@ -897,6 +901,11 @@ export default function InventoryApp({
               <span className="empty-index">01</span>
               <div><h3>Mulai dari lokasi</h3><p>Lengkapi pilihan di sebelah kiri. Daftar barang yang sesuai akan muncul otomatis di sini.</p></div>
             </div>
+          ) : remediationRequired ? (
+            <div className="empty-state">
+              <span className="empty-index">!</span>
+              <div><h3>Konfigurasi Site sedang diperbarui</h3><p>Pengisian sementara tidak dapat dilakukan. Muat ulang setelah pembaruan master selesai.</p></div>
+            </div>
           ) : !profile || !profileCategories.length ? (
             <div className="empty-state warning-state">
               <span className="empty-index">!</span>
@@ -908,7 +917,7 @@ export default function InventoryApp({
                 <div>
                   <p className="eyebrow">{mode === "site" ? "LANGKAH KETIGA" : "LANGKAH KEDUA"}</p>
                   <h3>{warehouseMode ? "Barang di Gudang" : "Pilih barang terpasang"}</h3>
-                  <p>{mode === "site" ? site : `Pratinjau ${profile}`}</p>
+                  <p>{mode === "site" ? selectedSite?.site : `Pratinjau ${profile}`}</p>
                 </div>
                 {warehouseMode ? <div className="warehouse-summary">
                   <strong>{totalUnits} unit fisik</strong>

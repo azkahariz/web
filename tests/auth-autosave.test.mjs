@@ -98,7 +98,7 @@ test("Station User hanya memfilter Site miliknya dan Gudang mengikuti scope yang
     readFile(new URL("../supabase/migrations/20260810010000_station_auth_autosave.sql", import.meta.url), "utf8"),
   ]);
   assert.match(inventory, /data\.stationSites\.filter\(\(row\) => row\.stationId === account\.stationId\)/);
-  assert.match(inventory, /isWarehouseContext\(data, selectedSite, selectedSubtype\)/);
+  assert.match(inventory, /isWarehouseContext\(selectedSite, selectedSubtype\)/);
   assert.match(page, /stationId: row\.station_id/);
   assert.match(adminPage, /from\("super_admins"\)/);
   assert.match(adminPage, /<AdminDashboard username=\{admin\.username\}/);
@@ -214,8 +214,8 @@ test("navigasi client-side dari Submission menghydrate payload server pada rende
   assert.match(hook, /client\.rpc\("admin_get_submission_state", \{ p_submission_id: adminSubmissionId \}\)/);
   assert.match(hook, /if \(choice\.payload\) onRemotePayload\(choice\.payload\)/);
 
-  assert.match(inventory, /useState\(initialSite\)/);
-  assert.match(inventory, /useState\(initialSubtype\)/);
+  assert.match(inventory, /find\(\(row\) => row\.site === initialSite\)\?\.siteId/);
+  assert.match(inventory, /find\(\(row\) => row\.subtype === initialSubtype\)\?\.subtypeId/);
   assert.match(submissionPage, /<InventoryApp[\s\S]*key=\{submission\.id\}/);
   assert.doesNotMatch(inventory, /setSite\(initialSite\)|setSubtype\(initialSubtype\)/);
 });

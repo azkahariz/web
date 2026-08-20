@@ -2,10 +2,10 @@
 
 import { useMemo } from "react";
 import { buildStationSiteProgress, type StationSubmissionProgress } from "../lib/station-site-progress";
-import type { DataSet, StationSite } from "../types/inventory";
+import type { StationRuntimeMaster, StationSite } from "../types/inventory";
 
 export default function StationSiteProgressPanel({
-  data,
+  master,
   sites,
   submissions,
   loading,
@@ -14,16 +14,16 @@ export default function StationSiteProgressPanel({
   disabled,
   onSelectSite,
 }: {
-  data: DataSet;
+  master: Pick<StationRuntimeMaster, "siteSubtypes" | "barangByJenis">;
   sites: StationSite[];
   submissions: StationSubmissionProgress[];
   loading: boolean;
   error: string;
   selectedSite: string;
   disabled: boolean;
-  onSelectSite: (site: string) => void;
+  onSelectSite: (siteId: string) => void;
 }) {
-  const rows = useMemo(() => buildStationSiteProgress(data, sites, submissions), [data, sites, submissions]);
+  const rows = useMemo(() => buildStationSiteProgress(master, sites, submissions), [master, sites, submissions]);
 
   return (
     <section className="station-site-progress" aria-labelledby="station-site-progress-title">
@@ -38,10 +38,10 @@ export default function StationSiteProgressPanel({
       <div className="station-site-progress-list">
         {rows.map((row) => (
           <button
-            className={`station-site-progress-row ${selectedSite === row.siteName ? "selected" : ""}`}
+            className={`station-site-progress-row ${selectedSite === row.siteId ? "selected" : ""}`}
             disabled={disabled}
             key={row.siteId}
-            onClick={() => onSelectSite(row.siteName)}
+            onClick={() => onSelectSite(row.siteId)}
           >
             <span className="station-site-progress-name"><strong>{row.siteName}</strong><small>{row.siteType}</small></span>
             {row.warehouseMode ? (

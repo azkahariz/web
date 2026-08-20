@@ -13,11 +13,12 @@ const data = {
   siteSubtypes: [
     ...["End Point", "Mid", "Station", "TDZ"].map((suffix, index) => ({
       siteType: "AWOS Kategori III",
+      siteTypeId: "awos-type",
       subtype: `AWOS Kategori III Vaisala ${suffix}`,
       profile: `AWOS ${index}`,
       subtypeId: `awos-${index}`,
     })),
-    { siteType: "AWS", subtype: "AWS Station", profile: "AWS", subtypeId: "aws-subtype" },
+    { siteType: "AWS", siteTypeId: "aws-type", subtype: "AWS Station", profile: "AWS", subtypeId: "aws-subtype" },
     { siteType: "Gudang", subtype: "Gudang", profile: "Gudang", siteTypeId: WAREHOUSE_SITE_TYPE_ID, subtypeId: WAREHOUSE_SUBTYPE_ID, profileId: WAREHOUSE_PROFILE_ID },
   ],
   barangByJenis: {
@@ -29,10 +30,10 @@ const data = {
 };
 
 const sites = [
-  { siteId: "awos-site", station: "Stasiun Uji", site: "AWOS Vaisala Kat. 3 Uji", siteType: "AWOS Kategori III" },
-  { siteId: "aws-site", station: "Stasiun Uji", site: "AWS Uji", siteType: "AWS" },
+  { siteId: "awos-site", station: "Stasiun Uji", site: "AWOS Vaisala Kat. 3 Uji", siteType: "AWOS Kategori III", siteTypeId: "awos-type" },
+  { siteId: "aws-site", station: "Stasiun Uji", site: "AWS Uji", siteType: "AWS", siteTypeId: "aws-type" },
   { siteId: "warehouse-site", station: "Stasiun Uji", site: "Gudang Uji", siteType: "Gudang", siteTypeId: WAREHOUSE_SITE_TYPE_ID },
-  { siteId: "empty-site", station: "Stasiun Uji", site: "AWS Belum Mulai", siteType: "AWS" },
+  { siteId: "empty-site", station: "Stasiun Uji", site: "AWS Belum Mulai", siteType: "AWS", siteTypeId: "aws-type" },
 ];
 
 test("ringkasan Station User menghitung AWOS multi-subtype sebagai satu parent site dan kategori", () => {

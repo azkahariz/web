@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import InventoryApp from "../../../InventoryApp";
+import { adminInventoryMaster } from "../../../lib/admin-inventory-master";
 import { createSupabaseServerClient } from "../../../lib/supabase/server";
 
 export default async function AdminSubmissionPage({ params, searchParams }: {
@@ -38,6 +39,7 @@ export default async function AdminSubmissionPage({ params, searchParams }: {
     account={{ id: admin.id, stationId: submission.station_id, stationName: station.name, username: admin.username }}
     adminSubmissionId={submission.id}
     adminMode
+    runtimeMaster={adminInventoryMaster(submission.station_id, station.name)}
     startInEditMode={edit === "1"}
     initialSite={site.name}
     initialSubtype={subtype.name}

@@ -1,4 +1,4 @@
-import type { DataSet, SiteSubtype, StationSite } from "../types/inventory.ts";
+import type { SiteSubtype, StationSite } from "../types/inventory.ts";
 
 export const WAREHOUSE_SITE_TYPE = "Gudang";
 export const WAREHOUSE_SUBTYPE = "Gudang";
@@ -15,12 +15,7 @@ export function warehouseDefinition() {
   };
 }
 
-export function isWarehouseContext(
-  data: DataSet,
-  site: StationSite | undefined,
-  subtype: SiteSubtype | undefined,
-) {
-  void data;
+export function isWarehouseContext(site: StationSite | undefined, subtype: SiteSubtype | undefined) {
   const canonical = warehouseDefinition();
   return Boolean(canonical
     && site?.siteTypeId === canonical.siteTypeId

@@ -1,6 +1,6 @@
 import { getAllowedSiteSubtypes } from "./site-subtypes.ts";
 import { isWarehouseContext } from "./warehouse.ts";
-import type { DataSet, SiteSubtype, StationSite } from "../types/inventory.ts";
+import type { SiteSubtype, StationRuntimeMaster, StationSite } from "../types/inventory.ts";
 
 export type StationSubmissionProgress = {
   siteId: string;
@@ -33,7 +33,7 @@ function subtypeKey(siteId: string | undefined, subtype: SiteSubtype) {
 }
 
 export function buildStationSiteProgress(
-  data: DataSet,
+  master: Pick<StationRuntimeMaster, "siteSubtypes" | "barangByJenis">,
   sites: StationSite[],
   submissions: StationSubmissionProgress[],
 ): StationSiteProgress[] {
@@ -43,14 +43,14 @@ export function buildStationSiteProgress(
   ]));
 
   return Array.from(new Map(sites.map((site) => [siteKey(site), site])).values()).map((site) => {
-    const allSubtypes = data.siteSubtypes.filter((subtype) => subtype.siteType === site.siteType);
+    const allSubtypes = master.siteSubtypes.filter((subtype) => subtype.siteTypeId === site.siteTypeId);
     const allowedSubtypes = getAllowedSiteSubtypes({
       siteName: site.site,
       siteTypeName: site.siteType,
       siteSubtypes: allSubtypes,
       getSubtypeName: (subtype) => subtype.subtype,
     });
-    const isWarehouse = allowedSubtypes.some((subtype) => isWarehouseContext(data, site, subtype));
+    const isWarehouse = allowedSubtypes.some((subtype) => isWarehouseContext(site, subtype));
 
     if (isWarehouse) {
       const summary = allowedSubtypes
@@ -75,7 +75,7 @@ export function buildStationSiteProgress(
       const summary = summariesBySubtype.get(subtypeKey(site.siteId, subtype));
       return {
         filledCount: summary?.filledCount ?? 0,
-        totalCount: summary?.totalCount ?? (data.barangByJenis[subtype.profile] ?? []).length,
+        totalCount: summary?.totalCount ?? (master.barangByJenis[subtype.profile] ?? []).length,
       };
     });
     const filledCount = subtypeProgress.reduce((total, summary) => total + summary.filledCount, 0);

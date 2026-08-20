@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import InventoryApp from "../../InventoryApp";
+import { adminInventoryMaster } from "../../lib/admin-inventory-master";
 import { getAllowedSiteSubtypes } from "../../lib/site-subtypes";
 import { createSupabaseServerClient } from "../../lib/supabase/server";
 
@@ -36,6 +37,7 @@ export default async function AdminInventoryPage({ searchParams }: {
   return <InventoryApp
     account={{ id: admin.id, stationId: site.station_id, stationName: station.name, username: admin.username }}
     adminMode
+    runtimeMaster={adminInventoryMaster(site.station_id, station.name)}
     initialSite={site.name}
     initialSubtype={subtype.name}
   />;

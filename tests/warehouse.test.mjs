@@ -56,7 +56,7 @@ test("master Gudang memakai UUID canonical dan label Gudang sebagai allowed cata
   assert.equal(warehouseSubtype.subtypeId, WAREHOUSE_SUBTYPE_ID);
   assert.equal(warehouseSubtype.profileId, WAREHOUSE_PROFILE_ID);
   assert.equal(generated.barangByJenis[WAREHOUSE_PROFILE].length, 128);
-  assert.equal(isWarehouseContext(generated, warehouseSite, warehouseSubtype), true);
+  assert.equal(isWarehouseContext(warehouseSite, warehouseSubtype), true);
   assert.deepEqual(summarizeWarehouseInventory({}), { categoryCount: 0, unitCount: 0 });
 });
 
@@ -202,7 +202,7 @@ test("form Site biasa dan Gudang mempertahankan field serta lifecycle infrastruc
   assert.match(form, /warehouseMode \? [\s\S]*Tahun pengadaan/);
   assert.match(form, /Nama kegiatan pengadaan/);
   assert.match(form, /: <label>Tahun pasang/);
-  assert.match(form, /!warehouseMode && \(/);
+  assert.match(form, /selectedSite && !warehouseMode && !remediationRequired/);
   assert.match(form, /create_product_proposal/);
   assert.match(hook, /open_submission|admin_open_submission/);
   assert.match(hook, /save_submission/);

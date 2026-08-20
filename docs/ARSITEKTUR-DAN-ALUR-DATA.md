@@ -1,6 +1,6 @@
 # Arsitektur dan Alur Data
 
-Terakhir diperbarui: 13 Agustus 2026.
+Terakhir diperbarui: 20 Agustus 2026.
 
 ```text
 Spreadsheet / CSV
@@ -12,17 +12,25 @@ Spreadsheet / CSV
 Browser
   |-- Next.js / Vercel
   |-- localStorage (cadangan draf perangkat)
-  `-- Supabase Auth + RLS + RPC --> submissions / lock / QC / audit
+  `-- Supabase Auth + RLS + RPC --> runtime master / submissions / lock / QC / audit
 ```
 
 ## Master data dan data pengisian
 
 **Master data** menentukan pilihan yang tersedia: stasiun, Site, tipe,
-subtipe, profil barang, barang, dan produk. Sumber utamanya Spreadsheet/CSV.
+subtipe, profil barang, barang, dan produk. Supabase production adalah master
+authoritative untuk runtime aplikasi.
 
 `app/data.generated.json` adalah hasil generate yang dilacak Git. Sinkronisasi
 master mengirim input CSV ke tabel master Supabase; export master hanya membaca
 tabel tersebut dan menghasilkan snapshot CSV, bukan perubahan balik otomatis.
+Artefak generated tidak dipakai untuk runtime Station User.
+
+Station User membaca `station_runtime_master()` yang mengidentifikasi akun dari
+`auth.uid()`, lalu mengembalikan hanya Site aktif milik stasiun tersebut,
+Subtipe aktif, profil, mapping kategori, dan item aktif yang relevan. RPC tidak
+menerima `station_id` dari browser. Jika master runtime gagal dimuat, form
+menampilkan retry dan tidak melakukan fallback ke artifact generated.
 
 **Data pengisian** adalah submission per Station, Site, dan Subtipe. Submission
 menyimpan payload JSON, version, operator, dan informasi lock di Supabase.

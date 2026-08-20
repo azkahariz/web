@@ -65,6 +65,20 @@ export type DataSet = {
   master?: MasterDataReferences;
 };
 
+/**
+ * Master yang dipakai form Station User saat runtime. Bentuknya sengaja
+ * kompatibel dengan kebutuhan form, tetapi seluruh nilainya berasal dari
+ * Supabase melalui RPC ter-scope akun stasiun.
+ */
+export type StationRuntimeMaster = {
+  station: { id: string; name: string };
+  stationSites: StationSite[];
+  siteSubtypes: SiteSubtype[];
+  barangByJenis: Record<string, string[]>;
+  master: MasterDataReferences;
+  legacySubmissionSubtypeIdsBySite: Record<string, string[]>;
+};
+
 export type Condition = "Baik" | "Rusak ringan" | "Rusak" | "Tidak beroperasi";
 
 export type UnitDetail = {

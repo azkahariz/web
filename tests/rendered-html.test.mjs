@@ -279,7 +279,7 @@ test("metadata Aloptama tersimpan per site dan memakai nilai lokasi otomatis", a
     readFile(new URL("../app/lib/draft-storage.ts", import.meta.url), "utf8"),
   ]);
 
-  assert.match(source, /site-metadata::\$\{station\}::\$\{site\}/);
+  assert.match(source, /site-metadata::\$\{account\.stationId\}::\$\{selectedSite\?\.siteId/);
   assert.match(source, /stationName: station/);
   assert.match(source, /equipmentType: selectedSite\?\.siteType/);
   assert.match(source, /fieldDomain: resolveFieldDomain\(selectedSite\?\.siteType \?\? ""\)/);

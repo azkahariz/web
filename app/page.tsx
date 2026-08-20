@@ -1,20 +1,18 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import rawData from "./data.generated.json";
 import AccountProblem from "./AccountProblem";
 import InventoryApp from "./InventoryApp";
 import LoginForm from "./LoginForm";
+import RuntimeMasterProblem from "./RuntimeMasterProblem";
 import FooterAttribution from "./components/FooterAttribution";
 import { getPublicSupabaseConfig } from "./lib/supabase/config";
 import { createSupabaseServerClient } from "./lib/supabase/server";
-import type { DataSet } from "./types/inventory";
+import { tryParseStationRuntimeMaster } from "./lib/station-runtime-master";
 
 export const metadata: Metadata = {
   title: "Aloptama Collect | Pendataan Aloptama",
   description: "Pendataan Metadata dan Inventaris Aloptama",
 };
-
-const data = rawData as DataSet;
 
 export default async function Home() {
   if (!getPublicSupabaseConfig()) {
@@ -44,7 +42,10 @@ export default async function Home() {
     .eq("active", true)
     .maybeSingle();
   if (error || !row) return <AccountProblem message="Akun belum terhubung ke stasiun aktif. Hubungi pengelola aplikasi." />;
-  const station = data.stationSites.find((item) => item.stationId === row.station_id);
-  if (!station) return <AccountProblem message="Data stasiun akun tidak ditemukan pada master aplikasi." />;
-  return <InventoryApp account={{ id: row.id, stationId: row.station_id, stationName: station.station, username: row.username }} />;
+  const { data: runtimePayload, error: runtimeError } = await supabase!.rpc("station_runtime_master");
+  if (runtimeError || !runtimePayload) return <RuntimeMasterProblem />;
+  const runtimeMaster = tryParseStationRuntimeMaster(runtimePayload);
+  if (!runtimeMaster) return <RuntimeMasterProblem />;
+  if (runtimeMaster.station.id !== row.station_id) return <AccountProblem message="Akun tidak sesuai dengan master stasiun aktif." />;
+  return <InventoryApp account={{ id: row.id, stationId: row.station_id, stationName: runtimeMaster.station.name, username: row.username }} runtimeMaster={runtimeMaster} />;
 }

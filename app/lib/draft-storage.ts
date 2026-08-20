@@ -8,7 +8,11 @@ import type {
 export const DRAFT_STORAGE_KEY = "irm-collect-local-drafts-v1";
 
 export type LocalDraftState = {
+  version?: 2;
   mode?: SourceMode;
+  stationId?: string;
+  siteId?: string;
+  subtypeId?: string;
   station?: string;
   site?: string;
   subtype?: string;

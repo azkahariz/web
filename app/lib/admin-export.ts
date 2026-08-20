@@ -59,7 +59,7 @@ function exportDefinition(siteId: string, siteSubtypeId: string) {
   return {
     profile: subtype.profile,
     categories: generated.barangByJenis[subtype.profile] ?? [],
-    warehouseMode: isWarehouseContext(generated, site, subtype),
+    warehouseMode: isWarehouseContext(site, subtype),
   };
 }
 
