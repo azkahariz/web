@@ -403,7 +403,7 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
           {dependenciesError && <p className="app-dialog-error" role="alert">{dependenciesError}</p>}
           {dependencies && <>
             <div className="product-dependency-summary">
-              <span><small>Direct current</small><strong>{dependencies.preflight.currentDirectReferenceCount}</strong></span><span><small>Site current</small><strong>{dependencies.preflight.currentSiteCount}</strong></span><span><small>Submission current</small><strong>{dependencies.preflight.currentSubmissionCount}</strong></span><span><small>QC resolved</small><strong>{dependencies.preflight.resolvedQcProposalCount}</strong></span><span><small>Alias</small><strong>{dependencies.preflight.aliasCount}</strong></span><span><small>Arsip</small><strong>{dependencies.preflight.archivedDirectReferenceCount}</strong></span>
+              <span><small>Referensi langsung</small><strong>{dependencies.preflight.currentDirectReferenceCount}</strong></span><span><small>Site current</small><strong>{dependencies.preflight.currentSiteCount}</strong></span><span><small>Submission current</small><strong>{dependencies.preflight.currentSubmissionCount}</strong></span><span><small>QC resolved</small><strong>{dependencies.preflight.resolvedQcProposalCount}</strong></span><span><small>Alias</small><strong>{dependencies.preflight.aliasCount}</strong></span><span><small>Arsip</small><strong>{dependencies.preflight.archivedDirectReferenceCount}</strong></span>
             </div>
             {dependencies.preflight.activeLockCount > 0 && <p className="product-dependency-lock">{dependencies.preflight.activeLockCount} Submission referensi sedang diedit.</p>}
           </>}

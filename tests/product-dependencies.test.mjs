@@ -34,7 +34,7 @@ test("Product dependency preflight tetap read-only, beridentitas stabil, dan han
   }
   assert.match(referencesRoute, /pageSize/);
   assert.match(referencesRoute, /archiveScope/);
-  for (const text of ["Dependency", "Referensi", "QC History", "Alias", "Direct current", "QC resolved", "Sedang diedit"]) assert.match(component, new RegExp(text));
+  for (const text of ["Dependency", "Referensi", "QC History", "Alias", "Referensi langsung", "QC resolved", "Sedang diedit"]) assert.match(component, new RegExp(text));
   assert.match(component, /expectedSubmissionVersion/);
   assert.match(component, /referencePageSize/);
   assert.match(component, /function DependencyPagination/);
@@ -58,5 +58,14 @@ test("Product dependency preflight tetap read-only, beridentitas stabil, dan han
   assert.match(await readFile(new URL("../app/globals.css", import.meta.url), "utf8"), /\.product-usage-pagination button:disabled/);
   assert.match(await readFile(new URL("../app/globals.css", import.meta.url), "utf8"), /\.product-usage-pagination > span \{[^}]*font-size: 9px/);
   assert.ok(component.indexOf("product-dependency-tabs") < component.indexOf("product-usage-content"), "Tabs harus berada di luar area content yang scroll.");
+  const canonicalCountsMigration = await readFile(new URL("../supabase/migrations/20260822120000_product_dependency_canonical_counts.sql", import.meta.url), "utf8");
+  assert.match(canonicalCountsMigration, /canonical_current_references/);
+  assert.match(canonicalCountsMigration, /item\.value ->> 'productId'/);
+  assert.match(canonicalCountsMigration, /item\.value ->> 'productProposalId'/);
+  assert.match(canonicalCountsMigration, /proposal\.status in \('APPROVED', 'MERGED'\)/);
+  assert.match(canonicalCountsMigration, /count\(distinct site_id\)/);
+  assert.match(canonicalCountsMigration, /count\(distinct submission_id\)/);
+  assert.doesNotMatch(canonicalCountsMigration, /\b(update|delete|insert into)\s+public\.(products|submissions|product_aliases|product_proposals)\b/i);
+  assert.match(component, /Referensi langsung/);
   assert.match(packageJson, /verify:product-dependencies/);
 });
