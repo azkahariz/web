@@ -23,15 +23,21 @@ async function createFixture(tx, { activeLock = false, targetCollision = false, 
   const roles = CENGKARENG_AWOS_REMEDIATION.roles;
   const sourceSubtypes = [];
   const targetSubtypes = [];
+  const profileIds = [];
+  const itemIds = [];
   for (const role of roles) {
     const [profile] = await tx`insert into public.item_profiles (name) values (${`VERIFY PROFILE ${role} ${suffix}`}) returning id`;
     const [item] = await tx`insert into public.items (name) values (${`VERIFY ITEM ${role} ${suffix}`}) returning id`;
     await tx`insert into public.profile_items (item_profile_id, item_id) values (${profile.id}, ${item.id})`;
+    profileIds.push(profile.id);
+    itemIds.push(item.id);
     let targetProfileId = profile.id;
     if (profileMismatch && role === "Mid") {
       const [differentProfile] = await tx`insert into public.item_profiles (name) values (${`VERIFY DIFFERENT PROFILE ${suffix}`}) returning id`;
       const [differentItem] = await tx`insert into public.items (name) values (${`VERIFY DIFFERENT ITEM ${suffix}`}) returning id`;
       await tx`insert into public.profile_items (item_profile_id, item_id) values (${differentProfile.id}, ${differentItem.id})`;
+      profileIds.push(differentProfile.id);
+      itemIds.push(differentItem.id);
       targetProfileId = differentProfile.id;
     }
     const [source] = await tx`
@@ -78,12 +84,30 @@ async function createFixture(tx, { activeLock = false, targetCollision = false, 
       siteName: `VERIFY CENGKARENG ${suffix}`,
       siteTypeName: `VERIFY CENGKARENG TYPE ${suffix}`,
     },
+    stationId: station.id,
+    siteTypeId: siteType.id,
+    profileIds,
+    itemIds,
     submissions,
   };
 }
 
+async function deleteFixture(tx, fixture) {
+  await tx`delete from public.submissions where station_id = ${fixture.stationId}`;
+  await tx`delete from public.sites where station_id = ${fixture.stationId}`;
+  await tx`delete from public.site_subtypes where site_type_id = ${fixture.siteTypeId}`;
+  await tx`delete from public.profile_items where item_profile_id = any(${tx.array(fixture.profileIds, 2950)})`;
+  await tx`delete from public.item_profiles where id = any(${tx.array(fixture.profileIds, 2950)})`;
+  await tx`delete from public.items where id = any(${tx.array(fixture.itemIds, 2950)})`;
+  await tx`delete from public.site_types where id = ${fixture.siteTypeId}`;
+  await tx`delete from public.stations where id = ${fixture.stationId}`;
+}
+
+const racer = postgres(resolveLocalDatabaseUrl(), { max: 1 });
+let atomicFixture = null;
 try {
-  await sql.begin(async (tx) => {
+  try {
+    await sql.begin(async (tx) => {
     const fixture = await createFixture(tx);
     const before = await inspectRemediation(tx, fixture.config);
     assertReady(before);
@@ -125,11 +149,38 @@ try {
     assert.equal(mismatch.plan.find((entry) => entry.role === "Mid").action, "PROFILE_MISMATCH");
     await assert.rejects(() => applyRemediation(tx, mismatchFixture.config), /REMEDIATION_NOT_READY/);
 
-    throw new Error(rollbackMarker);
-  });
-} catch (error) {
-  if (!(error instanceof Error) || error.message !== rollbackMarker) throw error;
+      throw new Error(rollbackMarker);
+    });
+  } catch (error) {
+    if (!(error instanceof Error) || error.message !== rollbackMarker) throw error;
+  }
+
+  atomicFixture = await createFixture(sql);
+  const atomicBefore = await inspectRemediation(sql, atomicFixture.config);
+  assertReady(atomicBefore);
+  const mid = atomicBefore.plan.find((entry) => entry.role === "Mid");
+  await assert.rejects(() => applyRemediation(sql, atomicFixture.config, {
+    onReady: async () => {
+      await racer`
+        insert into public.submissions (station_id, site_id, site_subtype_id, payload, version)
+        values (
+          ${atomicFixture.stationId}, ${atomicFixture.config.siteId}, ${mid.targetSubtype.id},
+          ${racer.json({ schemaVersion: 1, siteSubtypeId: mid.targetSubtype.id, inventory: {} })}, 1
+        )
+      `;
+    },
+  }), /duplicate key/);
+  const endpointBefore = atomicBefore.plan.find((entry) => entry.role === "End Point");
+  const [endpointAfterFailure] = await sql`
+    select site_subtype_id, version
+    from public.submissions
+    where id = ${endpointBefore.submission.id}
+  `;
+  assert.equal(endpointAfterFailure.site_subtype_id, endpointBefore.sourceSubtype.id, "Kegagalan Mid harus merollback End Point.");
+  assert.equal(endpointAfterFailure.version, endpointBefore.submission.version, "Rollback transaksi tidak boleh menaikkan version End Point.");
 } finally {
+  if (atomicFixture) await sql.begin((tx) => deleteFixture(tx, atomicFixture));
+  await racer.end({ timeout: 5 });
   await sql.end({ timeout: 5 });
 }
 
