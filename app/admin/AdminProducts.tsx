@@ -403,7 +403,12 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
           {dependenciesError && <p className="app-dialog-error" role="alert">{dependenciesError}</p>}
           {dependencies && <>
             <div className="product-dependency-summary">
-              <span><small>Referensi langsung</small><strong>{dependencies.preflight.currentDirectReferenceCount}</strong></span><span><small>Site current</small><strong>{dependencies.preflight.currentSiteCount}</strong></span><span><small>Submission current</small><strong>{dependencies.preflight.currentSubmissionCount}</strong></span><span><small>QC resolved</small><strong>{dependencies.preflight.resolvedQcProposalCount}</strong></span><span><small>Alias</small><strong>{dependencies.preflight.aliasCount}</strong></span><span><small>Arsip</small><strong>{dependencies.preflight.archivedDirectReferenceCount}</strong></span>
+              <div><small>Item langsung</small><strong>{dependencies.preflight.currentDirectReferenceCount}</strong><p>Item inventaris yang langsung memilih produk ini</p></div>
+              <div><small>Site aktif</small><strong>{dependencies.preflight.currentSiteCount}</strong><p>Site yang saat ini menggunakan produk ini</p></div>
+              <div><small>Submission aktif</small><strong>{dependencies.preflight.currentSubmissionCount}</strong><p>Submission aktif yang menggunakan produk ini</p></div>
+              <div><small>Hasil QC terkait</small><strong>{dependencies.preflight.resolvedQcProposalCount}</strong><p>Proposal QC yang telah diarahkan ke produk ini</p></div>
+              <div><small>Alias produk</small><strong>{dependencies.preflight.aliasCount}</strong><p>Nama alternatif yang mengarah ke produk ini</p></div>
+              <div><small>Referensi arsip</small><strong>{dependencies.preflight.archivedDirectReferenceCount}</strong><p>Referensi pada submission yang sudah diarsipkan</p></div>
             </div>
             {dependencies.preflight.activeLockCount > 0 && <p className="product-dependency-lock">{dependencies.preflight.activeLockCount} Submission referensi sedang diedit.</p>}
           </>}

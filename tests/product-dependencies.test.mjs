@@ -34,7 +34,8 @@ test("Product dependency preflight tetap read-only, beridentitas stabil, dan han
   }
   assert.match(referencesRoute, /pageSize/);
   assert.match(referencesRoute, /archiveScope/);
-  for (const text of ["Dependency", "Referensi", "QC History", "Alias", "Referensi langsung", "QC resolved", "Sedang diedit"]) assert.match(component, new RegExp(text));
+  for (const text of ["Dependency", "Referensi", "QC History", "Alias", "Item langsung", "Site aktif", "Submission aktif", "Hasil QC terkait", "Alias produk", "Referensi arsip", "Sedang diedit"]) assert.match(component, new RegExp(text));
+  for (const helper of ["Item inventaris yang langsung memilih produk ini", "Site yang saat ini menggunakan produk ini", "Submission aktif yang menggunakan produk ini", "Proposal QC yang telah diarahkan ke produk ini", "Nama alternatif yang mengarah ke produk ini", "Referensi pada submission yang sudah diarsipkan"]) assert.match(component, new RegExp(helper));
   assert.match(component, /expectedSubmissionVersion/);
   assert.match(component, /referencePageSize/);
   assert.match(component, /function DependencyPagination/);
@@ -66,6 +67,6 @@ test("Product dependency preflight tetap read-only, beridentitas stabil, dan han
   assert.match(canonicalCountsMigration, /count\(distinct site_id\)/);
   assert.match(canonicalCountsMigration, /count\(distinct submission_id\)/);
   assert.doesNotMatch(canonicalCountsMigration, /\b(update|delete|insert into)\s+public\.(products|submissions|product_aliases|product_proposals)\b/i);
-  assert.match(component, /Referensi langsung/);
+  assert.match(component, /Item langsung/);
   assert.match(packageJson, /verify:product-dependencies/);
 });

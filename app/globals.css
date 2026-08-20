@@ -398,10 +398,11 @@ button[aria-busy="true"] { display: inline-flex; align-items: center; justify-co
 .product-dependency-tabs button { min-height: 34px; padding: 7px 9px; border: 0; border-bottom: 2px solid transparent; background: transparent; color: var(--muted); font-size: 11px; font-weight: 800; white-space: nowrap; cursor: pointer; }
 .product-dependency-tabs button.is-active { border-bottom-color: var(--green-deep); color: var(--green-deep); }
 .product-dependency-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; margin: 0 0 12px; }
-.product-dependency-summary span { min-height: 58px; padding: 9px; border: 1px solid var(--line); border-radius: 6px; background: #fbfdfb; }
+.product-dependency-summary > div { min-height: 92px; padding: 9px; border: 1px solid var(--line); border-radius: 6px; background: #fbfdfb; }
 .product-dependency-summary small, .product-dependency-summary strong { display: block; }
 .product-dependency-summary small { color: var(--muted); font-size: 9px; font-weight: 800; text-transform: uppercase; }
-.product-dependency-summary strong { margin-top: 7px; color: var(--green-deep); font: 600 18px/1 Georgia, serif; }
+.product-dependency-summary strong { margin-top: 6px; color: var(--green-deep); font: 600 18px/1 Georgia, serif; }
+.product-dependency-summary p { margin: 6px 0 0; color: var(--muted); font-size: 9px; line-height: 1.35; }
 .product-dependency-lock { margin: 0 0 12px; color: var(--muted); font-size: 11px; }
 .product-usage-list { border-top: 1px solid var(--line); }
 .product-usage-list > div { padding: 11px 0; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 3px 12px; border-bottom: 1px solid var(--line); }
@@ -624,6 +625,7 @@ button[aria-busy="true"] { display: inline-flex; align-items: center; justify-co
 }
 
 @media (max-width: 620px) {
+  .product-dependency-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .topbar { min-height: 66px; padding: 12px 16px; }
   .guide-header { min-height: 66px; padding: 12px 16px; }
   .guide-header .logout-button { width: auto; }
