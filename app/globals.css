@@ -388,13 +388,13 @@ button[aria-busy="true"] { display: inline-flex; align-items: center; justify-co
 .product-table table { min-width: 760px; font-size: 12px; }
 .usage-link { padding: 0; border: 0; background: transparent; color: var(--green-deep); font-size: 10px; font-weight: 800; cursor: pointer; white-space: nowrap; }
 .usage-link:hover, .usage-link:focus-visible { text-decoration: underline; }
-.product-usage-dialog { width: min(680px, calc(100vw - 32px)); max-height: calc(100vh - 36px); display: flex; flex-direction: column; overflow: hidden; }
+.app-dialog.product-usage-dialog { width: min(680px, calc(100vw - 32px)); max-height: calc(100vh - 36px); display: flex; flex-direction: column; overflow: hidden; }
 .product-usage-name { margin: 0 0 8px; }
 .product-usage-name strong, .product-usage-name span { display: block; }
 .product-usage-name small { display: block; margin-top: 4px; color: var(--muted); font-size: 10px; }
 .product-usage-name span, .product-usage-summary { color: var(--muted); font-size: 12px; }
 .product-usage-summary { margin: 0 0 14px; }
-.product-dependency-tabs { display: flex; gap: 4px; margin: 14px 0; border-bottom: 1px solid var(--line); overflow-x: auto; }
+.product-dependency-tabs { position: relative; z-index: 2; flex: 0 0 auto; display: flex; gap: 4px; margin: 14px 0 10px; border-bottom: 1px solid var(--line); overflow-x: auto; background: white; }
 .product-dependency-tabs button { min-height: 34px; padding: 7px 9px; border: 0; border-bottom: 2px solid transparent; background: transparent; color: var(--muted); font-size: 11px; font-weight: 800; white-space: nowrap; cursor: pointer; }
 .product-dependency-tabs button.is-active { border-bottom-color: var(--green-deep); color: var(--green-deep); }
 .product-dependency-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; margin: 0 0 12px; }
@@ -415,6 +415,11 @@ button[aria-busy="true"] { display: inline-flex; align-items: center; justify-co
 .product-usage-spinner { width: 12px; height: 12px; flex: 0 0 12px; border: 2px solid var(--line); border-top-color: var(--muted); border-radius: 50%; animation: product-usage-spin 700ms linear infinite; }
 @keyframes product-usage-spin { to { transform: rotate(360deg); } }
 .product-usage-pagination { position: sticky; bottom: 0; z-index: 1; margin-top: 10px; padding: 8px 0 2px; justify-content: space-between; border-top: 1px solid var(--line); background: white; }
+.product-usage-pagination button { min-height: 32px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 6px; background: white; color: var(--green-deep); font-size: 10px; font-weight: 800; cursor: pointer; }
+.product-usage-pagination button:hover:not(:disabled) { border-color: var(--green-deep); background: var(--green-soft); }
+.product-usage-pagination button:focus-visible { outline: 2px solid var(--green-deep); outline-offset: 2px; }
+.product-usage-pagination button:disabled { opacity: .42; background: #f4f6f5; color: var(--muted); cursor: not-allowed; }
+.product-usage-pagination > span { color: var(--muted); font-size: 9px; font-weight: 500; white-space: nowrap; }
 .product-reference-toolbar { margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; gap: 10px; color: var(--muted); font-size: 11px; }
 .product-reference-toolbar label { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
 .product-reference-toolbar select { min-height: 31px; padding: 4px 7px; font-size: 11px; }

@@ -49,9 +49,14 @@ test("Product dependency preflight tetap read-only, beridentitas stabil, dan han
   assert.match(component, /aria-busy=\{usageLoading \|\| dependenciesLoading \|\| referencesLoading\}/);
   assert.match(component, /setDependencyPage\(1\)/);
   assert.match(component, /setReferencePageSize\(50\)/);
-  assert.match(await readFile(new URL("../app/globals.css", import.meta.url), "utf8"), /\.product-usage-dialog \{[^}]*overflow: hidden/);
+  assert.match(await readFile(new URL("../app/globals.css", import.meta.url), "utf8"), /\.app-dialog\.product-usage-dialog \{[^}]*overflow: hidden/);
   assert.match(await readFile(new URL("../app/globals.css", import.meta.url), "utf8"), /\.product-usage-content \{[^}]*overflow-y: auto/);
   assert.doesNotMatch(await readFile(new URL("../app/globals.css", import.meta.url), "utf8"), /\.product-usage-list \{[^}]*overflow/);
   assert.doesNotMatch(await readFile(new URL("../app/globals.css", import.meta.url), "utf8"), /\.product-reference-list \{[^}]*overflow/);
+  assert.match(await readFile(new URL("../app/globals.css", import.meta.url), "utf8"), /\.product-usage-pagination button \{[^}]*border: 1px solid/);
+  assert.match(await readFile(new URL("../app/globals.css", import.meta.url), "utf8"), /\.product-usage-pagination button:focus-visible/);
+  assert.match(await readFile(new URL("../app/globals.css", import.meta.url), "utf8"), /\.product-usage-pagination button:disabled/);
+  assert.match(await readFile(new URL("../app/globals.css", import.meta.url), "utf8"), /\.product-usage-pagination > span \{[^}]*font-size: 9px/);
+  assert.ok(component.indexOf("product-dependency-tabs") < component.indexOf("product-usage-content"), "Tabs harus berada di luar area content yang scroll.");
   assert.match(packageJson, /verify:product-dependencies/);
 });

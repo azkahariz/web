@@ -71,7 +71,7 @@ function DependencyPagination({ page, pageSize, total, loading, label, onPage, o
       <span>Menampilkan {first}–{last} dari {total} {label}</span>
       <label>Baris<select value={pageSize} onChange={(event) => onPageSize(Number(event.target.value))}><option value={50}>50</option><option value={100}>100</option><option value={200}>200</option></select></label>
     </div>
-    {pages > 1 && <div className="pagination-buttons product-usage-pagination"><button disabled={page <= 1 || loading} onClick={() => onPage(page - 1)}>Sebelumnya</button><span>Halaman {page} dari {pages}</span><button disabled={page >= pages || loading} onClick={() => onPage(page + 1)}>Berikutnya</button></div>}
+    {pages > 1 && <div className="pagination-buttons product-usage-pagination" aria-label={`Navigasi halaman ${label}`}><button type="button" disabled={page <= 1 || loading} onClick={() => onPage(page - 1)}>← Sebelumnya</button><span>Halaman {page} dari {pages}</span><button type="button" disabled={page >= pages || loading} onClick={() => onPage(page + 1)}>Berikutnya →</button></div>}
   </>;
 }
 
