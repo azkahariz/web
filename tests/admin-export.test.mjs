@@ -169,7 +169,8 @@ test("download Browse dan Admin tidak menjalankan lifecycle lock atau write", as
   assert.doesNotMatch(adminBrowse, /\.insert\(|\.update\(|\.upsert\(|open_submission/);
   assert.match(hook, /if \(adminMode && !adminSubmissionId\)[\s\S]*setStatus\("browsing"\)/);
   assert.match(ensureRoute, /is_super_admin/);
-  assert.match(ensureRoute, /getAllowedSiteSubtypes/);
+  assert.match(ensureRoute, /site_subtype_is_allowed/);
+  assert.doesNotMatch(ensureRoute, /getAllowedSiteSubtypes/);
   assert.match(ensureRoute, /\.upsert\(\{/);
   assert.match(ensureRoute, /admin_open_submission/);
 });

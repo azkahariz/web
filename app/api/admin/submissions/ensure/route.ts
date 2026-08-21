@@ -3,7 +3,6 @@ import { NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "../../../../lib/supabase/admin";
 import { getPublicSupabaseConfig } from "../../../../lib/supabase/config";
 import { createSupabaseServerClient } from "../../../../lib/supabase/server";
-import { getAllowedSiteSubtypes } from "../../../../lib/site-subtypes";
 
 export async function POST(request: Request) {
   const bearer = request.headers.get("authorization")?.match(/^Bearer\s+(.+)$/i)?.[1];
@@ -32,25 +31,20 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Target edit tidak lengkap." }, { status: 400 });
   }
   const { data: site } = await serviceClient.from("sites")
-    .select("id, station_id, site_type_id, name, active")
+    .select("id, station_id, active")
     .eq("id", body.siteId)
     .eq("station_id", body.stationId)
     .maybeSingle();
   if (!site || !site.active) {
     return NextResponse.json({ error: "Site/Subtipe tidak valid atau tidak aktif." }, { status: 400 });
   }
-  const [{ data: siteType }, { data: siteTypeSubtypes }] = await Promise.all([
-    serviceClient.from("site_types").select("id, name, active").eq("id", site.site_type_id).maybeSingle(),
-    serviceClient.from("site_subtypes").select("id, site_type_id, name, active").eq("site_type_id", site.site_type_id).eq("active", true),
-  ]);
-  const allowedSubtypes = siteType?.active ? getAllowedSiteSubtypes({
-    siteName: site.name,
-    siteTypeName: siteType.name,
-    siteSubtypes: siteTypeSubtypes ?? [],
-    getSubtypeName: (subtype) => subtype.name,
-  }) : [];
-  if (!allowedSubtypes.some((subtype) => subtype.id === body.siteSubtypeId)) {
-    return NextResponse.json({ error: "Subtipe tidak valid untuk variant Site tersebut." }, { status: 400 });
+  const { data: subtypeAllowed, error: subtypeError } = await serviceClient.rpc("site_subtype_is_allowed", {
+    p_site_id: body.siteId,
+    p_site_subtype_id: body.siteSubtypeId,
+  });
+  if (subtypeError) return NextResponse.json({ error: "Konfigurasi Site/Subtipe gagal diperiksa." }, { status: 500 });
+  if (!subtypeAllowed) {
+    return NextResponse.json({ error: "Subtipe tidak sesuai dengan konfigurasi Site saat ini. Muat ulang data Site dan pilih Subtipe yang tersedia." }, { status: 400 });
   }
 
   const { error: ensureError } = await serviceClient.from("submissions").upsert({

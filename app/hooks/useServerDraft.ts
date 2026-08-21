@@ -23,6 +23,13 @@ type RpcState = {
   last_saved_at?: string | null;
 };
 type SaveResult = "saved" | "skipped" | "local-only" | "conflict" | "read-only";
+const INVALID_SUBTYPE_MESSAGE = "Subtipe tidak sesuai dengan konfigurasi Site saat ini. Muat ulang data Site dan pilih Subtipe yang tersedia.";
+
+function siteSubtypeError(error: { code?: string; message?: string } | null) {
+  return error?.code === "22023" && error.message?.includes("site_subtype_not_allowed")
+    ? INVALID_SUBTYPE_MESSAGE
+    : "";
+}
 
 export type DraftSyncState =
   | "idle"
@@ -63,6 +70,7 @@ export function useServerDraft({
   const [lockLastActivityAt, setLockLastActivityAt] = useState<string | null>(null);
   const [latestPayload, setLatestPayload] = useState<DraftPayload | null>(null);
   const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
+  const [openError, setOpenError] = useState("");
   const [retryTick, setRetryTick] = useState(0);
   const versionRef = useRef(0);
   const initializedKeyRef = useRef("");
@@ -190,6 +198,7 @@ export function useServerDraft({
       setHasServerDraft(false);
       setLatestPayload(null);
       setDirty(false);
+      setOpenError("");
     });
     if (!stationId || !siteId || !siteSubtypeId || !payloadReady) {
       queueMicrotask(() => {
@@ -238,6 +247,7 @@ export function useServerDraft({
       if (generation !== generationRef.current) return;
       initializedKeyRef.current = key;
       if (error) {
+        setOpenError(siteSubtypeError(error));
         versionRef.current = local?.serverVersion ?? 0;
         lastSavedFingerprintRef.current = local?.payload ? payloadFingerprint(local.payload) : "";
         setStatus("browsing");
@@ -314,6 +324,7 @@ export function useServerDraft({
     setIsEditing(false);
     setDirty(false);
     setStatus("opening");
+    setOpenError("");
     const { data, error } = adminSubmissionId
       ? await client.rpc("admin_open_submission", {
         p_submission_id: adminSubmissionId,
@@ -327,7 +338,9 @@ export function useServerDraft({
         p_operator_name: operatorName || null,
       });
     if (error) {
-      setStatus("local-only");
+      const message = siteSubtypeError(error);
+      setOpenError(message);
+      setStatus(message ? "browsing" : "local-only");
       return false;
     }
     const row = firstRow(data as RpcState[]);
@@ -352,6 +365,7 @@ export function useServerDraft({
     }
     setIsEditing(false);
     setDirty(false);
+    setOpenError("");
     setStatus("read-only");
     return false;
   }, [adminMode, adminSubmissionId, onRemotePayload, operatorName, scope]);
@@ -447,6 +461,7 @@ export function useServerDraft({
     lockOperator,
     lockLastActivityAt,
     lastSavedAt,
+    openError,
     touchActivity,
     startEditing,
     retryAcquireEdit,

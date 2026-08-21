@@ -835,6 +835,7 @@ export default function InventoryApp({
                 </div>
               )}
               {editFeedback && <p className="warning-copy">{editFeedback}</p>}
+              {sync.openError && <p className="warning-copy" role="alert">{sync.openError}</p>}
           </div>
 
           {locationReady && (

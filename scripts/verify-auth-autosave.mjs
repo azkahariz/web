@@ -4,7 +4,12 @@ import { randomUUID } from "node:crypto";
 const databaseUrl = process.env.SUPABASE_DB_URL?.trim();
 if (!databaseUrl) throw new Error("SUPABASE_DB_URL wajib tersedia.");
 
-const sql = postgres(databaseUrl, { ssl: "require", max: 1, connect_timeout: 15, idle_timeout: 5 });
+const sql = postgres(databaseUrl, {
+  ssl: /localhost|127\.0\.0\.1/.test(databaseUrl) ? false : "require",
+  max: 1,
+  connect_timeout: 15,
+  idle_timeout: 5,
+});
 const rollbackMarker = `ROLLBACK_VERIFY_${randomUUID()}`;
 let existingAccountCount = 0;
 

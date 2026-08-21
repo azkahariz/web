@@ -9,7 +9,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "test": "npm run build && node --experimental-strip-types --test tests/rendered-html.test.mjs tests/master-sync.test.mjs tests/auth-autosave.test.mjs tests/admin-qc.test.mjs tests/admin-products.test.mjs tests/product-dependencies.test.mjs tests/product-reference-move.test.mjs tests/product-merge.test.mjs tests/product-delete.test.mjs tests/product-merge-recommendations.test.mjs tests/product-reference-selection.test.mjs tests/ux-polish.test.mjs tests/admin-export.test.mjs tests/admin-submission-monitoring.test.mjs tests/warehouse.test.mjs tests/station-site-progress.test.mjs tests/station-runtime-master.test.mjs tests/admin-runtime-master.test.mjs tests/export-master.test.mjs tests/export-source-csv.test.mjs",
+    "test": "npm run build && node --experimental-strip-types --test tests/rendered-html.test.mjs tests/master-sync.test.mjs tests/auth-autosave.test.mjs tests/admin-qc.test.mjs tests/admin-products.test.mjs tests/product-dependencies.test.mjs tests/product-reference-move.test.mjs tests/product-merge.test.mjs tests/product-delete.test.mjs tests/product-merge-recommendations.test.mjs tests/product-reference-selection.test.mjs tests/ux-polish.test.mjs tests/admin-export.test.mjs tests/admin-submission-monitoring.test.mjs tests/warehouse.test.mjs tests/station-site-progress.test.mjs tests/station-runtime-master.test.mjs tests/admin-runtime-master.test.mjs tests/export-master.test.mjs tests/export-source-csv.test.mjs tests/site-subtype-family.test.mjs",
     "lint": "eslint . --ignore-pattern .next",
     "check": "npm run lint && npm run test",
     "validate:master": "node scripts/sync-master.mjs --validate-only",
@@ -37,7 +37,8 @@
     "verify:cengkareng-awos-remediation": "node scripts/verify-cengkareng-awos-remediation.mjs",
     "verify:warehouse": "node scripts/verify-warehouse.mjs",
     "verify:admin-api": "node --env-file-if-exists=.env.local scripts/verify-admin-api.mjs",
-    "verify:station-runtime-master": "node --experimental-strip-types scripts/verify-station-runtime-master.mjs"
+    "verify:station-runtime-master": "node --experimental-strip-types scripts/verify-station-runtime-master.mjs",
+    "verify:site-subtype-family": "node scripts/verify-site-subtype-family.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.4",
