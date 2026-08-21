@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import GuideUpdatesSection from "../../components/GuideUpdatesSection";
+import { formatGuideDate, getLatestGuideUpdate } from "../../lib/guide-updates";
 import { createSupabaseServerClient } from "../../lib/supabase/server";
 
 export const metadata = {
@@ -14,6 +16,7 @@ export default async function AdminGuidePage() {
   if (!userData.user) redirect("/");
   const { data: admin } = await supabase.from("super_admins").select("id").eq("auth_user_id", userData.user.id).eq("active", true).maybeSingle();
   if (!admin) redirect("/");
+  const latest = getLatestGuideUpdate("admin");
 
   return (
     <main className="guide-shell">
@@ -24,6 +27,8 @@ export default async function AdminGuidePage() {
       <article className="guide-content">
         <p className="kicker">PANDUAN RINGKAS</p>
         <h2>Gunakan tindakan admin untuk membantu pengisian, bukan untuk menimpa data tanpa alasan.</h2>
+        {latest && <p className="guide-version-meta">Terakhir diperbarui: <strong>{formatGuideDate(latest.date)}</strong><span>Versi panduan {latest.version}</span></p>}
+        <GuideUpdatesSection audience="admin" />
         <section>
           <h3>Stasiun dan pengisian</h3>
           <ul>

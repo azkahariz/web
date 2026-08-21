@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAppFeedback } from "./components/AppFeedback";
 import { getConditionOptions, MOUNTING_MATERIALS } from "./config/form-options";
@@ -46,6 +45,7 @@ import { PRODUCT_PICKER_PAGE_SIZE } from "./lib/product-picker";
 import SiteMetadataForm from "./SiteMetadataForm";
 import StationSiteProgressPanel from "./components/StationSiteProgressPanel";
 import FooterAttribution from "./components/FooterAttribution";
+import GuideNoticeLink from "./components/GuideNoticeLink";
 import type {
   Condition,
   DraftContexts,
@@ -757,7 +757,7 @@ export default function InventoryApp({
         <div className="account-actions">
           <div className={`local-badge status-${sync.status}`}><span /> {syncLabels[sync.status]}{sync.status === "saved" && savedTime ? ` ${savedTime}` : ""}</div>
           {isAdminEditor && <button className="logout-button" onClick={() => router.push("/admin")}>Dashboard Admin</button>}
-          <Link className="logout-button" href="/panduan">Panduan</Link>
+          <GuideNoticeLink audience={isAdminEditor ? "admin" : "station"} />
           <button className="logout-button" onClick={logout}>Keluar</button>
         </div>
       </header>

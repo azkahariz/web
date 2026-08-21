@@ -1,4 +1,6 @@
 import Link from "next/link";
+import GuideUpdatesSection from "../components/GuideUpdatesSection";
+import { formatGuideDate, getLatestGuideUpdate } from "../lib/guide-updates";
 
 export const metadata = {
   title: "Panduan | Aloptama Collect",
@@ -6,6 +8,7 @@ export const metadata = {
 };
 
 export default function StationGuidePage() {
+  const latest = getLatestGuideUpdate("station");
   return (
     <main className="guide-shell">
       <header className="guide-header">
@@ -15,7 +18,9 @@ export default function StationGuidePage() {
       <article className="guide-content">
         <p className="kicker">PANDUAN RINGKAS</p>
         <h2>Isi data dengan aman, satu site dan subtipe pada satu waktu.</h2>
+        {latest && <p className="guide-version-meta">Terakhir diperbarui: <strong>{formatGuideDate(latest.date)}</strong><span>Versi panduan {latest.version}</span></p>}
         <p className="guide-more">Akses resmi: <a href="https://aloptama-collect.vercel.app">https://aloptama-collect.vercel.app</a>.</p>
+        <GuideUpdatesSection audience="station" />
         <section>
           <h3>Urutan pengisian</h3>
           <ol>

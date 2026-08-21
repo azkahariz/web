@@ -300,16 +300,19 @@ test("metadata Aloptama tersimpan per site dan memakai nilai lokasi otomatis", a
 });
 
 test("panduan ringkas tersedia untuk Station User dan Super Admin", async () => {
-  const [stationApp, stationGuide, adminDashboard, adminGuide] = await Promise.all([
+  const [stationApp, stationGuide, adminDashboard, adminGuide, guideLink] = await Promise.all([
     readFile(new URL("../app/InventoryApp.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/panduan/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/admin/AdminDashboard.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/admin/panduan/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/GuideNoticeLink.tsx", import.meta.url), "utf8"),
   ]);
 
-  assert.match(stationApp, /href="\/panduan">Panduan</);
+  assert.match(stationApp, /GuideNoticeLink audience=\{isAdminEditor \? "admin" : "station"\}/);
   assert.match(stationGuide, /Panduan ringkas pengisian Aloptama Collect/);
-  assert.match(adminDashboard, /href="\/admin\/panduan">Panduan Super Admin</);
+  assert.match(adminDashboard, /GuideNoticeLink audience="admin"/);
+  assert.match(guideLink, /station: "Panduan"/);
+  assert.match(guideLink, /admin: "Panduan Super Admin"/);
   assert.match(adminGuide, /createSupabaseServerClient/);
   assert.match(adminGuide, /super_admins/);
 });

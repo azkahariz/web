@@ -10,6 +10,7 @@ import { useAppFeedback } from "../components/AppFeedback";
 import AsyncButton from "../components/AsyncButton";
 import EyeIcon from "../components/EyeIcon";
 import FooterAttribution from "../components/FooterAttribution";
+import GuideNoticeLink from "../components/GuideNoticeLink";
 import { downloadAdminInventory } from "../lib/admin-export";
 import {
   accountMatchesAdminSearch,
@@ -588,7 +589,7 @@ export default function AdminDashboard({ username, displayName }: { username: st
     <main className="admin-shell">
       <header className="topbar admin-topbar">
         <div className="brand-lockup"><div className="brand-mark">AC</div><div><p className="eyebrow">SUPER ADMIN</p><h1>Aloptama Collect</h1></div></div>
-        <div className="account-actions"><span className="admin-username">{displayName}{displayName !== username && <small>{username}</small>}</span><Link className="logout-button" href="/admin/panduan">Panduan Super Admin</Link><button className="logout-button" onClick={logout}>Keluar</button></div>
+        <div className="account-actions"><span className="admin-username">{displayName}{displayName !== username && <small>{username}</small>}</span><GuideNoticeLink audience="admin" /><button className="logout-button" onClick={logout}>Keluar</button></div>
       </header>
       <div className="admin-layout">
         <nav className="admin-nav" aria-label="Menu admin">
