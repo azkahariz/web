@@ -146,6 +146,9 @@ button { color: inherit; }
 .guide-lead { max-width: 680px; margin: 18px 0 0; color: var(--muted); font-size: 15px; line-height: 1.7; }
 .guide-task-nav { margin-top: 34px; }
 .guide-task-nav h3 { font-size: 20px; }
+.guide-task-group { margin-top: 18px; }
+.guide-task-group + .guide-task-group { margin-top: 24px; }
+.guide-task-group > h4 { margin: 0; color: var(--green-deep); font-size: 11px; font-weight: 900; }
 .guide-task-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 14px; }
 .guide-task-grid a { min-width: 0; padding: 14px 15px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); text-decoration: none; }
 .guide-task-grid a:hover { border-color: #8eaaa1; background: #f7faf8; }

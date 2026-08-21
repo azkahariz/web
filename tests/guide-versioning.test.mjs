@@ -31,11 +31,11 @@ test("Station seen menyembunyikan notice dan memakai route normal", () => {
   assert.equal(getGuideNoticeHref("station", latest), "/panduan");
 });
 
-test("panduan Station lengkap memicu notice baru tanpa membump Admin", () => {
+test("panduan Station dan Admin memicu notice terpisah pada versi masing-masing", () => {
   assert.equal(getLatestGuideNoticeVersion("station"), "2026.08.21.3");
-  assert.equal(getLatestGuideNoticeVersion("admin"), "2026.08.21.2");
+  assert.equal(getLatestGuideNoticeVersion("admin"), "2026.08.21.3");
   assert.equal(isGuideNoticeUnseen("station", "2026.08.21.2"), true);
-  assert.equal(isGuideNoticeUnseen("admin", "2026.08.21.2"), false);
+  assert.equal(isGuideNoticeUnseen("admin", "2026.08.21.2"), true);
 });
 
 test("Admin mempunyai notice dan seen-state terpisah dari Station", () => {
@@ -123,14 +123,41 @@ test("panduan Station memakai navigasi berbasis pekerjaan dan langkah pengguna",
 test("panduan Admin menjelaskan pekerjaan dan tindakan Produk berisiko", async () => {
   const source = await readFile(new URL("../app/admin/panduan/page.tsx", import.meta.url), "utf8");
   assert.match(source, /Mau melakukan apa\?/);
-  assert.match(source, /Melihat progres pengisian/);
-  assert.match(source, /Memeriksa usulan Produk/);
+  assert.match(source, /Baru pertama kali menjadi Super Admin\?/);
+  assert.match(source, /Bagaimana melihat progres satu Stasiun\?/);
+  assert.match(source, /Bagaimana mencari, membuka, dan memperbaiki Submission\?/);
+  assert.match(source, /Arsipkan Submission/);
+  assert.match(source, /Pulihkan Submission/);
+  assert.match(source, /Paksa Lepas Lock/);
+  assert.match(source, /Provision akun/);
+  assert.match(source, /Bagaimana memeriksa proposal Produk\?/);
+  assert.match(source, /Approve Baru/);
+  assert.match(source, /Gabungkan Semua/);
+  assert.match(source, /Alasan penolakan wajib diisi/);
+  assert.match(source, /Bagaimana mengelola daftar Produk\?/);
+  assert.match(source, /Filter Status: Aktif, Nonaktif, Digabungkan, atau Semua status/);
+  assert.match(source, /Klik Merk, Tipe, Status, Sumber, atau Penggunaan/);
   assert.match(source, /Bagaimana mengecek Produk masih digunakan atau tidak\?/);
+  assert.match(source, /Item langsung = 0 tidak selalu berarti Produk tidak digunakan/);
   assert.match(source, /Pindahkan Referensi/);
+  assert.match(source, /Pilihan dari halaman lain tetap tersimpan/);
   assert.match(source, /Ada dua Produk yang sebenarnya sama/);
-  assert.match(source, /Jika Produk sudah tidak digunakan, sebaiknya cukup <strong>Nonaktifkan<\/strong>/);
+  assert.match(source, /Apa beda Pindahkan Referensi dan Gabungkan Produk\?/);
+  assert.match(source, /Tidak perlu\. Sebaiknya cukup Nonaktifkan/);
   assert.match(source, /Hapus Permanen tidak dapat dibatalkan melalui aplikasi/);
-  assert.match(source, /0 referensi<\/strong> tidak otomatis berarti Produk harus atau boleh dihapus/);
+  assert.match(source, /Apa fungsi Alias dan Lihat Riwayat\?/);
+  assert.match(source, /Konfigurasi Site sedang diperbarui/);
+  assert.match(source, /Bagaimana membaca riwayat tindakan Admin\?/);
+  assert.match(source, /Apa yang dilakukan jika terjadi masalah\?/);
+  assert.match(source, /FAQ Super Admin/);
+  assert.match(source, /Arti istilah pada halaman Admin/);
+  for (const id of [
+    "mulai-di-sini", "dashboard", "stasiun-pengisian", "submission", "lock",
+    "akun-stasiun", "qc-produk", "master-produk", "penggunaan-produk",
+    "pindahkan-referensi", "menggabungkan-produk", "move-vs-merge",
+    "produk-tidak-digunakan", "alias-riwayat", "site-subtipe", "export-admin",
+    "audit-admin", "troubleshooting", "faq", "istilah",
+  ]) assert.match(source, new RegExp(`id="${id}"`));
 });
 
 test("Yang Baru memakai bahasa umum tanpa jargon developer", async () => {
@@ -143,10 +170,11 @@ test("Yang Baru memakai bahasa umum tanpa jargon developer", async () => {
   assert.doesNotMatch(userVisibleGuide, /\b(?:RPC|JSONB|UUID|TOCTOU)\b|canonical resolver|foreign key/i);
   assert.match(registry, /Pemilihan Site dan Subtipe lebih aman/);
   assert.match(registry, /Panduan Pengguna kini lebih lengkap/);
+  assert.match(registry, /Panduan Super Admin kini lebih lengkap/);
   assert.match(registry, /Cek penggunaan Produk lebih lengkap/);
   assert.match(registry, /Produk yang salah dapat diperbaiki/);
   assert.equal(getGuideUpdates("station").length, 4);
-  assert.equal(getGuideUpdates("admin").length, 5);
+  assert.equal(getGuideUpdates("admin").length, 6);
 });
 
 test("panduan Station mendokumentasikan field dan state sesuai label aplikasi", async () => {

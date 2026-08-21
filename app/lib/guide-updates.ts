@@ -30,6 +30,14 @@ export const GUIDE_UPDATES: readonly GuideUpdate[] = [
   {
     version: "2026.08.21.3",
     date: "2026-08-21",
+    audience: "admin",
+    level: "update",
+    title: "Panduan Super Admin kini lebih lengkap",
+    summary: "Langkah memeriksa Submission, QC Produk, Master Produk, Pindahkan Referensi, Gabungkan Produk, Nonaktifkan, Hapus Permanen, Site/Subtipe, dan Audit sekarang dijelaskan lebih rinci.",
+  },
+  {
+    version: "2026.08.21.3",
+    date: "2026-08-21",
     audience: "station",
     level: "update",
     title: "Panduan Pengguna kini lebih lengkap",
