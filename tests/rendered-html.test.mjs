@@ -309,12 +309,14 @@ test("panduan ringkas tersedia untuk Station User dan Super Admin", async () => 
   ]);
 
   assert.match(stationApp, /GuideNoticeLink audience=\{isAdminEditor \? "admin" : "station"\}/);
-  assert.match(stationGuide, /Panduan ringkas pengisian Aloptama Collect/);
+  assert.match(stationGuide, /Panduan pengisian Aloptama Collect untuk pengguna Stasiun/);
+  assert.match(stationGuide, /Mau melakukan apa\?/);
   assert.match(adminDashboard, /GuideNoticeLink audience="admin"/);
   assert.match(guideLink, /station: "Panduan"/);
   assert.match(guideLink, /admin: "Panduan Super Admin"/);
   assert.match(adminGuide, /createSupabaseServerClient/);
   assert.match(adminGuide, /super_admins/);
+  assert.match(adminGuide, /Produk sudah tidak digunakan\. Haruskah dihapus\?/);
 });
 
 test("sidebar Super Admin memakai URL view sebagai sumber navigasi", async () => {
