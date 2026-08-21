@@ -31,11 +31,11 @@ test("Station seen menyembunyikan notice dan memakai route normal", () => {
   assert.equal(getGuideNoticeHref("station", latest), "/panduan");
 });
 
-test("perubahan struktur panduan memicu notice baru untuk kedua audience", () => {
-  assert.equal(getLatestGuideNoticeVersion("station"), "2026.08.21.2");
+test("panduan Station lengkap memicu notice baru tanpa membump Admin", () => {
+  assert.equal(getLatestGuideNoticeVersion("station"), "2026.08.21.3");
   assert.equal(getLatestGuideNoticeVersion("admin"), "2026.08.21.2");
-  assert.equal(isGuideNoticeUnseen("station", "2026.08.21.1"), true);
-  assert.equal(isGuideNoticeUnseen("admin", "2026.08.21.1"), true);
+  assert.equal(isGuideNoticeUnseen("station", "2026.08.21.2"), true);
+  assert.equal(isGuideNoticeUnseen("admin", "2026.08.21.2"), false);
 });
 
 test("Admin mempunyai notice dan seen-state terpisah dari Station", () => {
@@ -93,15 +93,31 @@ test("link notice, anchor, dan accessibility memakai shared implementation", asy
 test("panduan Station memakai navigasi berbasis pekerjaan dan langkah pengguna", async () => {
   const source = await readFile(new URL("../app/panduan/page.tsx", import.meta.url), "utf8");
   assert.match(source, /Mau melakukan apa\?/);
-  assert.match(source, /Mulai mengisi data/);
-  assert.match(source, /Melanjutkan pengisian/);
+  assert.match(source, /Mulai pengisian baru/);
+  assert.match(source, /Melanjutkan pengisian sebelumnya/);
   assert.match(source, /Memilih atau mengusulkan Produk/);
-  assert.match(source, /Bagaimana cara mengisi atau memperbaiki data\?/);
+  assert.match(source, /Bagaimana mulai, melanjutkan, atau memperbaiki pengisian\?/);
   assert.match(source, /Mulai Pengisian/);
   assert.match(source, /Selesai Mengedit/);
   assert.match(source, /Usulkan produk baru/);
   assert.match(source, /Unduh CSV/);
+  assert.match(source, /Unduh JSON/);
   assert.match(source, /Coba lagi/);
+  assert.match(source, /Baru pertama kali menggunakan aplikasi\?/);
+  assert.match(source, /Bagaimana menentukan data yang akan diisi\?/);
+  assert.match(source, /Bagaimana mengisi profil Site\?/);
+  assert.match(source, /Bagaimana mencatat peralatan yang tersedia\?/);
+  assert.match(source, /Bagaimana mengisi peralatan yang ada di Gudang\?/);
+  assert.match(source, /Penyimpanan otomatis/);
+  assert.match(source, /Tersimpan lokal/);
+  assert.match(source, /Apa yang dilakukan jika terjadi masalah\?/);
+  assert.match(source, /<h3>FAQ<\/h3>/);
+  assert.match(source, /Arti istilah pada aplikasi/);
+  for (const id of [
+    "mulai-di-sini", "akun-stasiun", "lokasi-pengisian", "alur-pengisian",
+    "metadata-aloptama", "kategori-dan-unit", "produk", "gudang", "penyimpanan",
+    "data-sedang-diedit", "unduh-data", "troubleshooting", "faq", "istilah",
+  ]) assert.match(source, new RegExp(`id="${id}"`));
 });
 
 test("panduan Admin menjelaskan pekerjaan dan tindakan Produk berisiko", async () => {
@@ -126,8 +142,25 @@ test("Yang Baru memakai bahasa umum tanpa jargon developer", async () => {
   const userVisibleGuide = `${stationGuide}\n${adminGuide}\n${registry}`;
   assert.doesNotMatch(userVisibleGuide, /\b(?:RPC|JSONB|UUID|TOCTOU)\b|canonical resolver|foreign key/i);
   assert.match(registry, /Pemilihan Site dan Subtipe lebih aman/);
+  assert.match(registry, /Panduan Pengguna kini lebih lengkap/);
   assert.match(registry, /Cek penggunaan Produk lebih lengkap/);
   assert.match(registry, /Produk yang salah dapat diperbaiki/);
-  assert.equal(getGuideUpdates("station").length, 3);
+  assert.equal(getGuideUpdates("station").length, 4);
   assert.equal(getGuideUpdates("admin").length, 5);
+});
+
+test("panduan Station mendokumentasikan field dan state sesuai label aplikasi", async () => {
+  const source = await readFile(new URL("../app/panduan/page.tsx", import.meta.url), "utf8");
+  for (const label of [
+    "Sumber Anggaran Pemeliharaan", "Merk Pengadaan", "WIGOS ID", "AWS Center ID",
+    "Status Kepemilikan", "Kode BMN \\(NUP\\)", "Tanggal Instalasi", "Alamat Detail",
+    "Latitude", "Longitude", "Elevasi \\(meter\\)", "Metode Ukur", "No SIM/GSM",
+    "Metode Transport", "Zona Waktu", "Interval Data \\(menit\\)", "Nomor seri",
+    "Kondisi", "Tahun pasang", "Tahun pengadaan", "Nama kegiatan pengadaan", "Catatan",
+  ]) assert.match(source, new RegExp(label));
+  for (const status of [
+    "Mode pengisian aktif", "Tersimpan ke server", "Semua perubahan sudah tersimpan",
+    "Ada perubahan belum tersinkron", "Muat versi terbaru", "Ambil alih draf",
+    "Konfigurasi Site sedang diperbarui",
+  ]) assert.match(source, new RegExp(status));
 });

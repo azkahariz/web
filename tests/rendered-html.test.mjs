@@ -309,7 +309,7 @@ test("panduan ringkas tersedia untuk Station User dan Super Admin", async () => 
   ]);
 
   assert.match(stationApp, /GuideNoticeLink audience=\{isAdminEditor \? "admin" : "station"\}/);
-  assert.match(stationGuide, /Panduan pengisian Aloptama Collect untuk pengguna Stasiun/);
+  assert.match(stationGuide, /Panduan lengkap Aloptama Collect untuk pengguna Stasiun/);
   assert.match(stationGuide, /Mau melakukan apa\?/);
   assert.match(adminDashboard, /GuideNoticeLink audience="admin"/);
   assert.match(guideLink, /station: "Panduan"/);

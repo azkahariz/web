@@ -162,8 +162,32 @@ button { color: inherit; }
 .guide-example { border-left-color: #a7a98d; background: #f8f8f3; }
 .guide-warning { border-left-color: #b57a45; background: #fbf5ef; }
 .guide-note > strong, .guide-example > strong, .guide-warning > strong { display: block; font-size: 12px; }
+.guide-note a, .guide-article a, .guide-disclosure a { color: var(--green-deep); font-weight: 800; text-underline-offset: 2px; }
+.guide-content code { overflow-wrap: anywhere; padding: 2px 5px; border-radius: 4px; background: #ecefe9; color: var(--ink); font-size: 12px; }
 .guide-choice-list { padding: 15px 18px 15px 34px !important; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
 .guide-direct-answer { margin: 15px 0 0; padding: 15px 16px; border-left: 3px solid var(--green); background: var(--green-soft); color: var(--ink); font-size: 14px; line-height: 1.65; }
+.guide-disclosure-list { display: grid; gap: 9px; margin-top: 20px; }
+.guide-disclosure { border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+.guide-disclosure summary { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 14px 16px; color: var(--ink); cursor: pointer; list-style-position: inside; }
+.guide-disclosure summary:hover { background: #f7faf8; }
+.guide-disclosure summary:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
+.guide-disclosure summary > span { min-width: 0; }
+.guide-disclosure summary strong, .guide-disclosure summary small { display: block; }
+.guide-disclosure summary strong { font-size: 13px; line-height: 1.4; }
+.guide-disclosure summary small { margin-top: 3px; color: var(--muted); font-size: 11px; line-height: 1.45; }
+.guide-field-list, .guide-problem-steps, .guide-glossary { margin: 0; }
+.guide-field-list { padding: 2px 16px 14px; }
+.guide-field-list > div, .guide-problem-steps > div { display: grid; grid-template-columns: minmax(145px, 190px) minmax(0, 1fr); gap: 14px; padding: 11px 0; border-top: 1px solid var(--line); }
+.guide-field-list dt, .guide-problem-steps dt, .guide-glossary dt { color: var(--ink); font-size: 12px; font-weight: 800; line-height: 1.5; }
+.guide-field-list dd, .guide-problem-steps dd, .guide-glossary dd { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.6; }
+.guide-unit-fields { margin-top: 20px; padding: 0; border-bottom: 1px solid var(--line); }
+.guide-problem-steps { padding: 0 16px 14px; }
+.guide-troubleshooting-list .guide-disclosure summary { align-items: flex-start; }
+.guide-faq-list .guide-disclosure > p { margin: 0; padding: 0 16px 15px; color: var(--muted); font-size: 13px; line-height: 1.65; }
+.guide-glossary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 22px; margin-top: 18px; }
+.guide-glossary > div { padding: 13px 0; border-top: 1px solid var(--line); }
+.guide-glossary dd { margin-top: 4px; }
+#data-sedang-diedit { scroll-margin-top: 20px; }
 .guide-more { margin: 26px 0 0; color: var(--muted); font-size: 13px; line-height: 1.65; }
 .guide-more a { color: var(--green-deep); font-weight: 800; }
 .guide-version-meta { margin: 18px 0 0; display: flex; align-items: center; gap: 8px 14px; flex-wrap: wrap; color: var(--muted); font-size: 12px; line-height: 1.5; }
@@ -787,6 +811,10 @@ button[aria-busy="true"] { display: inline-flex; align-items: center; justify-co
   .guide-content .guide-article { margin-top: 34px; padding-top: 27px; }
   .guide-article h3 { font-size: 23px; }
   .guide-note, .guide-example, .guide-warning, .guide-direct-answer { padding: 13px 14px; }
+  .guide-field-list > div, .guide-problem-steps > div { grid-template-columns: 1fr; gap: 4px; }
+  .guide-glossary { grid-template-columns: 1fr; }
+  .guide-disclosure summary { padding: 13px 14px; }
+  .guide-field-list, .guide-problem-steps { padding-right: 14px; padding-left: 14px; }
   .guide-version-meta span { width: 100%; padding-left: 0; border-left: 0; }
   .guide-update-list li > div { align-items: flex-start; justify-content: space-between; }
   .brand-mark { width: 38px; height: 38px; }
