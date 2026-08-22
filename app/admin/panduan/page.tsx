@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import GuideSearch from "../../components/GuideSearch";
 import GuideUpdatesSection from "../../components/GuideUpdatesSection";
 import { formatGuideDate, getLatestGuideUpdate } from "../../lib/guide-updates";
 import { createSupabaseServerClient } from "../../lib/supabase/server";
@@ -201,11 +202,12 @@ export default async function AdminGuidePage() {
         <Link className="logout-button" href="/admin">Kembali ke Dashboard</Link>
       </header>
 
-      <article className="guide-content">
+      <article id="admin-guide-content" className="guide-content">
         <p className="kicker">PANDUAN SUPER ADMIN</p>
         <h2>Kelola pengisian dan Produk dengan memahami langkah serta akibatnya.</h2>
         <p className="guide-lead">Mulai dari pekerjaan yang ingin dilakukan. Periksa dampak sebelum menjalankan tindakan yang mengubah banyak data.</p>
         {latest && <p className="guide-version-meta">Terakhir diperbarui: <strong>{formatGuideDate(latest.date)}</strong><span>Versi panduan {latest.version}</span></p>}
+        <GuideSearch audience="admin" rootId="admin-guide-content" />
 
         <nav className="guide-task-nav" aria-labelledby="admin-guide-tasks">
           <h3 id="admin-guide-tasks">Mau melakukan apa?</h3>
@@ -219,7 +221,7 @@ export default async function AdminGuidePage() {
           ))}
         </nav>
 
-        <section id="mulai-di-sini" className="guide-article guide-start-section">
+        <section id="mulai-di-sini" className="guide-article guide-start-section" data-guide-keywords="panduan awal, mulai super admin">
           <p className="guide-section-label">MULAI DI SINI</p>
           <h3>Baru pertama kali menjadi Super Admin?</h3>
           <p>Super Admin digunakan untuk memantau pengisian, membantu memperbaiki Submission, memeriksa proposal Produk, dan menjaga Master Produk.</p>
@@ -232,7 +234,7 @@ export default async function AdminGuidePage() {
           <p>Masuk melalui halaman login yang sama menggunakan akun Super Admin. Setelah berhasil, aplikasi membuka Dashboard Admin secara otomatis. Klik <strong>Keluar</strong> setelah pekerjaan selesai.</p>
         </section>
 
-        <section id="dashboard" className="guide-article">
+        <section id="dashboard" className="guide-article" data-guide-keywords="dashboard, ringkasan, progress, progres">
           <p className="guide-section-label">RINGKASAN</p>
           <h3>Bagaimana memahami halaman Super Admin?</h3>
           <p>Gunakan <strong>Ringkasan</strong> untuk melihat keadaan umum sebelum masuk ke detail. Kartu dapat diklik untuk menuju pekerjaan terkait.</p>
@@ -248,7 +250,7 @@ export default async function AdminGuidePage() {
           <p>Klik <strong>Muat ulang</strong> bila ingin mengambil kondisi terbaru. Menu samping menggunakan link sehingga halaman dapat dibuka di tab baru, di-bookmark, dan dipertahankan setelah refresh.</p>
         </section>
 
-        <section id="stasiun-pengisian" className="guide-article">
+        <section id="stasiun-pengisian" className="guide-article" data-guide-keywords="progress stasiun, progres pengisian, master pengisian">
           <p className="guide-section-label">STASIUN DAN PENGISIAN</p>
           <h3>Bagaimana melihat progres satu Stasiun?</h3>
           <ol>
@@ -263,7 +265,7 @@ export default async function AdminGuidePage() {
           <p>Jumlah Site menghitung Site utama, bukan jumlah Subtipe. Karena itu satu Site AWOS dengan beberapa Subtipe tetap dihitung sebagai satu Site.</p>
         </section>
 
-        <section id="submission" className="guide-article">
+        <section id="submission" className="guide-article" data-guide-keywords="submission, arsip, pulihkan, restore, hapus submission">
           <p className="guide-section-label">SUBMISSION</p>
           <h3>Bagaimana mencari, membuka, dan memperbaiki Submission?</h3>
           <p><strong>Submission</strong> adalah satu data pengisian untuk kombinasi Site dan Subtipe. <strong>Aktif</strong> adalah data yang dipakai sekarang; <strong>Diarsipkan</strong> adalah data lama yang disimpan sebagai riwayat.</p>
@@ -294,7 +296,7 @@ export default async function AdminGuidePage() {
           <div className="guide-warning"><strong>Hati-hati</strong><p>Utamakan Arsip untuk mempertahankan riwayat. Gunakan Hapus Permanen hanya setelah memastikan data memang tidak boleh dipertahankan dan telah mendapat persetujuan yang berlaku.</p></div>
         </section>
 
-        <section id="lock" className="guide-article">
+        <section id="lock" className="guide-article" data-guide-keywords="lock, data terkunci, tidak bisa edit, data dipakai orang lain, paksa lepas">
           <p className="guide-section-label">LOCK AKTIF</p>
           <h3>Bagaimana menangani data yang sedang diedit?</h3>
           <p>Lock berarti satu sesi sedang mempunyai hak untuk mengubah Submission. Menu <strong>Lock Aktif</strong> menampilkan Stasiun, Site/Subtipe, Operator, potongan identitas sesi, dan durasi sejak aktivitas terakhir.</p>
@@ -308,7 +310,7 @@ export default async function AdminGuidePage() {
           <div className="guide-warning"><strong>Hati-hati</strong><p>Paksa Lepas Lock atau Ambil Alih sebagai Admin dapat memutus hak simpan editor lain. Jangan gunakan ketika pengguna masih bekerja.</p></div>
         </section>
 
-        <section id="akun-stasiun" className="guide-article">
+        <section id="akun-stasiun" className="guide-article" data-guide-keywords="akun, provision, reset password, lupa password, credential">
           <p className="guide-section-label">AKUN STASIUN</p>
           <h3>Bagaimana membuat dan mengelola akun Stasiun?</h3>
           <p>Menu <strong>Akun Stasiun</strong> menampilkan nama Stasiun, Username, Status, dan Aksi. Cari menggunakan nama Stasiun atau Username.</p>
@@ -322,7 +324,7 @@ export default async function AdminGuidePage() {
           <div className="guide-note"><strong>Keamanan credential</strong><p>Kirim password hanya kepada petugas yang berwenang melalui saluran yang disepakati. Jangan mengirim daftar password ke grup umum, menaruhnya pada Catatan Submission, atau menyimpannya di file ekspor.</p></div>
         </section>
 
-        <section id="qc-produk" className="guide-article">
+        <section id="qc-produk" className="guide-article" data-guide-keywords="qc, approve, approve baru, merge qc, tolak proposal, pemeriksaan produk">
           <p className="guide-section-label">QC PRODUK</p>
           <h3>Bagaimana memeriksa proposal Produk?</h3>
           <p>QC Produk digunakan ketika pengguna Stasiun mengusulkan Merk dan Tipe yang belum ditemukan. Tab statusnya adalah <strong>PENDING</strong>, <strong>APPROVED</strong>, <strong>MERGED</strong>, dan <strong>REJECTED</strong>.</p>
@@ -348,7 +350,7 @@ export default async function AdminGuidePage() {
           <p>Bagian <strong>Perubahan master yang perlu masuk Spreadsheet</strong> menampilkan Produk yang belum ditandai selesai direkonsiliasi. <strong>Koreksi canonical</strong> memperbaiki Brand/Tipe utama dan mencatat tindakan pada Audit Admin. Gunakan hanya untuk koreksi nama, bukan untuk menyatukan dua Produk.</p>
         </section>
 
-        <section id="master-produk" className="guide-article">
+        <section id="master-produk" className="guide-article" data-guide-keywords="master produk, daftar produk, tambah produk, edit produk, filter produk">
           <p className="guide-section-label">MASTER PRODUK</p>
           <h3>Bagaimana mengelola daftar Produk?</h3>
           <p>Menu <strong>Produk</strong> menampilkan Merk, Tipe, Status, Sumber, Penggunaan, dan Aksi. Tampilan awal memakai Status <strong>Aktif</strong>.</p>
@@ -373,7 +375,7 @@ export default async function AdminGuidePage() {
           <div className="guide-example"><strong>Pilih tindakan yang tepat</strong><p>Salah ketik pada satu Produk: Edit. Beberapa item memilih Produk yang salah: Pindahkan Referensi. Dua Produk sebenarnya sama: Gabungkan.</p></div>
         </section>
 
-        <section id="penggunaan-produk" className="guide-article">
+        <section id="penggunaan-produk" className="guide-article" data-guide-keywords="penggunaan produk, dependency, keterkaitan, 0 referensi, referensi produk">
           <p className="guide-section-label">PENGGUNAAN PRODUK</p>
           <h3>Bagaimana mengecek Produk masih digunakan atau tidak?</h3>
           <ol>
@@ -395,7 +397,7 @@ export default async function AdminGuidePage() {
           <p>Checkbox paling atas memilih atau membatalkan seluruh referensi yang dapat dipilih pada halaman saat ini. Pilihan dari halaman lain tetap tersimpan. Tanda sebagian berarti hanya beberapa item halaman ini yang dipilih. Klik <strong>Batalkan semua</strong> untuk mengosongkan seluruh pilihan lintas halaman.</p>
         </section>
 
-        <section id="pindahkan-referensi" className="guide-article">
+        <section id="pindahkan-referensi" className="guide-article" data-guide-keywords="pindahkan, move, produk salah, perbaiki referensi">
           <p className="guide-section-label">PINDAHKAN REFERENSI</p>
           <h3>Beberapa item memilih Produk yang salah</h3>
           <ol>
@@ -412,7 +414,7 @@ export default async function AdminGuidePage() {
           <div className="guide-warning"><strong>Hati-hati</strong><p>Periksa Produk sumber, target, dan seluruh item terpilih. Pindahkan hanya item yang benar-benar salah menunjuk Produk.</p></div>
         </section>
 
-        <section id="menggabungkan-produk" className="guide-article">
+        <section id="menggabungkan-produk" className="guide-article" data-guide-keywords="gabungkan, merge produk, produk sama, produk kembar, duplikat produk">
           <p className="guide-section-label">GABUNGKAN PRODUK</p>
           <h3>Ada dua Produk yang sebenarnya sama</h3>
           <ol>
@@ -434,7 +436,7 @@ export default async function AdminGuidePage() {
           <div className="guide-example"><strong>Contoh</strong><p>Satu item salah memilih Datalogger CR6: Pindahkan Referensi. Produk Datalogger CR6 dan CR6 ternyata duplikat yang sama: Gabungkan Produk.</p></div>
         </section>
 
-        <section id="produk-tidak-digunakan" className="guide-article">
+        <section id="produk-tidak-digunakan" className="guide-article" data-guide-keywords="hapus produk, hapus permanen, nonaktifkan, produk tidak dipakai, 0 referensi">
           <p className="guide-section-label">NONAKTIFKAN DAN HAPUS</p>
           <h3>Produk sudah tidak digunakan. Haruskah dihapus?</h3>
           <p className="guide-direct-answer"><strong>Tidak perlu. Sebaiknya cukup Nonaktifkan.</strong></p>
@@ -455,7 +457,7 @@ export default async function AdminGuidePage() {
           <p>Produk berstatus <strong>Digabungkan</strong> dipertahankan sebagai jejak sumber. Produk tujuan yang menerima penggabungan juga dilindungi selama masih mempunyai hubungan tersebut.</p>
         </section>
 
-        <section id="alias-riwayat" className="guide-article">
+        <section id="alias-riwayat" className="guide-article" data-guide-keywords="alias, nama lain, riwayat produk">
           <p className="guide-section-label">ALIAS DAN RIWAYAT PRODUK</p>
           <h3>Apa fungsi Alias dan Lihat Riwayat?</h3>
           <p><strong>Alias</strong> adalah nama alternatif yang membantu aplikasi menghubungkan penulisan lama atau variasi nama dengan Produk utama yang sama.</p>
@@ -464,7 +466,7 @@ export default async function AdminGuidePage() {
           <p>Untuk Produk berstatus Digabungkan, klik <strong>Lihat Riwayat</strong> untuk melihat Produk tujuan, Dependency, referensi, QC History, dan Alias. Tidak ada tombol pengelolaan Alias manual pada halaman ini.</p>
         </section>
 
-        <section id="site-subtipe" className="guide-article">
+        <section id="site-subtipe" className="guide-article" data-guide-keywords="site subtipe, konfigurasi site, family awos, tipe site">
           <p className="guide-section-label">SITE DAN SUBTIPE</p>
           <h3>Bagaimana menangani Site dan Subtipe yang tidak sesuai?</h3>
           <p><strong>Site</strong> adalah lokasi atau sistem utama, <strong>Tipe Site</strong> adalah kelompoknya, dan <strong>Subtipe</strong> menentukan profil peralatan. Aplikasi hanya menerima Subtipe yang sesuai dengan Site saat ini.</p>
@@ -480,7 +482,7 @@ export default async function AdminGuidePage() {
           <p>Submission arsip dengan konfigurasi lama dapat tetap dibuka sebagai riwayat. Jangan memulihkan atau mengeditnya sebelum memastikan Site-Subtipe masih sesuai dengan master saat ini.</p>
         </section>
 
-        <section id="export-admin" className="guide-article">
+        <section id="export-admin" className="guide-article" data-guide-keywords="csv, json, zip, export, download, unduh data">
           <p className="guide-section-label">UNDUH DATA ADMIN</p>
           <h3>Bagaimana mengunduh satu atau banyak data?</h3>
           <h4>Satu Site-Subtipe</h4>
@@ -497,7 +499,7 @@ export default async function AdminGuidePage() {
           <p>Saat membuka form lengkap, menu Unduh juga menyediakan CSV dan JSON seperti pada Station User. CSV cocok untuk spreadsheet; JSON merupakan salinan data terstruktur.</p>
         </section>
 
-        <section id="audit-admin" className="guide-article">
+        <section id="audit-admin" className="guide-article" data-guide-keywords="audit, riwayat admin, catatan tindakan, pelaku perubahan">
           <p className="guide-section-label">AUDIT ADMIN</p>
           <h3>Bagaimana membaca riwayat tindakan Admin?</h3>
           <p>Menu <strong>Audit Admin</strong> menampilkan riwayat terbaru dengan kolom Waktu, Admin, Aksi, Target, dan Metadata.</p>

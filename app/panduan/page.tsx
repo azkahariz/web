@@ -1,4 +1,5 @@
 import Link from "next/link";
+import GuideSearch from "../components/GuideSearch";
 import GuideUpdatesSection from "../components/GuideUpdatesSection";
 import { formatGuideDate, getLatestGuideUpdate } from "../lib/guide-updates";
 
@@ -200,11 +201,12 @@ export default function StationGuidePage() {
         <Link className="logout-button" href="/">Kembali ke aplikasi</Link>
       </header>
 
-      <article className="guide-content">
+      <article id="station-guide-content" className="guide-content">
         <p className="kicker">PANDUAN PENGGUNA STASIUN</p>
         <h2>Gunakan Aloptama Collect dari masuk sampai pengisian selesai.</h2>
         <p className="guide-lead">Ikuti langkah berdasarkan pekerjaan yang ingin dilakukan. Gunakan nama tombol yang sama seperti yang terlihat di aplikasi.</p>
         {latest && <p className="guide-version-meta">Terakhir diperbarui: <strong>{formatGuideDate(latest.date)}</strong><span>Versi panduan {latest.version}</span></p>}
+        <GuideSearch audience="station" rootId="station-guide-content" />
 
         <nav className="guide-task-nav" aria-labelledby="station-guide-tasks">
           <h3 id="station-guide-tasks">Mau melakukan apa?</h3>
@@ -213,7 +215,7 @@ export default function StationGuidePage() {
           </div>
         </nav>
 
-        <section id="mulai-di-sini" className="guide-article guide-start-section">
+        <section id="mulai-di-sini" className="guide-article guide-start-section" data-guide-keywords="panduan awal, mulai menggunakan aplikasi">
           <p className="guide-section-label">MULAI DI SINI</p>
           <h3>Baru pertama kali menggunakan aplikasi?</h3>
           <ol>
@@ -228,7 +230,7 @@ export default function StationGuidePage() {
           <div className="guide-note"><strong>Catatan</strong><p>Gudang memiliki cara pengisian yang sedikit berbeda. Lihat bagian <a href="#gudang">Mengisi Gudang</a>.</p></div>
         </section>
 
-        <section id="akun-stasiun" className="guide-article">
+        <section id="akun-stasiun" className="guide-article" data-guide-keywords="login, tidak bisa login, lupa password, kata sandi, logout">
           <p className="guide-section-label">AKUN STASIUN</p>
           <h3>Bagaimana masuk dan keluar dari aplikasi?</h3>
           <h4>Masuk</h4>
@@ -249,7 +251,7 @@ export default function StationGuidePage() {
           <div className="guide-warning"><strong>Hati-hati</strong><p>Jangan membagikan password di Catatan, file ekspor, atau pesan umum. Jika lupa password atau akun belum siap, hubungi Super Admin. Aplikasi tidak menyediakan reset password mandiri.</p></div>
         </section>
 
-        <section id="lokasi-pengisian" className="guide-article">
+        <section id="lokasi-pengisian" className="guide-article" data-guide-keywords="site, subtipe, aloptama, lokasi pengisian">
           <p className="guide-section-label">STASIUN, SITE, DAN SUBTIPE</p>
           <h3>Bagaimana menentukan data yang akan diisi?</h3>
           <p><strong>Stasiun</strong> mengikuti akun. <strong>Site</strong> adalah lokasi atau sistem utama. <strong>Tipe Site</strong> menunjukkan kelompoknya. <strong>Subtipe</strong> menentukan profil dan kategori peralatan yang akan tampil.</p>
@@ -267,7 +269,7 @@ export default function StationGuidePage() {
           <p>Panel ini menampilkan persentase serta jumlah kategori yang sudah terisi. Klik sebuah baris untuk memilih Site tersebut. Saat sedang mengedit, pemilihan Site lain dinonaktifkan sampai Anda selesai.</p>
         </section>
 
-        <section id="alur-pengisian" className="guide-article">
+        <section id="alur-pengisian" className="guide-article" data-guide-keywords="pengisian baru, lanjut isi, edit data, perbaiki data">
           <p className="guide-section-label">LIHAT DAN EDIT DATA</p>
           <h3>Bagaimana mulai, melanjutkan, atau memperbaiki pengisian?</h3>
           <h4>Mode lihat</h4>
@@ -296,7 +298,7 @@ export default function StationGuidePage() {
           <p>Anda tidak perlu membuat Submission baru hanya untuk memperbaiki data.</p>
         </section>
 
-        <section id="metadata-aloptama" className="guide-article">
+        <section id="metadata-aloptama" className="guide-article" data-guide-keywords="metadata, profil site, alamat, koordinat, wigos">
           <p className="guide-section-label">METADATA ALOPTAMA</p>
           <h3>Bagaimana mengisi profil Site?</h3>
           <p>Metadata Aloptama tersedia untuk Site biasa dan tersimpan untuk Site tersebut. Buka setiap kelompok, lalu isi berdasarkan dokumen atau data resmi yang tersedia.</p>
@@ -315,7 +317,7 @@ export default function StationGuidePage() {
           <div className="guide-warning"><strong>Hati-hati</strong><p><strong>Kosongkan metadata</strong> menghapus seluruh isian metadata Site dari draf saat ini. Gunakan hanya jika memang ingin mengisi ulang.</p></div>
         </section>
 
-        <section id="kategori-dan-unit" className="guide-article">
+        <section id="kategori-dan-unit" className="guide-article" data-guide-keywords="serial, serial number, nomor seri, unit, jumlah, kondisi, tahun pasang, catatan">
           <p className="guide-section-label">KATEGORI, ITEM, DAN UNIT</p>
           <h3>Bagaimana mencatat peralatan yang tersedia?</h3>
           <p>Kategori mengelompokkan fungsi peralatan yang perlu didata, misalnya Sensor Suhu Udara, Pengolah Data, atau Sistem Catu Daya. Daftar kategori mengikuti profil Site dan Subtipe yang dipilih.</p>
@@ -340,7 +342,7 @@ export default function StationGuidePage() {
           <div className="guide-warning"><strong>Hati-hati</strong><p><strong>Kosongkan draf</strong> menghapus seluruh pilihan barang pada Site dan Subtipe yang sedang dibuka. Tindakan ini berbeda dengan menghapus satu Item.</p></div>
         </section>
 
-        <section id="produk" className="guide-article">
+        <section id="produk" className="guide-article" data-guide-keywords="produk tidak ada, barang tidak ada, usulkan produk, merk tipe, proposal produk">
           <p className="guide-section-label">PRODUK</p>
           <h3>Bagaimana memilih atau mengusulkan Produk?</h3>
           <h4>Memilih Produk yang sudah tersedia</h4>
@@ -369,7 +371,7 @@ export default function StationGuidePage() {
           </ul>
         </section>
 
-        <section id="gudang" className="guide-article">
+        <section id="gudang" className="guide-article" data-guide-keywords="barang di gudang, stok gudang, unit gudang, inventaris gudang">
           <p className="guide-section-label">INVENTARIS GUDANG</p>
           <h3>Bagaimana mengisi peralatan yang ada di Gudang?</h3>
           <p>Gudang tersedia sebagai Site dengan Tipe Site dan Subtipe <strong>Gudang</strong>. Gudang mencatat barang yang tersedia, bukan daftar kategori yang wajib dipenuhi.</p>
@@ -393,7 +395,7 @@ export default function StationGuidePage() {
           <p>Klik <strong>Hapus kategori</strong> jika kategori salah dipilih. Jika kategori sudah berisi Unit, aplikasi meminta konfirmasi. Unit sensor kombinasi tetap dipertahankan pada fungsi lain yang masih digunakan.</p>
         </section>
 
-        <section id="penyimpanan" className="guide-article">
+        <section id="penyimpanan" className="guide-article" data-guide-keywords="autosave, simpan, data terkunci, lock, tidak bisa edit, data dipakai orang lain">
           <p className="guide-section-label">SIMPAN DAN PENGGUNAAN BERSAMA</p>
           <h3>Bagaimana memastikan data aman dan tersimpan?</h3>
           <h4>Penyimpanan otomatis</h4>
@@ -416,7 +418,7 @@ export default function StationGuidePage() {
           <p>Klik <strong>Selesai Mengedit</strong>. Aplikasi menyimpan perubahan terakhir lalu melepas hak edit sesi ini. Jika pelepasan belum terkonfirmasi, aplikasi memberi tahu bahwa data sudah tersimpan dan hak edit akan berakhir otomatis.</p>
         </section>
 
-        <section id="unduh-data" className="guide-article">
+        <section id="unduh-data" className="guide-article" data-guide-keywords="csv, json, export, download, unduh data">
           <p className="guide-section-label">UNDUH HASIL</p>
           <h3>Bagaimana mengunduh CSV atau JSON?</h3>
           <ol>

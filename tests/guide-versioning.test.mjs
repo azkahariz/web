@@ -31,11 +31,11 @@ test("Station seen menyembunyikan notice dan memakai route normal", () => {
   assert.equal(getGuideNoticeHref("station", latest), "/panduan");
 });
 
-test("panduan Station dan Admin memicu notice terpisah pada versi masing-masing", () => {
-  assert.equal(getLatestGuideNoticeVersion("station"), "2026.08.21.3");
-  assert.equal(getLatestGuideNoticeVersion("admin"), "2026.08.21.3");
-  assert.equal(isGuideNoticeUnseen("station", "2026.08.21.2"), true);
-  assert.equal(isGuideNoticeUnseen("admin", "2026.08.21.2"), true);
+test("pencarian Panduan memicu notice baru untuk Station dan Admin", () => {
+  assert.equal(getLatestGuideNoticeVersion("station"), "2026.08.22.1");
+  assert.equal(getLatestGuideNoticeVersion("admin"), "2026.08.22.1");
+  assert.equal(isGuideNoticeUnseen("station", "2026.08.21.3"), true);
+  assert.equal(isGuideNoticeUnseen("admin", "2026.08.21.3"), true);
 });
 
 test("Admin mempunyai notice dan seen-state terpisah dari Station", () => {
@@ -55,6 +55,16 @@ test("minor tidak memicu notice sedangkan update dan important memicu", () => {
   assert.equal(isGuideNoticeUnseen("station", null, minor), false);
   assert.equal(isGuideNoticeUnseen("station", null, update), true);
   assert.equal(isGuideNoticeUnseen("station", null, important), true);
+});
+
+test("update audience all berlaku pada kedua Panduan tanpa menyatukan seen-state", () => {
+  const updates = [{ version: "4", date: "2026-08-22", audience: "all", level: "update", title: "Pencarian", summary: "Cari panduan" }];
+  assert.equal(getLatestGuideNoticeVersion("station", updates), "4");
+  assert.equal(getLatestGuideNoticeVersion("admin", updates), "4");
+  const storage = memoryStorage();
+  markGuideNoticeSeen(storage, "station", "4");
+  assert.equal(isGuideNoticeUnseen("station", readGuideSeenVersion(storage, "station"), updates), false);
+  assert.equal(isGuideNoticeUnseen("admin", readGuideSeenVersion(storage, "admin"), updates), true);
 });
 
 test("mark seen menyimpan latest notice version secara idempotent", () => {
@@ -171,10 +181,11 @@ test("Yang Baru memakai bahasa umum tanpa jargon developer", async () => {
   assert.match(registry, /Pemilihan Site dan Subtipe lebih aman/);
   assert.match(registry, /Panduan Pengguna kini lebih lengkap/);
   assert.match(registry, /Panduan Super Admin kini lebih lengkap/);
+  assert.match(registry, /Panduan sekarang lebih mudah dicari/);
   assert.match(registry, /Cek penggunaan Produk lebih lengkap/);
   assert.match(registry, /Produk yang salah dapat diperbaiki/);
-  assert.equal(getGuideUpdates("station").length, 4);
-  assert.equal(getGuideUpdates("admin").length, 6);
+  assert.equal(getGuideUpdates("station").length, 5);
+  assert.equal(getGuideUpdates("admin").length, 7);
 });
 
 test("panduan Station mendokumentasikan field dan state sesuai label aplikasi", async () => {
