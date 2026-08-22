@@ -45,9 +45,9 @@ const adminTaskGroups = [
 const troubleshooting = [
   {
     title: "Tidak bisa login Super Admin",
-    seen: "Username atau password ditolak, atau setelah masuk tidak terbuka Dashboard Admin.",
-    cause: "Credential salah, akun Super Admin tidak aktif, atau koneksi sedang bermasalah.",
-    action: "Periksa penulisan username dan password, lalu coba lagi setelah koneksi stabil. Pastikan akun memang terdaftar sebagai Super Admin aktif.",
+    seen: "Username atau password ditolak, muncul Konfigurasi login belum tersedia, atau setelah masuk tidak terbuka Dashboard Admin.",
+    cause: "Credential salah, akun Super Admin tidak aktif, konfigurasi layanan login belum tersedia, atau koneksi sedang bermasalah.",
+    action: "Periksa penulisan username dan password, lalu coba lagi setelah koneksi stabil. Pastikan akun memang terdaftar sebagai Super Admin aktif. Jika konfigurasi belum tersedia, hubungi pengelola aplikasi.",
     caution: "Jangan memakai akun Stasiun untuk mencoba membuka halaman Admin dan jangan membagikan credential Admin.",
   },
   {
@@ -279,6 +279,13 @@ export default async function AdminGuidePage() {
             <li>Atur <strong>Baris per halaman</strong>, lalu gunakan <strong>Sebelumnya</strong> dan <strong>Berikutnya</strong>.</li>
             <li>Klik baris untuk melihat kategori, item, versi, waktu simpan, QC Pending, dan alasan arsip.</li>
           </ol>
+          <dl className="guide-field-list guide-unit-fields">
+            <div><dt>Kosong</dt><dd>Belum ada kategori target yang terisi.</dd></div>
+            <div><dt>Terisi Sebagian</dt><dd>Sudah ada kategori target yang terisi, tetapi belum seluruhnya.</dd></div>
+            <div><dt>Lengkap</dt><dd>Seluruh kategori target pada profil sudah terisi.</dd></div>
+            <div><dt>Gudang</dt><dd>Progress ditampilkan sebagai jumlah kategori dan Unit, bukan persentase target.</dd></div>
+            <div><dt>Belum terpetakan</dt><dd>Profil belum menyediakan target kategori untuk menghitung progress.</dd></div>
+          </dl>
           <h4>Membuka dan mengedit</h4>
           <ol>
             <li>Klik <strong>Buka</strong> untuk membuka form lengkap dalam mode lihat.</li>
@@ -293,7 +300,7 @@ export default async function AdminGuidePage() {
           <div className="guide-warning"><strong>Hati-hati</strong><p>Jangan mengarsipkan hanya untuk menyembunyikan error. Submission yang masih dikunci tidak dapat diarsipkan. Pastikan alasan dan data pengganti sudah jelas.</p></div>
           <h4>Hapus Permanen Submission</h4>
           <p>Zona Berbahaya menyediakan <strong>Hapus Permanen</strong> untuk Submission yang tidak sedang dikunci. Tindakan meminta Anda mengetik <strong>HAPUS</strong> dan tidak dapat dipulihkan.</p>
-          <div className="guide-warning"><strong>Hati-hati</strong><p>Utamakan Arsip untuk mempertahankan riwayat. Gunakan Hapus Permanen hanya setelah memastikan data memang tidak boleh dipertahankan dan telah mendapat persetujuan yang berlaku.</p></div>
+          <div className="guide-warning"><strong>Hati-hati</strong><p>Utamakan Arsip untuk mempertahankan riwayat. Gunakan Hapus Permanen hanya setelah memastikan data memang tidak boleh dipertahankan. Aplikasi tidak menetapkan pihak pemberi persetujuan; ikuti ketentuan internal yang berlaku.</p></div>
         </section>
 
         <section id="lock" className="guide-article" data-guide-keywords="lock, data terkunci, tidak bisa edit, data dipakai orang lain, paksa lepas">
@@ -321,7 +328,7 @@ export default async function AdminGuidePage() {
             <li><strong>Reset Password:</strong> membuat password sementara baru dan langsung membuat password lama tidak berlaku.</li>
           </ul>
           <p>Setelah Provision atau Reset Password, dialog menampilkan Username dan Password baru. Gunakan tombol mata bila perlu, lalu klik <strong>Salin Password</strong>. Password hanya dapat dilihat selama dialog tersebut masih terbuka.</p>
-          <div className="guide-note"><strong>Keamanan credential</strong><p>Kirim password hanya kepada petugas yang berwenang melalui saluran yang disepakati. Jangan mengirim daftar password ke grup umum, menaruhnya pada Catatan Submission, atau menyimpannya di file ekspor.</p></div>
+          <div className="guide-note"><strong>Keamanan credential</strong><p>Kirim password hanya kepada petugas yang berwenang. Aplikasi tidak menetapkan kanal pengiriman resmi; ikuti ketentuan internal yang berlaku. Jangan mengirim daftar password ke grup umum, menaruhnya pada Catatan Submission, atau menyimpannya di file ekspor.</p></div>
         </section>
 
         <section id="qc-produk" className="guide-article" data-guide-keywords="qc, approve, approve baru, merge qc, tolak proposal, pemeriksaan produk">
@@ -348,6 +355,7 @@ export default async function AdminGuidePage() {
           <p>Tab hasil menampilkan Produk tujuan, Catatan QC, pemeriksa, dan waktu pemeriksaan. Tindakan pertama yang selesai menjadi hasil resmi; Admin berikutnya akan melihat konflik, bukan menimpa hasil tersebut.</p>
           <h4>Koreksi Produk hasil QC</h4>
           <p>Bagian <strong>Perubahan master yang perlu masuk Spreadsheet</strong> menampilkan Produk yang belum ditandai selesai direkonsiliasi. <strong>Koreksi canonical</strong> memperbaiki Brand/Tipe utama dan mencatat tindakan pada Audit Admin. Gunakan hanya untuk koreksi nama, bukan untuk menyatukan dua Produk.</p>
+          <p>Aplikasi tidak menetapkan penanggung jawab rekonsiliasi perubahan master ke Spreadsheet atau koreksi nama utama. Ikuti ketentuan internal yang berlaku sebelum menyatakan rekonsiliasi selesai.</p>
         </section>
 
         <section id="master-produk" className="guide-article" data-guide-keywords="master produk, daftar produk, tambah produk, edit produk, filter produk">
@@ -452,7 +460,7 @@ export default async function AdminGuidePage() {
             <li>Produk lain yang digabungkan ke Produk ini; atau</li>
             <li>status Produk sumber yang sudah Digabungkan.</li>
           </ul>
-          <p>Klik <strong>Hapus Permanen</strong> hanya setelah Produk Nonaktif, lalu baca pemeriksaan keterkaitan. Jika diblokir, gunakan <strong>Lihat Keterkaitan</strong>. Lanjutkan hanya bila aplikasi menyatakan Produk dapat dihapus.</p>
+          <p>Klik <strong>Hapus Permanen</strong> hanya setelah Produk Nonaktif, lalu baca pemeriksaan keterkaitan. Jika diblokir, gunakan <strong>Lihat Keterkaitan</strong>. Setelah keterkaitan berubah, klik <strong>Periksa lagi</strong>. Lanjutkan hanya bila aplikasi menyatakan Produk dapat dihapus.</p>
           <div className="guide-warning"><strong>Hati-hati</strong><p>Hapus Permanen tidak dapat dibatalkan melalui aplikasi. Jangan menghapus QC, Alias, arsip, atau hubungan lain hanya untuk membuat Produk memenuhi syarat.</p></div>
           <p>Produk berstatus <strong>Digabungkan</strong> dipertahankan sebagai jejak sumber. Produk tujuan yang menerima penggabungan juga dilindungi selama masih mempunyai hubungan tersebut.</p>
         </section>
