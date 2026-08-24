@@ -8,6 +8,7 @@ import {
   stationCompletionStatusLabel,
 } from "../app/lib/station-completion-view.ts";
 import { createStationCompletionDetailCache } from "../app/lib/station-completion-detail-cache.ts";
+import { formatCategoryLabel } from "../app/lib/category-label.ts";
 
 function row(status, overrides = {}) {
   return {
@@ -61,6 +62,24 @@ test("status detail memakai label Indonesia dan unknown tidak menjadi Lengkap", 
   assert.equal(stationCompletionStatusLabel("UNKNOWN"), "Status tidak dikenal");
 });
 
+test("label kategori diperbaiki hanya pada presentation tanpa mengubah identity payload", async () => {
+  const canonical = "SIstem Catu Daya Tidak Terputus";
+  assert.equal(formatCategoryLabel(canonical), "Sistem Catu Daya Tidak Terputus");
+  assert.equal(formatCategoryLabel("Sensor Suhu Udara"), "Sensor Suhu Udara");
+  const [inventoryApp, sharedDetail, unified, styles] = await Promise.all([
+    readFile(new URL("../app/InventoryApp.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/admin/SubmissionProgressDetail.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/admin/UnifiedFillingList.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
+  ]);
+  assert.match(inventoryApp, /key=\{category\}[\s\S]*formatCategoryLabel\(category\)/);
+  assert.match(inventoryApp, /setActiveCategory\(category\)/);
+  assert.doesNotMatch(inventoryApp, /setActiveCategory\(formatCategoryLabel/);
+  assert.match(sharedDetail, /formatCategoryLabel\(item\.name\)/);
+  assert.match(unified, /formatCategoryLabel\(category\.label\)/);
+  assert.match(styles, /\.unified-filling-actions > button, \.unified-filling-actions > a \{[\s\S]*display: inline-flex;[\s\S]*align-items: center;[\s\S]*justify-content: center;/);
+});
+
 test("pair key memakai identity UUID stabil dan parser menolak response malformed", () => {
   assert.equal(stationCompletionDetailKey(row("KOSONG")), "site-KOSONG:subtype-KOSONG:submission-KOSONG");
   assert.equal(stationCompletionDetailResponse(null), null);
@@ -79,6 +98,8 @@ test("unified detail menampilkan semua status, Gudang netral, issue, dan retry",
     "Coba muat ulang",
   ]) assert.match(component, new RegExp(text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   assert.match(component, /completion\.issues\.map/);
+  assert.match(component, /QC Pending/);
+  assert.match(component, /pendingProposalIds/);
   assert.match(component, /Inventaris Gudang tersedia/);
   assert.doesNotMatch(component, /Pengisian Gudang belum tersedia\./);
   assert.match(component, /aria-expanded=\{showAllMissing\}/);

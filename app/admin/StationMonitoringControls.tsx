@@ -1,46 +1,49 @@
 import type {
-  StationActivityFilter,
+  StationConditionFilter,
   StationFollowUpKey,
   StationMonitoringFilters,
   StationMonitoringSort,
-  StationProgressFilter,
-  StationStatusFilter,
+  StationQcFilter,
 } from "../lib/station-monitoring";
 import { hasStationMonitoringFilters } from "../lib/station-monitoring";
 
 type FollowUpCounts = {
-  attention: number;
   notStarted: number;
   partialUnder50: number;
-  stale7: number;
+  partial50to99: number;
+  complete: number;
 };
 
 const quickActions: Array<{ key: StationFollowUpKey; countKey: keyof FollowUpCounts; label: string }> = [
-  { key: "attention", countKey: "attention", label: "Perlu Perhatian" },
   { key: "not-started", countKey: "notStarted", label: "Belum Dimulai" },
   { key: "partial-under-50", countKey: "partialUnder50", label: "Terisi <50%" },
-  { key: "stale-7", countKey: "stale7", label: "Tidak diperbarui >7 hari" },
+  { key: "partial-50-99", countKey: "partial50to99", label: "Terisi 50-99%" },
+  { key: "complete", countKey: "complete", label: "Lengkap" },
 ];
 
 export default function StationMonitoringControls({
   filters,
   counts,
+  qcSummary,
   visibleCount,
   totalCount,
   loading,
   available,
   onChange,
   onQuickAction,
+  onQcPending,
   onReset,
 }: {
   filters: StationMonitoringFilters;
   counts: FollowUpCounts;
+  qcSummary: { stationCount: number; totalPending: number; maxPending: number };
   visibleCount: number;
   totalCount: number;
   loading: boolean;
   available: boolean;
   onChange: (next: StationMonitoringFilters) => void;
   onQuickAction: (key: StationFollowUpKey) => void;
+  onQcPending: () => void;
   onReset: () => void;
 }) {
   if (loading) return <section className="station-monitoring station-monitoring-skeleton" aria-label="Memuat kontrol monitoring" aria-busy="true">
@@ -51,7 +54,7 @@ export default function StationMonitoringControls({
   return <section className="station-monitoring" aria-labelledby="station-follow-up-heading">
     <div className="station-follow-up-heading">
       <h3 id="station-follow-up-heading">Perlu ditindaklanjuti</h3>
-      <small>Indikator dapat saling tumpang tindih.</small>
+      <small>Ringkasan progres dan beban QC dari data yang sama.</small>
     </div>
     <div className="station-follow-up-actions">
       {quickActions.map((action) => {
@@ -63,46 +66,40 @@ export default function StationMonitoringControls({
     </div>
 
     <div className="station-monitoring-filters">
-      <label>Status
-        <select value={filters.status} onChange={(event) => onChange({ ...filters, status: event.target.value as StationStatusFilter })}>
+      <label>Kondisi Pengisian
+        <select value={filters.condition} onChange={(event) => onChange({ ...filters, condition: event.target.value as StationConditionFilter })}>
           <option value="all">Semua</option>
-          <option value="incomplete">Belum Lengkap</option>
-          <option value="LENGKAP">Lengkap</option>
-          <option value="TERISI_SEBAGIAN">Terisi Sebagian</option>
-          <option value="BELUM_DIMULAI">Belum Dimulai</option>
-          <option value="PERLU_PERHATIAN">Perlu Perhatian</option>
-          <option value="TIDAK_DINILAI">Tidak Dinilai</option>
+          <option value="not-started">Belum Dimulai</option>
+          <option value="lt50">Terisi &lt;50%</option>
+          <option value="50to99">Terisi 50-99%</option>
+          <option value="complete">Lengkap</option>
+          <option value="attention">Perlu Perhatian</option>
+          <option value="not-assessed">Tidak Dinilai</option>
         </select>
       </label>
-      <label>Progress
-        <select value={filters.progress} onChange={(event) => onChange({ ...filters, progress: event.target.value as StationProgressFilter })}>
+      <label>QC Produk
+        <select value={filters.qc} onChange={(event) => onChange({ ...filters, qc: event.target.value as StationQcFilter })}>
           <option value="all">Semua</option>
-          <option value="lt25">Kurang dari 25%</option>
-          <option value="lt50">Kurang dari 50%</option>
-          <option value="50to99">50-99%</option>
-          <option value="100">100%</option>
-        </select>
-      </label>
-      <label>Aktivitas
-        <select value={filters.activity} onChange={(event) => onChange({ ...filters, activity: event.target.value as StationActivityFilter })}>
-          <option value="all">Semua</option>
-          <option value="never">Belum pernah disimpan</option>
-          <option value="stale7">Tidak diperbarui &gt; 7 hari</option>
-          <option value="stale14">Tidak diperbarui &gt; 14 hari</option>
+          <option value="pending">Ada QC Pending</option>
+          <option value="none">Tanpa QC Pending</option>
         </select>
       </label>
       <label>Urutkan
         <select value={filters.sort} onChange={(event) => onChange({ ...filters, sort: event.target.value as StationMonitoringSort })}>
-          <option value="priority">Prioritas Tindak Lanjut</option>
+          <option value="priority">Prioritas Pengisian</option>
           <option value="progress-asc">Progress Terendah</option>
           <option value="progress-desc">Progress Tertinggi</option>
-          <option value="oldest">Paling Lama Tidak Diperbarui</option>
-          <option value="newest">Pembaruan Terbaru</option>
+          <option value="qc-desc">QC Pending Terbanyak</option>
+          <option value="qc-asc">QC Pending Tersedikit</option>
           <option value="name-asc">Nama A-Z</option>
           <option value="name-desc">Nama Z-A</option>
         </select>
       </label>
       {hasStationMonitoringFilters(filters) && <button className="station-monitoring-reset" type="button" onClick={onReset}>Reset filter</button>}
+    </div>
+    <div className="station-qc-summary" aria-label="Ringkasan QC Produk">
+      <div><strong>QC Produk</strong><span>{qcSummary.stationCount} Stasiun memiliki QC Pending | {qcSummary.totalPending} QC Pending</span></div>
+      {qcSummary.totalPending > 0 && <button type="button" onClick={onQcPending}>Lihat QC Pending</button>}
     </div>
     <p className="station-monitoring-result" role="status">Menampilkan <strong>{visibleCount}</strong> dari <strong>{totalCount}</strong> Stasiun</p>
   </section>;

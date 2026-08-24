@@ -93,8 +93,31 @@ test("detail barang menampilkan produk ganda, material, dan item kosong dari sat
     primary: "Tiang galvanis",
     unitCount: 1,
     functions: ["Mounting"],
+    pendingQc: false,
   }]);
   assert.equal(rows[2].filled, false);
+});
+
+test("payload kategori legacy tetap dikenali dengan identity canonical lama", () => {
+  const category = "SIstem Catu Daya Tidak Terputus";
+  const inventory = { [category]: [product(1)] };
+  assert.deepEqual(summarizeSubmissionProgress([category], inventory), {
+    filledCount: 1, totalCount: 1, progressPercent: 100, progressStatus: "Lengkap",
+  });
+  assert.equal(submissionItemDisplays({ expected_items: [{ name: category, filled: true }], payload: { inventory } })[0].filled, true);
+});
+
+test("item submission menandai proposal QC pending tanpa menjadikan badge sebagai aksi", async () => {
+  const detail = {
+    expected_items: [{ name: "Sensor", filled: true }],
+    payload: { inventory: { Sensor: [{ brand: "Vaisala", model: "HMP155", quantity: 1, productProposalId: "proposal-pending" }] } },
+  };
+  const rows = submissionItemDisplays(detail, new Set(["proposal-pending"]));
+  assert.equal(rows[0].hasPendingQc, true);
+  assert.equal(rows[0].entries[0].pendingQc, true);
+  const component = await readFile(new URL("../app/admin/SubmissionProgressDetail.tsx", import.meta.url), "utf8");
+  assert.match(component, /className="qc-pending-badge"/);
+  assert.doesNotMatch(component.match(/className="qc-pending-badge"[\s\S]{0,160}/)?.[0] ?? "", /href|onClick/);
 });
 
 test("list ringan, lazy detail cache, sorting, page size, dan delete dijaga oleh contract", async () => {
@@ -158,7 +181,7 @@ test("list ringan, lazy detail cache, sorting, page size, dan delete dijaga oleh
   assert.match(monitor, /min=\{SUBMISSION_PAGE_SIZE_MIN\}[\s\S]*max=\{SUBMISSION_PAGE_SIZE_MAX\}/);
   assert.doesNotMatch(monitor, /setInterval|Realtime|channel\(/);
   assert.match(sharedDetail, /href=\{`\/admin\/submissions\/\$\{detail\.id\}`\} target="_blank" rel="noopener noreferrer">Buka/);
-  assert.match(sharedDetail, /submissionItemDisplays\(detail\)/);
+  assert.match(sharedDetail, /submissionItemDisplays\(detail, pendingProposalIds\)/);
   assert.match(monitor, /confirmationText: "HAPUS"/);
   assert.match(route, /admin_permanently_delete_submission/);
   assert.match(extensionMigration, /require_super_admin\(\)/);

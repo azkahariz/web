@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import AsyncButton from "../components/AsyncButton";
+import { formatCategoryLabel } from "../lib/category-label";
 import type { StationCompletionDetailResponse } from "../lib/station-completion";
 import { stationCompletionStatusClass, stationCompletionStatusLabel } from "../lib/station-completion-view";
 import type { SubmissionDetail, SubmissionSummary } from "../lib/submission-monitoring";
@@ -42,6 +43,7 @@ export default function UnifiedFillingList({
   loading,
   error,
   submissionDetails,
+  pendingProposalIds,
   detailLoadingIds,
   detailErrors,
   actionId,
@@ -57,6 +59,7 @@ export default function UnifiedFillingList({
   loading: boolean;
   error: string;
   submissionDetails: Record<string, SubmissionDetail>;
+  pendingProposalIds: ReadonlySet<string>;
   detailLoadingIds: Set<string>;
   detailErrors: Record<string, string>;
   actionId: string | null;
@@ -123,6 +126,7 @@ export default function UnifiedFillingList({
               <span className={`station-completion-status ${row.isWarehouse ? "tidak-dinilai" : stationCompletionStatusClass(completion?.status ?? "UNKNOWN")}`}>{status}</span>
               {row.isWarehouse ? <small>{submissionId ? "Inventaris Gudang tersedia" : "Belum ada inventaris tercatat"}</small>
                 : completion && <small><strong>{completion.filled_category_count}/{completion.expected_category_count}</strong> kategori terisi{missingCategories.length > 0 ? ` · ${missingCategories.length} belum terisi` : ""}</small>}
+              {!row.isWarehouse && completion && completion.pending_qc_count > 0 && <small className="unified-filling-qc">QC Pending: {completion.pending_qc_count}</small>}
             </div>
             <div className="unified-filling-meta">{submissionId ? <>
               <span>v{completion?.submission_version ?? submission?.version ?? "-"}</span>
@@ -147,7 +151,7 @@ export default function UnifiedFillingList({
 
           {!row.isWarehouse && visibleMissing.length > 0 && <div className="unified-filling-missing">
             <span>Belum:</span>
-            <ul>{visibleMissing.map((category) => <li key={category.id}>{category.label}</li>)}</ul>
+            <ul>{visibleMissing.map((category) => <li key={category.id}>{formatCategoryLabel(category.label)}</li>)}</ul>
             {missingCategories.length > 5 && <button type="button" aria-expanded={showAllMissing} onClick={() => setExpandedMissing((current) => {
               const next = new Set(current);
               if (next.has(row.key)) next.delete(row.key); else next.add(row.key);
@@ -160,6 +164,7 @@ export default function UnifiedFillingList({
             {detailErrors[submissionId] && <p className="submission-detail-error">{detailErrors[submissionId]}<AsyncButton type="button" onClick={() => void onLoadSubmissionDetail(submissionId, true)} loading={detailLoadingIds.has(submissionId)} loadingText="Memuat...">Coba lagi</AsyncButton></p>}
             {submissionDetails[submissionId] && <SubmissionProgressDetail
               detail={submissionDetails[submissionId]}
+              pendingProposalIds={pendingProposalIds}
               actionId={actionId}
               onDownload={async () => {
                 if (!subtype) return;

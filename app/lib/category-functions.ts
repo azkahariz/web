@@ -1,4 +1,5 @@
 import type { InstalledItem, Inventory, MasterDataReferences } from "../types/inventory.ts";
+import { canonicalCategoryName, categoryNamesEquivalent } from "./category-identity.ts";
 
 export const SENSOR_FUNCTION_GROUPS = [
   {
@@ -31,7 +32,7 @@ export function sensorFunctionGroup(category: string) {
 }
 
 export function getItemFunctionCategories(item: InstalledItem, storageCategory: string) {
-  const categories = item.functionCategories?.filter(Boolean) ?? [];
+  const categories = item.functionCategories?.filter(Boolean).map(canonicalCategoryName) ?? [];
   return categories.length ? Array.from(new Set(categories)) : [storageCategory];
 }
 
@@ -49,16 +50,22 @@ export function withItemFunctionCategories(
 }
 
 export function inventoryCategoryEntries(inventory: Inventory, category: string): InventoryCategoryEntry[] {
+  const seenIds = new Set<string>();
   return Object.entries(inventory).flatMap(([storageCategory, items]) => items
-    .filter((item) => getItemFunctionCategories(item, storageCategory).includes(category))
-    .map((item) => ({ storageCategory, item })));
+    .filter((item) => getItemFunctionCategories(item, storageCategory).some((name) => categoryNamesEquivalent(name, category)))
+    .filter((item) => {
+      if (!item.id || seenIds.has(item.id)) return !item.id;
+      seenIds.add(item.id);
+      return true;
+    })
+    .map((item) => ({ storageCategory: canonicalCategoryName(storageCategory), item })));
 }
 
 export function inventoryCategoryNames(inventory: Inventory) {
-  const result = new Set(Object.keys(inventory));
+  const result = new Set(Object.keys(inventory).map(canonicalCategoryName));
   for (const [storageCategory, items] of Object.entries(inventory)) {
     for (const item of items) {
-      for (const category of getItemFunctionCategories(item, storageCategory)) result.add(category);
+      for (const category of getItemFunctionCategories(item, storageCategory)) result.add(canonicalCategoryName(category));
     }
   }
   return Array.from(result);
@@ -109,14 +116,14 @@ export function removeInventoryCategory(
   for (const [storageCategory, items] of Object.entries(inventory)) {
     for (const item of items) {
       const currentFunctions = getItemFunctionCategories(item, storageCategory);
-      if (!currentFunctions.includes(category)) {
-        const destination = storageCategory === category ? currentFunctions[0] : storageCategory;
+      if (!currentFunctions.some((name) => categoryNamesEquivalent(name, category))) {
+        const destination = categoryNamesEquivalent(storageCategory, category) ? currentFunctions[0] : canonicalCategoryName(storageCategory);
         next[destination] = [...(next[destination] ?? []), item];
         continue;
       }
-      const remainingFunctions = currentFunctions.filter((name) => name !== category);
+      const remainingFunctions = currentFunctions.filter((name) => !categoryNamesEquivalent(name, category));
       if (!remainingFunctions.length) continue;
-      const destination = storageCategory === category ? remainingFunctions[0] : storageCategory;
+      const destination = categoryNamesEquivalent(storageCategory, category) ? remainingFunctions[0] : canonicalCategoryName(storageCategory);
       next[destination] = [
         ...(next[destination] ?? []),
         withItemFunctionCategories(item, remainingFunctions, categoryIds),
