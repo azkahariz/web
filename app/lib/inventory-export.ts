@@ -154,7 +154,7 @@ export function buildInventoryJson(context: InventoryExportContext, exportedAt =
     profile: context.profile,
     items: context.categories.map((category) => ({
       category,
-      products: (context.payload.inventory[category] ?? []).map((item) => exportItem(item, context.resolveItem)),
+      products: inventoryCategoryEntries(context.payload.inventory, category).map(({ item }) => exportItem(item, context.resolveItem)),
     })),
     physicalUnits: Object.entries(context.payload.inventory).flatMap(([storageCategory, items]) => items.flatMap((rawItem) => {
       const item = exportItem(rawItem, context.resolveItem);

@@ -14,6 +14,7 @@ import { useProductCatalog } from "./hooks/useProductCatalog";
 import { buildAloptamaFilename, downloadText } from "./lib/download";
 import { buildInventoryCsv, buildInventoryJson } from "./lib/inventory-export";
 import { formatCategoryLabel } from "./lib/category-label";
+import { normalizeInventoryCategoryKeys } from "./lib/category-identity";
 import { resolveInstalledProduct } from "./lib/product-qc";
 import {
   getItemFunctionCategories,
@@ -123,7 +124,7 @@ export default function InventoryApp({
             && data.siteSubtypes.some((row) => row.subtypeId === parsed.subtypeId)) {
             setSite(parsed.siteId ?? "");
             setSubtype(parsed.subtypeId ?? "");
-            setDrafts(parsed.drafts ?? {});
+            setDrafts(Object.fromEntries(Object.entries(parsed.drafts ?? {}).map(([key, inventory]) => [key, normalizeInventoryCategoryKeys(inventory)])));
             setDraftContexts(parsed.draftContexts ?? {});
             setSiteMetadataDrafts(parsed.siteMetadataDrafts ?? {});
           }
@@ -439,7 +440,7 @@ export default function InventoryApp({
   }
 
   const applyRemotePayload = useCallback((next: DraftPayload) => {
-    setDrafts((current) => ({ ...current, [draftKey]: next.inventory ?? {} }));
+    setDrafts((current) => ({ ...current, [draftKey]: normalizeInventoryCategoryKeys(next.inventory ?? {}) }));
     setDraftContexts((current) => ({ ...current, [draftKey]: { runwayAzimuth: next.runwayAzimuth ?? "" } }));
     setSiteMetadataDrafts((current) => ({ ...current, [metadataKey]: { ...EMPTY_SITE_METADATA, ...(next.siteMetadata ?? {}) } }));
   }, [draftKey, metadataKey]);
