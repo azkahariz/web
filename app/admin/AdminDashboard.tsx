@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import AdminBulkExport from "./AdminBulkExport";
 import AdminProducts from "./AdminProducts";
 import AdminSubmissionMonitor from "./AdminSubmissionMonitor";
+import StationMonitoringControls from "./StationMonitoringControls";
 import UnifiedFillingList from "./UnifiedFillingList";
 import { useAppFeedback } from "../components/AppFeedback";
 import AsyncButton from "../components/AsyncButton";
@@ -28,6 +29,14 @@ import { hasMixedMergeProposalFamilies, rankMergeProducts, type ProductAlias } f
 import type { QcProposalContext } from "../lib/qc-proposal-context";
 import type { StationCompletionDetailResponse, StationCompletionSummary } from "../lib/station-completion";
 import { createStationCompletionDetailCache } from "../lib/station-completion-detail-cache";
+import {
+  applyStationFollowUpPreset,
+  applyStationMonitoring,
+  DEFAULT_STATION_MONITORING_FILTERS,
+  getStationFollowUpCounts,
+  hasStationMonitoringFilters,
+  type StationMonitoringFilters,
+} from "../lib/station-monitoring";
 import {
   stationCompletionCategory,
   stationCompletionDetailResponse,
@@ -109,6 +118,20 @@ function ageLabel(value: string | null, now: number) {
   return minutes < 1 ? "kurang dari 1 menit" : `${minutes} menit`;
 }
 
+const stationActivityFormatter = new Intl.DateTimeFormat("id-ID", {
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+});
+
+function stationActivityLabel(completion: StationCompletionSummary) {
+  if (completion.station_status === "TIDAK_DINILAI") return "Pengisian tidak dinilai";
+  if (!completion.content_last_updated) return "Belum pernah disimpan";
+  return `Terakhir simpan: ${stationActivityFormatter.format(new Date(completion.content_last_updated))}`;
+}
+
 function proposalCategoryLabel(context: QcProposalContext) {
   if (context.state === "unavailable") return "Konteks tidak tersedia";
   if (context.state === "missing-submission") return "Konteks submission tidak tersedia";
@@ -182,6 +205,7 @@ const StationFillingCard = memo(function StationFillingCard({
           aria-valuenow={category.progress}
         ><span style={{ width: `${Math.min(100, Math.max(0, category.progress))}%` }} /></div>}
         {warehouseInfo && <small className="station-completion-warehouse-info">{warehouseInfo}</small>}
+        <small className="station-completion-activity">{stationActivityLabel(completion)}</small>
         {completion.site_count === 0 && completion.issues[0]?.label && <small>{completion.issues[0].label}</small>}
       </div> : completionLoading ? <div className="station-completion-skeleton" aria-label="Memuat ringkasan kelengkapan"><span /><span /></div> : <div className="station-completion-unavailable"><span>{view.siteCount} Site (data master)</span><small>Kelengkapan belum tersedia</small></div>}
     </summary>
@@ -254,6 +278,8 @@ export default function AdminDashboard({ username, displayName }: { username: st
   const [credentialVisible, setCredentialVisible] = useState(false);
   const [loading, setLoading] = useState(true);
   const [completionRows, setCompletionRows] = useState<StationCompletionSummary[]>([]);
+  const [stationMonitoringFilters, setStationMonitoringFilters] = useState<StationMonitoringFilters>(DEFAULT_STATION_MONITORING_FILTERS);
+  const [stationMonitoringReferenceTime, setStationMonitoringReferenceTime] = useState(0);
   const [completionLoading, setCompletionLoading] = useState(false);
   const [completionError, setCompletionError] = useState("");
   const [completionDetails, setCompletionDetails] = useState<Map<string, StationCompletionDetailResponse>>(() => new Map());
@@ -315,6 +341,7 @@ export default function AdminDashboard({ username, displayName }: { username: st
         const { data, error } = await client.rpc("admin_station_completion_summary");
         if (error) throw error;
         setCompletionRows(stationCompletionRows(data));
+        setStationMonitoringReferenceTime(Date.now());
         completionLoadedRef.current = true;
       } catch {
         setCompletionError("Data kelengkapan belum dapat dimuat.");
@@ -564,13 +591,37 @@ export default function AdminDashboard({ username, displayName }: { username: st
     station,
     view: buildStationFillingView(station.id, sites, siteTypes, subtypes, submissions),
   })), [sites, siteTypes, stations, submissions, subtypes]);
-  const filteredStationFillingViews = useMemo(() => stationFillingViews.map(({ station, view }) => ({
+  const searchedStationFillingViews = useMemo(() => stationFillingViews.map(({ station, view }) => ({
     station,
     view,
     visibleRows: filterStationFillingRows(station.name, view.rows, query),
   })).filter(({ station, visibleRows }) => !query
     || station.name.toLocaleLowerCase("id-ID").includes(query)
     || visibleRows.length > 0), [query, stationFillingViews]);
+  const filteredStationFillingViews = useMemo(() => {
+    const searchedIds = new Set(searchedStationFillingViews.map(({ station }) => station.id));
+    const filteredSummaries = applyStationMonitoring(
+      completionRows.filter((summary) => searchedIds.has(summary.station_id)),
+      stationMonitoringFilters,
+      stationMonitoringReferenceTime,
+    );
+    const orderByStationId = new Map(filteredSummaries.map((summary, index) => [summary.station_id, index]));
+    const assessmentFilterActive = stationMonitoringFilters.status !== "all"
+      || stationMonitoringFilters.progress !== "all"
+      || stationMonitoringFilters.activity !== "all";
+    return searchedStationFillingViews
+      .filter(({ station }) => orderByStationId.has(station.id)
+        || (!assessmentFilterActive && !completionByStationId.has(station.id)))
+      .sort((left, right) => {
+        const leftOrder = orderByStationId.get(left.station.id);
+        const rightOrder = orderByStationId.get(right.station.id);
+        if (leftOrder !== undefined && rightOrder !== undefined) return leftOrder - rightOrder;
+        if (leftOrder !== undefined) return -1;
+        if (rightOrder !== undefined) return 1;
+        return left.station.name.localeCompare(right.station.name, "id-ID", { sensitivity: "base" });
+      });
+  }, [completionByStationId, completionRows, searchedStationFillingViews, stationMonitoringFilters, stationMonitoringReferenceTime]);
+  const stationFollowUpCounts = useMemo(() => getStationFollowUpCounts(completionRows, stationMonitoringReferenceTime), [completionRows, stationMonitoringReferenceTime]);
   const filteredAccounts = accounts.filter((account) => accountMatchesAdminSearch(account, query, stationMap));
   const filteredUnprovisionedStations = stations.filter((station) => !accountByStation.has(station.id)
     && (!query || station.name.toLocaleLowerCase("id-ID").includes(query)));
@@ -934,8 +985,8 @@ export default function AdminDashboard({ username, displayName }: { username: st
           </section>}
 
           {!loading && tab === "stations" && <div className="status-tabs filling-mode-tabs" role="tablist" aria-label="Mode Stasiun dan Pengisian">
-            <button role="tab" aria-selected={fillingMode === "master"} className={fillingMode === "master" ? "active" : ""} onClick={() => { setFillingMode("master"); setSearch(""); }}>Per Stasiun</button>
-            <button role="tab" aria-selected={fillingMode === "submissions"} className={fillingMode === "submissions" ? "active" : ""} onClick={() => { setSubmissionMonitorMounted(true); setFillingMode("submissions"); setSearch(""); }}>Semua Pengisian</button>
+            <button role="tab" aria-selected={fillingMode === "master"} className={fillingMode === "master" ? "active" : ""} onClick={() => { setFillingMode("master"); setStationMonitoringReferenceTime(Date.now()); }}>Per Stasiun</button>
+            <button role="tab" aria-selected={fillingMode === "submissions"} className={fillingMode === "submissions" ? "active" : ""} onClick={() => { setSubmissionMonitorMounted(true); setFillingMode("submissions"); }}>Semua Pengisian</button>
           </div>}
 
           {!loading && tab === "products" && <AdminProducts onChanged={refreshProductSummary} />}
@@ -943,7 +994,7 @@ export default function AdminDashboard({ username, displayName }: { username: st
           {!loading && searchTab && tab !== "stations" && <label className="admin-search">Cari<input autoComplete="off" value={search} onChange={(event) => setSearch(event.target.value)} placeholder={adminSearchPlaceholder(searchTab)} /></label>}
 
           {!loading && tab === "stations" && fillingMode === "master" && <div className="station-filling-toolbar">
-            <label className="admin-search">Cari<input autoComplete="off" value={search} onChange={(event) => setSearch(event.target.value)} placeholder={adminSearchPlaceholder("stations")} /></label>
+            <label className="admin-search">Cari<input autoComplete="off" value={search} onChange={(event) => { setSearch(event.target.value); setStationMonitoringReferenceTime(Date.now()); }} placeholder={adminSearchPlaceholder("stations")} /></label>
             <AdminBulkExport stations={stations} sites={sites} siteTypes={siteTypes} subtypes={subtypes} onMessage={setMessage} />
           </div>}
 
@@ -953,6 +1004,18 @@ export default function AdminDashboard({ username, displayName }: { username: st
           </div>}
 
           {!loading && tab === "stations" && fillingMode === "master" && completionLoading && completionRows.length > 0 && <p className="station-completion-updating" role="status"><span className="loading-spinner" aria-hidden="true" />Memperbarui ringkasan kelengkapan...</p>}
+
+          {!loading && tab === "stations" && fillingMode === "master" && <StationMonitoringControls
+            filters={stationMonitoringFilters}
+            counts={stationFollowUpCounts}
+            visibleCount={filteredStationFillingViews.length}
+            totalCount={stations.length}
+            loading={completionLoading && completionRows.length === 0}
+            available={completionRows.length > 0}
+            onChange={(next) => { setStationMonitoringFilters(next); setStationMonitoringReferenceTime(Date.now()); }}
+            onQuickAction={(key) => { setStationMonitoringFilters((current) => applyStationFollowUpPreset(current, key)); setStationMonitoringReferenceTime(Date.now()); }}
+            onReset={() => { setStationMonitoringFilters(DEFAULT_STATION_MONITORING_FILTERS); setStationMonitoringReferenceTime(Date.now()); }}
+          />}
 
           {!loading && tab === "stations" && fillingMode === "master" && <div className="admin-list" aria-busy={completionLoading}>
             {filteredStationFillingViews.map(({ station, view, visibleRows }) => <StationFillingCard
@@ -983,6 +1046,10 @@ export default function AdminDashboard({ username, displayName }: { username: st
               onArchive={changeUnifiedSubmissionArchive}
               onDelete={deleteUnifiedSubmission}
             />)}
+            {filteredStationFillingViews.length === 0 && <div className="station-monitoring-empty">
+              <p>Tidak ada Stasiun yang sesuai dengan filter saat ini.</p>
+              {hasStationMonitoringFilters(stationMonitoringFilters) && <button type="button" onClick={() => { setStationMonitoringFilters(DEFAULT_STATION_MONITORING_FILTERS); setStationMonitoringReferenceTime(Date.now()); }}>Reset filter</button>}
+            </div>}
           </div>}
 
           {submissionMonitorMounted && <div hidden={tab !== "stations" || fillingMode !== "submissions"}>

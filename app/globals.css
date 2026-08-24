@@ -665,6 +665,7 @@ button[aria-busy="true"] { display: inline-flex; align-items: center; justify-co
 .station-completion-progress > span { height: 100%; display: block; border-radius: inherit; background: var(--green); }
 .station-completion-body > small, .station-completion-unavailable small { color: var(--red); font-size: 10px; }
 .station-completion-body > small.station-completion-warehouse-info { color: var(--muted); }
+.station-completion-body > small.station-completion-activity { color: var(--muted); }
 .station-completion-skeleton { margin-top: 10px; display: grid; gap: 7px; }
 .station-completion-skeleton span { width: min(420px, 80%); height: 11px; border-radius: 4px; background: #e7ebe8; }
 .station-completion-skeleton span:last-child { width: min(300px, 58%); height: 5px; }
@@ -672,6 +673,33 @@ button[aria-busy="true"] { display: inline-flex; align-items: center; justify-co
 .station-completion-error { margin-top: 14px; padding: 10px 12px; display: flex; align-items: center; justify-content: space-between; gap: 12px; border: 1px solid #e3c9c4; border-radius: 7px; background: #fff8f6; color: #7f4239; font-size: 11px; }
 .station-completion-error button { min-height: 32px; padding: 6px 9px; border: 1px solid #d1aaa3; border-radius: 6px; background: white; color: #7f4239; font-size: 10px; font-weight: 800; cursor: pointer; }
 .station-completion-updating { margin: 12px 0 -6px; display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: 10px; }
+.station-monitoring { margin-top: 14px; padding: 14px; border: 1px solid var(--line); border-radius: 8px; background: #fbfcfa; }
+.station-follow-up-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.station-follow-up-heading h3 { margin: 0; color: var(--ink); font-size: 12px; line-height: 1.4; }
+.station-follow-up-heading small { color: var(--muted); font-size: 9px; }
+.station-follow-up-actions { margin-top: 9px; display: grid; grid-template-columns: repeat(4, minmax(130px, 1fr)); gap: 7px; }
+.station-follow-up-actions button { min-height: 45px; padding: 8px 10px; display: flex; align-items: baseline; gap: 7px; border: 1px solid #c8d7d0; border-radius: 7px; background: white; color: var(--green-deep); text-align: left; cursor: pointer; }
+.station-follow-up-actions button strong { flex: 0 0 auto; font-size: 15px; line-height: 1; }
+.station-follow-up-actions button span { color: var(--ink); font-size: 9px; font-weight: 800; line-height: 1.35; }
+.station-follow-up-actions button:hover:not(:disabled) { border-color: var(--green); background: var(--green-soft); }
+.station-follow-up-actions button:focus-visible, .station-monitoring-reset:focus-visible, .station-monitoring-empty button:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
+.station-follow-up-actions button:disabled { border-color: var(--line); background: #f4f6f4; color: var(--muted); cursor: not-allowed; opacity: .7; }
+.station-follow-up-actions button:disabled span { color: var(--muted); }
+.station-monitoring-filters { margin-top: 12px; padding-top: 11px; display: grid; grid-template-columns: repeat(4, minmax(135px, 1fr)) auto; align-items: end; gap: 8px; border-top: 1px solid var(--line); }
+.station-monitoring-filters label { min-width: 0; display: grid; gap: 5px; color: var(--muted); font-size: 9px; font-weight: 800; }
+.station-monitoring-filters select { width: 100%; min-height: 36px; padding: 7px 28px 7px 9px; border: 1px solid var(--line); border-radius: 6px; background: white; color: var(--ink); font: inherit; font-size: 10px; }
+.station-monitoring-filters select:focus-visible { outline: 2px solid var(--green); outline-offset: 1px; }
+.station-monitoring-reset, .station-monitoring-empty button { min-height: 36px; padding: 7px 10px; border: 1px solid #bdd0c8; border-radius: 6px; background: white; color: var(--green-deep); font-size: 9px; font-weight: 800; cursor: pointer; white-space: nowrap; }
+.station-monitoring-reset:hover, .station-monitoring-empty button:hover { background: var(--green-soft); }
+.station-monitoring-result { margin: 10px 0 0; color: var(--muted); font-size: 10px; }
+.station-monitoring-result strong { color: var(--ink); }
+.station-monitoring-skeleton { min-height: 118px; display: grid; align-content: center; gap: 9px; }
+.station-monitoring-skeleton span { width: min(520px, 78%); height: 11px; border-radius: 4px; background: #e6ebe7; }
+.station-monitoring-skeleton span:nth-child(2) { width: min(680px, 94%); height: 40px; }
+.station-monitoring-skeleton span:nth-child(3) { width: min(420px, 62%); }
+.station-monitoring-empty { padding: 24px 16px; border: 1px dashed var(--line); border-radius: 8px; color: var(--muted); text-align: center; }
+.station-monitoring-empty p { margin: 0; font-size: 11px; }
+.station-monitoring-empty button { margin-top: 10px; }
 .station-completion-detail { padding: 16px; border-top: 1px solid var(--line); background: #fbfcfa; }
 .station-completion-detail-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
 .station-completion-detail-heading h3 { margin: 0; color: var(--ink); font: 600 17px/1.3 Georgia, serif; }
@@ -912,6 +940,9 @@ button[aria-busy="true"] { display: inline-flex; align-items: center; justify-co
   .submission-pagination { justify-content: flex-start; }
   .unified-filling-row-main { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); }
   .unified-filling-actions { justify-content: flex-start; }
+  .station-follow-up-actions { grid-template-columns: repeat(2, minmax(130px, 1fr)); }
+  .station-monitoring-filters { grid-template-columns: repeat(2, minmax(140px, 1fr)); }
+  .station-monitoring-reset { justify-self: start; }
 }
 
 @media (max-width: 620px) {
@@ -1004,6 +1035,9 @@ button[aria-busy="true"] { display: inline-flex; align-items: center; justify-co
   .admin-stats { grid-template-columns: 1fr 1fr; }
   .qc-toolbar { align-items: stretch; flex-direction: column; }
   .station-filling-toolbar { align-items: stretch; flex-direction: column; }
+  .station-follow-up-heading { align-items: flex-start; flex-direction: column; gap: 3px; }
+  .station-follow-up-actions, .station-monitoring-filters { grid-template-columns: 1fr; }
+  .station-monitoring-reset { width: 100%; }
   .station-completion-heading { align-items: flex-start; flex-direction: column; gap: 7px; }
   .station-completion-status { white-space: normal; }
   .station-completion-metrics { gap: 6px 12px; }
