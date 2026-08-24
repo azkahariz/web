@@ -702,6 +702,33 @@ button[aria-busy="true"] { display: inline-flex; align-items: center; justify-co
 .station-completion-detail-error button { min-height: 32px; padding: 6px 9px; border: 1px solid #d1aaa3; border-radius: 6px; background: white; color: #7f4239; font-size: 10px; font-weight: 800; cursor: pointer; }
 .station-completion-complete { margin: 12px 0 0; padding: 10px 12px; border-left: 3px solid var(--green); background: var(--green-soft); color: var(--green-deep); font-size: 11px; line-height: 1.5; }
 .station-completion-warehouse-info, .station-completion-unassessed { margin: 12px 0 0; color: var(--muted); font-size: 11px; line-height: 1.5; }
+.unified-filling { padding: 16px; border-top: 1px solid var(--line); background: #fbfcfa; }
+.unified-filling-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.unified-filling-heading h3 { margin: 0; color: var(--ink); font: 600 17px/1.3 Georgia, serif; }
+.unified-filling-heading span { margin-top: 3px; display: block; color: var(--muted); font-size: 10px; }
+.unified-filling-heading > strong { color: var(--muted); font-size: 10px; font-weight: 700; }
+.unified-filling-list { margin-top: 12px; border-top: 1px solid var(--line); }
+.unified-filling-row { border-bottom: 1px solid var(--line); background: transparent; }
+.unified-filling-row.is-expanded { margin: 0 -16px; padding: 0 16px; background: white; }
+.unified-filling-row-main { padding: 13px 0; display: grid; grid-template-columns: minmax(180px, 1.7fr) minmax(150px, 1fr) minmax(120px, .75fr) auto; align-items: center; gap: 12px; }
+.unified-filling-identity, .unified-filling-progress, .unified-filling-meta { min-width: 0; display: grid; gap: 3px; }
+.unified-filling-identity strong { color: var(--ink); font-size: 12px; line-height: 1.45; overflow-wrap: anywhere; }
+.unified-filling-identity span, .unified-filling-progress small, .unified-filling-meta small { color: var(--muted); font-size: 10px; line-height: 1.4; overflow-wrap: anywhere; }
+.unified-filling-progress .station-completion-status { width: fit-content; }
+.unified-filling-progress small strong { color: var(--green-deep); }
+.unified-filling-meta > span { color: var(--ink); font-size: 10px; font-weight: 800; }
+.unified-filling-actions { display: flex; align-items: center; justify-content: flex-end; gap: 6px; flex-wrap: wrap; }
+.unified-filling-actions > button, .unified-filling-actions > a { min-height: 32px; padding: 6px 9px; border: 1px solid #bdd0c8; border-radius: 6px; background: white; color: var(--green-deep); font-size: 9px; font-weight: 800; line-height: 1.3; text-decoration: none; cursor: pointer; white-space: nowrap; }
+.unified-filling-actions > button:hover, .unified-filling-actions > a:hover { background: var(--green-soft); }
+.unified-filling-actions > button:focus-visible, .unified-filling-actions > a:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
+.unified-filling-missing { margin: -3px 0 12px; padding-left: min(24px, 2vw); display: flex; align-items: flex-start; gap: 8px; color: var(--muted); font-size: 10px; line-height: 1.45; }
+.unified-filling-missing > span { flex: 0 0 auto; font-weight: 800; }
+.unified-filling-missing ul { margin: 0; padding-left: 16px; display: flex; gap: 4px 20px; flex-wrap: wrap; color: var(--ink); }
+.unified-filling-missing li { overflow-wrap: anywhere; }
+.unified-filling-missing button { padding: 0; border: 0; background: transparent; color: var(--green-deep); font-size: 10px; font-weight: 800; cursor: pointer; white-space: nowrap; }
+.unified-filling-row > .station-completion-issues { margin: -3px 0 12px; }
+.unified-filling-detail { margin: 0 -16px; border-top: 1px solid var(--line); background: #f8faf7; }
+.unified-filling-empty { margin: 14px 0 0; color: var(--muted); font-size: 11px; }
 .admin-table-wrap { margin-top: 20px; max-width: 100%; overflow: auto; border: 1px solid var(--line); border-radius: 8px; background: white; }
 .admin-list .admin-table-wrap { margin: 0; border-width: 1px 0 0; border-radius: 0; }
 .admin-table-wrap table { width: 100%; border-collapse: collapse; font-size: 10px; }
@@ -883,6 +910,8 @@ button[aria-busy="true"] { display: inline-flex; align-items: center; justify-co
   .submission-item-list { grid-template-columns: 1fr 1fr; }
   .submission-info { grid-template-columns: 1fr 1fr; }
   .submission-pagination { justify-content: flex-start; }
+  .unified-filling-row-main { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); }
+  .unified-filling-actions { justify-content: flex-start; }
 }
 
 @media (max-width: 620px) {
@@ -984,6 +1013,11 @@ button[aria-busy="true"] { display: inline-flex; align-items: center; justify-co
   .station-completion-gap-heading .station-completion-status { align-self: flex-start; }
   .station-completion-detail-error { align-items: stretch; flex-direction: column; }
   .station-completion-detail-error button { width: 100%; }
+  .unified-filling-heading { align-items: flex-start; flex-direction: column; }
+  .unified-filling-row-main { grid-template-columns: 1fr; gap: 8px; }
+  .unified-filling-actions { justify-content: flex-start; }
+  .unified-filling-missing { padding-left: 0; display: grid; }
+  .unified-filling-missing ul { display: grid; gap: 3px; }
   .submission-filter-grid, .submission-item-list, .submission-info { grid-template-columns: 1fr; }
   .submission-pagination { align-items: stretch; }
   .page-size-control, .pagination-buttons { justify-content: space-between; }

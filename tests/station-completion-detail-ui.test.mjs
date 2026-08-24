@@ -67,23 +67,21 @@ test("pair key memakai identity UUID stabil dan parser menolak response malforme
   assert.equal(stationCompletionDetailResponse({ station_id: "station", summary: {}, rows: "invalid" }), null);
 });
 
-test("detail UI menampilkan gap assessed, informasi Gudang netral, complete, issue, dan retry", async () => {
-  const component = await readFile(new URL("../app/admin/StationCompletionDetail.tsx", import.meta.url), "utf8");
+test("unified detail menampilkan semua status, Gudang netral, issue, dan retry", async () => {
+  const component = await readFile(new URL("../app/admin/UnifiedFillingList.tsx", import.meta.url), "utf8");
   for (const text of [
-    "Yang belum dilengkapi",
-    "Pengisian belum tersedia.",
+    "Pengisian",
+    "Belum ada submission",
     "kategori terisi",
-    "kategori belum terisi",
     "Lihat semua",
     "Sembunyikan kategori",
-    "Tidak ada pengisian non-Gudang yang dinilai untuk Stasiun ini.",
-    "Semua pengisian yang dinilai sudah lengkap.",
+    "Tidak ada pengisian non-Gudang yang dinilai",
     "Coba muat ulang",
   ]) assert.match(component, new RegExp(text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
-  assert.match(component, /row\.issues\.map/);
-  assert.match(component, /stationCompletionWarehouseInfo\(detail\.summary\)/);
+  assert.match(component, /completion\.issues\.map/);
+  assert.match(component, /Inventaris Gudang tersedia/);
   assert.doesNotMatch(component, /Pengisian Gudang belum tersedia\./);
-  assert.match(component, /aria-expanded=\{showAllCategories\}/);
+  assert.match(component, /aria-expanded=\{showAllMissing\}/);
   assert.doesNotMatch(component, /WIGOS|AWS Center|Koordinat|Elevasi|Alamat|Teknisi|BMN|Serial Number|Tahun|Kondisi|Quantity/);
 });
 

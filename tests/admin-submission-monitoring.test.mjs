@@ -98,13 +98,14 @@ test("detail barang menampilkan produk ganda, material, dan item kosong dari sat
 });
 
 test("list ringan, lazy detail cache, sorting, page size, dan delete dijaga oleh contract", async () => {
-  const [migration, extensionMigration, route, monitor, dashboard, feedback] = await Promise.all([
+  const [migration, extensionMigration, route, monitor, dashboard, feedback, sharedDetail] = await Promise.all([
     readFile(new URL("../supabase/migrations/20260812120000_admin_submission_monitoring.sql", import.meta.url), "utf8"),
     readFile(new URL("../supabase/migrations/20260813120000_admin_monitoring_sort_delete.sql", import.meta.url), "utf8"),
     readFile(new URL("../app/api/admin/submissions/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/admin/AdminSubmissionMonitor.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/admin/AdminDashboard.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/components/AppFeedback.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/admin/SubmissionProgressDetail.tsx", import.meta.url), "utf8"),
   ]);
 
   const pagedProjection = migration.match(/paged as \([\s\S]*?from filtered/)?.[0] ?? "";
@@ -143,7 +144,7 @@ test("list ringan, lazy detail cache, sorting, page size, dan delete dijaga oleh
   assert.match(monitor, /setDetailCache\(\{\}\)/);
   assert.match(monitor, /Memuat detail submission/);
   assert.match(monitor, /Coba lagi/);
-  assert.match(monitor, /Mengarsipkan\.\.\./);
+  assert.match(sharedDetail, /Mengarsipkan\.\.\./);
   assert.doesNotMatch(monitor, /Edit sebagai Admin|Membuka mode edit/);
   assert.match(dashboard, /runAction\(/);
   assert.match(dashboard, /loadingText="Melepas lock\.\.\."/);
@@ -156,8 +157,8 @@ test("list ringan, lazy detail cache, sorting, page size, dan delete dijaga oleh
   assert.match(monitor, /SUBMISSION_PAGE_SIZE_OPTIONS/);
   assert.match(monitor, /min=\{SUBMISSION_PAGE_SIZE_MIN\}[\s\S]*max=\{SUBMISSION_PAGE_SIZE_MAX\}/);
   assert.doesNotMatch(monitor, /setInterval|Realtime|channel\(/);
-  assert.match(monitor, /href=\{`\/admin\/submissions\/\$\{row\.id\}`\} target="_blank" rel="noopener noreferrer">Buka/);
-  assert.match(monitor, /submissionItemDisplays\(visibleDetail\)/);
+  assert.match(sharedDetail, /href=\{`\/admin\/submissions\/\$\{detail\.id\}`\} target="_blank" rel="noopener noreferrer">Buka/);
+  assert.match(sharedDetail, /submissionItemDisplays\(detail\)/);
   assert.match(monitor, /confirmationText: "HAPUS"/);
   assert.match(route, /admin_permanently_delete_submission/);
   assert.match(extensionMigration, /require_super_admin\(\)/);

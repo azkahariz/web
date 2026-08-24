@@ -1,16 +1,15 @@
 "use client";
 
-import Link from "next/link";
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAppFeedback } from "../components/AppFeedback";
 import AsyncButton from "../components/AsyncButton";
+import SubmissionProgressDetail from "./SubmissionProgressDetail";
 import {
   SUBMISSION_PAGE_SIZE,
   SUBMISSION_PAGE_SIZE_MAX,
   SUBMISSION_PAGE_SIZE_MIN,
   SUBMISSION_PAGE_SIZE_OPTIONS,
   normalizeSubmissionPageSize,
-  submissionItemDisplays,
   type SubmissionArchiveFilter,
   type SubmissionDetail,
   type SubmissionProgressStatus,
@@ -94,7 +93,6 @@ export default function AdminSubmissionMonitor({
   const [detailLoadingId, setDetailLoadingId] = useState<string | null>(null);
   const [detailCache, setDetailCache] = useState<Record<string, SubmissionDetail>>({});
   const [detailErrors, setDetailErrors] = useState<Record<string, string>>({});
-  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
   const [actionId, setActionId] = useState<string | null>(null);
   const lastScheduledRequestKeyRef = useRef<string | null>(null);
   const listCacheRef = useRef(new Map<string, ListCacheValue>());
@@ -335,7 +333,6 @@ export default function AdminSubmissionMonitor({
     void toggleDetail(id);
   }
 
-  const visibleItems = visibleDetail ? submissionItemDisplays(visibleDetail) : [];
   const firstRow = totalCount ? (page - 1) * pageSize + 1 : 0;
   const lastRow = Math.min(page * pageSize, totalCount);
 
@@ -395,42 +392,17 @@ export default function AdminSubmissionMonitor({
         {expandedId === row.id && <tr className="submission-detail-row"><td colSpan={9}>
           {detailLoadingId === row.id && <p className="submission-loading-copy"><span className="loading-spinner" aria-hidden="true" />Memuat detail submission...</p>}
           {detailErrors[row.id] && <p className="submission-detail-error">{detailErrors[row.id]}<AsyncButton type="button" onClick={() => void loadDetail(row.id)} loading={detailLoadingId === row.id} loadingText="Memuat...">Coba lagi</AsyncButton></p>}
-          {visibleDetail && <div className="submission-inline-detail">
-            <div className="submission-detail-summary">{visibleDetail.progress_kind === "WAREHOUSE" ? <><div><strong>Inventaris Gudang</strong><span>Tidak memakai target kelengkapan katalog</span></div><strong>{visibleDetail.warehouse_unit_count} unit / {visibleDetail.warehouse_category_count} kategori</strong></> : <><div><strong>Progress Barang</strong><span>{visibleDetail.filled_count} dari {visibleDetail.total_count} kategori terisi</span></div><strong>{visibleDetail.progress_percent}%</strong></>}</div>
-            <div className="submission-item-list">{visibleItems.map((item) => {
-              const itemKey = `${row.id}:${item.name}`;
-              const itemExpanded = expandedItems.has(itemKey);
-              const first = item.entries[0];
-              return <div className={item.filled ? "filled" : "empty"} key={item.name}>
-                <button
-                  type="button"
-                  disabled={item.entries.length < 2}
-                  aria-expanded={item.entries.length > 1 ? itemExpanded : undefined}
-                  onClick={() => setExpandedItems((current) => {
-                    const next = new Set(current);
-                    if (next.has(itemKey)) next.delete(itemKey); else next.add(itemKey);
-                    return next;
-                  })}
-                >
-                  <span>{item.filled ? "\u2713" : "\u25CB"} {item.name}</span>
-                  {first && <small>{first.kind === "material" ? first.primary : `${first.primary} - ${first.secondary}`} · {first.unitCount} unit{first.functions.length > 1 ? ` · ${first.functions.join(" + ")}` : ""}{item.entries.length > 1 ? ` + ${item.entries.length - 1} lainnya` : ""}</small>}
-                  {item.entries.length > 1 && <b aria-hidden="true">{itemExpanded ? "\u25B2" : "\u25BC"}</b>}
-                </button>
-                {itemExpanded && <ol>{item.entries.map((entry, index) => <li key={`${entry.primary}:${entry.secondary ?? ""}:${index}`}>{entry.kind === "material" ? entry.primary : `${entry.primary} - ${entry.secondary}`} · {entry.unitCount} unit{entry.functions.length > 1 ? ` · ${entry.functions.join(" + ")}` : ""}</li>)}</ol>}
-              </div>;
-            })}</div>
-            {!visibleDetail.expected_items.length && <p>Profil barang belum terpetakan pada master.</p>}
-            <dl className="submission-info"><div><dt>Operator</dt><dd>{visibleDetail.operator_name || "-"}</dd></div><div><dt>Versi</dt><dd>v{visibleDetail.version}</dd></div><div><dt>Terakhir diperbarui</dt><dd>{formatUpdated(visibleDetail)}</dd></div><div><dt>QC Pending</dt><dd>{visibleDetail.qc_pending_count}</dd></div>{visibleDetail.archive_reason && <div><dt>Alasan arsip</dt><dd>{visibleDetail.archive_reason}</dd></div>}</dl>
-            <div className="table-actions submission-detail-actions">
-              <Link className="table-action" href={`/admin/submissions/${row.id}`} target="_blank" rel="noopener noreferrer">Buka</Link>
-              <AsyncButton loading={actionId === `download:${row.id}`} loadingText="Menyiapkan..." onClick={async () => { if (actionId) return; setActionId(`download:${row.id}`); try { await onDownload(row); } finally { setActionId(null); } }}>Unduh</AsyncButton>
-              <AsyncButton className={row.archived_at ? "" : "danger-inline"} loading={actionId === `archive:${row.id}`} loadingText={row.archived_at ? "Memulihkan..." : "Mengarsipkan..."} onClick={() => void changeArchive(row)}>{row.archived_at ? "Pulihkan Submission" : "Arsipkan Submission"}</AsyncButton>
-            </div>
-            <div className="submission-danger-zone">
-              <div><strong>Zona Berbahaya</strong><span>Penghapusan permanen tidak dapat dipulihkan.</span></div>
-              <AsyncButton className="danger-button" loading={actionId === `delete:${row.id}`} loadingText="Menghapus..." onClick={() => void permanentlyDelete(row)}>Hapus Permanen</AsyncButton>
-            </div>
-          </div>}
+          {visibleDetail && <SubmissionProgressDetail
+            detail={visibleDetail}
+            actionId={actionId}
+            onDownload={async (detail) => {
+              if (actionId) return;
+              setActionId(`download:${detail.id}`);
+              try { await onDownload(detail); } finally { setActionId(null); }
+            }}
+            onArchive={changeArchive}
+            onDelete={permanentlyDelete}
+          />}
         </td></tr>}
       </Fragment>)}
       {!loading && !rows.length && <tr><td colSpan={9}>{archive === "ACTIVE" ? "Belum ada submission aktif yang cocok." : "Belum ada submission diarsipkan yang cocok."}</td></tr>}

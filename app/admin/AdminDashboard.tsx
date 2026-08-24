@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import AdminBulkExport from "./AdminBulkExport";
 import AdminProducts from "./AdminProducts";
 import AdminSubmissionMonitor from "./AdminSubmissionMonitor";
-import StationCompletionDetail from "./StationCompletionDetail";
+import UnifiedFillingList from "./UnifiedFillingList";
 import { useAppFeedback } from "../components/AppFeedback";
 import AsyncButton from "../components/AsyncButton";
 import EyeIcon from "../components/EyeIcon";
@@ -37,7 +37,7 @@ import {
   stationCompletionStatusLabel,
   stationCompletionWarehouseInfo,
 } from "../lib/station-completion-view";
-import type { SubmissionSummary } from "../lib/submission-monitoring";
+import type { SubmissionDetail, SubmissionSummary } from "../lib/submission-monitoring";
 import { getSupabaseBrowserClient } from "../lib/supabase/client";
 
 type Station = { id: string; name: string; active: boolean };
@@ -127,10 +127,16 @@ const StationFillingCard = memo(function StationFillingCard({
   completionDetailError,
   visibleRows,
   expanded,
-  busyAction,
+  submissionDetails,
+  submissionDetailLoadingIds,
+  submissionDetailErrors,
+  actionId,
   onToggle,
   onRetryCompletionDetail,
+  onLoadSubmissionDetail,
   onDownload,
+  onArchive,
+  onDelete,
 }: {
   station: Station;
   view: StationFillingView;
@@ -141,10 +147,16 @@ const StationFillingCard = memo(function StationFillingCard({
   completionDetailError: string;
   visibleRows: StationFillingView["rows"];
   expanded: boolean;
-  busyAction: string | null;
+  submissionDetails: Record<string, SubmissionDetail>;
+  submissionDetailLoadingIds: Set<string>;
+  submissionDetailErrors: Record<string, string>;
+  actionId: string | null;
   onToggle: (open: boolean) => void;
   onRetryCompletionDetail: () => void;
-  onDownload: (station: Station, site: Site, subtype: Subtype) => void;
+  onLoadSubmissionDetail: (id: string, force?: boolean) => Promise<void>;
+  onDownload: (site: Site, subtype: Subtype, submissionId?: string) => Promise<void>;
+  onArchive: (row: SubmissionSummary) => Promise<void>;
+  onDelete: (row: SubmissionSummary) => Promise<void>;
 }) {
   const category = completion ? stationCompletionCategory(completion) : null;
   const submission = completion ? stationCompletionSubmission(completion) : null;
@@ -173,30 +185,22 @@ const StationFillingCard = memo(function StationFillingCard({
         {completion.site_count === 0 && completion.issues[0]?.label && <small>{completion.issues[0].label}</small>}
       </div> : completionLoading ? <div className="station-completion-skeleton" aria-label="Memuat ringkasan kelengkapan"><span /><span /></div> : <div className="station-completion-unavailable"><span>{view.siteCount} Site (data master)</span><small>Kelengkapan belum tersedia</small></div>}
     </summary>
-    {expanded && <StationCompletionDetail
+    {expanded && <UnifiedFillingList
+      stationName={station.name}
+      masterRows={visibleRows}
       detail={completionDetail}
       loading={completionDetailLoading}
       error={completionDetailError}
-      onRetry={onRetryCompletionDetail}
+      submissionDetails={submissionDetails}
+      detailLoadingIds={submissionDetailLoadingIds}
+      detailErrors={submissionDetailErrors}
+      actionId={actionId}
+      onRetryCompletion={onRetryCompletionDetail}
+      onLoadSubmissionDetail={onLoadSubmissionDetail}
+      onDownload={onDownload}
+      onArchive={onArchive}
+      onDelete={onDelete}
     />}
-    {expanded && <div className="admin-table-wrap station-filling-table"><table><thead><tr><th>Site</th><th>Tipe Site</th><th>Subtipe</th><th>Status</th><th>Versi</th><th>Terakhir Simpan</th><th>Aksi</th></tr></thead><tbody>
-      {visibleRows.map(({ site, siteType, subtype, submission }) => <tr key={`${site.id}:${subtype?.id ?? "no-subtype"}`}>
-        <td><strong>{site.name}</strong></td>
-        <td>{siteType?.name ?? "Belum terpetakan"}</td>
-        <td>{subtype?.name ?? "Belum terpetakan"}</td>
-        <td><span className={`status-pill ${submission ? "active" : "pending"}`}>{submission ? "Sudah ada data" : "Belum ada submission"}</span></td>
-        <td>{submission?.version ?? "-"}</td>
-        <td>{submission ? new Date(submission.last_saved_at ?? submission.updated_at).toLocaleString("id-ID") : "-"}</td>
-        <td>{subtype ? <details className="row-action-menu">
-          <summary>Aksi</summary>
-          <div>
-            <Link href={submission ? `/admin/submissions/${submission.id}` : `/admin/inventory?siteId=${site.id}&subtypeId=${subtype.id}`} target="_blank" rel="noopener noreferrer">Buka</Link>
-            <AsyncButton loading={busyAction === `download:${site.id}:${subtype.id}`} loadingText="Menyiapkan..." onClick={() => onDownload(station, site, subtype)}>Unduh</AsyncButton>
-          </div>
-        </details> : "-"}</td>
-      </tr>)}
-      {!visibleRows.length && <tr><td colSpan={7}>Belum ada site atau subtipe yang cocok.</td></tr>}
-    </tbody></table></div>}
   </details>;
 }, (previous, next) => (
   previous.station === next.station
@@ -208,7 +212,12 @@ const StationFillingCard = memo(function StationFillingCard({
   && previous.completionDetailError === next.completionDetailError
   && previous.visibleRows === next.visibleRows
   && previous.expanded === next.expanded
-  && previous.busyAction === next.busyAction
+  && (!next.expanded || (
+    previous.submissionDetails === next.submissionDetails
+    && previous.submissionDetailLoadingIds === next.submissionDetailLoadingIds
+    && previous.submissionDetailErrors === next.submissionDetailErrors
+    && previous.actionId === next.actionId
+  ))
 ));
 
 export default function AdminDashboard({ username, displayName }: { username: string; displayName: string }) {
@@ -253,6 +262,11 @@ export default function AdminDashboard({ username, displayName }: { username: st
   const completionRequestRef = useRef<Promise<void> | null>(null);
   const completionLoadedRef = useRef(false);
   const completionDetailCacheRef = useRef(createStationCompletionDetailCache<StationCompletionDetailResponse>());
+  const [unifiedSubmissionDetails, setUnifiedSubmissionDetails] = useState<Record<string, SubmissionDetail>>({});
+  const [unifiedSubmissionDetailLoadingIds, setUnifiedSubmissionDetailLoadingIds] = useState<Set<string>>(() => new Set());
+  const [unifiedSubmissionDetailErrors, setUnifiedSubmissionDetailErrors] = useState<Record<string, string>>({});
+  const unifiedSubmissionDetailCacheRef = useRef(new Map<string, SubmissionDetail>());
+  const unifiedSubmissionDetailRequestsRef = useRef(new Map<string, Promise<void>>());
   const [loadedAt, setLoadedAt] = useState(0);
   const [activeAction, setActiveAction] = useState<string | null>(null);
 
@@ -361,6 +375,59 @@ export default function AdminDashboard({ username, displayName }: { username: st
       if (!stationId) return {};
       const next = { ...current };
       delete next[stationId];
+      return next;
+    });
+  }, []);
+
+  const loadUnifiedSubmissionDetail = useCallback(async (submissionId: string, force = false) => {
+    const cached = unifiedSubmissionDetailCacheRef.current.get(submissionId);
+    if (!force && cached) {
+      setUnifiedSubmissionDetails((current) => current[submissionId] ? current : { ...current, [submissionId]: cached });
+      return;
+    }
+    const inFlight = unifiedSubmissionDetailRequestsRef.current.get(submissionId);
+    if (!force && inFlight) return inFlight;
+
+    const request = (async () => {
+      setUnifiedSubmissionDetailLoadingIds((current) => new Set(current).add(submissionId));
+      setUnifiedSubmissionDetailErrors((current) => {
+        const next = { ...current };
+        delete next[submissionId];
+        return next;
+      });
+      try {
+        const response = await fetch(`/api/admin/submissions?id=${encodeURIComponent(submissionId)}`, { cache: "no-store" });
+        const result = await response.json() as { detail?: SubmissionDetail; error?: string };
+        if (!response.ok || !result.detail) throw new Error(result.error || "Detail submission gagal dimuat.");
+        unifiedSubmissionDetailCacheRef.current.set(submissionId, result.detail);
+        setUnifiedSubmissionDetails((current) => ({ ...current, [submissionId]: result.detail! }));
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Detail submission gagal dimuat.";
+        setUnifiedSubmissionDetailErrors((current) => ({ ...current, [submissionId]: message }));
+        feedback.toast(message, "error");
+      } finally {
+        unifiedSubmissionDetailRequestsRef.current.delete(submissionId);
+        setUnifiedSubmissionDetailLoadingIds((current) => {
+          const next = new Set(current);
+          next.delete(submissionId);
+          return next;
+        });
+      }
+    })();
+    unifiedSubmissionDetailRequestsRef.current.set(submissionId, request);
+    return request;
+  }, [feedback]);
+
+  const invalidateUnifiedSubmissionDetail = useCallback((submissionId: string) => {
+    unifiedSubmissionDetailCacheRef.current.delete(submissionId);
+    setUnifiedSubmissionDetails((current) => {
+      const next = { ...current };
+      delete next[submissionId];
+      return next;
+    });
+    setUnifiedSubmissionDetailErrors((current) => {
+      const next = { ...current };
+      delete next[submissionId];
       return next;
     });
   }, []);
@@ -736,6 +803,81 @@ export default function AdminDashboard({ username, displayName }: { username: st
     await downloadRow(station, site, subtype, row.id);
   }
 
+  async function changeUnifiedSubmissionArchive(row: SubmissionSummary) {
+    const restoring = Boolean(row.archived_at);
+    let reason = "";
+    if (!restoring) {
+      const input = await feedback.prompt({
+        title: "Arsipkan Submission?",
+        description: "Submission akan disembunyikan dari pengisian aktif dan tetap dapat dipulihkan.",
+        inputLabel: "Alasan arsip (opsional)",
+        maxLength: 500,
+        confirmLabel: "Lanjutkan",
+      });
+      if (input === null) return;
+      reason = input;
+    }
+    await feedback.confirmAction({
+      title: restoring ? "Pulihkan Submission?" : "Konfirmasi Arsip Submission",
+      description: restoring
+        ? "UUID, payload, dan versi tetap sama setelah dipulihkan."
+        : `${row.station_name} / ${row.site_name} / ${row.subtype_name}`,
+      confirmLabel: restoring ? "Pulihkan" : "Arsipkan",
+      danger: !restoring,
+    }, async () => {
+      if (activeAction) return false;
+      let succeeded = false;
+      await runAction(`archive:${row.id}`, async () => {
+        const response = await fetch("/api/admin/submissions", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ action: restoring ? "restore" : "archive", submissionId: row.id, reason }),
+        });
+        const result = await response.json() as { ok?: boolean; error?: string };
+        if (!response.ok) {
+          feedback.toast(result.error || "Aksi submission gagal.", "error");
+          return;
+        }
+        succeeded = true;
+        invalidateUnifiedSubmissionDetail(row.id);
+        feedback.toast(restoring ? "Submission berhasil dipulihkan." : "Submission berhasil diarsipkan.", "success");
+        await refreshAfterSubmissionChange(row.station_id);
+      });
+      return succeeded;
+    });
+  }
+
+  async function deleteUnifiedSubmission(row: SubmissionSummary) {
+    await feedback.confirmAction({
+      title: "Hapus Submission secara permanen?",
+      description: `${row.station_name} / ${row.site_name} / ${row.subtype_name}. Data ini akan dihapus secara permanen dan tidak dapat dipulihkan.`,
+      inputLabel: "Ketik HAPUS untuk melanjutkan",
+      confirmationText: "HAPUS",
+      confirmLabel: "Hapus Permanen",
+      danger: true,
+    }, async () => {
+      if (activeAction) return false;
+      let succeeded = false;
+      await runAction(`delete:${row.id}`, async () => {
+        const response = await fetch("/api/admin/submissions", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ action: "delete", submissionId: row.id }),
+        });
+        const result = await response.json() as { ok?: boolean; error?: string };
+        if (!response.ok) {
+          feedback.toast(result.error || "Submission gagal dihapus permanen.", "error");
+          return;
+        }
+        succeeded = true;
+        invalidateUnifiedSubmissionDetail(row.id);
+        feedback.toast("Submission berhasil dihapus permanen.", "success");
+        await refreshAfterSubmissionChange(row.station_id);
+      });
+      return succeeded;
+    });
+  }
+
   function navigate(nextTab: Tab, options?: { fillingMode?: FillingMode; qcStatus?: Proposal["status"] }) {
     router.push(adminViewHref(nextTab));
     setSearch("");
@@ -792,8 +934,8 @@ export default function AdminDashboard({ username, displayName }: { username: st
           </section>}
 
           {!loading && tab === "stations" && <div className="status-tabs filling-mode-tabs" role="tablist" aria-label="Mode Stasiun dan Pengisian">
-            <button role="tab" aria-selected={fillingMode === "master"} className={fillingMode === "master" ? "active" : ""} onClick={() => { setFillingMode("master"); setSearch(""); }}>Master Pengisian</button>
-            <button role="tab" aria-selected={fillingMode === "submissions"} className={fillingMode === "submissions" ? "active" : ""} onClick={() => { setSubmissionMonitorMounted(true); setFillingMode("submissions"); setSearch(""); }}>Submission</button>
+            <button role="tab" aria-selected={fillingMode === "master"} className={fillingMode === "master" ? "active" : ""} onClick={() => { setFillingMode("master"); setSearch(""); }}>Per Stasiun</button>
+            <button role="tab" aria-selected={fillingMode === "submissions"} className={fillingMode === "submissions" ? "active" : ""} onClick={() => { setSubmissionMonitorMounted(true); setFillingMode("submissions"); setSearch(""); }}>Semua Pengisian</button>
           </div>}
 
           {!loading && tab === "products" && <AdminProducts onChanged={refreshProductSummary} />}
@@ -824,13 +966,22 @@ export default function AdminDashboard({ username, displayName }: { username: st
               completionDetailError={completionDetailErrors[station.id] ?? ""}
               visibleRows={visibleRows}
               expanded={expandedStationId === station.id}
-              busyAction={activeAction?.startsWith(`download:${station.id}:`) ? activeAction : null}
+              submissionDetails={unifiedSubmissionDetails}
+              submissionDetailLoadingIds={unifiedSubmissionDetailLoadingIds}
+              submissionDetailErrors={unifiedSubmissionDetailErrors}
+              actionId={activeAction}
               onToggle={(open) => {
                 setExpandedStationId(open ? station.id : null);
                 if (open) void loadCompletionDetail(station.id);
               }}
               onRetryCompletionDetail={() => void loadCompletionDetail(station.id, true)}
-              onDownload={(selectedStation, site, subtype) => void runAction(`download:${site.id}:${subtype.id}`, () => downloadRow(selectedStation, site, subtype))}
+              onLoadSubmissionDetail={loadUnifiedSubmissionDetail}
+              onDownload={async (site, subtype, submissionId) => {
+                const actionKey = submissionId ? `download:${submissionId}` : `download:${site.id}:${subtype.id}`;
+                await runAction(actionKey, () => downloadRow(station, site as Site, subtype as Subtype, submissionId));
+              }}
+              onArchive={changeUnifiedSubmissionArchive}
+              onDelete={deleteUnifiedSubmission}
             />)}
           </div>}
 
