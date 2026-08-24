@@ -152,6 +152,7 @@ const StationFillingCard = memo(function StationFillingCard({
   visibleRows,
   expanded,
   submissionDetails,
+  pendingProposalIds,
   submissionDetailLoadingIds,
   submissionDetailErrors,
   actionId,
@@ -172,6 +173,7 @@ const StationFillingCard = memo(function StationFillingCard({
   visibleRows: StationFillingView["rows"];
   expanded: boolean;
   submissionDetails: Record<string, SubmissionDetail>;
+  pendingProposalIds: ReadonlySet<string>;
   submissionDetailLoadingIds: Set<string>;
   submissionDetailErrors: Record<string, string>;
   actionId: string | null;
@@ -218,6 +220,7 @@ const StationFillingCard = memo(function StationFillingCard({
       loading={completionDetailLoading}
       error={completionDetailError}
       submissionDetails={submissionDetails}
+      pendingProposalIds={pendingProposalIds}
       detailLoadingIds={submissionDetailLoadingIds}
       detailErrors={submissionDetailErrors}
       actionId={actionId}
@@ -238,6 +241,7 @@ const StationFillingCard = memo(function StationFillingCard({
   && previous.completionDetailError === next.completionDetailError
   && previous.visibleRows === next.visibleRows
   && previous.expanded === next.expanded
+  && previous.pendingProposalIds === next.pendingProposalIds
   && (!next.expanded || (
     previous.submissionDetails === next.submissionDetails
     && previous.submissionDetailLoadingIds === next.submissionDetailLoadingIds
@@ -620,6 +624,10 @@ export default function AdminDashboard({ username, displayName }: { username: st
   }, [completionByStationId, completionRows, searchedStationFillingViews, stationMonitoringFilters]);
   const stationFollowUpCounts = useMemo(() => getStationFollowUpCounts(completionRows), [completionRows]);
   const stationQcSummary = useMemo(() => getStationQcSummary(completionRows), [completionRows]);
+  const pendingProposalIds = useMemo(
+    () => new Set(proposals.filter((proposal) => proposal.status === "PENDING").map((proposal) => proposal.id)),
+    [proposals],
+  );
   const filteredAccounts = accounts.filter((account) => accountMatchesAdminSearch(account, query, stationMap));
   const filteredUnprovisionedStations = stations.filter((station) => !accountByStation.has(station.id)
     && (!query || station.name.toLocaleLowerCase("id-ID").includes(query)));
@@ -1030,6 +1038,7 @@ export default function AdminDashboard({ username, displayName }: { username: st
               visibleRows={visibleRows}
               expanded={expandedStationId === station.id}
               submissionDetails={unifiedSubmissionDetails}
+              pendingProposalIds={pendingProposalIds}
               submissionDetailLoadingIds={unifiedSubmissionDetailLoadingIds}
               submissionDetailErrors={unifiedSubmissionDetailErrors}
               actionId={activeAction}

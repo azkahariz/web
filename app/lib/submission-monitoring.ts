@@ -67,7 +67,8 @@ export type SubmissionDetail = SubmissionSummary & {
 export type SubmissionItemDisplay = {
   name: string;
   filled: boolean;
-  entries: Array<{ kind: "product" | "material"; primary: string; secondary?: string; unitCount: number; functions: string[] }>;
+  hasPendingQc: boolean;
+  entries: Array<{ kind: "product" | "material"; primary: string; secondary?: string; unitCount: number; functions: string[]; pendingQc: boolean }>;
 };
 
 function hasText(value: unknown) {
@@ -117,7 +118,10 @@ export function normalizeSubmissionPageSize(value: unknown, fallback = SUBMISSIO
   return Math.min(SUBMISSION_PAGE_SIZE_MAX, Math.max(SUBMISSION_PAGE_SIZE_MIN, Math.floor(parsed)));
 }
 
-export function submissionItemDisplays(detail: Pick<SubmissionDetail, "payload" | "expected_items">): SubmissionItemDisplay[] {
+export function submissionItemDisplays(
+  detail: Pick<SubmissionDetail, "payload" | "expected_items">,
+  pendingProposalIds: ReadonlySet<string> = new Set(),
+): SubmissionItemDisplay[] {
   const payloadInventory = detail.payload?.inventory;
   const inventory = payloadInventory && typeof payloadInventory === "object" && !Array.isArray(payloadInventory)
     ? payloadInventory as Record<string, unknown>
@@ -125,11 +129,12 @@ export function submissionItemDisplays(detail: Pick<SubmissionDetail, "payload" 
   return detail.expected_items.map((expected) => {
     const entries: SubmissionItemDisplay["entries"] = inventoryCategoryEntries(inventory as Inventory, expected.name).flatMap(({ storageCategory, item: row }): SubmissionItemDisplay["entries"] => {
       if (!isFilledInventoryItem(row)) return [];
+      const pendingQc = typeof row.productProposalId === "string" && pendingProposalIds.has(row.productProposalId);
       if (row.itemKind === "material") {
-        return [{ kind: "material" as const, primary: row.material!.trim(), unitCount: getItemUnits(row).length, functions: getItemFunctionCategories(row, storageCategory) }];
+        return [{ kind: "material" as const, primary: row.material!.trim(), unitCount: getItemUnits(row).length, functions: getItemFunctionCategories(row, storageCategory), pendingQc }];
       }
-      return [{ kind: "product" as const, primary: row.brand.trim(), secondary: row.model.trim(), unitCount: getItemUnits(row).length, functions: getItemFunctionCategories(row, storageCategory) }];
+      return [{ kind: "product" as const, primary: row.brand.trim(), secondary: row.model.trim(), unitCount: getItemUnits(row).length, functions: getItemFunctionCategories(row, storageCategory), pendingQc }];
     });
-    return { name: expected.name, filled: entries.length > 0, entries };
+    return { name: expected.name, filled: entries.length > 0, hasPendingQc: entries.some((entry) => entry.pendingQc), entries };
   });
 }

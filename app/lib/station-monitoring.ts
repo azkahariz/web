@@ -10,7 +10,7 @@ export type StationMonitoringFilters = {
   sort: StationMonitoringSort;
 };
 
-export type StationFollowUpKey = "attention" | "not-started" | "partial-under-50" | "partial-50-99";
+export type StationFollowUpKey = "not-started" | "partial-under-50" | "partial-50-99" | "complete";
 
 export const DEFAULT_STATION_MONITORING_FILTERS: StationMonitoringFilters = {
   condition: "all",
@@ -97,12 +97,12 @@ export function applyStationMonitoring(
 
 export function getStationFollowUpCounts(rows: StationCompletionSummary[]) {
   return {
-    attention: rows.filter((row) => row.station_status === "PERLU_PERHATIAN").length,
     notStarted: rows.filter((row) => row.station_status === "BELUM_DIMULAI").length,
     partialUnder50: rows.filter((row) => row.station_status === "TERISI_SEBAGIAN"
       && row.category_progress !== null && row.category_progress < 50).length,
     partial50to99: rows.filter((row) => row.station_status === "TERISI_SEBAGIAN"
       && row.category_progress !== null && row.category_progress >= 50 && row.category_progress < 100).length,
+    complete: rows.filter((row) => row.station_status === "LENGKAP").length,
   };
 }
 
@@ -116,10 +116,10 @@ export function getStationQcSummary(rows: StationCompletionSummary[]) {
 
 export function applyStationFollowUpPreset(current: StationMonitoringFilters, key: StationFollowUpKey) {
   const base = { ...DEFAULT_STATION_MONITORING_FILTERS, sort: current.sort };
-  if (key === "attention") return { ...base, condition: "attention" as const };
   if (key === "not-started") return { ...base, condition: "not-started" as const };
   if (key === "partial-under-50") return { ...base, condition: "lt50" as const };
-  return { ...base, condition: "50to99" as const };
+  if (key === "partial-50-99") return { ...base, condition: "50to99" as const };
+  return { ...base, condition: "complete" as const };
 }
 
 export function hasStationMonitoringFilters(filters: StationMonitoringFilters) {

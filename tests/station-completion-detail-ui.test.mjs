@@ -79,6 +79,8 @@ test("unified detail menampilkan semua status, Gudang netral, issue, dan retry",
     "Coba muat ulang",
   ]) assert.match(component, new RegExp(text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   assert.match(component, /completion\.issues\.map/);
+  assert.match(component, /QC Pending/);
+  assert.match(component, /pendingProposalIds/);
   assert.match(component, /Inventaris Gudang tersedia/);
   assert.doesNotMatch(component, /Pengisian Gudang belum tersedia\./);
   assert.match(component, /aria-expanded=\{showAllMissing\}/);

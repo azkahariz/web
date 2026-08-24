@@ -102,10 +102,11 @@ test("quick follow-up count, preset, dan reset memakai subset yang terlihat pada
     summary("Complete", "LENGKAP", 100),
     summary("Warehouse", "TIDAK_DINILAI", null),
   ];
-  assert.deepEqual(getStationFollowUpCounts(rows), { attention: 1, notStarted: 1, partialUnder50: 1, partial50to99: 1 });
+  assert.deepEqual(getStationFollowUpCounts(rows), { notStarted: 1, partialUnder50: 1, partial50to99: 1, complete: 1 });
   assert.deepEqual(applyStationFollowUpPreset(DEFAULT_STATION_MONITORING_FILTERS, "not-started").condition, "not-started");
   assert.deepEqual(applyStationFollowUpPreset(DEFAULT_STATION_MONITORING_FILTERS, "partial-under-50").condition, "lt50");
   assert.deepEqual(applyStationFollowUpPreset(DEFAULT_STATION_MONITORING_FILTERS, "partial-50-99").condition, "50to99");
+  assert.deepEqual(applyStationFollowUpPreset(DEFAULT_STATION_MONITORING_FILTERS, "complete").condition, "complete");
 });
 
 test("search subset dan filter tersusun AND tanpa mengubah source summary", () => {
@@ -131,6 +132,8 @@ test("UI monitoring hanya hidup di Per Stasiun dan perubahan kontrol tidak meman
   assert.match(controls, /Prioritas Pengisian/);
   assert.match(controls, /QC Pending Terbanyak/);
   assert.match(controls, /Terisi 50-99%/);
+  assert.match(controls, /Lengkap/);
+  assert.doesNotMatch(controls, /key: "attention"/);
   assert.doesNotMatch(controls, /Aktivitas|Tidak diperbarui|Paling Lama Tidak Diperbarui|Pembaruan Terbaru/);
   assert.match(controls, /onQcPending/);
   assert.match(controls, /Menampilkan <strong>\{visibleCount\}<\/strong> dari <strong>\{totalCount\}/);

@@ -8,17 +8,17 @@ import type {
 import { hasStationMonitoringFilters } from "../lib/station-monitoring";
 
 type FollowUpCounts = {
-  attention: number;
   notStarted: number;
   partialUnder50: number;
   partial50to99: number;
+  complete: number;
 };
 
 const quickActions: Array<{ key: StationFollowUpKey; countKey: keyof FollowUpCounts; label: string }> = [
   { key: "not-started", countKey: "notStarted", label: "Belum Dimulai" },
   { key: "partial-under-50", countKey: "partialUnder50", label: "Terisi <50%" },
   { key: "partial-50-99", countKey: "partial50to99", label: "Terisi 50-99%" },
-  { key: "attention", countKey: "attention", label: "Perlu Perhatian" },
+  { key: "complete", countKey: "complete", label: "Lengkap" },
 ];
 
 export default function StationMonitoringControls({
