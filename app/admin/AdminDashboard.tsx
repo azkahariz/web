@@ -290,11 +290,16 @@ export default function AdminDashboard({ username, displayName }: { username: st
   const [completionLoading, setCompletionLoading] = useState(false);
   const [completionError, setCompletionError] = useState("");
   const [completionLoaded, setCompletionLoaded] = useState(false);
+  const [siteTypeCompletionLoading, setSiteTypeCompletionLoading] = useState(false);
+  const [siteTypeCompletionError, setSiteTypeCompletionError] = useState("");
+  const [siteTypeCompletionLoaded, setSiteTypeCompletionLoaded] = useState(false);
   const [completionDetails, setCompletionDetails] = useState<Map<string, StationCompletionDetailResponse>>(() => new Map());
   const [completionDetailLoadingIds, setCompletionDetailLoadingIds] = useState<Set<string>>(() => new Set());
   const [completionDetailErrors, setCompletionDetailErrors] = useState<Record<string, string>>({});
   const completionRequestRef = useRef<Promise<void> | null>(null);
   const completionLoadedRef = useRef(false);
+  const siteTypeCompletionRequestRef = useRef<Promise<void> | null>(null);
+  const siteTypeCompletionLoadedRef = useRef(false);
   const completionDetailCacheRef = useRef(createStationCompletionDetailCache<StationCompletionDetailResponse>());
   const [unifiedSubmissionDetails, setUnifiedSubmissionDetails] = useState<Record<string, SubmissionDetail>>({});
   const [unifiedSubmissionDetailLoadingIds, setUnifiedSubmissionDetailLoadingIds] = useState<Set<string>>(() => new Set());
@@ -336,7 +341,7 @@ export default function AdminDashboard({ username, displayName }: { username: st
     return true;
   }, []);
 
-  const refreshCompletionSummary = useCallback(async (force = false) => {
+  const refreshStationCompletionSummary = useCallback(async (force = false) => {
     if (!force && completionLoadedRef.current) return;
     if (completionRequestRef.current) return completionRequestRef.current;
 
@@ -346,17 +351,10 @@ export default function AdminDashboard({ username, displayName }: { username: st
       try {
         const client = getSupabaseBrowserClient();
         if (!client) throw new Error("Konfigurasi Supabase belum tersedia.");
-        const [stationResult, siteTypeResult] = await Promise.all([
-          client.rpc("admin_station_completion_summary"),
-          client.rpc("admin_site_type_completion_summary"),
-        ]);
+        const stationResult = await client.rpc("admin_station_completion_summary");
         const stationRows = stationResult.error ? null : parseStationCompletionRows(stationResult.data);
-        const siteTypeRows = siteTypeResult.error ? null : parseSiteTypeCompletionRows(siteTypeResult.data);
         if (stationRows) setCompletionRows(stationRows);
-        if (siteTypeRows) setSiteTypeCompletionRowsState(siteTypeRows);
-        if (stationResult.error || siteTypeResult.error || !stationRows || !siteTypeRows) {
-          throw stationResult.error ?? siteTypeResult.error ?? new Error("Contract ringkasan monitoring tidak valid.");
-        }
+        if (stationResult.error || !stationRows) throw stationResult.error ?? new Error("Contract ringkasan monitoring stasiun tidak valid.");
         setCompletionLoaded(true);
         completionLoadedRef.current = true;
       } catch {
@@ -370,6 +368,41 @@ export default function AdminDashboard({ username, displayName }: { username: st
     completionRequestRef.current = request;
     return request;
   }, []);
+
+  const refreshSiteTypeCompletionSummary = useCallback(async (force = false) => {
+    if (!force && siteTypeCompletionLoadedRef.current) return;
+    if (siteTypeCompletionRequestRef.current) return siteTypeCompletionRequestRef.current;
+
+    const request = (async () => {
+      setSiteTypeCompletionLoading(true);
+      setSiteTypeCompletionError("");
+      try {
+        const client = getSupabaseBrowserClient();
+        if (!client) throw new Error("Konfigurasi Supabase belum tersedia.");
+        const siteTypeResult = await client.rpc("admin_site_type_completion_summary");
+        const siteTypeRows = siteTypeResult.error ? null : parseSiteTypeCompletionRows(siteTypeResult.data);
+        if (siteTypeRows) setSiteTypeCompletionRowsState(siteTypeRows);
+        if (siteTypeResult.error || !siteTypeRows) throw siteTypeResult.error ?? new Error("Contract ringkasan Tipe Site tidak valid.");
+        setSiteTypeCompletionLoaded(true);
+        siteTypeCompletionLoadedRef.current = true;
+      } catch {
+        setSiteTypeCompletionError("Progress Tipe Site belum dapat dimuat.");
+      } finally {
+        setSiteTypeCompletionLoading(false);
+        siteTypeCompletionRequestRef.current = null;
+      }
+    })();
+
+    siteTypeCompletionRequestRef.current = request;
+    return request;
+  }, []);
+
+  const refreshCompletionSummary = useCallback(async (force = false) => {
+    await Promise.all([
+      refreshStationCompletionSummary(force),
+      refreshSiteTypeCompletionSummary(force),
+    ]);
+  }, [refreshSiteTypeCompletionSummary, refreshStationCompletionSummary]);
 
   const loadCompletionDetail = useCallback(async (stationId: string, force = false) => {
     const cached = completionDetailCacheRef.current.get(stationId);
@@ -986,7 +1019,7 @@ export default function AdminDashboard({ username, displayName }: { username: st
           {tabs.map((item) => <Link key={item.id} href={adminViewHref(item.id)} className={tab === item.id ? "active" : ""} aria-current={tab === item.id ? "page" : undefined}>{item.label}</Link>)}
         </nav>
         <section className={`admin-content${tab === "accounts" ? " accounts-view" : ""}`}>
-          <div className="admin-heading"><div><p className="kicker">PENGELOLAAN APLIKASI</p><h2>{tabs.find((item) => item.id === tab)?.label}</h2></div>{!(tab === "stations" && fillingMode === "submissions") && tab !== "products" && <AsyncButton className="secondary-button" type="button" loading={loading || ((tab === "stations" || tab === "summary") && completionLoading)} loadingText="Memuat..." onClick={() => void (tab === "stations" && fillingMode === "master" ? refreshMasterCompletion() : tab === "summary" ? refreshSummary() : refresh())}>Muat ulang</AsyncButton>}</div>
+          <div className="admin-heading"><div><p className="kicker">PENGELOLAAN APLIKASI</p><h2>{tabs.find((item) => item.id === tab)?.label}</h2></div>{!(tab === "stations" && fillingMode === "submissions") && tab !== "products" && <AsyncButton className="secondary-button" type="button" loading={loading || ((tab === "stations" || tab === "summary") && (completionLoading || siteTypeCompletionLoading))} loadingText="Memuat..." onClick={() => void (tab === "stations" && fillingMode === "master" ? refreshMasterCompletion() : tab === "summary" ? refreshSummary() : refresh())}>Muat ulang</AsyncButton>}</div>
           {message && <p className="admin-message" role="status">{message}</p>}
           {loading && <p className="loading-copy">Memuat data admin...</p>}
 
@@ -1007,7 +1040,7 @@ export default function AdminDashboard({ username, displayName }: { username: st
             <div className="admin-section-heading"><h3 id="monitoring-summary-heading">Ringkasan Monitoring Pengisian</h3><span>{monitoringSummary.total} stasiun aktif</span></div>
             {completionError && <div className="station-completion-error" role="alert">
               <span>{completionError}</span>
-              <AsyncButton type="button" loading={completionLoading} loadingText="Memuat..." onClick={() => void refreshCompletionSummary(true)}>Coba muat ulang</AsyncButton>
+              <AsyncButton type="button" loading={completionLoading} loadingText="Memuat..." onClick={() => void refreshStationCompletionSummary(true)}>Coba muat ulang</AsyncButton>
             </div>}
             {!completionLoaded
               ? <p className="admin-summary-muted">{completionError ? "Ringkasan monitoring belum tersedia." : "Memuat ringkasan kelengkapan..."}</p>
@@ -1030,14 +1063,18 @@ export default function AdminDashboard({ username, displayName }: { username: st
 
           {!loading && tab === "summary" && <section className="admin-site-type-summary" aria-labelledby="site-type-summary-heading">
             <div className="admin-section-heading"><h3 id="site-type-summary-heading">Site berdasarkan Tipe Site</h3><span>{siteTypeSummary.totalCount} site unik</span></div>
-            {completionLoaded ? <div className="admin-site-type-grid">
+            {siteTypeCompletionError && <div className="station-completion-error" role="alert">
+              <span>{siteTypeCompletionError}</span>
+              <AsyncButton type="button" loading={siteTypeCompletionLoading} loadingText="Memuat..." onClick={() => void refreshSiteTypeCompletionSummary(true)}>Coba muat ulang</AsyncButton>
+            </div>}
+            {siteTypeCompletionLoaded ? <div className="admin-site-type-grid">
               {siteTypeSummary.byType.map((siteType) => {
                 const progress = siteTypeProgressById.get(siteType.id);
                 const progressLabel = progress?.is_warehouse ? "Tidak Dinilai" : progress?.category_progress === null || !progress ? "-" : `${progress.category_progress}%`;
                 const categoryLabel = progress && !progress.is_warehouse ? `${progress.filled_category_count} / ${progress.expected_category_count} Kategori` : "";
                 return <div className="admin-site-type-item" key={siteType.id}><span>{siteType.name}<small>{siteType.count} Site{categoryLabel ? ` · ${categoryLabel}` : ""}</small></span><strong>{progressLabel}</strong></div>;
               })}
-            </div> : <p className="admin-summary-muted">{completionError ? "Progress Tipe Site belum tersedia." : "Memuat progress Tipe Site..."}</p>}
+            </div> : <p className="admin-summary-muted">{siteTypeCompletionError ? "Progress Tipe Site belum tersedia." : "Memuat progress Tipe Site..."}</p>}
           </section>}
 
           {!loading && tab === "stations" && <div className="status-tabs filling-mode-tabs" role="tablist" aria-label="Mode Stasiun dan Pengisian">
@@ -1056,7 +1093,7 @@ export default function AdminDashboard({ username, displayName }: { username: st
 
           {!loading && tab === "stations" && fillingMode === "master" && completionError && <div className="station-completion-error" role="alert">
             <span>{completionError}</span>
-            <AsyncButton type="button" loading={completionLoading} loadingText="Memuat..." onClick={() => void refreshCompletionSummary(true)}>Coba muat ulang</AsyncButton>
+            <AsyncButton type="button" loading={completionLoading} loadingText="Memuat..." onClick={() => void refreshStationCompletionSummary(true)}>Coba muat ulang</AsyncButton>
           </div>}
 
           {!loading && tab === "stations" && fillingMode === "master" && completionLoading && completionRows.length > 0 && <p className="station-completion-updating" role="status"><span className="loading-spinner" aria-hidden="true" />Memperbarui ringkasan kelengkapan...</p>}

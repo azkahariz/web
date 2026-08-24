@@ -176,13 +176,19 @@ test("parser menerima bentuk JSONB rows aktual dan menolak respons malformed", (
 });
 
 test("RPC site type memakai agregasi bulk, UUID, dan tidak mengembalikan payload", async () => {
-  const migration = await readFile(new URL("../supabase/migrations/20260830120000_admin_site_type_completion_summary.sql", import.meta.url), "utf8");
+  const [migration, repair] = await Promise.all([
+    readFile(new URL("../supabase/migrations/20260830120000_admin_site_type_completion_summary.sql", import.meta.url), "utf8"),
+    readFile(new URL("../supabase/migrations/20260830140000_fix_admin_site_type_completion_summary.sql", import.meta.url), "utf8"),
+  ]);
   assert.match(migration, /admin_site_type_completion_summary/);
   assert.match(migration, /station_completion_rows\(null\)/);
   assert.match(migration, /count\(distinct id\)/);
   assert.match(migration, /require_super_admin/);
   assert.match(migration, /revoke all on function public\.admin_site_type_completion_summary\(\) from public, anon/);
   assert.doesNotMatch(migration.split("comment on function")[0], /payload/);
+  assert.match(repair, /left join category_counts on category_counts\.site_type_id = site_counts\.site_type_id/);
+  assert.match(repair, /perform public\.require_super_admin\(\)/);
+  assert.match(repair, /grant execute on function public\.admin_site_type_completion_summary\(\) to authenticated/);
 });
 
 test("station category master memiliki lima identity tetap dan mapping UUID eksplisit", async () => {
@@ -236,8 +242,12 @@ test("refresh summary tidak mengubah state filter dan detail tetap lazy", async 
   assert.match(dashboard, /if \(open\) void loadCompletionDetail\(station\.id\)/);
   assert.doesNotMatch(dashboard.match(/onQuickAction=\{[\s\S]*?\}/)?.[0] ?? "", /loadCompletionDetail|refreshCompletionSummary/);
   assert.match(dashboard, /const \[completionLoaded, setCompletionLoaded\] = useState\(false\)/);
+  assert.match(dashboard, /const \[siteTypeCompletionLoaded, setSiteTypeCompletionLoaded\] = useState\(false\)/);
   assert.match(dashboard, /completionError && <div className="station-completion-error"/);
+  assert.match(dashboard, /siteTypeCompletionError && <div className="station-completion-error"/);
   assert.match(dashboard, /Coba muat ulang/);
+  assert.match(dashboard, /refreshStationCompletionSummary\(true\)/);
+  assert.match(dashboard, /refreshSiteTypeCompletionSummary\(true\)/);
   assert.match(dashboard, /client\.rpc\("admin_station_completion_summary"\)/);
   assert.match(dashboard, /client\.rpc\("admin_site_type_completion_summary"\)/);
 });
