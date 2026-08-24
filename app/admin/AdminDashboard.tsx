@@ -24,7 +24,7 @@ import {
 import { csvCell, downloadText } from "../lib/download";
 import { formatCategoryLabel } from "../lib/category-label";
 import { logoutCurrentBrowser } from "../lib/local-logout";
-import { summarizeSitesByType } from "../lib/admin-summary";
+import { siteTypeCompletionRows, summarizeSiteTypeProgress, summarizeSitesByType, summarizeStationMonitoring, summarizeQc } from "../lib/admin-summary";
 import { adminViewFromSearchParam, adminViewHref, type AdminView } from "../lib/admin-navigation";
 import { hasMixedMergeProposalFamilies, rankMergeProducts, type ProductAlias } from "../lib/product-qc";
 import type { QcProposalContext } from "../lib/qc-proposal-context";
@@ -285,6 +285,7 @@ export default function AdminDashboard({ username, displayName }: { username: st
   const [credentialVisible, setCredentialVisible] = useState(false);
   const [loading, setLoading] = useState(true);
   const [completionRows, setCompletionRows] = useState<StationCompletionSummary[]>([]);
+  const [siteTypeCompletionRowsState, setSiteTypeCompletionRowsState] = useState<ReturnType<typeof siteTypeCompletionRows>>([]);
   const [stationMonitoringFilters, setStationMonitoringFilters] = useState<StationMonitoringFilters>(DEFAULT_STATION_MONITORING_FILTERS);
   const [completionLoading, setCompletionLoading] = useState(false);
   const [completionError, setCompletionError] = useState("");
@@ -344,9 +345,14 @@ export default function AdminDashboard({ username, displayName }: { username: st
       try {
         const client = getSupabaseBrowserClient();
         if (!client) throw new Error("Konfigurasi Supabase belum tersedia.");
-        const { data, error } = await client.rpc("admin_station_completion_summary");
-        if (error) throw error;
-        setCompletionRows(stationCompletionRows(data));
+        const [stationResult, siteTypeResult] = await Promise.all([
+          client.rpc("admin_station_completion_summary"),
+          client.rpc("admin_site_type_completion_summary"),
+        ]);
+        if (stationResult.error) throw stationResult.error;
+        if (siteTypeResult.error) throw siteTypeResult.error;
+        setCompletionRows(stationCompletionRows(stationResult.data));
+        setSiteTypeCompletionRowsState(siteTypeCompletionRows(siteTypeResult.data));
         completionLoadedRef.current = true;
       } catch {
         setCompletionError("Data kelengkapan belum dapat dimuat.");
@@ -548,13 +554,17 @@ export default function AdminDashboard({ username, displayName }: { username: st
     ]);
   }, [expandedStationId, invalidateCompletionDetail, loadCompletionDetail, refresh, refreshCompletionSummary]);
 
+  const refreshSummary = useCallback(async () => {
+    await Promise.all([refresh(), refreshCompletionSummary(true)]);
+  }, [refresh, refreshCompletionSummary]);
+
   useEffect(() => {
     const timer = window.setTimeout(() => void refresh(), 0);
     return () => window.clearTimeout(timer);
   }, [refresh]);
 
   useEffect(() => {
-    if (tab !== "stations" || fillingMode !== "master") return;
+    if (tab !== "summary" && (tab !== "stations" || fillingMode !== "master")) return;
     const timer = window.setTimeout(() => void refreshCompletionSummary(), 0);
     return () => window.clearTimeout(timer);
   }, [fillingMode, refreshCompletionSummary, tab]);
@@ -625,6 +635,8 @@ export default function AdminDashboard({ username, displayName }: { username: st
   }, [completionByStationId, completionRows, searchedStationFillingViews, stationMonitoringFilters]);
   const stationFollowUpCounts = useMemo(() => getStationFollowUpCounts(completionRows), [completionRows]);
   const stationQcSummary = useMemo(() => getStationQcSummary(completionRows), [completionRows]);
+  const monitoringSummary = useMemo(() => summarizeStationMonitoring(completionRows), [completionRows]);
+  const monitoringQcSummary = useMemo(() => summarizeQc(completionRows), [completionRows]);
   const pendingProposalIds = useMemo(
     () => new Set(proposals.filter((proposal) => proposal.status === "PENDING").map((proposal) => proposal.id)),
     [proposals],
@@ -633,6 +645,8 @@ export default function AdminDashboard({ username, displayName }: { username: st
   const filteredUnprovisionedStations = stations.filter((station) => !accountByStation.has(station.id)
     && (!query || station.name.toLocaleLowerCase("id-ID").includes(query)));
   const siteTypeSummary = useMemo(() => summarizeSitesByType(sites, siteTypes), [sites, siteTypes]);
+  const siteTypeProgress = useMemo(() => summarizeSiteTypeProgress(siteTypeCompletionRowsState), [siteTypeCompletionRowsState]);
+  const siteTypeProgressById = useMemo(() => new Map(siteTypeProgress.map((row) => [row.site_type_id, row])), [siteTypeProgress]);
   const filteredProposals = proposals.filter((proposal) => proposal.status === qcStatus && (!query
     || `${proposal.proposed_brand} ${proposal.proposed_model} ${stationMap.get(proposal.station_id)?.name ?? ""} ${proposal.context.siteName ?? ""} ${proposal.context.subtypeName ?? ""} ${proposal.context.categories.join(" ")}`.toLocaleLowerCase("id-ID").includes(query)));
   const searchTab = (tab === "stations" && fillingMode === "master") || tab === "accounts" || tab === "qc" ? tab : null;
@@ -967,7 +981,7 @@ export default function AdminDashboard({ username, displayName }: { username: st
           {tabs.map((item) => <Link key={item.id} href={adminViewHref(item.id)} className={tab === item.id ? "active" : ""} aria-current={tab === item.id ? "page" : undefined}>{item.label}</Link>)}
         </nav>
         <section className={`admin-content${tab === "accounts" ? " accounts-view" : ""}`}>
-          <div className="admin-heading"><div><p className="kicker">PENGELOLAAN APLIKASI</p><h2>{tabs.find((item) => item.id === tab)?.label}</h2></div>{!(tab === "stations" && fillingMode === "submissions") && tab !== "products" && <AsyncButton className="secondary-button" type="button" loading={loading || (tab === "stations" && fillingMode === "master" && completionLoading)} loadingText="Memuat..." onClick={() => void (tab === "stations" && fillingMode === "master" ? refreshMasterCompletion() : refresh())}>Muat ulang</AsyncButton>}</div>
+          <div className="admin-heading"><div><p className="kicker">PENGELOLAAN APLIKASI</p><h2>{tabs.find((item) => item.id === tab)?.label}</h2></div>{!(tab === "stations" && fillingMode === "submissions") && tab !== "products" && <AsyncButton className="secondary-button" type="button" loading={loading || ((tab === "stations" || tab === "summary") && completionLoading)} loadingText="Memuat..." onClick={() => void (tab === "stations" && fillingMode === "master" ? refreshMasterCompletion() : tab === "summary" ? refreshSummary() : refresh())}>Muat ulang</AsyncButton>}</div>
           {message && <p className="admin-message" role="status">{message}</p>}
           {loading && <p className="loading-copy">Memuat data admin...</p>}
 
@@ -984,10 +998,36 @@ export default function AdminDashboard({ username, displayName }: { username: st
             <button onClick={() => navigate("qc", { qcStatus: "REJECTED" })}><strong>{proposals.filter((row) => row.status === "REJECTED").length}</strong><span>Rejected</span></button>
           </div>}
 
+          {!loading && tab === "summary" && <section className="admin-monitoring-summary" aria-labelledby="monitoring-summary-heading">
+            <div className="admin-section-heading"><h3 id="monitoring-summary-heading">Ringkasan Monitoring Pengisian</h3><span>{monitoringSummary.total} stasiun aktif</span></div>
+            {completionLoading && completionRows.length === 0
+              ? <p className="admin-summary-muted">Memuat ringkasan kelengkapan...</p>
+              : <>
+                <div className="admin-monitoring-grid">
+                  <div><strong>{monitoringSummary.notStarted}</strong><span>Belum Dimulai</span></div>
+                  <div><strong>{monitoringSummary.partialUnder50}</strong><span>Terisi &lt;50%</span></div>
+                  <div><strong>{monitoringSummary.partial50to99}</strong><span>Terisi 50–99%</span></div>
+                  <div><strong>{monitoringSummary.complete}</strong><span>Lengkap</span></div>
+                  <div><strong>{monitoringSummary.notAssessed}</strong><span>Tidak Dinilai</span></div>
+                </div>
+                <div className="admin-monitoring-progress">
+                  <div className="admin-section-heading"><span>Progress kategori global · {monitoringSummary.filledCategoryCount} / {monitoringSummary.expectedCategoryCount} kategori</span><strong>{monitoringSummary.globalProgress === null ? "Tidak Dinilai" : `${monitoringSummary.globalProgress}%`}</strong></div>
+                  {monitoringSummary.globalProgress !== null && <div className="admin-monitoring-progress-track" role="progressbar" aria-label="Progress kategori global" aria-valuemin={0} aria-valuemax={100} aria-valuenow={monitoringSummary.globalProgress}><span style={{ width: `${monitoringSummary.globalProgress}%` }} /></div>}
+                  <small>{monitoringSummary.total} total status</small>
+                </div>
+                <div className="admin-qc-summary" aria-label="Ringkasan QC Produk"><strong>QC Produk</strong><span>{monitoringQcSummary.totalPending} pending pada {monitoringQcSummary.stationCount} stasiun</span><span>{monitoringQcSummary.topStation ? `Terbanyak: ${monitoringQcSummary.topStation.name} (${monitoringQcSummary.topStation.count})` : "Tidak ada QC pending"}</span></div>
+              </>}
+          </section>}
+
           {!loading && tab === "summary" && <section className="admin-site-type-summary" aria-labelledby="site-type-summary-heading">
             <div className="admin-section-heading"><h3 id="site-type-summary-heading">Site berdasarkan Tipe Site</h3><span>{siteTypeSummary.totalCount} site unik</span></div>
             <div className="admin-site-type-grid">
-              {siteTypeSummary.byType.map((siteType) => <div className="admin-site-type-item" key={siteType.id}><span>{siteType.name}</span><strong>{siteType.count}</strong></div>)}
+              {siteTypeSummary.byType.map((siteType) => {
+                const progress = siteTypeProgressById.get(siteType.id);
+                const progressLabel = progress?.is_warehouse ? "Tidak Dinilai" : progress?.category_progress === null || !progress ? "-" : `${progress.category_progress}%`;
+                const categoryLabel = progress && !progress.is_warehouse ? `${progress.filled_category_count} / ${progress.expected_category_count} Kategori` : "";
+                return <div className="admin-site-type-item" key={siteType.id}><span>{siteType.name}<small>{siteType.count} Site{categoryLabel ? ` · ${categoryLabel}` : ""}</small></span><strong>{progressLabel}</strong></div>;
+              })}
             </div>
           </section>}
 

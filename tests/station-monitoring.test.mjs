@@ -10,6 +10,7 @@ import {
   getStationQcSummary,
   sortStationCompletionSummaries,
 } from "../app/lib/station-monitoring.ts";
+import { summarizeSiteTypeProgress, summarizeStationMonitoring, summarizeQc } from "../app/lib/admin-summary.ts";
 
 function summary(name, status, progress, overrides = {}) {
   return {
@@ -116,6 +117,56 @@ test("search subset dan filter tersusun AND tanpa mengubah source summary", () =
   assert.deepEqual(source, statusRows);
 });
 
+test("ringkasan monitoring memakai status canonical dan progress global berbobot", () => {
+  const rows = [
+    summary("49", "TERISI_SEBAGIAN", 49, { expected_category_count: 100, filled_category_count: 49 }),
+    summary("50", "TERISI_SEBAGIAN", 50, { expected_category_count: 3, filled_category_count: 2 }),
+    summary("99", "TERISI_SEBAGIAN", 99, { expected_category_count: 100, filled_category_count: 99 }),
+    summary("Complete", "LENGKAP", 100, { expected_category_count: 1, filled_category_count: 1 }),
+    summary("Warehouse", "TIDAK_DINILAI", null, { expected_category_count: 0, filled_category_count: 0 }),
+    summary("Attention", "PERLU_PERHATIAN", 20, { expected_category_count: 10, filled_category_count: 2 }),
+  ];
+  assert.deepEqual(summarizeStationMonitoring(rows), {
+    notStarted: 0,
+    partialUnder50: 1,
+    partial50to99: 2,
+    complete: 1,
+    notAssessed: 1,
+    attention: 1,
+    total: 6,
+    expectedCategoryCount: 214,
+    filledCategoryCount: 153,
+    globalProgress: 71,
+  });
+});
+
+test("QC summary memilih station terbanyak dan site type Gudang netral", () => {
+  assert.deepEqual(summarizeQc([
+    { station_name: "B", pending_qc_count: 2 },
+    { station_name: "A", pending_qc_count: 2 },
+    { station_name: "C", pending_qc_count: 0 },
+  ]), { stationCount: 2, totalPending: 4, topStation: { name: "A", count: 2 } });
+  assert.equal(summarizeSiteTypeProgress([{
+    site_type_id: "warehouse",
+    site_type_name: "Gudang",
+    site_count: 1,
+    expected_category_count: 0,
+    filled_category_count: 0,
+    category_progress: 0,
+    is_warehouse: true,
+  }])[0].category_progress, null);
+});
+
+test("RPC site type memakai agregasi bulk, UUID, dan tidak mengembalikan payload", async () => {
+  const migration = await readFile(new URL("../supabase/migrations/20260830120000_admin_site_type_completion_summary.sql", import.meta.url), "utf8");
+  assert.match(migration, /admin_site_type_completion_summary/);
+  assert.match(migration, /station_completion_rows\(null\)/);
+  assert.match(migration, /count\(distinct id\)/);
+  assert.match(migration, /require_super_admin/);
+  assert.match(migration, /revoke all on function public\.admin_site_type_completion_summary\(\) from public, anon/);
+  assert.doesNotMatch(migration.split("comment on function")[0], /payload/);
+});
+
 test("UI monitoring hanya hidup di Per Stasiun dan perubahan kontrol tidak memanggil RPC", async () => {
   const [dashboard, controls, unified] = await Promise.all([
     readFile(new URL("../app/admin/AdminDashboard.tsx", import.meta.url), "utf8"),
@@ -123,6 +174,7 @@ test("UI monitoring hanya hidup di Per Stasiun dan perubahan kontrol tidak meman
     readFile(new URL("../app/admin/UnifiedFillingList.tsx", import.meta.url), "utf8"),
   ]);
   assert.equal(dashboard.match(/client\.rpc\("admin_station_completion_summary"\)/g)?.length, 1);
+  assert.equal(dashboard.match(/client\.rpc\("admin_site_type_completion_summary"\)/g)?.length, 1);
   assert.match(dashboard, /fillingMode === "master" && <StationMonitoringControls/);
   assert.match(dashboard, /applyStationMonitoring\([\s\S]*completionRows/);
   assert.match(dashboard, /setStationMonitoringFilters/);
