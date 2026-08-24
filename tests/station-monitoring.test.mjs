@@ -198,7 +198,7 @@ test("station category master memiliki lima identity tetap dan mapping UUID eksp
   }
   assert.equal(migration.match(/insert into public\.station_categories \(id, code, name\)/)?.length, 1);
   assert.equal(migration.match(/station_category_id uuid references public\.station_categories\(id\)/)?.length, 1);
-  const mapping = migration.match(/with mapping\(station_id, station_category_id\)[\s\S]*?\n\)\nupdate public\.stations/)?.[0] ?? "";
+  const mapping = migration.match(/with mapping\(station_id, station_category_id\)[\s\S]*?\r?\n\)\r?\nupdate public\.stations/)?.[0] ?? "";
   assert.equal(mapping.match(/'[0-9a-f-]{36}'::uuid/g)?.length, 197);
   assert.match(mapping, /2d251d56-f6e0-41db-b312-03b2a14da2e7/);
   assert.match(mapping, /33ec8aed-24cb-46c7-8e7c-1600276dce60/);
