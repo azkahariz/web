@@ -196,14 +196,15 @@ test("retry acquire memakai respons lock dan versi server terbaru, bukan state r
 });
 
 test("navigasi client-side dari Submission menghydrate payload server pada render awal siap", async () => {
-  const [hook, inventory, submissionPage, monitor, dashboard] = await Promise.all([
+  const [hook, inventory, submissionPage, monitor, dashboard, sharedDetail] = await Promise.all([
     readFile(new URL("../app/hooks/useServerDraft.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/InventoryApp.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/admin/submissions/[id]/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/admin/AdminSubmissionMonitor.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/admin/AdminDashboard.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/admin/SubmissionProgressDetail.tsx", import.meta.url), "utf8"),
   ]);
-  assert.match(monitor, /href=\{`\/admin\/submissions\/\$\{row\.id\}`\} target="_blank" rel="noopener noreferrer">Buka/);
+  assert.match(sharedDetail, /href=\{`\/admin\/submissions\/\$\{detail\.id\}`\} target="_blank" rel="noopener noreferrer">Buka/);
   assert.match(submissionPage, /startInEditMode=\{edit === "1"\}/);
   assert.doesNotMatch(monitor, /window\.location|location\.reload/);
   assert.doesNotMatch(dashboard, /window\.location|location\.reload/);

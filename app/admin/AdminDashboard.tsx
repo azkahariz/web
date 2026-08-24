@@ -6,6 +6,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import AdminBulkExport from "./AdminBulkExport";
 import AdminProducts from "./AdminProducts";
 import AdminSubmissionMonitor from "./AdminSubmissionMonitor";
+import StationMonitoringControls from "./StationMonitoringControls";
+import UnifiedFillingList from "./UnifiedFillingList";
 import { useAppFeedback } from "../components/AppFeedback";
 import AsyncButton from "../components/AsyncButton";
 import EyeIcon from "../components/EyeIcon";
@@ -25,7 +27,26 @@ import { summarizeSitesByType } from "../lib/admin-summary";
 import { adminViewFromSearchParam, adminViewHref, type AdminView } from "../lib/admin-navigation";
 import { hasMixedMergeProposalFamilies, rankMergeProducts, type ProductAlias } from "../lib/product-qc";
 import type { QcProposalContext } from "../lib/qc-proposal-context";
-import type { SubmissionSummary } from "../lib/submission-monitoring";
+import type { StationCompletionDetailResponse, StationCompletionSummary } from "../lib/station-completion";
+import { createStationCompletionDetailCache } from "../lib/station-completion-detail-cache";
+import {
+  applyStationFollowUpPreset,
+  applyStationMonitoring,
+  DEFAULT_STATION_MONITORING_FILTERS,
+  getStationFollowUpCounts,
+  hasStationMonitoringFilters,
+  type StationMonitoringFilters,
+} from "../lib/station-monitoring";
+import {
+  stationCompletionCategory,
+  stationCompletionDetailResponse,
+  stationCompletionRows,
+  stationCompletionSubmission,
+  stationCompletionStatusClass,
+  stationCompletionStatusLabel,
+  stationCompletionWarehouseInfo,
+} from "../lib/station-completion-view";
+import type { SubmissionDetail, SubmissionSummary } from "../lib/submission-monitoring";
 import { getSupabaseBrowserClient } from "../lib/supabase/client";
 
 type Station = { id: string; name: string; active: boolean };
@@ -97,6 +118,20 @@ function ageLabel(value: string | null, now: number) {
   return minutes < 1 ? "kurang dari 1 menit" : `${minutes} menit`;
 }
 
+const stationActivityFormatter = new Intl.DateTimeFormat("id-ID", {
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+});
+
+function stationActivityLabel(completion: StationCompletionSummary) {
+  if (completion.station_status === "TIDAK_DINILAI") return "Pengisian tidak dinilai";
+  if (!completion.content_last_updated) return "Belum pernah disimpan";
+  return `Terakhir simpan: ${stationActivityFormatter.format(new Date(completion.content_last_updated))}`;
+}
+
 function proposalCategoryLabel(context: QcProposalContext) {
   if (context.state === "unavailable") return "Konteks tidak tersedia";
   if (context.state === "missing-submission") return "Konteks submission tidak tersedia";
@@ -108,47 +143,105 @@ function proposalCategoryLabel(context: QcProposalContext) {
 const StationFillingCard = memo(function StationFillingCard({
   station,
   view,
+  completion,
+  completionLoading,
+  completionDetail,
+  completionDetailLoading,
+  completionDetailError,
   visibleRows,
   expanded,
-  busyAction,
+  submissionDetails,
+  submissionDetailLoadingIds,
+  submissionDetailErrors,
+  actionId,
   onToggle,
+  onRetryCompletionDetail,
+  onLoadSubmissionDetail,
   onDownload,
+  onArchive,
+  onDelete,
 }: {
   station: Station;
   view: StationFillingView;
+  completion: StationCompletionSummary | null;
+  completionLoading: boolean;
+  completionDetail: StationCompletionDetailResponse | null;
+  completionDetailLoading: boolean;
+  completionDetailError: string;
   visibleRows: StationFillingView["rows"];
   expanded: boolean;
-  busyAction: string | null;
+  submissionDetails: Record<string, SubmissionDetail>;
+  submissionDetailLoadingIds: Set<string>;
+  submissionDetailErrors: Record<string, string>;
+  actionId: string | null;
   onToggle: (open: boolean) => void;
-  onDownload: (station: Station, site: Site, subtype: Subtype) => void;
+  onRetryCompletionDetail: () => void;
+  onLoadSubmissionDetail: (id: string, force?: boolean) => Promise<void>;
+  onDownload: (site: Site, subtype: Subtype, submissionId?: string) => Promise<void>;
+  onArchive: (row: SubmissionSummary) => Promise<void>;
+  onDelete: (row: SubmissionSummary) => Promise<void>;
 }) {
+  const category = completion ? stationCompletionCategory(completion) : null;
+  const submission = completion ? stationCompletionSubmission(completion) : null;
+  const warehouseInfo = completion ? stationCompletionWarehouseInfo(completion) : null;
   return <details open={expanded} onToggle={(event) => onToggle(event.currentTarget.open)}>
-    <summary><strong>{station.name}</strong><span>{view.siteCount} site {"\u2022"} {view.submissionCount} submission</span></summary>
-    {expanded && <div className="admin-table-wrap station-filling-table"><table><thead><tr><th>Site</th><th>Tipe Site</th><th>Subtipe</th><th>Status</th><th>Versi</th><th>Terakhir Simpan</th><th>Aksi</th></tr></thead><tbody>
-      {visibleRows.map(({ site, siteType, subtype, submission }) => <tr key={`${site.id}:${subtype?.id ?? "no-subtype"}`}>
-        <td><strong>{site.name}</strong></td>
-        <td>{siteType?.name ?? "Belum terpetakan"}</td>
-        <td>{subtype?.name ?? "Belum terpetakan"}</td>
-        <td><span className={`status-pill ${submission ? "active" : "pending"}`}>{submission ? "Sudah ada data" : "Belum ada submission"}</span></td>
-        <td>{submission?.version ?? "-"}</td>
-        <td>{submission ? new Date(submission.last_saved_at ?? submission.updated_at).toLocaleString("id-ID") : "-"}</td>
-        <td>{subtype ? <details className="row-action-menu">
-          <summary>Aksi</summary>
-          <div>
-            <Link href={submission ? `/admin/submissions/${submission.id}` : `/admin/inventory?siteId=${site.id}&subtypeId=${subtype.id}`} target="_blank" rel="noopener noreferrer">Buka</Link>
-            <AsyncButton loading={busyAction === `download:${site.id}:${subtype.id}`} loadingText="Menyiapkan..." onClick={() => onDownload(station, site, subtype)}>Unduh</AsyncButton>
-          </div>
-        </details> : "-"}</td>
-      </tr>)}
-      {!visibleRows.length && <tr><td colSpan={7}>Belum ada site atau subtipe yang cocok.</td></tr>}
-    </tbody></table></div>}
+    <summary className="station-completion-summary">
+      <div className="station-completion-heading">
+        <strong>{station.name}</strong>
+        {completion && <span className={`station-completion-status ${stationCompletionStatusClass(completion.station_status)}`}>{stationCompletionStatusLabel(completion.station_status)}</span>}
+      </div>
+      {completion ? <div className="station-completion-body">
+        <div className="station-completion-metrics">
+          <span><strong>{completion.site_count}</strong> Site</span>
+          <span><strong>{submission?.value}</strong> {submission?.label}</span>
+          <span><strong>{category?.label}</strong>{category && category.progress !== null && <> · {category.progress}%</>}</span>
+        </div>
+        {category && category.progress !== null && <div
+          className="station-completion-progress"
+          role="progressbar"
+          aria-label={`Progress kategori ${category.progress} persen`}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={category.progress}
+        ><span style={{ width: `${Math.min(100, Math.max(0, category.progress))}%` }} /></div>}
+        {warehouseInfo && <small className="station-completion-warehouse-info">{warehouseInfo}</small>}
+        <small className="station-completion-activity">{stationActivityLabel(completion)}</small>
+        {completion.site_count === 0 && completion.issues[0]?.label && <small>{completion.issues[0].label}</small>}
+      </div> : completionLoading ? <div className="station-completion-skeleton" aria-label="Memuat ringkasan kelengkapan"><span /><span /></div> : <div className="station-completion-unavailable"><span>{view.siteCount} Site (data master)</span><small>Kelengkapan belum tersedia</small></div>}
+    </summary>
+    {expanded && <UnifiedFillingList
+      stationName={station.name}
+      masterRows={visibleRows}
+      detail={completionDetail}
+      loading={completionDetailLoading}
+      error={completionDetailError}
+      submissionDetails={submissionDetails}
+      detailLoadingIds={submissionDetailLoadingIds}
+      detailErrors={submissionDetailErrors}
+      actionId={actionId}
+      onRetryCompletion={onRetryCompletionDetail}
+      onLoadSubmissionDetail={onLoadSubmissionDetail}
+      onDownload={onDownload}
+      onArchive={onArchive}
+      onDelete={onDelete}
+    />}
   </details>;
 }, (previous, next) => (
   previous.station === next.station
   && previous.view === next.view
+  && previous.completion === next.completion
+  && previous.completionLoading === next.completionLoading
+  && previous.completionDetail === next.completionDetail
+  && previous.completionDetailLoading === next.completionDetailLoading
+  && previous.completionDetailError === next.completionDetailError
   && previous.visibleRows === next.visibleRows
   && previous.expanded === next.expanded
-  && previous.busyAction === next.busyAction
+  && (!next.expanded || (
+    previous.submissionDetails === next.submissionDetails
+    && previous.submissionDetailLoadingIds === next.submissionDetailLoadingIds
+    && previous.submissionDetailErrors === next.submissionDetailErrors
+    && previous.actionId === next.actionId
+  ))
 ));
 
 export default function AdminDashboard({ username, displayName }: { username: string; displayName: string }) {
@@ -184,6 +277,22 @@ export default function AdminDashboard({ username, displayName }: { username: st
   const [credential, setCredential] = useState<{ username: string; password: string; title: string } | null>(null);
   const [credentialVisible, setCredentialVisible] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [completionRows, setCompletionRows] = useState<StationCompletionSummary[]>([]);
+  const [stationMonitoringFilters, setStationMonitoringFilters] = useState<StationMonitoringFilters>(DEFAULT_STATION_MONITORING_FILTERS);
+  const [stationMonitoringReferenceTime, setStationMonitoringReferenceTime] = useState(0);
+  const [completionLoading, setCompletionLoading] = useState(false);
+  const [completionError, setCompletionError] = useState("");
+  const [completionDetails, setCompletionDetails] = useState<Map<string, StationCompletionDetailResponse>>(() => new Map());
+  const [completionDetailLoadingIds, setCompletionDetailLoadingIds] = useState<Set<string>>(() => new Set());
+  const [completionDetailErrors, setCompletionDetailErrors] = useState<Record<string, string>>({});
+  const completionRequestRef = useRef<Promise<void> | null>(null);
+  const completionLoadedRef = useRef(false);
+  const completionDetailCacheRef = useRef(createStationCompletionDetailCache<StationCompletionDetailResponse>());
+  const [unifiedSubmissionDetails, setUnifiedSubmissionDetails] = useState<Record<string, SubmissionDetail>>({});
+  const [unifiedSubmissionDetailLoadingIds, setUnifiedSubmissionDetailLoadingIds] = useState<Set<string>>(() => new Set());
+  const [unifiedSubmissionDetailErrors, setUnifiedSubmissionDetailErrors] = useState<Record<string, string>>({});
+  const unifiedSubmissionDetailCacheRef = useRef(new Map<string, SubmissionDetail>());
+  const unifiedSubmissionDetailRequestsRef = useRef(new Map<string, Promise<void>>());
   const [loadedAt, setLoadedAt] = useState(0);
   const [activeAction, setActiveAction] = useState<string | null>(null);
 
@@ -217,6 +326,137 @@ export default function AdminDashboard({ username, displayName }: { username: st
     }
     setProposals(payload.rows ?? []);
     return true;
+  }, []);
+
+  const refreshCompletionSummary = useCallback(async (force = false) => {
+    if (!force && completionLoadedRef.current) return;
+    if (completionRequestRef.current) return completionRequestRef.current;
+
+    const request = (async () => {
+      setCompletionLoading(true);
+      setCompletionError("");
+      try {
+        const client = getSupabaseBrowserClient();
+        if (!client) throw new Error("Konfigurasi Supabase belum tersedia.");
+        const { data, error } = await client.rpc("admin_station_completion_summary");
+        if (error) throw error;
+        setCompletionRows(stationCompletionRows(data));
+        setStationMonitoringReferenceTime(Date.now());
+        completionLoadedRef.current = true;
+      } catch {
+        setCompletionError("Data kelengkapan belum dapat dimuat.");
+      } finally {
+        setCompletionLoading(false);
+        completionRequestRef.current = null;
+      }
+    })();
+
+    completionRequestRef.current = request;
+    return request;
+  }, []);
+
+  const loadCompletionDetail = useCallback(async (stationId: string, force = false) => {
+    const cached = completionDetailCacheRef.current.get(stationId);
+    if (!force && cached) {
+      setCompletionDetails((current) => current.has(stationId) ? current : new Map(current).set(stationId, cached));
+      return;
+    }
+
+    try {
+      setCompletionDetailLoadingIds((current) => new Set(current).add(stationId));
+      setCompletionDetailErrors((current) => {
+        const next = { ...current };
+        delete next[stationId];
+        return next;
+      });
+      const detail = await completionDetailCacheRef.current.load(stationId, async () => {
+        const client = getSupabaseBrowserClient();
+        if (!client) throw new Error("Konfigurasi Supabase belum tersedia.");
+        const { data, error } = await client.rpc("admin_station_completion_detail", { p_station_id: stationId });
+        if (error) throw error;
+        const detail = stationCompletionDetailResponse(data);
+        if (!detail || detail.station_id !== stationId) throw new Error("Contract detail kelengkapan tidak valid.");
+        return detail;
+      }, force);
+      setCompletionDetails((current) => new Map(current).set(stationId, detail));
+    } catch {
+      setCompletionDetailErrors((current) => ({ ...current, [stationId]: "Detail kelengkapan belum dapat dimuat." }));
+    } finally {
+      setCompletionDetailLoadingIds((current) => {
+        const next = new Set(current);
+        next.delete(stationId);
+        return next;
+      });
+    }
+  }, []);
+
+  const invalidateCompletionDetail = useCallback((stationId?: string) => {
+    completionDetailCacheRef.current.invalidate(stationId);
+    setCompletionDetails((current) => {
+      if (!stationId) return new Map();
+      const next = new Map(current);
+      next.delete(stationId);
+      return next;
+    });
+    setCompletionDetailErrors((current) => {
+      if (!stationId) return {};
+      const next = { ...current };
+      delete next[stationId];
+      return next;
+    });
+  }, []);
+
+  const loadUnifiedSubmissionDetail = useCallback(async (submissionId: string, force = false) => {
+    const cached = unifiedSubmissionDetailCacheRef.current.get(submissionId);
+    if (!force && cached) {
+      setUnifiedSubmissionDetails((current) => current[submissionId] ? current : { ...current, [submissionId]: cached });
+      return;
+    }
+    const inFlight = unifiedSubmissionDetailRequestsRef.current.get(submissionId);
+    if (!force && inFlight) return inFlight;
+
+    const request = (async () => {
+      setUnifiedSubmissionDetailLoadingIds((current) => new Set(current).add(submissionId));
+      setUnifiedSubmissionDetailErrors((current) => {
+        const next = { ...current };
+        delete next[submissionId];
+        return next;
+      });
+      try {
+        const response = await fetch(`/api/admin/submissions?id=${encodeURIComponent(submissionId)}`, { cache: "no-store" });
+        const result = await response.json() as { detail?: SubmissionDetail; error?: string };
+        if (!response.ok || !result.detail) throw new Error(result.error || "Detail submission gagal dimuat.");
+        unifiedSubmissionDetailCacheRef.current.set(submissionId, result.detail);
+        setUnifiedSubmissionDetails((current) => ({ ...current, [submissionId]: result.detail! }));
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Detail submission gagal dimuat.";
+        setUnifiedSubmissionDetailErrors((current) => ({ ...current, [submissionId]: message }));
+        feedback.toast(message, "error");
+      } finally {
+        unifiedSubmissionDetailRequestsRef.current.delete(submissionId);
+        setUnifiedSubmissionDetailLoadingIds((current) => {
+          const next = new Set(current);
+          next.delete(submissionId);
+          return next;
+        });
+      }
+    })();
+    unifiedSubmissionDetailRequestsRef.current.set(submissionId, request);
+    return request;
+  }, [feedback]);
+
+  const invalidateUnifiedSubmissionDetail = useCallback((submissionId: string) => {
+    unifiedSubmissionDetailCacheRef.current.delete(submissionId);
+    setUnifiedSubmissionDetails((current) => {
+      const next = { ...current };
+      delete next[submissionId];
+      return next;
+    });
+    setUnifiedSubmissionDetailErrors((current) => {
+      const next = { ...current };
+      delete next[submissionId];
+      return next;
+    });
   }, []);
 
   const refresh = useCallback(async () => {
@@ -285,10 +525,34 @@ export default function AdminDashboard({ username, displayName }: { username: st
     setProductTotal(Number(productSummary?.total_count ?? 0));
   }, []);
 
+  const refreshAfterSubmissionChange = useCallback(async (stationId?: string) => {
+    invalidateCompletionDetail(stationId);
+    await Promise.all([
+      refresh(),
+      refreshCompletionSummary(true),
+      stationId && expandedStationId === stationId ? loadCompletionDetail(stationId, true) : Promise.resolve(),
+    ]);
+  }, [expandedStationId, invalidateCompletionDetail, loadCompletionDetail, refresh, refreshCompletionSummary]);
+
+  const refreshMasterCompletion = useCallback(async () => {
+    invalidateCompletionDetail();
+    await Promise.all([
+      refresh(),
+      refreshCompletionSummary(true),
+      expandedStationId ? loadCompletionDetail(expandedStationId, true) : Promise.resolve(),
+    ]);
+  }, [expandedStationId, invalidateCompletionDetail, loadCompletionDetail, refresh, refreshCompletionSummary]);
+
   useEffect(() => {
     const timer = window.setTimeout(() => void refresh(), 0);
     return () => window.clearTimeout(timer);
   }, [refresh]);
+
+  useEffect(() => {
+    if (tab !== "stations" || fillingMode !== "master") return;
+    const timer = window.setTimeout(() => void refreshCompletionSummary(), 0);
+    return () => window.clearTimeout(timer);
+  }, [fillingMode, refreshCompletionSummary, tab]);
 
   useEffect(() => {
     if (tab !== "qc") return;
@@ -309,6 +573,7 @@ export default function AdminDashboard({ username, displayName }: { username: st
   }, [credential]);
 
   const stationMap = useMemo(() => new Map(stations.map((station) => [station.id, station])), [stations]);
+  const completionByStationId = useMemo(() => new Map(completionRows.map((summary) => [summary.station_id, summary])), [completionRows]);
   const siteMap = useMemo(() => new Map(sites.map((site) => [site.id, site])), [sites]);
   const subtypeMap = useMemo(() => new Map(subtypes.map((subtype) => [subtype.id, subtype])), [subtypes]);
   const accountByStation = useMemo(() => new Map(accounts.map((account) => [account.station_id, account])), [accounts]);
@@ -326,13 +591,37 @@ export default function AdminDashboard({ username, displayName }: { username: st
     station,
     view: buildStationFillingView(station.id, sites, siteTypes, subtypes, submissions),
   })), [sites, siteTypes, stations, submissions, subtypes]);
-  const filteredStationFillingViews = useMemo(() => stationFillingViews.map(({ station, view }) => ({
+  const searchedStationFillingViews = useMemo(() => stationFillingViews.map(({ station, view }) => ({
     station,
     view,
     visibleRows: filterStationFillingRows(station.name, view.rows, query),
   })).filter(({ station, visibleRows }) => !query
     || station.name.toLocaleLowerCase("id-ID").includes(query)
     || visibleRows.length > 0), [query, stationFillingViews]);
+  const filteredStationFillingViews = useMemo(() => {
+    const searchedIds = new Set(searchedStationFillingViews.map(({ station }) => station.id));
+    const filteredSummaries = applyStationMonitoring(
+      completionRows.filter((summary) => searchedIds.has(summary.station_id)),
+      stationMonitoringFilters,
+      stationMonitoringReferenceTime,
+    );
+    const orderByStationId = new Map(filteredSummaries.map((summary, index) => [summary.station_id, index]));
+    const assessmentFilterActive = stationMonitoringFilters.status !== "all"
+      || stationMonitoringFilters.progress !== "all"
+      || stationMonitoringFilters.activity !== "all";
+    return searchedStationFillingViews
+      .filter(({ station }) => orderByStationId.has(station.id)
+        || (!assessmentFilterActive && !completionByStationId.has(station.id)))
+      .sort((left, right) => {
+        const leftOrder = orderByStationId.get(left.station.id);
+        const rightOrder = orderByStationId.get(right.station.id);
+        if (leftOrder !== undefined && rightOrder !== undefined) return leftOrder - rightOrder;
+        if (leftOrder !== undefined) return -1;
+        if (rightOrder !== undefined) return 1;
+        return left.station.name.localeCompare(right.station.name, "id-ID", { sensitivity: "base" });
+      });
+  }, [completionByStationId, completionRows, searchedStationFillingViews, stationMonitoringFilters, stationMonitoringReferenceTime]);
+  const stationFollowUpCounts = useMemo(() => getStationFollowUpCounts(completionRows, stationMonitoringReferenceTime), [completionRows, stationMonitoringReferenceTime]);
   const filteredAccounts = accounts.filter((account) => accountMatchesAdminSearch(account, query, stationMap));
   const filteredUnprovisionedStations = stations.filter((station) => !accountByStation.has(station.id)
     && (!query || station.name.toLocaleLowerCase("id-ID").includes(query)));
@@ -565,6 +854,81 @@ export default function AdminDashboard({ username, displayName }: { username: st
     await downloadRow(station, site, subtype, row.id);
   }
 
+  async function changeUnifiedSubmissionArchive(row: SubmissionSummary) {
+    const restoring = Boolean(row.archived_at);
+    let reason = "";
+    if (!restoring) {
+      const input = await feedback.prompt({
+        title: "Arsipkan Submission?",
+        description: "Submission akan disembunyikan dari pengisian aktif dan tetap dapat dipulihkan.",
+        inputLabel: "Alasan arsip (opsional)",
+        maxLength: 500,
+        confirmLabel: "Lanjutkan",
+      });
+      if (input === null) return;
+      reason = input;
+    }
+    await feedback.confirmAction({
+      title: restoring ? "Pulihkan Submission?" : "Konfirmasi Arsip Submission",
+      description: restoring
+        ? "UUID, payload, dan versi tetap sama setelah dipulihkan."
+        : `${row.station_name} / ${row.site_name} / ${row.subtype_name}`,
+      confirmLabel: restoring ? "Pulihkan" : "Arsipkan",
+      danger: !restoring,
+    }, async () => {
+      if (activeAction) return false;
+      let succeeded = false;
+      await runAction(`archive:${row.id}`, async () => {
+        const response = await fetch("/api/admin/submissions", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ action: restoring ? "restore" : "archive", submissionId: row.id, reason }),
+        });
+        const result = await response.json() as { ok?: boolean; error?: string };
+        if (!response.ok) {
+          feedback.toast(result.error || "Aksi submission gagal.", "error");
+          return;
+        }
+        succeeded = true;
+        invalidateUnifiedSubmissionDetail(row.id);
+        feedback.toast(restoring ? "Submission berhasil dipulihkan." : "Submission berhasil diarsipkan.", "success");
+        await refreshAfterSubmissionChange(row.station_id);
+      });
+      return succeeded;
+    });
+  }
+
+  async function deleteUnifiedSubmission(row: SubmissionSummary) {
+    await feedback.confirmAction({
+      title: "Hapus Submission secara permanen?",
+      description: `${row.station_name} / ${row.site_name} / ${row.subtype_name}. Data ini akan dihapus secara permanen dan tidak dapat dipulihkan.`,
+      inputLabel: "Ketik HAPUS untuk melanjutkan",
+      confirmationText: "HAPUS",
+      confirmLabel: "Hapus Permanen",
+      danger: true,
+    }, async () => {
+      if (activeAction) return false;
+      let succeeded = false;
+      await runAction(`delete:${row.id}`, async () => {
+        const response = await fetch("/api/admin/submissions", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ action: "delete", submissionId: row.id }),
+        });
+        const result = await response.json() as { ok?: boolean; error?: string };
+        if (!response.ok) {
+          feedback.toast(result.error || "Submission gagal dihapus permanen.", "error");
+          return;
+        }
+        succeeded = true;
+        invalidateUnifiedSubmissionDetail(row.id);
+        feedback.toast("Submission berhasil dihapus permanen.", "success");
+        await refreshAfterSubmissionChange(row.station_id);
+      });
+      return succeeded;
+    });
+  }
+
   function navigate(nextTab: Tab, options?: { fillingMode?: FillingMode; qcStatus?: Proposal["status"] }) {
     router.push(adminViewHref(nextTab));
     setSearch("");
@@ -596,7 +960,7 @@ export default function AdminDashboard({ username, displayName }: { username: st
           {tabs.map((item) => <Link key={item.id} href={adminViewHref(item.id)} className={tab === item.id ? "active" : ""} aria-current={tab === item.id ? "page" : undefined}>{item.label}</Link>)}
         </nav>
         <section className={`admin-content${tab === "accounts" ? " accounts-view" : ""}`}>
-          <div className="admin-heading"><div><p className="kicker">PENGELOLAAN APLIKASI</p><h2>{tabs.find((item) => item.id === tab)?.label}</h2></div>{!(tab === "stations" && fillingMode === "submissions") && tab !== "products" && <AsyncButton className="secondary-button" type="button" loading={loading} loadingText="Memuat..." onClick={() => void refresh()}>Muat ulang</AsyncButton>}</div>
+          <div className="admin-heading"><div><p className="kicker">PENGELOLAAN APLIKASI</p><h2>{tabs.find((item) => item.id === tab)?.label}</h2></div>{!(tab === "stations" && fillingMode === "submissions") && tab !== "products" && <AsyncButton className="secondary-button" type="button" loading={loading || (tab === "stations" && fillingMode === "master" && completionLoading)} loadingText="Memuat..." onClick={() => void (tab === "stations" && fillingMode === "master" ? refreshMasterCompletion() : refresh())}>Muat ulang</AsyncButton>}</div>
           {message && <p className="admin-message" role="status">{message}</p>}
           {loading && <p className="loading-copy">Memuat data admin...</p>}
 
@@ -621,8 +985,8 @@ export default function AdminDashboard({ username, displayName }: { username: st
           </section>}
 
           {!loading && tab === "stations" && <div className="status-tabs filling-mode-tabs" role="tablist" aria-label="Mode Stasiun dan Pengisian">
-            <button role="tab" aria-selected={fillingMode === "master"} className={fillingMode === "master" ? "active" : ""} onClick={() => { setFillingMode("master"); setSearch(""); }}>Master Pengisian</button>
-            <button role="tab" aria-selected={fillingMode === "submissions"} className={fillingMode === "submissions" ? "active" : ""} onClick={() => { setSubmissionMonitorMounted(true); setFillingMode("submissions"); setSearch(""); }}>Submission</button>
+            <button role="tab" aria-selected={fillingMode === "master"} className={fillingMode === "master" ? "active" : ""} onClick={() => { setFillingMode("master"); setStationMonitoringReferenceTime(Date.now()); }}>Per Stasiun</button>
+            <button role="tab" aria-selected={fillingMode === "submissions"} className={fillingMode === "submissions" ? "active" : ""} onClick={() => { setSubmissionMonitorMounted(true); setFillingMode("submissions"); }}>Semua Pengisian</button>
           </div>}
 
           {!loading && tab === "products" && <AdminProducts onChanged={refreshProductSummary} />}
@@ -630,21 +994,62 @@ export default function AdminDashboard({ username, displayName }: { username: st
           {!loading && searchTab && tab !== "stations" && <label className="admin-search">Cari<input autoComplete="off" value={search} onChange={(event) => setSearch(event.target.value)} placeholder={adminSearchPlaceholder(searchTab)} /></label>}
 
           {!loading && tab === "stations" && fillingMode === "master" && <div className="station-filling-toolbar">
-            <label className="admin-search">Cari<input autoComplete="off" value={search} onChange={(event) => setSearch(event.target.value)} placeholder={adminSearchPlaceholder("stations")} /></label>
+            <label className="admin-search">Cari<input autoComplete="off" value={search} onChange={(event) => { setSearch(event.target.value); setStationMonitoringReferenceTime(Date.now()); }} placeholder={adminSearchPlaceholder("stations")} /></label>
             <AdminBulkExport stations={stations} sites={sites} siteTypes={siteTypes} subtypes={subtypes} onMessage={setMessage} />
           </div>}
 
-          {!loading && tab === "stations" && fillingMode === "master" && <div className="admin-list">
+          {!loading && tab === "stations" && fillingMode === "master" && completionError && <div className="station-completion-error" role="alert">
+            <span>{completionError}</span>
+            <AsyncButton type="button" loading={completionLoading} loadingText="Memuat..." onClick={() => void refreshCompletionSummary(true)}>Coba muat ulang</AsyncButton>
+          </div>}
+
+          {!loading && tab === "stations" && fillingMode === "master" && completionLoading && completionRows.length > 0 && <p className="station-completion-updating" role="status"><span className="loading-spinner" aria-hidden="true" />Memperbarui ringkasan kelengkapan...</p>}
+
+          {!loading && tab === "stations" && fillingMode === "master" && <StationMonitoringControls
+            filters={stationMonitoringFilters}
+            counts={stationFollowUpCounts}
+            visibleCount={filteredStationFillingViews.length}
+            totalCount={stations.length}
+            loading={completionLoading && completionRows.length === 0}
+            available={completionRows.length > 0}
+            onChange={(next) => { setStationMonitoringFilters(next); setStationMonitoringReferenceTime(Date.now()); }}
+            onQuickAction={(key) => { setStationMonitoringFilters((current) => applyStationFollowUpPreset(current, key)); setStationMonitoringReferenceTime(Date.now()); }}
+            onReset={() => { setStationMonitoringFilters(DEFAULT_STATION_MONITORING_FILTERS); setStationMonitoringReferenceTime(Date.now()); }}
+          />}
+
+          {!loading && tab === "stations" && fillingMode === "master" && <div className="admin-list" aria-busy={completionLoading}>
             {filteredStationFillingViews.map(({ station, view, visibleRows }) => <StationFillingCard
               key={station.id}
               station={station}
               view={view}
+              completion={completionByStationId.get(station.id) ?? null}
+              completionLoading={completionLoading && completionRows.length === 0}
+              completionDetail={completionDetails.get(station.id) ?? null}
+              completionDetailLoading={completionDetailLoadingIds.has(station.id)}
+              completionDetailError={completionDetailErrors[station.id] ?? ""}
               visibleRows={visibleRows}
               expanded={expandedStationId === station.id}
-              busyAction={activeAction?.startsWith(`download:${station.id}:`) ? activeAction : null}
-              onToggle={(open) => setExpandedStationId(open ? station.id : null)}
-              onDownload={(selectedStation, site, subtype) => void runAction(`download:${site.id}:${subtype.id}`, () => downloadRow(selectedStation, site, subtype))}
+              submissionDetails={unifiedSubmissionDetails}
+              submissionDetailLoadingIds={unifiedSubmissionDetailLoadingIds}
+              submissionDetailErrors={unifiedSubmissionDetailErrors}
+              actionId={activeAction}
+              onToggle={(open) => {
+                setExpandedStationId(open ? station.id : null);
+                if (open) void loadCompletionDetail(station.id);
+              }}
+              onRetryCompletionDetail={() => void loadCompletionDetail(station.id, true)}
+              onLoadSubmissionDetail={loadUnifiedSubmissionDetail}
+              onDownload={async (site, subtype, submissionId) => {
+                const actionKey = submissionId ? `download:${submissionId}` : `download:${site.id}:${subtype.id}`;
+                await runAction(actionKey, () => downloadRow(station, site as Site, subtype as Subtype, submissionId));
+              }}
+              onArchive={changeUnifiedSubmissionArchive}
+              onDelete={deleteUnifiedSubmission}
             />)}
+            {filteredStationFillingViews.length === 0 && <div className="station-monitoring-empty">
+              <p>Tidak ada Stasiun yang sesuai dengan filter saat ini.</p>
+              {hasStationMonitoringFilters(stationMonitoringFilters) && <button type="button" onClick={() => { setStationMonitoringFilters(DEFAULT_STATION_MONITORING_FILTERS); setStationMonitoringReferenceTime(Date.now()); }}>Reset filter</button>}
+            </div>}
           </div>}
 
           {submissionMonitorMounted && <div hidden={tab !== "stations" || fillingMode !== "submissions"}>
@@ -652,7 +1057,7 @@ export default function AdminDashboard({ username, displayName }: { username: st
               stations={stations}
               siteTypes={siteTypes}
               onDownload={downloadSubmission}
-              onChanged={refresh}
+              onChanged={refreshAfterSubmissionChange}
             />
           </div>}
 

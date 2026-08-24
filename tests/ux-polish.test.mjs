@@ -223,9 +223,10 @@ test("shared feedback menggantikan dialog browser native pada flow production", 
 });
 
 test("temporary password hanya berada di response sukses dan state dialog", async () => {
-  const [route, dashboard] = await Promise.all([
+  const [route, dashboard, unified] = await Promise.all([
     readFile(new URL("../app/api/admin/accounts/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/admin/AdminDashboard.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/admin/UnifiedFillingList.tsx", import.meta.url), "utf8"),
   ]);
   assert.match(route, /return NextResponse\.json\(\{ ok: true, username: account\.username, temporaryPassword \}\)/);
   assert.match(route, /metadata: \{\}/);
@@ -234,12 +235,13 @@ test("temporary password hanya berada di response sukses dan state dialog", asyn
   assert.match(dashboard, /type=\{credentialVisible \? "text" : "password"\}/);
   assert.match(dashboard, /Setelah dialog ditutup, password tidak dapat ditampilkan kembali/);
   assert.match(dashboard, /buildStationFillingView\(station\.id, sites, siteTypes, subtypes, submissions\)/);
-  assert.match(dashboard, /<th>Site<\/th><th>Tipe Site<\/th><th>Subtipe<\/th><th>Status<\/th>/);
+  assert.match(unified, /row\.site\.name/);
+  assert.match(unified, /row\.siteType\?\.name/);
+  assert.match(unified, /subtype\?\.name/);
   assert.match(dashboard, /loadAllAdminRows\(\(from, to\) => client\.from\("sites"\)/);
   assert.match(dashboard, /\.order\("name"\)\s*\.order\("id"\)\s*\.range\(from, to\)/);
-  assert.match(dashboard, /<td>\{siteType\?\.name \?\? "Belum terpetakan"\}<\/td>/);
-  assert.match(dashboard, /<td>\{subtype\?\.name \?\? "Belum terpetakan"\}<\/td>/);
-  assert.match(dashboard, /<td><span className=\{`status-pill \$\{submission \? "active" : "pending"\}`\}>\{submission \? "Sudah ada data" : "Belum ada submission"\}<\/span><\/td>/);
+  assert.match(unified, /Pengisian belum tersedia\./);
+  assert.match(unified, /stationCompletionStatusLabel\(completion\.status\)/);
   assert.doesNotMatch(dashboard, /buildStationSiteRows/);
   assert.doesNotMatch(dashboard, /\?\? submission\.site_id/);
   assert.doesNotMatch(dashboard, /localStorage|sessionStorage/);
@@ -249,9 +251,9 @@ test("Master Pengisian merender detail station secara lazy dan memoized", async 
   const dashboard = await readFile(new URL("../app/admin/AdminDashboard.tsx", import.meta.url), "utf8");
   assert.match(dashboard, /const StationFillingCard = memo\(/);
   assert.match(dashboard, /expandedStationId/);
-  assert.match(dashboard, /\{expanded && <div className="admin-table-wrap station-filling-table">/);
+  assert.match(dashboard, /\{expanded && <UnifiedFillingList/);
   assert.match(dashboard, /previous\.view === next\.view/);
-  assert.match(dashboard, /busyAction === next\.busyAction/);
+  assert.match(dashboard, /previous\.actionId === next\.actionId/);
   assert.match(dashboard, /filteredStationFillingViews = useMemo/);
 });
 

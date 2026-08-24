@@ -147,13 +147,14 @@ test("CSV default dan CSV semua jalur memakai serializer yang sama", () => {
 });
 
 test("download Browse dan Admin tidak menjalankan lifecycle lock atau write", async () => {
-  const [inventory, adminExport, dashboard, adminBrowse, ensureRoute, hook] = await Promise.all([
+  const [inventory, adminExport, dashboard, adminBrowse, ensureRoute, hook, unified] = await Promise.all([
     readFile(new URL("../app/InventoryApp.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/lib/admin-export.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/admin/AdminDashboard.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/admin/inventory/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/api/admin/submissions/ensure/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/hooks/useServerDraft.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/admin/UnifiedFillingList.tsx", import.meta.url), "utf8"),
   ]);
   const saveBeforeDownload = inventory.match(/async function saveBeforeDownload\(\)[\s\S]*?\n  }/)?.[0] ?? "";
   assert.match(saveBeforeDownload, /if \(!sync\.isEditing \|\| !sync\.dirty\) return true;[\s\S]*persistLocalNow\(\)/);
@@ -163,7 +164,7 @@ test("download Browse dan Admin tidak menjalankan lifecycle lock atau write", as
   assert.match(inventory, /buildInventoryJson/);
   assert.doesNotMatch(adminExport, /\.rpc\(|\.insert\(|\.update\(|\.upsert\(|open_submission|release_submission|touch_submission|takeover/);
   assert.match(adminExport, /loadAllAdminRows[\s\S]*\.eq\("station_id", scope\.stationId\)/);
-  assert.match(dashboard, /target="_blank" rel="noopener noreferrer">Buka<\/Link>[\s\S]*>Unduh<\/AsyncButton>/);
+  assert.match(unified, /target="_blank" rel="noopener noreferrer">Buka<\/Link>[\s\S]*>Unduh<\/AsyncButton>/);
   const masterTable = dashboard.match(/fillingMode === "master" && <div className="admin-list">[\s\S]*?submissionMonitorMounted/)?.[0] ?? "";
   assert.doesNotMatch(masterTable, /Edit sebagai Admin|editRow|\/ensure/);
   assert.doesNotMatch(adminBrowse, /\.insert\(|\.update\(|\.upsert\(|open_submission/);
