@@ -22,6 +22,7 @@ import {
   loadAllAdminRows,
 } from "../lib/admin-view";
 import { csvCell, downloadText } from "../lib/download";
+import { formatCategoryLabel } from "../lib/category-label";
 import { logoutCurrentBrowser } from "../lib/local-logout";
 import { summarizeSitesByType } from "../lib/admin-summary";
 import { adminViewFromSearchParam, adminViewHref, type AdminView } from "../lib/admin-navigation";
@@ -138,7 +139,7 @@ function proposalCategoryLabel(context: QcProposalContext) {
   if (context.state === "missing-submission") return "Konteks submission tidak tersedia";
   if (!context.categories.length) return "Kategori tidak ditemukan pada submission aktif";
   const visible = context.categories.slice(0, 3);
-  return `${visible.join(" · ")}${context.categories.length > visible.length ? ` · +${context.categories.length - visible.length} lainnya` : ""}`;
+  return `${visible.map(formatCategoryLabel).join(" · ")}${context.categories.length > visible.length ? ` · +${context.categories.length - visible.length} lainnya` : ""}`;
 }
 
 const StationFillingCard = memo(function StationFillingCard({

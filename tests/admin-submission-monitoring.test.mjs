@@ -98,6 +98,15 @@ test("detail barang menampilkan produk ganda, material, dan item kosong dari sat
   assert.equal(rows[2].filled, false);
 });
 
+test("payload kategori legacy tetap dikenali dengan identity canonical lama", () => {
+  const category = "SIstem Catu Daya Tidak Terputus";
+  const inventory = { [category]: [product(1)] };
+  assert.deepEqual(summarizeSubmissionProgress([category], inventory), {
+    filledCount: 1, totalCount: 1, progressPercent: 100, progressStatus: "Lengkap",
+  });
+  assert.equal(submissionItemDisplays({ expected_items: [{ name: category, filled: true }], payload: { inventory } })[0].filled, true);
+});
+
 test("item submission menandai proposal QC pending tanpa menjadikan badge sebagai aksi", async () => {
   const detail = {
     expected_items: [{ name: "Sensor", filled: true }],

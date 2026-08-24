@@ -13,6 +13,7 @@ import { useStationSiteProgress } from "./hooks/useStationSiteProgress";
 import { useProductCatalog } from "./hooks/useProductCatalog";
 import { buildAloptamaFilename, downloadText } from "./lib/download";
 import { buildInventoryCsv, buildInventoryJson } from "./lib/inventory-export";
+import { formatCategoryLabel } from "./lib/category-label";
 import { resolveInstalledProduct } from "./lib/product-qc";
 import {
   getItemFunctionCategories,
@@ -410,7 +411,7 @@ export default function InventoryApp({
   async function removeWarehouseCategory(category: string) {
     const affected = inventoryCategoryEntries(inventory, category);
     if (affected.length && !await feedback.confirm({
-      title: `Hapus kategori ${category}?`,
+      title: `Hapus kategori ${formatCategoryLabel(category)}?`,
       description: `${affected.reduce((sum, row) => sum + getItemUnits(row.item).length, 0)} unit terkait akan dihapus dari kategori ini. Unit kombinasi tetap dipertahankan pada fungsi lainnya.`,
       confirmLabel: "Hapus Kategori",
       danger: true,
@@ -951,8 +952,8 @@ export default function InventoryApp({
                     <article className={`category-card ${entries.length ? "is-filled" : ""}`} key={category}>
                       <div className="category-title-row">
                         <span className="category-number">{String(categories.indexOf(category) + 1).padStart(2, "0")}</span>
-                        <div className="category-name"><h4>{category}</h4><p>{entries.length ? `${unitCount} ${mountingCategory ? "bahan mounting" : "unit fisik"}` : mountingCategory ? "Belum memilih bahan" : "Belum memilih produk"}</p></div>
-                        {warehouseMode && <button className="remove-category" type="button" aria-label={`Hapus kategori ${category}`} onClick={() => void removeWarehouseCategory(category)}>Hapus kategori</button>}
+                        <div className="category-name"><h4>{formatCategoryLabel(category)}</h4><p>{entries.length ? `${unitCount} ${mountingCategory ? "bahan mounting" : "unit fisik"}` : mountingCategory ? "Belum memilih bahan" : "Belum memilih produk"}</p></div>
+                        {warehouseMode && <button className="remove-category" type="button" aria-label={`Hapus kategori ${formatCategoryLabel(category)}`} onClick={() => void removeWarehouseCategory(category)}>Hapus kategori</button>}
                         <button className="add-product" onClick={() => { productCatalog.setPage(1); setActiveCategory(category); setProductQuery(""); setCustomMaterial(""); setCustomBrand(""); setCustomModel(""); setCustomProductNote(""); void productCatalog.refresh(); }}>
                           <span aria-hidden="true">＋</span> {mountingCategory ? "Pilih bahan" : "Pilih produk"}
                         </button>
@@ -1061,7 +1062,7 @@ export default function InventoryApp({
             <div className="product-results warehouse-category-results">
               {availableWarehouseCategories.map((category) => <button key={category} onClick={() => addWarehouseCategory(category)}>
                 <span className="product-avatar">KB</span>
-                <span><strong>{category}</strong><small>Kategori Barang</small></span>
+                <span><strong>{formatCategoryLabel(category)}</strong><small>Kategori Barang</small></span>
                 <span className="choose-label">Tambah</span>
               </button>)}
               {!availableWarehouseCategories.length && <div className="no-product"><strong>Kategori tidak ditemukan</strong><span>Coba kata pencarian lain atau semua kategori sudah dipilih.</span></div>}

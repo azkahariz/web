@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import AsyncButton from "../components/AsyncButton";
+import { formatCategoryLabel } from "../lib/category-label";
 import type { StationCompletionDetailResponse } from "../lib/station-completion";
 import { stationCompletionStatusClass, stationCompletionStatusLabel } from "../lib/station-completion-view";
 import type { SubmissionDetail, SubmissionSummary } from "../lib/submission-monitoring";
@@ -150,7 +151,7 @@ export default function UnifiedFillingList({
 
           {!row.isWarehouse && visibleMissing.length > 0 && <div className="unified-filling-missing">
             <span>Belum:</span>
-            <ul>{visibleMissing.map((category) => <li key={category.id}>{category.label}</li>)}</ul>
+            <ul>{visibleMissing.map((category) => <li key={category.id}>{formatCategoryLabel(category.label)}</li>)}</ul>
             {missingCategories.length > 5 && <button type="button" aria-expanded={showAllMissing} onClick={() => setExpandedMissing((current) => {
               const next = new Set(current);
               if (next.has(row.key)) next.delete(row.key); else next.add(row.key);

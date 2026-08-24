@@ -754,7 +754,7 @@ button[aria-busy="true"] { display: inline-flex; align-items: center; justify-co
 .unified-filling-qc { color: #846220 !important; font-weight: 800; }
 .unified-filling-meta > span { color: var(--ink); font-size: 10px; font-weight: 800; }
 .unified-filling-actions { display: flex; align-items: center; justify-content: flex-end; gap: 6px; flex-wrap: wrap; }
-.unified-filling-actions > button, .unified-filling-actions > a { min-height: 32px; padding: 6px 9px; border: 1px solid #bdd0c8; border-radius: 6px; background: white; color: var(--green-deep); font-size: 9px; font-weight: 800; line-height: 1.3; text-decoration: none; cursor: pointer; white-space: nowrap; }
+.unified-filling-actions > button, .unified-filling-actions > a { box-sizing: border-box; min-height: 32px; padding: 6px 9px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #bdd0c8; border-radius: 6px; background: white; color: var(--green-deep); font-size: 9px; font-weight: 800; line-height: 1.3; text-decoration: none; cursor: pointer; white-space: nowrap; }
 .unified-filling-actions > button:hover, .unified-filling-actions > a:hover { background: var(--green-soft); }
 .unified-filling-actions > button:focus-visible, .unified-filling-actions > a:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
 .unified-filling-missing { margin: -3px 0 12px; padding-left: min(24px, 2vw); display: flex; align-items: flex-start; gap: 8px; color: var(--muted); font-size: 10px; line-height: 1.45; }
