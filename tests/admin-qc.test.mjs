@@ -181,6 +181,28 @@ test("konteks proposal QC berasal dari submission dan menduplikasi kategori seca
   });
 });
 
+test("konteks QC enriched membawa scope kategori stasiun, Tipe Site, dan bucket penggunaan", () => {
+  const contexts = buildQcProposalContexts(
+    [{ id: "proposal", station_id: "station", submission_id: "submission" }],
+    [{ id: "submission", site_id: "site", site_subtype_id: "subtype", payload: { inventory: { "Sensor": [{ productProposalId: "proposal" }] } } }],
+    [{ id: "site", name: "AWOS Uji", site_type_id: "awos" }],
+    [{ id: "subtype", name: "AWOS TDZ" }],
+    [{ id: "station", station_category_id: "11111111-1111-4111-8111-111111111111" }],
+    [{ id: "awos", name: "AWOS Kategori III" }],
+  );
+  assert.deepEqual(contexts.get("proposal"), {
+    state: "resolved",
+    siteName: "AWOS Uji",
+    subtypeName: "AWOS TDZ",
+    categories: ["Sensor"],
+    stationCategoryId: "11111111-1111-4111-8111-111111111111",
+    siteTypeId: "awos",
+    stationCategoryName: "Meteorologi",
+    siteTypeName: "AWOS Kategori III",
+    qcContext: "pengisian",
+  });
+});
+
 test("resolusi proposal menjaga raw input dan memakai canonical hanya setelah QC", () => {
   const item = { id: "item", brand: "Campbel", model: "CR 1000 X", itemKind: "custom-product", quantity: 1, productProposalId: "proposal" };
   const pending = new Map([["proposal", { id: "proposal", proposedBrand: item.brand, proposedModel: item.model, status: "PENDING" }]]);

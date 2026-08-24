@@ -25,6 +25,8 @@ export default function StationMonitoringControls({
   filters,
   counts,
   qcSummary,
+  stationCategories,
+  siteTypes,
   visibleCount,
   totalCount,
   loading,
@@ -37,6 +39,8 @@ export default function StationMonitoringControls({
   filters: StationMonitoringFilters;
   counts: FollowUpCounts;
   qcSummary: { stationCount: number; totalPending: number; maxPending: number };
+  stationCategories: Array<{ id: string; name: string }>;
+  siteTypes: Array<{ id: string; name: string }>;
   visibleCount: number;
   totalCount: number;
   loading: boolean;
@@ -66,6 +70,18 @@ export default function StationMonitoringControls({
     </div>
 
     <div className="station-monitoring-filters">
+      <label>Jenis Stasiun
+        <select value={filters.stationCategoryId} onChange={(event) => onChange({ ...filters, stationCategoryId: event.target.value, siteTypeId: "all" })}>
+          <option value="all">Semua jenis stasiun</option>
+          {stationCategories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
+        </select>
+      </label>
+      <label>Tipe Site
+        <select value={filters.siteTypeId} onChange={(event) => onChange({ ...filters, siteTypeId: event.target.value })}>
+          <option value="all">Semua tipe site</option>
+          {siteTypes.map((siteType) => <option key={siteType.id} value={siteType.id}>{siteType.name}</option>)}
+        </select>
+      </label>
       <label>Kondisi Pengisian
         <select value={filters.condition} onChange={(event) => onChange({ ...filters, condition: event.target.value as StationConditionFilter })}>
           <option value="all">Semua</option>

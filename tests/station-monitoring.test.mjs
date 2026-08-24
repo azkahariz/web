@@ -8,6 +8,8 @@ import {
   filterStationCompletionSummaries,
   getStationFollowUpCounts,
   getStationQcSummary,
+  stationIdsForScope,
+  STATION_CATEGORIES,
   sortStationCompletionSummaries,
 } from "../app/lib/station-monitoring.ts";
 import { parseSiteTypeCompletionRows, summarizeSiteTypeProgress, summarizeStationMonitoring, summarizeQc } from "../app/lib/admin-summary.ts";
@@ -109,6 +111,12 @@ test("quick follow-up count, preset, dan reset memakai subset yang terlihat pada
   assert.deepEqual(applyStationFollowUpPreset(DEFAULT_STATION_MONITORING_FILTERS, "partial-under-50").condition, "lt50");
   assert.deepEqual(applyStationFollowUpPreset(DEFAULT_STATION_MONITORING_FILTERS, "partial-50-99").condition, "50to99");
   assert.deepEqual(applyStationFollowUpPreset(DEFAULT_STATION_MONITORING_FILTERS, "complete").condition, "complete");
+  assert.deepEqual(applyStationFollowUpPreset({ ...DEFAULT_STATION_MONITORING_FILTERS, stationCategoryId: "meteorologi", siteTypeId: "awos" }, "complete"), {
+    ...DEFAULT_STATION_MONITORING_FILTERS,
+    stationCategoryId: "meteorologi",
+    siteTypeId: "awos",
+    condition: "complete",
+  });
 });
 
 test("search subset dan filter tersusun AND tanpa mengubah source summary", () => {
@@ -116,6 +124,23 @@ test("search subset dan filter tersusun AND tanpa mengubah source summary", () =
   const source = [...statusRows];
   assert.deepEqual(applyStationMonitoring(source, filters).map((row) => row.station_name), ["Partial"]);
   assert.deepEqual(source, statusRows);
+});
+
+test("scope hierarkis memakai UUID kategori stasiun dan Tipe Site sebagai filter AND", () => {
+  assert.deepEqual(STATION_CATEGORIES.map((category) => category.code), ["METEOROLOGI", "KLIMATOLOGI", "GEOFISIKA", "BALAI", "PUSAT"]);
+  const stations = [
+    { id: "meteorologi", station_category_id: STATION_CATEGORIES[0].id },
+    { id: "klimatologi", station_category_id: STATION_CATEGORIES[1].id },
+    { id: "unmapped", station_category_id: null },
+  ];
+  const sites = [
+    { station_id: "meteorologi", site_type_id: "awos-iii" },
+    { station_id: "meteorologi", site_type_id: "aws" },
+    { station_id: "klimatologi", site_type_id: "arg" },
+  ];
+  assert.deepEqual([...stationIdsForScope(stations, sites, { stationCategoryId: STATION_CATEGORIES[0].id, siteTypeId: "awos-iii" })], ["meteorologi"]);
+  assert.deepEqual([...stationIdsForScope(stations, sites, { stationCategoryId: "all", siteTypeId: "arg" })], ["klimatologi"]);
+  assert.deepEqual([...stationIdsForScope(stations, sites, { stationCategoryId: "all", siteTypeId: "unknown" })], []);
 });
 
 test("ringkasan monitoring memakai status canonical dan progress global berbobot", () => {
@@ -216,9 +241,11 @@ test("UI monitoring hanya hidup di Per Stasiun dan perubahan kontrol tidak meman
   assert.equal(dashboard.match(/client\.rpc\("admin_site_type_completion_summary"\)/g)?.length, 1);
   assert.match(dashboard, /fillingMode === "master" && <StationMonitoringControls/);
   assert.match(dashboard, /applyStationMonitoring\([\s\S]*completionRows/);
-  assert.match(dashboard, /setStationMonitoringFilters/);
+  assert.match(dashboard, /changeMonitoringFilters/);
   assert.doesNotMatch(controls, /rpc\(|fetch\(|getSupabaseBrowserClient/);
   assert.match(controls, /Kondisi Pengisian/);
+  assert.match(controls, /Jenis Stasiun/);
+  assert.match(controls, /Tipe Site/);
   assert.match(controls, /QC Produk/);
   assert.match(controls, /Prioritas Pengisian/);
   assert.match(controls, /QC Pending Terbanyak/);
@@ -231,6 +258,9 @@ test("UI monitoring hanya hidup di Per Stasiun dan perubahan kontrol tidak meman
   assert.match(controls, /Reset filter/);
   assert.match(controls, /disabled=\{count === 0\}/);
   assert.match(dashboard, /stationActivityLabel\(completion\)/);
+  assert.match(dashboard, /qcContext/);
+  assert.match(dashboard, /stationCategoryId/);
+  assert.match(dashboard, /navigate\("qc", \{ qcStatus: "PENDING", qcContext: "pengisian" \}\)/);
   assert.match(unified, /composeUnifiedFillingRows/);
   assert.doesNotMatch(dashboard, /Yang belum dilengkapi|station-filling-table/);
 });

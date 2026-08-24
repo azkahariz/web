@@ -137,7 +137,7 @@ test("master Produk memakai RPC Super Admin, filter/sorting server-side, dan gua
   const qcContext = await readFile(new URL("../app/lib/qc-proposal-context.ts", import.meta.url), "utf8");
   assert.match(qcContextRoute, /admin_product_summary/);
   assert.match(qcContextRoute, /\.in\("id", submissionIds\)/);
-  assert.match(qcContextRoute, /select\("id, site_id, site_subtype_id, payload"\)/);
+  assert.match(qcContextRoute, /select\("id, site_id, site_subtype_id, payload, archived_at"\)/);
   assert.match(qcContextRoute, /buildQcProposalContexts/);
   assert.match(qcContext, /productProposalId/);
   assert.match(qcContext, /functionCategories/);

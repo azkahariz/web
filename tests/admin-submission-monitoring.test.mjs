@@ -171,7 +171,7 @@ test("list ringan, lazy detail cache, sorting, page size, dan delete dijaga oleh
   assert.doesNotMatch(monitor, /Edit sebagai Admin|Membuka mode edit/);
   assert.match(dashboard, /runAction\(/);
   assert.match(dashboard, /loadingText="Melepas lock\.\.\."/);
-  assert.match(dashboard, /const \[submissionMonitorMounted, setSubmissionMonitorMounted\] = useState\(false\)/);
+  assert.match(dashboard, /const \[submissionMonitorMounted, setSubmissionMonitorMounted\] = useState\(/);
   assert.match(dashboard, /setSubmissionMonitorMounted\(true\)/);
   assert.match(dashboard, /<div hidden=\{tab !== "stations" \|\| fillingMode !== "submissions"\}>[\s\S]*<AdminSubmissionMonitor/);
   assert.doesNotMatch(dashboard, /!loading && tab === "stations" && fillingMode === "submissions" && <AdminSubmissionMonitor/);

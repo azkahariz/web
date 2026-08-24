@@ -38,6 +38,8 @@ import {
   getStationFollowUpCounts,
   getStationQcSummary,
   hasStationMonitoringFilters,
+  stationIdsForScope,
+  STATION_CATEGORIES,
   type StationMonitoringFilters,
 } from "../lib/station-monitoring";
 import {
@@ -52,7 +54,7 @@ import {
 import type { SubmissionDetail, SubmissionSummary } from "../lib/submission-monitoring";
 import { getSupabaseBrowserClient } from "../lib/supabase/client";
 
-type Station = { id: string; name: string; active: boolean };
+type Station = { id: string; name: string; active: boolean; station_category_id: string | null };
 type Site = { id: string; station_id: string; site_type_id: string; name: string; active: boolean };
 type SiteType = { id: string; name: string };
 type Subtype = { id: string; site_type_id: string; name: string };
@@ -93,6 +95,25 @@ type QcMutationResult = {
 };
 type Tab = AdminView;
 type FillingMode = "master" | "submissions";
+type QcContextFilter = "all" | "pengisian" | "gudang" | "tidak-digunakan-saat-ini";
+
+function monitoringFiltersFromSearchParams(params: URLSearchParams): StationMonitoringFilters {
+  const condition = params.get("condition");
+  const qc = params.get("stationQc");
+  const sort = params.get("sort");
+  return {
+    stationCategoryId: params.get("stationCategory") || "all",
+    siteTypeId: params.get("siteType") || "all",
+    condition: ["all", "not-started", "lt50", "50to99", "complete", "attention", "not-assessed"].includes(condition ?? "") ? condition as StationMonitoringFilters["condition"] : "all",
+    qc: ["all", "pending", "none"].includes(qc ?? "") ? qc as StationMonitoringFilters["qc"] : "all",
+    sort: ["priority", "progress-asc", "progress-desc", "qc-desc", "qc-asc", "name-asc", "name-desc"].includes(sort ?? "") ? sort as StationMonitoringFilters["sort"] : "priority",
+  };
+}
+
+function qcContextFromSearchParams(params: URLSearchParams): QcContextFilter {
+  const value = params.get("qcContext");
+  return value === "pengisian" || value === "gudang" || value === "tidak-digunakan-saat-ini" ? value : "all";
+}
 
 type StationFillingView = {
   siteCount: number;
@@ -257,10 +278,11 @@ export default function AdminDashboard({ username, displayName }: { username: st
   const searchParams = useSearchParams();
   const feedback = useAppFeedback();
   const tab = adminViewFromSearchParam(searchParams.get("view"));
-  const [fillingMode, setFillingMode] = useState<FillingMode>("master");
+  const fillingMode: FillingMode = searchParams.get("mode") === "submissions" ? "submissions" : "master";
   const [expandedStationId, setExpandedStationId] = useState<string | null>(null);
-  const [submissionMonitorMounted, setSubmissionMonitorMounted] = useState(false);
+  const [submissionMonitorMounted, setSubmissionMonitorMounted] = useState(() => searchParams.get("mode") === "submissions");
   const [stations, setStations] = useState<Station[]>([]);
+  const qcContextFilter = qcContextFromSearchParams(new URLSearchParams(searchParams.toString()));
   const [sites, setSites] = useState<Site[]>([]);
   const [siteTypes, setSiteTypes] = useState<SiteType[]>([]);
   const [subtypes, setSubtypes] = useState<Subtype[]>([]);
@@ -275,7 +297,7 @@ export default function AdminDashboard({ username, displayName }: { username: st
   const [audits, setAudits] = useState<Audit[]>([]);
   const [adminIdentities, setAdminIdentities] = useState<AdminIdentity[]>([]);
   const [search, setSearch] = useState("");
-  const [qcStatus, setQcStatus] = useState<Proposal["status"]>("PENDING");
+  const qcStatus: Proposal["status"] = searchParams.get("qcStatus") === "APPROVED" || searchParams.get("qcStatus") === "MERGED" || searchParams.get("qcStatus") === "REJECTED" ? searchParams.get("qcStatus") as Proposal["status"] : "PENDING";
   const [selectedProposals, setSelectedProposals] = useState<string[]>([]);
   const [mergeProductId, setMergeProductId] = useState("");
   const [mergeProductQuery, setMergeProductQuery] = useState("");
@@ -288,7 +310,7 @@ export default function AdminDashboard({ username, displayName }: { username: st
   const [loading, setLoading] = useState(true);
   const [completionRows, setCompletionRows] = useState<StationCompletionSummary[]>([]);
   const [siteTypeCompletionRowsState, setSiteTypeCompletionRowsState] = useState<ReturnType<typeof siteTypeCompletionRows>>([]);
-  const [stationMonitoringFilters, setStationMonitoringFilters] = useState<StationMonitoringFilters>(DEFAULT_STATION_MONITORING_FILTERS);
+  const stationMonitoringFilters = useMemo(() => monitoringFiltersFromSearchParams(new URLSearchParams(searchParams.toString())), [searchParams]);
   const [completionLoading, setCompletionLoading] = useState(false);
   const [completionError, setCompletionError] = useState("");
   const [completionLoaded, setCompletionLoaded] = useState(false);
@@ -517,7 +539,7 @@ export default function AdminDashboard({ username, displayName }: { username: st
     setLoading(true);
     try {
       const [stationRows, siteRows, siteTypeRows, subtypeRows, submissionRows, accountRows, productSummaryRows, proposalResponse, auditRows] = await Promise.all([
-      client.from("stations").select("id, name, active").order("name"),
+        client.from("stations").select("id, name, active, station_category_id").order("name"),
       loadAllAdminRows((from, to) => client.from("sites")
         .select("id, station_id, site_type_id, name, active")
         .order("name")
@@ -655,14 +677,26 @@ export default function AdminDashboard({ username, displayName }: { username: st
   })).filter(({ station, visibleRows }) => !query
     || station.name.toLocaleLowerCase("id-ID").includes(query)
     || visibleRows.length > 0), [query, stationFillingViews]);
+  const activeMonitoringFilters = useMemo(() => {
+    const categoryValid = stationMonitoringFilters.stationCategoryId === "all"
+      || STATION_CATEGORIES.some((category) => category.id === stationMonitoringFilters.stationCategoryId);
+    const siteTypeValid = stationMonitoringFilters.siteTypeId === "all"
+      || sites.some((site) => site.site_type_id === stationMonitoringFilters.siteTypeId);
+    return {
+      ...stationMonitoringFilters,
+      stationCategoryId: categoryValid ? stationMonitoringFilters.stationCategoryId : "all",
+      siteTypeId: siteTypeValid ? stationMonitoringFilters.siteTypeId : "all",
+    };
+  }, [sites, stationMonitoringFilters]);
+  const stationScopeIds = useMemo(() => stationIdsForScope(stations, sites, activeMonitoringFilters), [activeMonitoringFilters, sites, stations]);
   const filteredStationFillingViews = useMemo(() => {
-    const searchedIds = new Set(searchedStationFillingViews.map(({ station }) => station.id));
+    const searchedIds = new Set(searchedStationFillingViews.filter(({ station }) => stationScopeIds.has(station.id)).map(({ station }) => station.id));
     const filteredSummaries = applyStationMonitoring(
       completionRows.filter((summary) => searchedIds.has(summary.station_id)),
-      stationMonitoringFilters,
+      activeMonitoringFilters,
     );
     const orderByStationId = new Map(filteredSummaries.map((summary, index) => [summary.station_id, index]));
-    const monitoringFilterActive = stationMonitoringFilters.condition !== "all" || stationMonitoringFilters.qc !== "all";
+    const monitoringFilterActive = activeMonitoringFilters.condition !== "all" || activeMonitoringFilters.qc !== "all";
     return searchedStationFillingViews
       .filter(({ station }) => orderByStationId.has(station.id)
         || (!monitoringFilterActive && !completionByStationId.has(station.id)))
@@ -674,7 +708,7 @@ export default function AdminDashboard({ username, displayName }: { username: st
         if (rightOrder !== undefined) return 1;
         return left.station.name.localeCompare(right.station.name, "id-ID", { sensitivity: "base" });
       });
-  }, [completionByStationId, completionRows, searchedStationFillingViews, stationMonitoringFilters]);
+  }, [activeMonitoringFilters, completionByStationId, completionRows, searchedStationFillingViews, stationScopeIds]);
   const stationFollowUpCounts = useMemo(() => getStationFollowUpCounts(completionRows), [completionRows]);
   const stationQcSummary = useMemo(() => getStationQcSummary(completionRows), [completionRows]);
   const monitoringSummary = useMemo(() => summarizeStationMonitoring(completionRows), [completionRows]);
@@ -687,9 +721,20 @@ export default function AdminDashboard({ username, displayName }: { username: st
   const filteredUnprovisionedStations = stations.filter((station) => !accountByStation.has(station.id)
     && (!query || station.name.toLocaleLowerCase("id-ID").includes(query)));
   const siteTypeSummary = useMemo(() => summarizeSitesByType(sites, siteTypes), [sites, siteTypes]);
+  const stationCategoryOptions = STATION_CATEGORIES;
+  const scopedSiteTypes = useMemo(() => {
+    if (activeMonitoringFilters.stationCategoryId === "all") return siteTypes;
+    const stationIds = new Set(stations.filter((station) => station.station_category_id === activeMonitoringFilters.stationCategoryId).map((station) => station.id));
+    const siteTypeIds = new Set(sites.filter((site) => stationIds.has(site.station_id)).map((site) => site.site_type_id));
+    return siteTypes.filter((siteType) => siteTypeIds.has(siteType.id));
+  }, [activeMonitoringFilters.stationCategoryId, sites, siteTypes, stations]);
   const siteTypeProgress = useMemo(() => summarizeSiteTypeProgress(siteTypeCompletionRowsState), [siteTypeCompletionRowsState]);
   const siteTypeProgressById = useMemo(() => new Map(siteTypeProgress.map((row) => [row.site_type_id, row])), [siteTypeProgress]);
-  const filteredProposals = proposals.filter((proposal) => proposal.status === qcStatus && (!query
+  const filteredProposals = proposals.filter((proposal) => proposal.status === qcStatus
+    && (qcContextFilter === "all" || proposal.context.qcContext === qcContextFilter)
+    && (activeMonitoringFilters.stationCategoryId === "all" || proposal.context.stationCategoryId === activeMonitoringFilters.stationCategoryId)
+    && (activeMonitoringFilters.siteTypeId === "all" || proposal.context.siteTypeId === activeMonitoringFilters.siteTypeId)
+    && (!query
     || `${proposal.proposed_brand} ${proposal.proposed_model} ${stationMap.get(proposal.station_id)?.name ?? ""} ${proposal.context.siteName ?? ""} ${proposal.context.subtypeName ?? ""} ${proposal.context.categories.join(" ")}`.toLocaleLowerCase("id-ID").includes(query)));
   const searchTab = (tab === "stations" && fillingMode === "master") || tab === "accounts" || tab === "qc" ? tab : null;
   const selectedPendingProposals = useMemo(() => selectedProposals.map((id) => proposals.find((proposal) => proposal.id === id))
@@ -992,17 +1037,57 @@ export default function AdminDashboard({ username, displayName }: { username: st
     });
   }
 
-  function navigate(nextTab: Tab, options?: { fillingMode?: FillingMode; qcStatus?: Proposal["status"] }) {
-    router.push(adminViewHref(nextTab));
+  function updateAdminQuery(changes: Record<string, string | null>, replace = true) {
+    const params = new URLSearchParams(searchParams.toString());
+    for (const [key, value] of Object.entries(changes)) {
+      if (value && value !== "all" && value !== "master") params.set(key, value);
+      else params.delete(key);
+    }
+    const href = `/admin?${params.toString()}`;
+    if (replace) router.replace(href); else router.push(href);
+  }
+
+  function navigate(nextTab: Tab, options?: { fillingMode?: FillingMode; qcStatus?: Proposal["status"]; qcContext?: QcContextFilter; siteTypeId?: string; condition?: StationMonitoringFilters["condition"] }) {
+    const params = new URLSearchParams();
+    params.set("view", nextTab);
+    if (options?.fillingMode === "submissions") params.set("mode", "submissions");
+    if (options?.qcStatus && options.qcStatus !== "PENDING") params.set("qcStatus", options.qcStatus);
+    if (options?.qcContext && options.qcContext !== "all") params.set("qcContext", options.qcContext);
+    if (options?.siteTypeId) params.set("siteType", options.siteTypeId);
+    if (options?.condition && options.condition !== "all") params.set("condition", options.condition);
+    router.push(`/admin?${params.toString()}`);
     setSearch("");
     if (options?.fillingMode) {
-      setFillingMode(options.fillingMode);
       if (options.fillingMode === "submissions") setSubmissionMonitorMounted(true);
     }
     if (options?.qcStatus) {
-      setQcStatus(options.qcStatus);
       setSelectedProposals([]);
     }
+  }
+
+  function changeMonitoringFilters(next: StationMonitoringFilters) {
+    updateAdminQuery({
+      stationCategory: next.stationCategoryId,
+      siteType: next.siteTypeId,
+      condition: next.condition,
+      stationQc: next.qc,
+      sort: next.sort,
+    });
+  }
+
+  function changeFillingMode(next: FillingMode) {
+    if (next === "submissions") setSubmissionMonitorMounted(true);
+    updateAdminQuery({ mode: next });
+  }
+
+  function changeQcStatus(next: Proposal["status"]) {
+    setSelectedProposals([]);
+    updateAdminQuery({ qcStatus: next === "PENDING" ? null : next, qcContext: null });
+  }
+
+  function changeQcContext(next: QcContextFilter) {
+    setSelectedProposals([]);
+    updateAdminQuery({ qcContext: next });
   }
 
   async function logout() {
@@ -1050,11 +1135,11 @@ export default function AdminDashboard({ username, displayName }: { username: st
               ? <p className="admin-summary-muted">{completionError ? "Ringkasan monitoring belum tersedia." : "Memuat ringkasan kelengkapan..."}</p>
               : <>
                 <div className="admin-monitoring-grid">
-                  <div><strong>{monitoringSummary.notStarted}</strong><span>Belum Dimulai</span></div>
-                  <div><strong>{monitoringSummary.partialUnder50}</strong><span>Terisi &lt;50%</span></div>
+                  <button type="button" onClick={() => navigate("stations", { fillingMode: "master", condition: "not-started" })}><strong>{monitoringSummary.notStarted}</strong><span>Belum Dimulai</span></button>
+                  <button type="button" onClick={() => navigate("stations", { fillingMode: "master", condition: "lt50" })}><strong>{monitoringSummary.partialUnder50}</strong><span>Terisi &lt;50%</span></button>
                   <div><strong>{monitoringSummary.partial50to99}</strong><span>Terisi 50–99%</span></div>
-                  <div><strong>{monitoringSummary.complete}</strong><span>Lengkap</span></div>
-                  <div><strong>{monitoringSummary.notAssessed}</strong><span>Tidak Dinilai</span></div>
+                  <button type="button" onClick={() => navigate("stations", { fillingMode: "master", condition: "complete" })}><strong>{monitoringSummary.complete}</strong><span>Lengkap</span></button>
+                  <button type="button" onClick={() => navigate("stations", { fillingMode: "master", condition: "not-assessed" })}><strong>{monitoringSummary.notAssessed}</strong><span>Tidak Dinilai</span></button>
                 </div>
                 <div className="admin-monitoring-progress">
                   <div className="admin-section-heading"><span>Progress kategori global · {monitoringSummary.filledCategoryCount} / {monitoringSummary.expectedCategoryCount} kategori</span><strong>{monitoringSummary.globalProgress === null ? "Tidak Dinilai" : `${monitoringSummary.globalProgress}%`}</strong></div>
@@ -1063,9 +1148,8 @@ export default function AdminDashboard({ username, displayName }: { username: st
                 </div>
                 {qcPendingSummary && <div className="admin-qc-summary" aria-label="Ringkasan QC Produk">
                   <div><strong>QC Produk</strong><b>{qcPendingSummary.totalPending} QC Pending</b></div>
-                  <span>{qcPendingSummary.pendingPengisian} Pengisian · {qcPendingSummary.pendingGudang} Gudang</span>
+                  <div className="admin-summary-links"><button type="button" onClick={() => navigate("qc", { qcStatus: "PENDING", qcContext: "pengisian" })}>{qcPendingSummary.pendingPengisian} Pengisian</button><button type="button" onClick={() => navigate("qc", { qcStatus: "PENDING", qcContext: "gudang" })}>{qcPendingSummary.pendingGudang} Gudang</button><button type="button" onClick={() => navigate("qc", { qcStatus: "PENDING", qcContext: "tidak-digunakan-saat-ini" })}>{qcPendingSummary.pendingTidakDigunakan} Tidak Digunakan Saat Ini</button></div>
                   <span>{monitoringQcSummary.stationCount} Stasiun memiliki QC Pending pada Pengisian</span>
-                  <span>{qcPendingSummary.pendingTidakDigunakan} Tidak Digunakan Saat Ini</span>
                   <small>Proposal Pending yang tidak sedang digunakan pada inventaris aktif, tetapi tetap dapat diperiksa untuk menjadi master Product.</small>
                 </div>}
               </>}
@@ -1082,14 +1166,14 @@ export default function AdminDashboard({ username, displayName }: { username: st
                 const progress = siteTypeProgressById.get(siteType.id);
                 const progressLabel = progress?.is_warehouse ? "Tidak Dinilai" : progress?.category_progress === null || !progress ? "-" : `${progress.category_progress}%`;
                 const categoryLabel = progress && !progress.is_warehouse ? `${progress.filled_category_count} / ${progress.expected_category_count} Kategori` : "";
-                return <div className="admin-site-type-item" key={siteType.id}><span>{siteType.name}<small>{siteType.count} Site{categoryLabel ? ` · ${categoryLabel}` : ""}</small></span><strong>{progressLabel}</strong></div>;
+                return <button type="button" className="admin-site-type-item" key={siteType.id} onClick={() => navigate("stations", { fillingMode: "master", siteTypeId: siteType.id })}><span>{siteType.name}<small>{siteType.count} Site{categoryLabel ? ` · ${categoryLabel}` : ""}</small></span><strong>{progressLabel}</strong></button>;
               })}
             </div> : <p className="admin-summary-muted">{siteTypeCompletionError ? "Progress Tipe Site belum tersedia." : "Memuat progress Tipe Site..."}</p>}
           </section>}
 
           {!loading && tab === "stations" && <div className="status-tabs filling-mode-tabs" role="tablist" aria-label="Mode Stasiun dan Pengisian">
-            <button role="tab" aria-selected={fillingMode === "master"} className={fillingMode === "master" ? "active" : ""} onClick={() => setFillingMode("master")}>Per Stasiun</button>
-            <button role="tab" aria-selected={fillingMode === "submissions"} className={fillingMode === "submissions" ? "active" : ""} onClick={() => { setSubmissionMonitorMounted(true); setFillingMode("submissions"); }}>Semua Pengisian</button>
+            <button role="tab" aria-selected={fillingMode === "master"} className={fillingMode === "master" ? "active" : ""} onClick={() => changeFillingMode("master")}>Per Stasiun</button>
+            <button role="tab" aria-selected={fillingMode === "submissions"} className={fillingMode === "submissions" ? "active" : ""} onClick={() => changeFillingMode("submissions")}>Semua Pengisian</button>
           </div>}
 
           {!loading && tab === "products" && <AdminProducts onChanged={refreshProductSummary} />}
@@ -1109,17 +1193,19 @@ export default function AdminDashboard({ username, displayName }: { username: st
           {!loading && tab === "stations" && fillingMode === "master" && completionLoading && completionRows.length > 0 && <p className="station-completion-updating" role="status"><span className="loading-spinner" aria-hidden="true" />Memperbarui ringkasan kelengkapan...</p>}
 
           {!loading && tab === "stations" && fillingMode === "master" && <StationMonitoringControls
-            filters={stationMonitoringFilters}
+            filters={activeMonitoringFilters}
             counts={stationFollowUpCounts}
             qcSummary={stationQcSummary}
             visibleCount={filteredStationFillingViews.length}
-            totalCount={stations.length}
+            totalCount={stationScopeIds.size}
+            stationCategories={stationCategoryOptions}
+            siteTypes={scopedSiteTypes}
             loading={completionLoading && completionRows.length === 0}
             available={completionRows.length > 0}
-            onChange={setStationMonitoringFilters}
-            onQuickAction={(key) => setStationMonitoringFilters((current) => applyStationFollowUpPreset(current, key))}
-            onQcPending={() => setStationMonitoringFilters((current) => ({ ...current, qc: "pending", sort: "qc-desc" }))}
-            onReset={() => setStationMonitoringFilters(DEFAULT_STATION_MONITORING_FILTERS)}
+            onChange={changeMonitoringFilters}
+            onQuickAction={(key) => changeMonitoringFilters(applyStationFollowUpPreset(activeMonitoringFilters, key))}
+            onQcPending={() => changeMonitoringFilters({ ...activeMonitoringFilters, qc: "pending", sort: "qc-desc" })}
+            onReset={() => changeMonitoringFilters(DEFAULT_STATION_MONITORING_FILTERS)}
           />}
 
           {!loading && tab === "stations" && fillingMode === "master" && <div className="admin-list" aria-busy={completionLoading}>
@@ -1154,7 +1240,7 @@ export default function AdminDashboard({ username, displayName }: { username: st
             />)}
             {filteredStationFillingViews.length === 0 && <div className="station-monitoring-empty">
               <p>Tidak ada Stasiun yang sesuai dengan filter saat ini.</p>
-              {hasStationMonitoringFilters(stationMonitoringFilters) && <button type="button" onClick={() => setStationMonitoringFilters(DEFAULT_STATION_MONITORING_FILTERS)}>Reset filter</button>}
+            {hasStationMonitoringFilters(activeMonitoringFilters) && <button type="button" onClick={() => changeMonitoringFilters(DEFAULT_STATION_MONITORING_FILTERS)}>Reset filter</button>}
             </div>}
           </div>}
 
@@ -1179,7 +1265,12 @@ export default function AdminDashboard({ username, displayName }: { username: st
           </tbody></table></div>}
 
           {!loading && tab === "qc" && <>
-            <div className="qc-toolbar"><div className="status-tabs">{(["PENDING", "APPROVED", "MERGED", "REJECTED"] as const).map((status) => <button key={status} className={qcStatus === status ? "active" : ""} onClick={() => { setQcStatus(status); setSelectedProposals([]); }}>{status} ({proposals.filter((row) => row.status === status).length})</button>)}</div><button className="secondary-button" disabled={!pendingSpreadsheet.length} onClick={exportProducts}>Unduh Produk Baru untuk Spreadsheet ({pendingSpreadsheet.length})</button></div>
+            <div className="qc-toolbar"><div className="status-tabs">{(["PENDING", "APPROVED", "MERGED", "REJECTED"] as const).map((status) => <button key={status} className={qcStatus === status ? "active" : ""} onClick={() => changeQcStatus(status)}>{status} ({proposals.filter((row) => row.status === status).length})</button>)}</div><button className="secondary-button" disabled={!pendingSpreadsheet.length} onClick={exportProducts}>Unduh Produk Baru untuk Spreadsheet ({pendingSpreadsheet.length})</button></div>
+            <div className="qc-context-filter">
+              <label>Jenis Stasiun<select value={activeMonitoringFilters.stationCategoryId} onChange={(event) => changeMonitoringFilters({ ...activeMonitoringFilters, stationCategoryId: event.target.value, siteTypeId: "all" })}><option value="all">Semua jenis stasiun</option>{stationCategoryOptions.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select></label>
+              <label>Tipe Site<select value={activeMonitoringFilters.siteTypeId} onChange={(event) => changeMonitoringFilters({ ...activeMonitoringFilters, siteTypeId: event.target.value })}><option value="all">Semua tipe site</option>{scopedSiteTypes.map((siteType) => <option key={siteType.id} value={siteType.id}>{siteType.name}</option>)}</select></label>
+              {qcStatus === "PENDING" && <label>Konteks QC<select value={qcContextFilter} onChange={(event) => changeQcContext(event.target.value as QcContextFilter)}><option value="all">Semua Pending</option><option value="pengisian">Pengisian</option><option value="gudang">Gudang</option><option value="tidak-digunakan-saat-ini">Tidak Digunakan Saat Ini</option></select></label>}
+            </div>
             {qcStatus === "PENDING" && <div className="bulk-merge"><div className="qc-merge-combobox">
               <input
                 aria-activedescendant={mergeActiveIndex >= 0 ? `qc-merge-option-${mergeActiveIndex}` : undefined}

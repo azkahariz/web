@@ -3,8 +3,25 @@ import type { StationCompletionStatus, StationCompletionSummary } from "./statio
 export type StationConditionFilter = "all" | "not-started" | "lt50" | "50to99" | "complete" | "attention" | "not-assessed";
 export type StationQcFilter = "all" | "pending" | "none";
 export type StationMonitoringSort = "priority" | "progress-asc" | "progress-desc" | "qc-desc" | "qc-asc" | "name-asc" | "name-desc";
+export type StationCategoryFilter = "all" | string;
+export type SiteTypeFilter = "all" | string;
+export type StationCategoryOption = { id: string; code: string; name: string };
+
+export const STATION_CATEGORIES: StationCategoryOption[] = [
+  { id: "11111111-1111-4111-8111-111111111111", code: "METEOROLOGI", name: "Meteorologi" },
+  { id: "22222222-2222-4222-8222-222222222222", code: "KLIMATOLOGI", name: "Klimatologi" },
+  { id: "33333333-3333-4333-8333-333333333333", code: "GEOFISIKA", name: "Geofisika" },
+  { id: "44444444-4444-4444-8444-444444444444", code: "BALAI", name: "Balai" },
+  { id: "55555555-5555-4555-8555-555555555555", code: "PUSAT", name: "Pusat" },
+];
+
+export function stationCategoryName(id: string | null | undefined) {
+  return STATION_CATEGORIES.find((category) => category.id === id)?.name ?? null;
+}
 
 export type StationMonitoringFilters = {
+  stationCategoryId: StationCategoryFilter;
+  siteTypeId: SiteTypeFilter;
   condition: StationConditionFilter;
   qc: StationQcFilter;
   sort: StationMonitoringSort;
@@ -13,6 +30,8 @@ export type StationMonitoringFilters = {
 export type StationFollowUpKey = "not-started" | "partial-under-50" | "partial-50-99" | "complete";
 
 export const DEFAULT_STATION_MONITORING_FILTERS: StationMonitoringFilters = {
+  stationCategoryId: "all",
+  siteTypeId: "all",
   condition: "all",
   qc: "all",
   sort: "priority",
@@ -115,7 +134,12 @@ export function getStationQcSummary(rows: StationCompletionSummary[]) {
 }
 
 export function applyStationFollowUpPreset(current: StationMonitoringFilters, key: StationFollowUpKey) {
-  const base = { ...DEFAULT_STATION_MONITORING_FILTERS, sort: current.sort };
+  const base = {
+    ...DEFAULT_STATION_MONITORING_FILTERS,
+    stationCategoryId: current.stationCategoryId,
+    siteTypeId: current.siteTypeId,
+    sort: current.sort,
+  };
   if (key === "not-started") return { ...base, condition: "not-started" as const };
   if (key === "partial-under-50") return { ...base, condition: "lt50" as const };
   if (key === "partial-50-99") return { ...base, condition: "50to99" as const };
@@ -123,7 +147,26 @@ export function applyStationFollowUpPreset(current: StationMonitoringFilters, ke
 }
 
 export function hasStationMonitoringFilters(filters: StationMonitoringFilters) {
-  return filters.condition !== DEFAULT_STATION_MONITORING_FILTERS.condition
+  return filters.stationCategoryId !== DEFAULT_STATION_MONITORING_FILTERS.stationCategoryId
+    || filters.siteTypeId !== DEFAULT_STATION_MONITORING_FILTERS.siteTypeId
+    || filters.condition !== DEFAULT_STATION_MONITORING_FILTERS.condition
     || filters.qc !== DEFAULT_STATION_MONITORING_FILTERS.qc
     || filters.sort !== DEFAULT_STATION_MONITORING_FILTERS.sort;
+}
+
+export function stationIdsForScope(
+  stations: Array<{ id: string; station_category_id?: string | null }>,
+  sites: Array<{ station_id: string; site_type_id: string }>,
+  filters: Pick<StationMonitoringFilters, "stationCategoryId" | "siteTypeId">,
+) {
+  const siteTypesByStation = new Map<string, Set<string>>();
+  for (const site of sites) {
+    const types = siteTypesByStation.get(site.station_id) ?? new Set<string>();
+    types.add(site.site_type_id);
+    siteTypesByStation.set(site.station_id, types);
+  }
+  return new Set(stations.filter((station) =>
+    (filters.stationCategoryId === "all" || station.station_category_id === filters.stationCategoryId)
+    && (filters.siteTypeId === "all" || siteTypesByStation.get(station.id)?.has(filters.siteTypeId) === true),
+  ).map((station) => station.id));
 }
