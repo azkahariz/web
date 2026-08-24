@@ -24,10 +24,11 @@ import {
 import { csvCell, downloadText } from "../lib/download";
 import { formatCategoryLabel } from "../lib/category-label";
 import { logoutCurrentBrowser } from "../lib/local-logout";
-import { summarizeSitesByType } from "../lib/admin-summary";
+import { parseSiteTypeCompletionRows, siteTypeCompletionRows, summarizeSiteTypeProgress, summarizeSitesByType, summarizeStationMonitoring, summarizeQc } from "../lib/admin-summary";
 import { adminViewFromSearchParam, adminViewHref, type AdminView } from "../lib/admin-navigation";
 import { hasMixedMergeProposalFamilies, rankMergeProducts, type ProductAlias } from "../lib/product-qc";
 import type { QcProposalContext } from "../lib/qc-proposal-context";
+import { type QcPendingSummary } from "../lib/qc-pending-summary";
 import type { StationCompletionDetailResponse, StationCompletionSummary } from "../lib/station-completion";
 import { createStationCompletionDetailCache } from "../lib/station-completion-detail-cache";
 import {
@@ -42,7 +43,7 @@ import {
 import {
   stationCompletionCategory,
   stationCompletionDetailResponse,
-  stationCompletionRows,
+  parseStationCompletionRows,
   stationCompletionSubmission,
   stationCompletionStatusClass,
   stationCompletionStatusLabel,
@@ -270,6 +271,7 @@ export default function AdminDashboard({ username, displayName }: { username: st
   const [qcProductsLoading, setQcProductsLoading] = useState(false);
   const [productTotal, setProductTotal] = useState(0);
   const [proposals, setProposals] = useState<Proposal[]>([]);
+  const [qcPendingSummary, setQcPendingSummary] = useState<QcPendingSummary | null>(null);
   const [audits, setAudits] = useState<Audit[]>([]);
   const [adminIdentities, setAdminIdentities] = useState<AdminIdentity[]>([]);
   const [search, setSearch] = useState("");
@@ -285,14 +287,21 @@ export default function AdminDashboard({ username, displayName }: { username: st
   const [credentialVisible, setCredentialVisible] = useState(false);
   const [loading, setLoading] = useState(true);
   const [completionRows, setCompletionRows] = useState<StationCompletionSummary[]>([]);
+  const [siteTypeCompletionRowsState, setSiteTypeCompletionRowsState] = useState<ReturnType<typeof siteTypeCompletionRows>>([]);
   const [stationMonitoringFilters, setStationMonitoringFilters] = useState<StationMonitoringFilters>(DEFAULT_STATION_MONITORING_FILTERS);
   const [completionLoading, setCompletionLoading] = useState(false);
   const [completionError, setCompletionError] = useState("");
+  const [completionLoaded, setCompletionLoaded] = useState(false);
+  const [siteTypeCompletionLoading, setSiteTypeCompletionLoading] = useState(false);
+  const [siteTypeCompletionError, setSiteTypeCompletionError] = useState("");
+  const [siteTypeCompletionLoaded, setSiteTypeCompletionLoaded] = useState(false);
   const [completionDetails, setCompletionDetails] = useState<Map<string, StationCompletionDetailResponse>>(() => new Map());
   const [completionDetailLoadingIds, setCompletionDetailLoadingIds] = useState<Set<string>>(() => new Set());
   const [completionDetailErrors, setCompletionDetailErrors] = useState<Record<string, string>>({});
   const completionRequestRef = useRef<Promise<void> | null>(null);
   const completionLoadedRef = useRef(false);
+  const siteTypeCompletionRequestRef = useRef<Promise<void> | null>(null);
+  const siteTypeCompletionLoadedRef = useRef(false);
   const completionDetailCacheRef = useRef(createStationCompletionDetailCache<StationCompletionDetailResponse>());
   const [unifiedSubmissionDetails, setUnifiedSubmissionDetails] = useState<Record<string, SubmissionDetail>>({});
   const [unifiedSubmissionDetailLoadingIds, setUnifiedSubmissionDetailLoadingIds] = useState<Set<string>>(() => new Set());
@@ -325,16 +334,17 @@ export default function AdminDashboard({ username, displayName }: { username: st
 
   const refreshQcProposals = useCallback(async () => {
     const response = await fetch("/api/admin/product-proposals", { cache: "no-store" });
-    const payload = await response.json().catch(() => ({})) as { rows?: Proposal[]; error?: string };
+    const payload = await response.json().catch(() => ({})) as { rows?: Proposal[]; pendingSummary?: QcPendingSummary; error?: string };
     if (!response.ok) {
       setMessage(payload.error || "Proposal produk gagal dimuat.");
       return false;
     }
     setProposals(payload.rows ?? []);
+    setQcPendingSummary(payload.pendingSummary ?? null);
     return true;
   }, []);
 
-  const refreshCompletionSummary = useCallback(async (force = false) => {
+  const refreshStationCompletionSummary = useCallback(async (force = false) => {
     if (!force && completionLoadedRef.current) return;
     if (completionRequestRef.current) return completionRequestRef.current;
 
@@ -344,9 +354,11 @@ export default function AdminDashboard({ username, displayName }: { username: st
       try {
         const client = getSupabaseBrowserClient();
         if (!client) throw new Error("Konfigurasi Supabase belum tersedia.");
-        const { data, error } = await client.rpc("admin_station_completion_summary");
-        if (error) throw error;
-        setCompletionRows(stationCompletionRows(data));
+        const stationResult = await client.rpc("admin_station_completion_summary");
+        const stationRows = stationResult.error ? null : parseStationCompletionRows(stationResult.data);
+        if (stationRows) setCompletionRows(stationRows);
+        if (stationResult.error || !stationRows) throw stationResult.error ?? new Error("Contract ringkasan monitoring stasiun tidak valid.");
+        setCompletionLoaded(true);
         completionLoadedRef.current = true;
       } catch {
         setCompletionError("Data kelengkapan belum dapat dimuat.");
@@ -359,6 +371,41 @@ export default function AdminDashboard({ username, displayName }: { username: st
     completionRequestRef.current = request;
     return request;
   }, []);
+
+  const refreshSiteTypeCompletionSummary = useCallback(async (force = false) => {
+    if (!force && siteTypeCompletionLoadedRef.current) return;
+    if (siteTypeCompletionRequestRef.current) return siteTypeCompletionRequestRef.current;
+
+    const request = (async () => {
+      setSiteTypeCompletionLoading(true);
+      setSiteTypeCompletionError("");
+      try {
+        const client = getSupabaseBrowserClient();
+        if (!client) throw new Error("Konfigurasi Supabase belum tersedia.");
+        const siteTypeResult = await client.rpc("admin_site_type_completion_summary");
+        const siteTypeRows = siteTypeResult.error ? null : parseSiteTypeCompletionRows(siteTypeResult.data);
+        if (siteTypeRows) setSiteTypeCompletionRowsState(siteTypeRows);
+        if (siteTypeResult.error || !siteTypeRows) throw siteTypeResult.error ?? new Error("Contract ringkasan Tipe Site tidak valid.");
+        setSiteTypeCompletionLoaded(true);
+        siteTypeCompletionLoadedRef.current = true;
+      } catch {
+        setSiteTypeCompletionError("Progress Tipe Site belum dapat dimuat.");
+      } finally {
+        setSiteTypeCompletionLoading(false);
+        siteTypeCompletionRequestRef.current = null;
+      }
+    })();
+
+    siteTypeCompletionRequestRef.current = request;
+    return request;
+  }, []);
+
+  const refreshCompletionSummary = useCallback(async (force = false) => {
+    await Promise.all([
+      refreshStationCompletionSummary(force),
+      refreshSiteTypeCompletionSummary(force),
+    ]);
+  }, [refreshSiteTypeCompletionSummary, refreshStationCompletionSummary]);
 
   const loadCompletionDetail = useCallback(async (stationId: string, force = false) => {
     const cached = completionDetailCacheRef.current.get(stationId);
@@ -497,7 +544,7 @@ export default function AdminDashboard({ username, displayName }: { username: st
           .select("auth_user_id, username")
           .order("username");
       }
-      const proposalPayload = await proposalResponse.json().catch(() => ({})) as { rows?: Proposal[]; error?: string };
+      const proposalPayload = await proposalResponse.json().catch(() => ({})) as { rows?: Proposal[]; pendingSummary?: QcPendingSummary; error?: string };
       const error = [stationRows, siteRows, siteTypeRows, subtypeRows, submissionRows, accountRows, productSummaryRows, auditRows].find((result) => result.error)?.error;
       if (error || !proposalResponse.ok) setMessage(error ? `Gagal memuat dashboard: ${error.message}` : proposalPayload.error || "Proposal produk gagal dimuat.");
       else {
@@ -510,6 +557,7 @@ export default function AdminDashboard({ username, displayName }: { username: st
         const productSummary = Array.isArray(productSummaryRows.data) ? productSummaryRows.data[0] : productSummaryRows.data;
         setProductTotal(Number(productSummary?.total_count ?? 0));
         setProposals(proposalPayload.rows ?? []);
+        setQcPendingSummary(proposalPayload.pendingSummary ?? null);
         setAudits((auditRows.data ?? []) as Audit[]);
         setAdminIdentities((adminIdentityResult.data ?? []) as AdminIdentity[]);
       }
@@ -548,13 +596,17 @@ export default function AdminDashboard({ username, displayName }: { username: st
     ]);
   }, [expandedStationId, invalidateCompletionDetail, loadCompletionDetail, refresh, refreshCompletionSummary]);
 
+  const refreshSummary = useCallback(async () => {
+    await Promise.all([refresh(), refreshCompletionSummary(true)]);
+  }, [refresh, refreshCompletionSummary]);
+
   useEffect(() => {
     const timer = window.setTimeout(() => void refresh(), 0);
     return () => window.clearTimeout(timer);
   }, [refresh]);
 
   useEffect(() => {
-    if (tab !== "stations" || fillingMode !== "master") return;
+    if (tab !== "summary" && (tab !== "stations" || fillingMode !== "master")) return;
     const timer = window.setTimeout(() => void refreshCompletionSummary(), 0);
     return () => window.clearTimeout(timer);
   }, [fillingMode, refreshCompletionSummary, tab]);
@@ -625,6 +677,8 @@ export default function AdminDashboard({ username, displayName }: { username: st
   }, [completionByStationId, completionRows, searchedStationFillingViews, stationMonitoringFilters]);
   const stationFollowUpCounts = useMemo(() => getStationFollowUpCounts(completionRows), [completionRows]);
   const stationQcSummary = useMemo(() => getStationQcSummary(completionRows), [completionRows]);
+  const monitoringSummary = useMemo(() => summarizeStationMonitoring(completionRows), [completionRows]);
+  const monitoringQcSummary = useMemo(() => summarizeQc(completionRows), [completionRows]);
   const pendingProposalIds = useMemo(
     () => new Set(proposals.filter((proposal) => proposal.status === "PENDING").map((proposal) => proposal.id)),
     [proposals],
@@ -633,6 +687,8 @@ export default function AdminDashboard({ username, displayName }: { username: st
   const filteredUnprovisionedStations = stations.filter((station) => !accountByStation.has(station.id)
     && (!query || station.name.toLocaleLowerCase("id-ID").includes(query)));
   const siteTypeSummary = useMemo(() => summarizeSitesByType(sites, siteTypes), [sites, siteTypes]);
+  const siteTypeProgress = useMemo(() => summarizeSiteTypeProgress(siteTypeCompletionRowsState), [siteTypeCompletionRowsState]);
+  const siteTypeProgressById = useMemo(() => new Map(siteTypeProgress.map((row) => [row.site_type_id, row])), [siteTypeProgress]);
   const filteredProposals = proposals.filter((proposal) => proposal.status === qcStatus && (!query
     || `${proposal.proposed_brand} ${proposal.proposed_model} ${stationMap.get(proposal.station_id)?.name ?? ""} ${proposal.context.siteName ?? ""} ${proposal.context.subtypeName ?? ""} ${proposal.context.categories.join(" ")}`.toLocaleLowerCase("id-ID").includes(query)));
   const searchTab = (tab === "stations" && fillingMode === "master") || tab === "accounts" || tab === "qc" ? tab : null;
@@ -967,7 +1023,7 @@ export default function AdminDashboard({ username, displayName }: { username: st
           {tabs.map((item) => <Link key={item.id} href={adminViewHref(item.id)} className={tab === item.id ? "active" : ""} aria-current={tab === item.id ? "page" : undefined}>{item.label}</Link>)}
         </nav>
         <section className={`admin-content${tab === "accounts" ? " accounts-view" : ""}`}>
-          <div className="admin-heading"><div><p className="kicker">PENGELOLAAN APLIKASI</p><h2>{tabs.find((item) => item.id === tab)?.label}</h2></div>{!(tab === "stations" && fillingMode === "submissions") && tab !== "products" && <AsyncButton className="secondary-button" type="button" loading={loading || (tab === "stations" && fillingMode === "master" && completionLoading)} loadingText="Memuat..." onClick={() => void (tab === "stations" && fillingMode === "master" ? refreshMasterCompletion() : refresh())}>Muat ulang</AsyncButton>}</div>
+          <div className="admin-heading"><div><p className="kicker">PENGELOLAAN APLIKASI</p><h2>{tabs.find((item) => item.id === tab)?.label}</h2></div>{!(tab === "stations" && fillingMode === "submissions") && tab !== "products" && <AsyncButton className="secondary-button" type="button" loading={loading || ((tab === "stations" || tab === "summary") && (completionLoading || siteTypeCompletionLoading))} loadingText="Memuat..." onClick={() => void (tab === "stations" && fillingMode === "master" ? refreshMasterCompletion() : tab === "summary" ? refreshSummary() : refresh())}>Muat ulang</AsyncButton>}</div>
           {message && <p className="admin-message" role="status">{message}</p>}
           {loading && <p className="loading-copy">Memuat data admin...</p>}
 
@@ -978,17 +1034,57 @@ export default function AdminDashboard({ username, displayName }: { username: st
             <button onClick={() => navigate("products")}><strong>{productTotal}</strong><span>Produk</span></button>
             <button onClick={() => navigate("stations", { fillingMode: "submissions" })}><strong>{submissions.length}</strong><span>Submission</span></button>
             <button onClick={() => navigate("locks")}><strong>{activeLocks.length}</strong><span>Lock aktif</span></button>
-            <button onClick={() => navigate("qc", { qcStatus: "PENDING" })}><strong>{proposals.filter((row) => row.status === "PENDING").length}</strong><span>QC Pending</span></button>
+            <button onClick={() => navigate("qc", { qcStatus: "PENDING" })}><strong>{qcPendingSummary?.totalPending ?? proposals.filter((row) => row.status === "PENDING").length}</strong><span>Pending Proposal</span></button>
             <button onClick={() => navigate("qc", { qcStatus: "APPROVED" })}><strong>{proposals.filter((row) => row.status === "APPROVED").length}</strong><span>Approved</span></button>
             <button onClick={() => navigate("qc", { qcStatus: "MERGED" })}><strong>{proposals.filter((row) => row.status === "MERGED").length}</strong><span>Merged</span></button>
             <button onClick={() => navigate("qc", { qcStatus: "REJECTED" })}><strong>{proposals.filter((row) => row.status === "REJECTED").length}</strong><span>Rejected</span></button>
           </div>}
 
+          {!loading && tab === "summary" && <section className="admin-monitoring-summary" aria-labelledby="monitoring-summary-heading">
+            <div className="admin-section-heading"><h3 id="monitoring-summary-heading">Ringkasan Monitoring Pengisian</h3><span>{monitoringSummary.total} stasiun aktif</span></div>
+            {completionError && <div className="station-completion-error" role="alert">
+              <span>{completionError}</span>
+              <AsyncButton type="button" loading={completionLoading} loadingText="Memuat..." onClick={() => void refreshStationCompletionSummary(true)}>Coba muat ulang</AsyncButton>
+            </div>}
+            {!completionLoaded
+              ? <p className="admin-summary-muted">{completionError ? "Ringkasan monitoring belum tersedia." : "Memuat ringkasan kelengkapan..."}</p>
+              : <>
+                <div className="admin-monitoring-grid">
+                  <div><strong>{monitoringSummary.notStarted}</strong><span>Belum Dimulai</span></div>
+                  <div><strong>{monitoringSummary.partialUnder50}</strong><span>Terisi &lt;50%</span></div>
+                  <div><strong>{monitoringSummary.partial50to99}</strong><span>Terisi 50–99%</span></div>
+                  <div><strong>{monitoringSummary.complete}</strong><span>Lengkap</span></div>
+                  <div><strong>{monitoringSummary.notAssessed}</strong><span>Tidak Dinilai</span></div>
+                </div>
+                <div className="admin-monitoring-progress">
+                  <div className="admin-section-heading"><span>Progress kategori global · {monitoringSummary.filledCategoryCount} / {monitoringSummary.expectedCategoryCount} kategori</span><strong>{monitoringSummary.globalProgress === null ? "Tidak Dinilai" : `${monitoringSummary.globalProgress}%`}</strong></div>
+                  {monitoringSummary.globalProgress !== null && <div className="admin-monitoring-progress-track" role="progressbar" aria-label="Progress kategori global" aria-valuemin={0} aria-valuemax={100} aria-valuenow={monitoringSummary.globalProgress}><span style={{ width: `${monitoringSummary.globalProgress}%` }} /></div>}
+                  <small>{monitoringSummary.total} total status</small>
+                </div>
+                {qcPendingSummary && <div className="admin-qc-summary" aria-label="Ringkasan QC Produk">
+                  <div><strong>QC Produk</strong><b>{qcPendingSummary.totalPending} QC Pending</b></div>
+                  <span>{qcPendingSummary.pendingPengisian} Pengisian · {qcPendingSummary.pendingGudang} Gudang</span>
+                  <span>{monitoringQcSummary.stationCount} Stasiun memiliki QC Pending pada Pengisian</span>
+                  <span>{qcPendingSummary.pendingTidakDigunakan} Tidak Digunakan Saat Ini</span>
+                  <small>Proposal Pending yang tidak sedang digunakan pada inventaris aktif, tetapi tetap dapat diperiksa untuk menjadi master Product.</small>
+                </div>}
+              </>}
+          </section>}
+
           {!loading && tab === "summary" && <section className="admin-site-type-summary" aria-labelledby="site-type-summary-heading">
             <div className="admin-section-heading"><h3 id="site-type-summary-heading">Site berdasarkan Tipe Site</h3><span>{siteTypeSummary.totalCount} site unik</span></div>
-            <div className="admin-site-type-grid">
-              {siteTypeSummary.byType.map((siteType) => <div className="admin-site-type-item" key={siteType.id}><span>{siteType.name}</span><strong>{siteType.count}</strong></div>)}
-            </div>
+            {siteTypeCompletionError && <div className="station-completion-error" role="alert">
+              <span>{siteTypeCompletionError}</span>
+              <AsyncButton type="button" loading={siteTypeCompletionLoading} loadingText="Memuat..." onClick={() => void refreshSiteTypeCompletionSummary(true)}>Coba muat ulang</AsyncButton>
+            </div>}
+            {siteTypeCompletionLoaded ? <div className="admin-site-type-grid">
+              {siteTypeSummary.byType.map((siteType) => {
+                const progress = siteTypeProgressById.get(siteType.id);
+                const progressLabel = progress?.is_warehouse ? "Tidak Dinilai" : progress?.category_progress === null || !progress ? "-" : `${progress.category_progress}%`;
+                const categoryLabel = progress && !progress.is_warehouse ? `${progress.filled_category_count} / ${progress.expected_category_count} Kategori` : "";
+                return <div className="admin-site-type-item" key={siteType.id}><span>{siteType.name}<small>{siteType.count} Site{categoryLabel ? ` · ${categoryLabel}` : ""}</small></span><strong>{progressLabel}</strong></div>;
+              })}
+            </div> : <p className="admin-summary-muted">{siteTypeCompletionError ? "Progress Tipe Site belum tersedia." : "Memuat progress Tipe Site..."}</p>}
           </section>}
 
           {!loading && tab === "stations" && <div className="status-tabs filling-mode-tabs" role="tablist" aria-label="Mode Stasiun dan Pengisian">
@@ -1007,7 +1103,7 @@ export default function AdminDashboard({ username, displayName }: { username: st
 
           {!loading && tab === "stations" && fillingMode === "master" && completionError && <div className="station-completion-error" role="alert">
             <span>{completionError}</span>
-            <AsyncButton type="button" loading={completionLoading} loadingText="Memuat..." onClick={() => void refreshCompletionSummary(true)}>Coba muat ulang</AsyncButton>
+            <AsyncButton type="button" loading={completionLoading} loadingText="Memuat..." onClick={() => void refreshStationCompletionSummary(true)}>Coba muat ulang</AsyncButton>
           </div>}
 
           {!loading && tab === "stations" && fillingMode === "master" && completionLoading && completionRows.length > 0 && <p className="station-completion-updating" role="status"><span className="loading-spinner" aria-hidden="true" />Memperbarui ringkasan kelengkapan...</p>}
