@@ -24,7 +24,7 @@ import {
 import { csvCell, downloadText } from "../lib/download";
 import { formatCategoryLabel } from "../lib/category-label";
 import { logoutCurrentBrowser } from "../lib/local-logout";
-import { siteTypeCompletionRows, summarizeSiteTypeProgress, summarizeSitesByType, summarizeStationMonitoring, summarizeQc } from "../lib/admin-summary";
+import { parseSiteTypeCompletionRows, siteTypeCompletionRows, summarizeSiteTypeProgress, summarizeSitesByType, summarizeStationMonitoring, summarizeQc } from "../lib/admin-summary";
 import { adminViewFromSearchParam, adminViewHref, type AdminView } from "../lib/admin-navigation";
 import { hasMixedMergeProposalFamilies, rankMergeProducts, type ProductAlias } from "../lib/product-qc";
 import type { QcProposalContext } from "../lib/qc-proposal-context";
@@ -42,7 +42,7 @@ import {
 import {
   stationCompletionCategory,
   stationCompletionDetailResponse,
-  stationCompletionRows,
+  parseStationCompletionRows,
   stationCompletionSubmission,
   stationCompletionStatusClass,
   stationCompletionStatusLabel,
@@ -289,6 +289,7 @@ export default function AdminDashboard({ username, displayName }: { username: st
   const [stationMonitoringFilters, setStationMonitoringFilters] = useState<StationMonitoringFilters>(DEFAULT_STATION_MONITORING_FILTERS);
   const [completionLoading, setCompletionLoading] = useState(false);
   const [completionError, setCompletionError] = useState("");
+  const [completionLoaded, setCompletionLoaded] = useState(false);
   const [completionDetails, setCompletionDetails] = useState<Map<string, StationCompletionDetailResponse>>(() => new Map());
   const [completionDetailLoadingIds, setCompletionDetailLoadingIds] = useState<Set<string>>(() => new Set());
   const [completionDetailErrors, setCompletionDetailErrors] = useState<Record<string, string>>({});
@@ -349,10 +350,14 @@ export default function AdminDashboard({ username, displayName }: { username: st
           client.rpc("admin_station_completion_summary"),
           client.rpc("admin_site_type_completion_summary"),
         ]);
-        if (stationResult.error) throw stationResult.error;
-        if (siteTypeResult.error) throw siteTypeResult.error;
-        setCompletionRows(stationCompletionRows(stationResult.data));
-        setSiteTypeCompletionRowsState(siteTypeCompletionRows(siteTypeResult.data));
+        const stationRows = stationResult.error ? null : parseStationCompletionRows(stationResult.data);
+        const siteTypeRows = siteTypeResult.error ? null : parseSiteTypeCompletionRows(siteTypeResult.data);
+        if (stationRows) setCompletionRows(stationRows);
+        if (siteTypeRows) setSiteTypeCompletionRowsState(siteTypeRows);
+        if (stationResult.error || siteTypeResult.error || !stationRows || !siteTypeRows) {
+          throw stationResult.error ?? siteTypeResult.error ?? new Error("Contract ringkasan monitoring tidak valid.");
+        }
+        setCompletionLoaded(true);
         completionLoadedRef.current = true;
       } catch {
         setCompletionError("Data kelengkapan belum dapat dimuat.");
@@ -1000,8 +1005,12 @@ export default function AdminDashboard({ username, displayName }: { username: st
 
           {!loading && tab === "summary" && <section className="admin-monitoring-summary" aria-labelledby="monitoring-summary-heading">
             <div className="admin-section-heading"><h3 id="monitoring-summary-heading">Ringkasan Monitoring Pengisian</h3><span>{monitoringSummary.total} stasiun aktif</span></div>
-            {completionLoading && completionRows.length === 0
-              ? <p className="admin-summary-muted">Memuat ringkasan kelengkapan...</p>
+            {completionError && <div className="station-completion-error" role="alert">
+              <span>{completionError}</span>
+              <AsyncButton type="button" loading={completionLoading} loadingText="Memuat..." onClick={() => void refreshCompletionSummary(true)}>Coba muat ulang</AsyncButton>
+            </div>}
+            {!completionLoaded
+              ? <p className="admin-summary-muted">{completionError ? "Ringkasan monitoring belum tersedia." : "Memuat ringkasan kelengkapan..."}</p>
               : <>
                 <div className="admin-monitoring-grid">
                   <div><strong>{monitoringSummary.notStarted}</strong><span>Belum Dimulai</span></div>
@@ -1021,14 +1030,14 @@ export default function AdminDashboard({ username, displayName }: { username: st
 
           {!loading && tab === "summary" && <section className="admin-site-type-summary" aria-labelledby="site-type-summary-heading">
             <div className="admin-section-heading"><h3 id="site-type-summary-heading">Site berdasarkan Tipe Site</h3><span>{siteTypeSummary.totalCount} site unik</span></div>
-            <div className="admin-site-type-grid">
+            {completionLoaded ? <div className="admin-site-type-grid">
               {siteTypeSummary.byType.map((siteType) => {
                 const progress = siteTypeProgressById.get(siteType.id);
                 const progressLabel = progress?.is_warehouse ? "Tidak Dinilai" : progress?.category_progress === null || !progress ? "-" : `${progress.category_progress}%`;
                 const categoryLabel = progress && !progress.is_warehouse ? `${progress.filled_category_count} / ${progress.expected_category_count} Kategori` : "";
                 return <div className="admin-site-type-item" key={siteType.id}><span>{siteType.name}<small>{siteType.count} Site{categoryLabel ? ` · ${categoryLabel}` : ""}</small></span><strong>{progressLabel}</strong></div>;
               })}
-            </div>
+            </div> : <p className="admin-summary-muted">{completionError ? "Progress Tipe Site belum tersedia." : "Memuat progress Tipe Site..."}</p>}
           </section>}
 
           {!loading && tab === "stations" && <div className="status-tabs filling-mode-tabs" role="tablist" aria-label="Mode Stasiun dan Pengisian">

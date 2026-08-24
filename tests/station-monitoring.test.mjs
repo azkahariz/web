@@ -10,7 +10,8 @@ import {
   getStationQcSummary,
   sortStationCompletionSummaries,
 } from "../app/lib/station-monitoring.ts";
-import { summarizeSiteTypeProgress, summarizeStationMonitoring, summarizeQc } from "../app/lib/admin-summary.ts";
+import { parseSiteTypeCompletionRows, summarizeSiteTypeProgress, summarizeStationMonitoring, summarizeQc } from "../app/lib/admin-summary.ts";
+import { parseStationCompletionRows } from "../app/lib/station-completion-view.ts";
 
 function summary(name, status, progress, overrides = {}) {
   return {
@@ -157,6 +158,23 @@ test("QC summary memilih station terbanyak dan site type Gudang netral", () => {
   }])[0].category_progress, null);
 });
 
+test("parser menerima bentuk JSONB rows aktual dan menolak respons malformed", () => {
+  const stationResponse = { rows: [summary("Station A", "TERISI_SEBAGIAN", 40)] };
+  const siteTypeResponse = { rows: [{
+    site_type_id: "type-a",
+    site_type_name: "AWS",
+    site_count: 2,
+    expected_category_count: 4,
+    filled_category_count: 2,
+    category_progress: 50,
+    is_warehouse: false,
+  }] };
+  assert.equal(parseStationCompletionRows(stationResponse)?.length, 1);
+  assert.equal(parseSiteTypeCompletionRows(siteTypeResponse)?.[0].category_progress, 50);
+  assert.equal(parseStationCompletionRows({ rows: [{ invalid: true }] }), null);
+  assert.equal(parseSiteTypeCompletionRows({ rows: [{ ...siteTypeResponse.rows[0], site_count: "2" }] }), null);
+});
+
 test("RPC site type memakai agregasi bulk, UUID, dan tidak mengembalikan payload", async () => {
   const migration = await readFile(new URL("../supabase/migrations/20260830120000_admin_site_type_completion_summary.sql", import.meta.url), "utf8");
   assert.match(migration, /admin_site_type_completion_summary/);
@@ -217,4 +235,9 @@ test("refresh summary tidak mengubah state filter dan detail tetap lazy", async 
   assert.doesNotMatch(refreshSummary, /setStationMonitoringFilters/);
   assert.match(dashboard, /if \(open\) void loadCompletionDetail\(station\.id\)/);
   assert.doesNotMatch(dashboard.match(/onQuickAction=\{[\s\S]*?\}/)?.[0] ?? "", /loadCompletionDetail|refreshCompletionSummary/);
+  assert.match(dashboard, /const \[completionLoaded, setCompletionLoaded\] = useState\(false\)/);
+  assert.match(dashboard, /completionError && <div className="station-completion-error"/);
+  assert.match(dashboard, /Coba muat ulang/);
+  assert.match(dashboard, /client\.rpc\("admin_station_completion_summary"\)/);
+  assert.match(dashboard, /client\.rpc\("admin_site_type_completion_summary"\)/);
 });

@@ -87,6 +87,14 @@ export function siteTypeCompletionRows(value: unknown): SiteTypeCompletionSummar
   });
 }
 
+export function parseSiteTypeCompletionRows(value: unknown): SiteTypeCompletionSummary[] | null {
+  if (!value || typeof value !== "object" || !("rows" in value)) return null;
+  const rows = (value as { rows?: unknown }).rows;
+  if (!Array.isArray(rows)) return null;
+  const parsed = siteTypeCompletionRows(value);
+  return parsed.length === rows.length ? parsed : null;
+}
+
 export function summarizeSitesByType(
   sites: SummarySite[],
   siteTypes: SummarySiteType[],

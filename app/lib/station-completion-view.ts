@@ -105,3 +105,11 @@ export function stationCompletionRows(value: unknown): StationCompletionSummary[
     && typeof row.station_id === "string",
   ));
 }
+
+export function parseStationCompletionRows(value: unknown): StationCompletionSummary[] | null {
+  if (!value || typeof value !== "object" || !("rows" in value)) return null;
+  const rows = (value as { rows?: unknown }).rows;
+  if (!Array.isArray(rows)) return null;
+  const parsed = stationCompletionRows(value);
+  return parsed.length === rows.length ? parsed : null;
+}
