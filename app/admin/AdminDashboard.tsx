@@ -1137,7 +1137,7 @@ export default function AdminDashboard({ username, displayName }: { username: st
                 <div className="admin-monitoring-grid">
                   <button type="button" onClick={() => navigate("stations", { fillingMode: "master", condition: "not-started" })}><strong>{monitoringSummary.notStarted}</strong><span>Belum Dimulai</span></button>
                   <button type="button" onClick={() => navigate("stations", { fillingMode: "master", condition: "lt50" })}><strong>{monitoringSummary.partialUnder50}</strong><span>Terisi &lt;50%</span></button>
-                  <div><strong>{monitoringSummary.partial50to99}</strong><span>Terisi 50–99%</span></div>
+                  <button type="button" onClick={() => navigate("stations", { fillingMode: "master", condition: "50to99" })}><strong>{monitoringSummary.partial50to99}</strong><span>Terisi 50–99%</span></button>
                   <button type="button" onClick={() => navigate("stations", { fillingMode: "master", condition: "complete" })}><strong>{monitoringSummary.complete}</strong><span>Lengkap</span></button>
                   <button type="button" onClick={() => navigate("stations", { fillingMode: "master", condition: "not-assessed" })}><strong>{monitoringSummary.notAssessed}</strong><span>Tidak Dinilai</span></button>
                 </div>
