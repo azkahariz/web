@@ -8,6 +8,7 @@ import {
   stationCompletionIncompleteRows,
   stationCompletionStatusClass,
   stationCompletionStatusLabel,
+  stationCompletionWarehouseInfo,
 } from "../lib/station-completion-view";
 
 const VISIBLE_MISSING_LIMIT = 3;
@@ -35,12 +36,11 @@ function CompletionGap({ row }: { row: StationCompletionDetailRow }) {
     </div>
 
     {isStationWithoutSite(row) ? <p>Stasiun belum memiliki Site aktif yang dapat dimonitor.</p>
-      : row.is_warehouse ? <p>Pengisian Gudang belum tersedia.</p>
-        : <>
-          {row.status === "BELUM_DIMULAI" && <p>Pengisian belum tersedia.</p>}
-          {row.status !== "BELUM_DIMULAI" && <p><strong>{row.filled_category_count} / {row.expected_category_count}</strong> kategori terisi</p>}
-          <p>{row.missing_categories.length} kategori belum terisi</p>
-        </>}
+      : <>
+        {row.status === "BELUM_DIMULAI" && <p>Pengisian belum tersedia.</p>}
+        {row.status !== "BELUM_DIMULAI" && <p><strong>{row.filled_category_count} / {row.expected_category_count}</strong> kategori terisi</p>}
+        <p>{row.missing_categories.length} kategori belum terisi</p>
+      </>}
 
     {row.issues.length > 0 && <ul className="station-completion-issues">
       {row.issues.map((issue) => <li key={issue.code}>{issue.label}</li>)}
@@ -83,7 +83,9 @@ export default function StationCompletionDetail({
 
     {loading && !detail && <div className="station-completion-detail-skeleton" aria-label="Memuat detail kelengkapan"><span /><span /><span /></div>}
     {error && <div className="station-completion-detail-error" role="alert"><span>{error}</span><AsyncButton type="button" loading={loading} loadingText="Memuat..." onClick={onRetry}>Coba muat ulang</AsyncButton></div>}
-    {detail && incompleteRows.length === 0 && <p className="station-completion-complete">Semua pengisian yang diwajibkan sudah tersedia dan kategori yang dipersyaratkan sudah terisi.</p>}
+    {detail && stationCompletionWarehouseInfo(detail.summary) && <p className="station-completion-warehouse-info">{stationCompletionWarehouseInfo(detail.summary)}</p>}
+    {detail && detail.summary.station_status === "TIDAK_DINILAI" && <p className="station-completion-unassessed">Tidak ada pengisian non-Gudang yang dinilai untuk Stasiun ini.</p>}
+    {detail && detail.summary.station_status !== "TIDAK_DINILAI" && incompleteRows.length === 0 && <p className="station-completion-complete">Semua pengisian yang dinilai sudah lengkap.</p>}
     {detail && incompleteRows.length > 0 && <div className="station-completion-gap-list">
       {incompleteRows.map((row) => <CompletionGap key={stationCompletionDetailKey(row)} row={row} />)}
     </div>}

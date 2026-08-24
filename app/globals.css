@@ -655,6 +655,7 @@ button[aria-busy="true"] { display: inline-flex; align-items: center; justify-co
 .station-completion-status.perlu-perhatian { border-color: #dfbcb6; background: #f8e8e5; color: #8c3f35; }
 .station-completion-status.kosong { border-color: #dcc7a7; background: #faf1df; color: #775622; }
 .station-completion-status.gudang-tersedia { border-color: #bfd7cc; background: #e8f2ed; color: #35634f; }
+.station-completion-status.tidak-dinilai { border-color: #ccd5d1; background: #f1f4f2; color: #52635e; }
 .station-completion-status.unknown { border-color: var(--line); background: #f5f6f4; color: var(--muted); }
 .station-completion-body { margin-top: 9px; display: grid; gap: 7px; }
 .station-completion-metrics { display: flex; align-items: baseline; gap: 8px 18px; flex-wrap: wrap; }
@@ -663,6 +664,7 @@ button[aria-busy="true"] { display: inline-flex; align-items: center; justify-co
 .station-completion-progress { width: min(420px, 100%); height: 5px; overflow: hidden; border-radius: 999px; background: #e3e8e5; }
 .station-completion-progress > span { height: 100%; display: block; border-radius: inherit; background: var(--green); }
 .station-completion-body > small, .station-completion-unavailable small { color: var(--red); font-size: 10px; }
+.station-completion-body > small.station-completion-warehouse-info { color: var(--muted); }
 .station-completion-skeleton { margin-top: 10px; display: grid; gap: 7px; }
 .station-completion-skeleton span { width: min(420px, 80%); height: 11px; border-radius: 4px; background: #e7ebe8; }
 .station-completion-skeleton span:last-child { width: min(300px, 58%); height: 5px; }
@@ -699,6 +701,7 @@ button[aria-busy="true"] { display: inline-flex; align-items: center; justify-co
 .station-completion-detail-error { margin-top: 12px; padding: 10px; display: flex; align-items: center; justify-content: space-between; gap: 10px; border-left: 3px solid #b64f42; background: #fff7f5; color: #7f4239; font-size: 11px; }
 .station-completion-detail-error button { min-height: 32px; padding: 6px 9px; border: 1px solid #d1aaa3; border-radius: 6px; background: white; color: #7f4239; font-size: 10px; font-weight: 800; cursor: pointer; }
 .station-completion-complete { margin: 12px 0 0; padding: 10px 12px; border-left: 3px solid var(--green); background: var(--green-soft); color: var(--green-deep); font-size: 11px; line-height: 1.5; }
+.station-completion-warehouse-info, .station-completion-unassessed { margin: 12px 0 0; color: var(--muted); font-size: 11px; line-height: 1.5; }
 .admin-table-wrap { margin-top: 20px; max-width: 100%; overflow: auto; border: 1px solid var(--line); border-radius: 8px; background: white; }
 .admin-list .admin-table-wrap { margin: 0; border-width: 1px 0 0; border-radius: 0; }
 .admin-table-wrap table { width: 100%; border-collapse: collapse; font-size: 10px; }

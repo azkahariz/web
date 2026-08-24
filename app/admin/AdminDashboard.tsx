@@ -32,8 +32,10 @@ import {
   stationCompletionCategory,
   stationCompletionDetailResponse,
   stationCompletionRows,
+  stationCompletionSubmission,
   stationCompletionStatusClass,
   stationCompletionStatusLabel,
+  stationCompletionWarehouseInfo,
 } from "../lib/station-completion-view";
 import type { SubmissionSummary } from "../lib/submission-monitoring";
 import { getSupabaseBrowserClient } from "../lib/supabase/client";
@@ -145,6 +147,8 @@ const StationFillingCard = memo(function StationFillingCard({
   onDownload: (station: Station, site: Site, subtype: Subtype) => void;
 }) {
   const category = completion ? stationCompletionCategory(completion) : null;
+  const submission = completion ? stationCompletionSubmission(completion) : null;
+  const warehouseInfo = completion ? stationCompletionWarehouseInfo(completion) : null;
   return <details open={expanded} onToggle={(event) => onToggle(event.currentTarget.open)}>
     <summary className="station-completion-summary">
       <div className="station-completion-heading">
@@ -154,7 +158,7 @@ const StationFillingCard = memo(function StationFillingCard({
       {completion ? <div className="station-completion-body">
         <div className="station-completion-metrics">
           <span><strong>{completion.site_count}</strong> Site</span>
-          <span><strong>{completion.existing_submission_count} / {completion.expected_submission_count}</strong> Pengisian</span>
+          <span><strong>{submission?.value}</strong> {submission?.label}</span>
           <span><strong>{category?.label}</strong>{category && category.progress !== null && <> · {category.progress}%</>}</span>
         </div>
         {category && category.progress !== null && <div
@@ -165,6 +169,7 @@ const StationFillingCard = memo(function StationFillingCard({
           aria-valuemax={100}
           aria-valuenow={category.progress}
         ><span style={{ width: `${Math.min(100, Math.max(0, category.progress))}%` }} /></div>}
+        {warehouseInfo && <small className="station-completion-warehouse-info">{warehouseInfo}</small>}
         {completion.site_count === 0 && completion.issues[0]?.label && <small>{completion.issues[0].label}</small>}
       </div> : completionLoading ? <div className="station-completion-skeleton" aria-label="Memuat ringkasan kelengkapan"><span /><span /></div> : <div className="station-completion-unavailable"><span>{view.siteCount} Site (data master)</span><small>Kelengkapan belum tersedia</small></div>}
     </summary>

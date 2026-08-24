@@ -2,7 +2,8 @@ export type StationCompletionStatus =
   | "PERLU_PERHATIAN"
   | "BELUM_DIMULAI"
   | "TERISI_SEBAGIAN"
-  | "LENGKAP";
+  | "LENGKAP"
+  | "TIDAK_DINILAI";
 
 export type StationCompletionRowStatus =
   | StationCompletionStatus

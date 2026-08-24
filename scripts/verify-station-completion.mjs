@@ -127,6 +127,39 @@ try {
     const warehousePresentSite = await createSite(tx, warehousePresentStation.id, WAREHOUSE_TYPE_ID, "WAREHOUSE PRESENT");
     await createSubmission(tx, warehousePresentStation.id, warehousePresentSite.id, WAREHOUSE_SUBTYPE_ID, { inventory: {} });
 
+    const warehousePopulatedStation = await createStation(tx, "WAREHOUSE POPULATED");
+    const warehousePopulatedSite = await createSite(tx, warehousePopulatedStation.id, WAREHOUSE_TYPE_ID, "WAREHOUSE POPULATED");
+    const warehouseInventory = {
+      inventory: {
+        "Warehouse Category": [{
+          id: randomUUID(), brand: "Verifier", model: "Warehouse", quantity: 14,
+          functionCategories: Array.from({ length: 8 }, (_, index) => `Warehouse Function ${index + 1}`),
+        }],
+      },
+    };
+    await createSubmission(tx, warehousePopulatedStation.id, warehousePopulatedSite.id, WAREHOUSE_SUBTYPE_ID, warehouseInventory);
+
+    const mixedAbsentStation = await createStation(tx, "MIXED WAREHOUSE ABSENT");
+    const mixedAbsentSite = await createSite(tx, mixedAbsentStation.id, context3.siteType.id, "MIXED ASSESSED");
+    await createSite(tx, mixedAbsentStation.id, WAREHOUSE_TYPE_ID, "MIXED WAREHOUSE");
+    await createSubmission(tx, mixedAbsentStation.id, mixedAbsentSite.id, context3.subtype.id, { inventory: inventory(profile3.items.map((item) => item.name)) });
+
+    const mixedEmptyStation = await createStation(tx, "MIXED WAREHOUSE EMPTY");
+    const mixedEmptySite = await createSite(tx, mixedEmptyStation.id, context3.siteType.id, "MIXED ASSESSED");
+    const mixedEmptyWarehouse = await createSite(tx, mixedEmptyStation.id, WAREHOUSE_TYPE_ID, "MIXED WAREHOUSE");
+    await createSubmission(tx, mixedEmptyStation.id, mixedEmptySite.id, context3.subtype.id, { inventory: inventory(profile3.items.map((item) => item.name)) });
+    await createSubmission(tx, mixedEmptyStation.id, mixedEmptyWarehouse.id, WAREHOUSE_SUBTYPE_ID, { inventory: {} });
+
+    const mixedPopulatedStation = await createStation(tx, "MIXED WAREHOUSE POPULATED");
+    const mixedPopulatedSite = await createSite(tx, mixedPopulatedStation.id, context3.siteType.id, "MIXED ASSESSED");
+    const mixedPopulatedWarehouse = await createSite(tx, mixedPopulatedStation.id, WAREHOUSE_TYPE_ID, "MIXED WAREHOUSE");
+    await createSubmission(tx, mixedPopulatedStation.id, mixedPopulatedSite.id, context3.subtype.id, { inventory: inventory([profile3.items[0].name]) });
+    await createSubmission(tx, mixedPopulatedStation.id, mixedPopulatedWarehouse.id, WAREHOUSE_SUBTYPE_ID, warehouseInventory);
+
+    const archivedWarehouseStation = await createStation(tx, "WAREHOUSE ARCHIVED ONLY");
+    const archivedWarehouseSite = await createSite(tx, archivedWarehouseStation.id, WAREHOUSE_TYPE_ID, "WAREHOUSE ARCHIVED");
+    await createSubmission(tx, archivedWarehouseStation.id, archivedWarehouseSite.id, WAREHOUSE_SUBTYPE_ID, warehouseInventory, { archivedAt: new Date("2026-08-20T00:00:00.000Z") });
+
     const noSiteStation = await createStation(tx, "NO SITE");
 
     const archivedStation = await createStation(tx, "ARCHIVED ONLY");
@@ -228,8 +261,10 @@ try {
     assert.equal(proposal.station_status, "LENGKAP");
 
     const warehouseAbsent = byName(rows, warehouseAbsentStation.name);
-    assert.equal(warehouseAbsent.not_started_count, 1);
-    assert.equal(warehouseAbsent.station_status, "BELUM_DIMULAI");
+    assert.equal(warehouseAbsent.expected_submission_count, 0);
+    assert.equal(warehouseAbsent.existing_submission_count, 0);
+    assert.equal(warehouseAbsent.not_started_count, 0);
+    assert.equal(warehouseAbsent.station_status, "TIDAK_DINILAI");
     assert.equal(warehouseAbsent.category_progress, null);
 
     const warehousePresent = byName(rows, warehousePresentStation.name);
@@ -237,7 +272,39 @@ try {
     assert.equal(warehousePresent.warehouse_category_count, 0);
     assert.equal(warehousePresent.warehouse_unit_count, 0);
     assert.equal(warehousePresent.category_progress, null);
-    assert.equal(warehousePresent.station_status, "LENGKAP");
+    assert.equal(warehousePresent.expected_submission_count, 0);
+    assert.equal(warehousePresent.station_status, "TIDAK_DINILAI");
+
+    const warehousePopulated = byName(rows, warehousePopulatedStation.name);
+    assert.equal(warehousePopulated.expected_submission_count, 0);
+    assert.equal(warehousePopulated.expected_category_count, 0);
+    assert.equal(warehousePopulated.warehouse_category_count, 8);
+    assert.equal(warehousePopulated.warehouse_unit_count, 14);
+    assert.equal(warehousePopulated.station_status, "TIDAK_DINILAI");
+
+    const mixedAbsent = byName(rows, mixedAbsentStation.name);
+    assert.equal(mixedAbsent.expected_submission_count, 1);
+    assert.equal(mixedAbsent.existing_submission_count, 1);
+    assert.equal(mixedAbsent.complete_submission_count, 1);
+    assert.equal(mixedAbsent.warehouse_existing_count, 0);
+    assert.equal(mixedAbsent.station_status, "LENGKAP");
+
+    const mixedEmpty = byName(rows, mixedEmptyStation.name);
+    assert.equal(mixedEmpty.expected_submission_count, 1);
+    assert.equal(mixedEmpty.complete_submission_count, 1);
+    assert.equal(mixedEmpty.warehouse_existing_count, 1);
+    assert.equal(mixedEmpty.station_status, "LENGKAP");
+
+    const mixedPopulated = byName(rows, mixedPopulatedStation.name);
+    assert.equal(mixedPopulated.expected_submission_count, 1);
+    assert.equal(mixedPopulated.partial_submission_count, 1);
+    assert.equal(mixedPopulated.warehouse_category_count, 8);
+    assert.equal(mixedPopulated.warehouse_unit_count, 14);
+    assert.equal(mixedPopulated.station_status, "TERISI_SEBAGIAN");
+
+    const archivedWarehouse = byName(rows, archivedWarehouseStation.name);
+    assert.equal(archivedWarehouse.warehouse_existing_count, 0);
+    assert.equal(archivedWarehouse.station_status, "TIDAK_DINILAI");
 
     const noSite = byName(rows, noSiteStation.name);
     assert.equal(noSite.station_status, "PERLU_PERHATIAN");
@@ -280,8 +347,7 @@ try {
           + row.partial_submission_count
           + row.empty_submission_count
           + row.not_started_count
-          + row.expected_attention_count
-          + row.warehouse_existing_count,
+          + row.expected_attention_count,
         `Bucket identity gagal untuk ${row.station_name}`,
       );
       if (row.station_status === "LENGKAP") {
@@ -298,6 +364,12 @@ try {
     assert.equal(missingRow.missing_categories.length, 20);
     assert.ok(missingRow.missing_categories.every((category) => category.id && category.label));
 
+    const [warehouseDetailResponse] = await tx`select public.admin_station_completion_detail(${warehousePopulatedStation.id}) as result`;
+    assert.equal(warehouseDetailResponse.result.summary.station_status, "TIDAK_DINILAI");
+    assert.equal(warehouseDetailResponse.result.summary.warehouse_category_count, 8);
+    assert.equal(warehouseDetailResponse.result.summary.warehouse_unit_count, 14);
+    assert.equal(warehouseDetailResponse.result.rows.length, 0, "Gudang tidak boleh masuk daftar gap completion.");
+
     await tx`reset role`;
     const [canonicalProgress] = await tx`select * from public.submission_progress((select payload from public.submissions where id = ${completeSubmission.id}), ${profile3.id})`;
     const [completionRow] = await tx`select filled_category_count, expected_category_count from public.station_completion_rows(${completeStation.id}) where is_expected`;
@@ -308,7 +380,7 @@ try {
   });
 } catch (error) {
   if (error instanceof Error && error.message === rollbackMarker) {
-    console.log("Station completion verifier passed: 18 deterministic scenarios, authorization, identities, detail gaps, and canonical progress equivalence.");
+    console.log("Station completion verifier passed: 23 deterministic scenarios, warehouse exclusion, authorization, identities, detail gaps, and canonical progress equivalence.");
   } else {
     throw error;
   }

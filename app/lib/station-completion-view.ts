@@ -10,6 +10,7 @@ const STATUS_LABELS: Record<StationCompletionRowStatus, string> = {
   TERISI_SEBAGIAN: "Terisi Sebagian",
   BELUM_DIMULAI: "Belum Dimulai",
   PERLU_PERHATIAN: "Perlu Perhatian",
+  TIDAK_DINILAI: "Tidak Dinilai",
   KOSONG: "Kosong",
   GUDANG_TERSEDIA: "Gudang Tersedia",
 };
@@ -61,12 +62,8 @@ export function stationCompletionCategory(summary: Pick<StationCompletionSummary
   | "warehouse_category_count" | "warehouse_unit_count"
 >) {
   if (summary.expected_category_count === 0 || summary.category_progress === null) {
-    const warehouseOnly = summary.warehouse_expected_count > 0
-      && summary.warehouse_existing_count === summary.warehouse_expected_count;
     return {
-      label: warehouseOnly
-        ? `Gudang · ${summary.warehouse_category_count} kategori · ${summary.warehouse_unit_count} unit`
-        : "Kategori: -",
+      label: "Kategori: -",
       progress: null,
     };
   }
@@ -75,6 +72,26 @@ export function stationCompletionCategory(summary: Pick<StationCompletionSummary
     label: `${summary.filled_category_count} / ${summary.expected_category_count} Kategori`,
     progress: summary.category_progress,
   };
+}
+
+export function stationCompletionSubmission(summary: Pick<StationCompletionSummary,
+  "expected_submission_count" | "existing_submission_count"
+>) {
+  return summary.expected_submission_count === 0
+    ? { value: "-", label: "Pengisian" }
+    : { value: `${summary.existing_submission_count} / ${summary.expected_submission_count}`, label: "Pengisian" };
+}
+
+export function stationCompletionWarehouseInfo(summary: Pick<StationCompletionSummary,
+  "warehouse_expected_count" | "warehouse_existing_count"
+  | "warehouse_category_count" | "warehouse_unit_count"
+>) {
+  if (summary.warehouse_expected_count === 0) return null;
+  if (summary.warehouse_existing_count === 0
+    || (summary.warehouse_category_count === 0 && summary.warehouse_unit_count === 0)) {
+    return "Gudang · belum ada inventaris tercatat";
+  }
+  return `Gudang · ${summary.warehouse_category_count} kategori · ${summary.warehouse_unit_count} unit`;
 }
 
 export function stationCompletionRows(value: unknown): StationCompletionSummary[] {

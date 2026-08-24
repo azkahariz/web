@@ -4,7 +4,9 @@ import test from "node:test";
 import {
   stationCompletionCategory,
   stationCompletionRows,
+  stationCompletionSubmission,
   stationCompletionStatusLabel,
+  stationCompletionWarehouseInfo,
 } from "../app/lib/station-completion-view.ts";
 
 function category(overrides = {}) {
@@ -32,10 +34,11 @@ test("status completion dipetakan ke label Indonesia dan unknown tetap defensif"
   assert.equal(stationCompletionStatusLabel("TERISI_SEBAGIAN"), "Terisi Sebagian");
   assert.equal(stationCompletionStatusLabel("BELUM_DIMULAI"), "Belum Dimulai");
   assert.equal(stationCompletionStatusLabel("PERLU_PERHATIAN"), "Perlu Perhatian");
+  assert.equal(stationCompletionStatusLabel("TIDAK_DINILAI"), "Tidak Dinilai");
   assert.equal(stationCompletionStatusLabel("STATUS_BARU"), "Status tidak dikenal");
 });
 
-test("Gudang tanpa denominator kategori tidak menampilkan persentase menyesatkan", () => {
+test("Gudang-only tidak mempunyai metrik assessment dan tetap tampil informasional", () => {
   const missing = category({
     expected_category_count: 0,
     filled_category_count: 0,
@@ -54,8 +57,29 @@ test("Gudang tanpa denominator kategori tidak menampilkan persentase menyesatkan
     warehouse_category_count: 4,
     warehouse_unit_count: 11,
   });
-  assert.deepEqual(available, { label: "Gudang · 4 kategori · 11 unit", progress: null });
+  assert.deepEqual(available, { label: "Kategori: -", progress: null });
+  assert.deepEqual(stationCompletionSubmission({ expected_submission_count: 0, existing_submission_count: 0 }), { value: "-", label: "Pengisian" });
+  assert.equal(stationCompletionWarehouseInfo({
+    warehouse_expected_count: 1,
+    warehouse_existing_count: 0,
+    warehouse_category_count: 0,
+    warehouse_unit_count: 0,
+  }), "Gudang · belum ada inventaris tercatat");
+  assert.equal(stationCompletionWarehouseInfo({
+    warehouse_expected_count: 1,
+    warehouse_existing_count: 1,
+    warehouse_category_count: 4,
+    warehouse_unit_count: 11,
+  }), "Gudang · 4 kategori · 11 unit");
   assert.doesNotMatch(`${missing.label} ${available.label}`, /0%|100%|NaN|0\s*\/\s*0 Kategori/);
+});
+
+test("mixed Station memakai denominator non-Gudang dan Gudang tidak memberi penalti", () => {
+  assert.deepEqual(stationCompletionSubmission({ expected_submission_count: 2, existing_submission_count: 2 }), { value: "2 / 2", label: "Pengisian" });
+  assert.deepEqual(category({ expected_category_count: 53, filled_category_count: 53, category_progress: 100, warehouse_expected_count: 1, warehouse_existing_count: 0 }), {
+    label: "53 / 53 Kategori",
+    progress: 100,
+  });
 });
 
 test("response null atau malformed tidak membuat UI crash", () => {

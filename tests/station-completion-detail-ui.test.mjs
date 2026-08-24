@@ -56,6 +56,7 @@ test("status detail memakai label Indonesia dan unknown tidak menjadi Lengkap", 
   assert.equal(stationCompletionStatusLabel("TERISI_SEBAGIAN"), "Terisi Sebagian");
   assert.equal(stationCompletionStatusLabel("LENGKAP"), "Lengkap");
   assert.equal(stationCompletionStatusLabel("PERLU_PERHATIAN"), "Perlu Perhatian");
+  assert.equal(stationCompletionStatusLabel("TIDAK_DINILAI"), "Tidak Dinilai");
   assert.equal(stationCompletionStatusLabel("GUDANG_TERSEDIA"), "Gudang Tersedia");
   assert.equal(stationCompletionStatusLabel("UNKNOWN"), "Status tidak dikenal");
 });
@@ -66,7 +67,7 @@ test("pair key memakai identity UUID stabil dan parser menolak response malforme
   assert.equal(stationCompletionDetailResponse({ station_id: "station", summary: {}, rows: "invalid" }), null);
 });
 
-test("detail UI menampilkan gap, disclosure, Gudang, complete, issue, retry tanpa metadata atau unit-quality", async () => {
+test("detail UI menampilkan gap assessed, informasi Gudang netral, complete, issue, dan retry", async () => {
   const component = await readFile(new URL("../app/admin/StationCompletionDetail.tsx", import.meta.url), "utf8");
   for (const text of [
     "Yang belum dilengkapi",
@@ -75,11 +76,13 @@ test("detail UI menampilkan gap, disclosure, Gudang, complete, issue, retry tanp
     "kategori belum terisi",
     "Lihat semua",
     "Sembunyikan kategori",
-    "Pengisian Gudang belum tersedia.",
-    "Semua pengisian yang diwajibkan sudah tersedia",
+    "Tidak ada pengisian non-Gudang yang dinilai untuk Stasiun ini.",
+    "Semua pengisian yang dinilai sudah lengkap.",
     "Coba muat ulang",
   ]) assert.match(component, new RegExp(text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   assert.match(component, /row\.issues\.map/);
+  assert.match(component, /stationCompletionWarehouseInfo\(detail\.summary\)/);
+  assert.doesNotMatch(component, /Pengisian Gudang belum tersedia\./);
   assert.match(component, /aria-expanded=\{showAllCategories\}/);
   assert.doesNotMatch(component, /WIGOS|AWS Center|Koordinat|Elevasi|Alamat|Teknisi|BMN|Serial Number|Tahun|Kondisi|Quantity/);
 });
