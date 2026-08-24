@@ -7,13 +7,11 @@ import {
   DEFAULT_STATION_MONITORING_FILTERS,
   filterStationCompletionSummaries,
   getStationFollowUpCounts,
-  isOlderThanDays,
+  getStationQcSummary,
   sortStationCompletionSummaries,
 } from "../app/lib/station-monitoring.ts";
 
-const NOW = Date.parse("2026-08-24T12:00:00.000Z");
-
-function summary(name, status, progress, updated = null, overrides = {}) {
+function summary(name, status, progress, overrides = {}) {
   return {
     station_id: `station-${name}`,
     station_name: name,
@@ -35,7 +33,7 @@ function summary(name, status, progress, updated = null, overrides = {}) {
     warehouse_category_count: 0,
     warehouse_unit_count: 0,
     pending_qc_count: 0,
-    content_last_updated: updated,
+    content_last_updated: null,
     station_status: status,
     issues: [],
     ...overrides,
@@ -50,57 +48,37 @@ const statusRows = [
   summary("Warehouse", "TIDAK_DINILAI", null),
 ];
 
-test("status filter memakai canonical backend status dan Belum Lengkap tidak memuat Tidak Dinilai", () => {
-  const filter = (status) => filterStationCompletionSummaries(statusRows, { status, progress: "all", activity: "all" }, NOW)
-    .map((row) => row.station_status);
-  assert.equal(filter("all").length, 5);
-  assert.deepEqual(filter("incomplete"), ["PERLU_PERHATIAN", "BELUM_DIMULAI", "TERISI_SEBAGIAN"]);
-  for (const status of ["LENGKAP", "TERISI_SEBAGIAN", "BELUM_DIMULAI", "PERLU_PERHATIAN", "TIDAK_DINILAI"]) {
-    assert.deepEqual(filter(status), [status]);
-  }
-});
-
-test("progress filter menjaga boundary 0, 24, 25, 49, 50, 99, 100, dan null", () => {
-  const rows = [0, 24, 25, 49, 50, 99, 100, null].map((progress) => summary(String(progress), progress === null ? "TIDAK_DINILAI" : "TERISI_SEBAGIAN", progress));
-  const values = (progress) => filterStationCompletionSummaries(rows, { status: "all", progress, activity: "all" }, NOW).map((row) => row.category_progress);
-  assert.deepEqual(values("lt25"), [0, 24]);
-  assert.deepEqual(values("lt50"), [0, 24, 25, 49]);
+test("Kondisi Pengisian memakai status canonical dan boundary 49/50/99", () => {
+  const rows = [0, 49, 50, 99, 100, null].map((progress) => summary(String(progress), progress === null ? "TIDAK_DINILAI" : progress === 100 ? "LENGKAP" : "TERISI_SEBAGIAN", progress));
+  const values = (condition) => filterStationCompletionSummaries(rows, { condition, qc: "all" }).map((row) => row.category_progress);
+  assert.deepEqual(values("not-started"), []);
+  assert.deepEqual(values("lt50"), [0, 49]);
   assert.deepEqual(values("50to99"), [50, 99]);
-  assert.deepEqual(values("100"), [100]);
+  assert.deepEqual(values("complete"), [100]);
+  assert.deepEqual(values("not-assessed"), [null]);
+  assert.deepEqual(values("attention"), []);
 });
 
-test("activity filter memakai durasi strict lebih dari 7 dan 14 hari", () => {
-  const ago = (milliseconds) => new Date(NOW - milliseconds).toISOString();
-  const day = 24 * 60 * 60 * 1000;
-  assert.equal(isOlderThanDays(ago(7 * day), NOW, 7), false);
-  assert.equal(isOlderThanDays(ago(7 * day + 1000), NOW, 7), true);
-  assert.equal(isOlderThanDays(ago(14 * day), NOW, 14), false);
-  assert.equal(isOlderThanDays(ago(14 * day + 1000), NOW, 14), true);
-
+test("QC filter memakai pending_qc_count dan tidak mengubah status completion", () => {
   const rows = [
-    summary("Never", "BELUM_DIMULAI", 0, null),
-    summary("Fresh", "TERISI_SEBAGIAN", 30, ago(6 * day + 23 * 60 * 60 * 1000)),
-    summary("Exact 7", "TERISI_SEBAGIAN", 30, ago(7 * day)),
-    summary("Stale 7", "TERISI_SEBAGIAN", 30, ago(7 * day + 1000)),
-    summary("Exact 14", "PERLU_PERHATIAN", 30, ago(14 * day)),
-    summary("Stale 14", "PERLU_PERHATIAN", 30, ago(14 * day + 1000)),
-    summary("Complete", "LENGKAP", 100, ago(30 * day)),
-    summary("Warehouse", "TIDAK_DINILAI", null, null),
+    summary("No QC", "TERISI_SEBAGIAN", 40, { pending_qc_count: 0 }),
+    summary("One QC", "TERISI_SEBAGIAN", 40, { pending_qc_count: 1 }),
+    summary("Ten QC", "LENGKAP", 100, { pending_qc_count: 10 }),
   ];
-  const activity = (value) => filterStationCompletionSummaries(rows, { status: "all", progress: "all", activity: value }, NOW).map((row) => row.station_name);
-  assert.deepEqual(activity("never"), ["Never"]);
-  assert.deepEqual(activity("stale7"), ["Stale 7", "Exact 14", "Stale 14"]);
-  assert.deepEqual(activity("stale14"), ["Stale 14"]);
+  assert.deepEqual(filterStationCompletionSummaries(rows, { condition: "all", qc: "pending" }).map((row) => row.station_name), ["One QC", "Ten QC"]);
+  assert.deepEqual(filterStationCompletionSummaries(rows, { condition: "all", qc: "none" }).map((row) => row.station_name), ["No QC"]);
+  assert.equal(getStationQcSummary(rows).stationCount, 2);
+  assert.equal(getStationQcSummary(rows).totalPending, 11);
+  assert.equal(getStationQcSummary(rows).maxPending, 10);
 });
 
-test("priority sort transparan: status, progress parsial, activity, lalu nama", () => {
-  const day = 24 * 60 * 60 * 1000;
+test("priority sort transparan: status, progress parsial, lalu nama", () => {
   const rows = [
     summary("Warehouse", "TIDAK_DINILAI", null),
     summary("Complete", "LENGKAP", 100),
     summary("Partial 70", "TERISI_SEBAGIAN", 70),
-    summary("Partial 10 B", "TERISI_SEBAGIAN", 10, new Date(NOW - day).toISOString()),
-    summary("Partial 10 A", "TERISI_SEBAGIAN", 10, null),
+    summary("Partial 10 B", "TERISI_SEBAGIAN", 10),
+    summary("Partial 10 A", "TERISI_SEBAGIAN", 10),
     summary("Not Started", "BELUM_DIMULAI", 0),
     summary("Attention", "PERLU_PERHATIAN", 20),
   ];
@@ -109,34 +87,31 @@ test("priority sort transparan: status, progress parsial, activity, lalu nama", 
   ]);
   assert.equal(sortStationCompletionSummaries(rows, "progress-asc").at(-1).station_name, "Warehouse");
   assert.equal(sortStationCompletionSummaries(rows, "progress-desc").at(-1).station_name, "Warehouse");
-  assert.equal(sortStationCompletionSummaries(rows, "oldest").at(-1).station_name, "Warehouse");
-  assert.equal(sortStationCompletionSummaries(rows, "newest").at(-1).station_name, "Warehouse");
+  const qcRows = rows.map((row, index) => ({ ...row, pending_qc_count: index }));
+  assert.deepEqual(sortStationCompletionSummaries(qcRows, "qc-desc").map((row) => row.station_name), [
+    "Attention", "Not Started", "Partial 10 A", "Partial 10 B", "Partial 70", "Complete", "Warehouse",
+  ]);
 });
 
-test("quick follow-up count dan preset memakai subset yang terlihat pada kontrol", () => {
-  const stale = new Date(NOW - 8 * 24 * 60 * 60 * 1000).toISOString();
+test("quick follow-up count, preset, dan reset memakai subset yang terlihat pada kontrol", () => {
   const rows = [
-    summary("Attention", "PERLU_PERHATIAN", 20, stale),
+    summary("Attention", "PERLU_PERHATIAN", 20),
     summary("Not Started", "BELUM_DIMULAI", 0),
-    summary("Partial low", "TERISI_SEBAGIAN", 40, stale),
-    summary("Partial high", "TERISI_SEBAGIAN", 70, stale),
-    summary("Complete", "LENGKAP", 100, stale),
+    summary("Partial low", "TERISI_SEBAGIAN", 40),
+    summary("Partial high", "TERISI_SEBAGIAN", 70),
+    summary("Complete", "LENGKAP", 100),
     summary("Warehouse", "TIDAK_DINILAI", null),
   ];
-  assert.deepEqual(getStationFollowUpCounts(rows, NOW), { attention: 1, notStarted: 1, partialUnder50: 1, stale7: 3 });
-  assert.deepEqual(applyStationFollowUpPreset(DEFAULT_STATION_MONITORING_FILTERS, "not-started").status, "BELUM_DIMULAI");
-  assert.deepEqual(applyStationFollowUpPreset(DEFAULT_STATION_MONITORING_FILTERS, "partial-under-50"), {
-    ...DEFAULT_STATION_MONITORING_FILTERS, status: "TERISI_SEBAGIAN", progress: "lt50",
-  });
-  assert.deepEqual(applyStationFollowUpPreset(DEFAULT_STATION_MONITORING_FILTERS, "stale-7"), {
-    ...DEFAULT_STATION_MONITORING_FILTERS, status: "incomplete", activity: "stale7",
-  });
+  assert.deepEqual(getStationFollowUpCounts(rows), { attention: 1, notStarted: 1, partialUnder50: 1, partial50to99: 1 });
+  assert.deepEqual(applyStationFollowUpPreset(DEFAULT_STATION_MONITORING_FILTERS, "not-started").condition, "not-started");
+  assert.deepEqual(applyStationFollowUpPreset(DEFAULT_STATION_MONITORING_FILTERS, "partial-under-50").condition, "lt50");
+  assert.deepEqual(applyStationFollowUpPreset(DEFAULT_STATION_MONITORING_FILTERS, "partial-50-99").condition, "50to99");
 });
 
 test("search subset dan filter tersusun AND tanpa mengubah source summary", () => {
-  const filters = { ...DEFAULT_STATION_MONITORING_FILTERS, status: "TERISI_SEBAGIAN", progress: "lt50" };
+  const filters = { ...DEFAULT_STATION_MONITORING_FILTERS, condition: "lt50" };
   const source = [...statusRows];
-  assert.deepEqual(applyStationMonitoring(source, filters, NOW).map((row) => row.station_name), ["Partial"]);
+  assert.deepEqual(applyStationMonitoring(source, filters).map((row) => row.station_name), ["Partial"]);
   assert.deepEqual(source, statusRows);
 });
 
@@ -151,6 +126,13 @@ test("UI monitoring hanya hidup di Per Stasiun dan perubahan kontrol tidak meman
   assert.match(dashboard, /applyStationMonitoring\([\s\S]*completionRows/);
   assert.match(dashboard, /setStationMonitoringFilters/);
   assert.doesNotMatch(controls, /rpc\(|fetch\(|getSupabaseBrowserClient/);
+  assert.match(controls, /Kondisi Pengisian/);
+  assert.match(controls, /QC Produk/);
+  assert.match(controls, /Prioritas Pengisian/);
+  assert.match(controls, /QC Pending Terbanyak/);
+  assert.match(controls, /Terisi 50-99%/);
+  assert.doesNotMatch(controls, /Aktivitas|Tidak diperbarui|Paling Lama Tidak Diperbarui|Pembaruan Terbaru/);
+  assert.match(controls, /onQcPending/);
   assert.match(controls, /Menampilkan <strong>\{visibleCount\}<\/strong> dari <strong>\{totalCount\}/);
   assert.match(controls, /Reset filter/);
   assert.match(controls, /disabled=\{count === 0\}/);

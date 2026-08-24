@@ -34,6 +34,7 @@ import {
   applyStationMonitoring,
   DEFAULT_STATION_MONITORING_FILTERS,
   getStationFollowUpCounts,
+  getStationQcSummary,
   hasStationMonitoringFilters,
   type StationMonitoringFilters,
 } from "../lib/station-monitoring";
@@ -195,6 +196,7 @@ const StationFillingCard = memo(function StationFillingCard({
           <span><strong>{completion.site_count}</strong> Site</span>
           <span><strong>{submission?.value}</strong> {submission?.label}</span>
           <span><strong>{category?.label}</strong>{category && category.progress !== null && <> · {category.progress}%</>}</span>
+          {completion.pending_qc_count > 0 && <span className="station-completion-qc"><strong>QC Pending: {completion.pending_qc_count}</strong></span>}
         </div>
         {category && category.progress !== null && <div
           className="station-completion-progress"
@@ -279,7 +281,6 @@ export default function AdminDashboard({ username, displayName }: { username: st
   const [loading, setLoading] = useState(true);
   const [completionRows, setCompletionRows] = useState<StationCompletionSummary[]>([]);
   const [stationMonitoringFilters, setStationMonitoringFilters] = useState<StationMonitoringFilters>(DEFAULT_STATION_MONITORING_FILTERS);
-  const [stationMonitoringReferenceTime, setStationMonitoringReferenceTime] = useState(0);
   const [completionLoading, setCompletionLoading] = useState(false);
   const [completionError, setCompletionError] = useState("");
   const [completionDetails, setCompletionDetails] = useState<Map<string, StationCompletionDetailResponse>>(() => new Map());
@@ -341,7 +342,6 @@ export default function AdminDashboard({ username, displayName }: { username: st
         const { data, error } = await client.rpc("admin_station_completion_summary");
         if (error) throw error;
         setCompletionRows(stationCompletionRows(data));
-        setStationMonitoringReferenceTime(Date.now());
         completionLoadedRef.current = true;
       } catch {
         setCompletionError("Data kelengkapan belum dapat dimuat.");
@@ -603,15 +603,12 @@ export default function AdminDashboard({ username, displayName }: { username: st
     const filteredSummaries = applyStationMonitoring(
       completionRows.filter((summary) => searchedIds.has(summary.station_id)),
       stationMonitoringFilters,
-      stationMonitoringReferenceTime,
     );
     const orderByStationId = new Map(filteredSummaries.map((summary, index) => [summary.station_id, index]));
-    const assessmentFilterActive = stationMonitoringFilters.status !== "all"
-      || stationMonitoringFilters.progress !== "all"
-      || stationMonitoringFilters.activity !== "all";
+    const monitoringFilterActive = stationMonitoringFilters.condition !== "all" || stationMonitoringFilters.qc !== "all";
     return searchedStationFillingViews
       .filter(({ station }) => orderByStationId.has(station.id)
-        || (!assessmentFilterActive && !completionByStationId.has(station.id)))
+        || (!monitoringFilterActive && !completionByStationId.has(station.id)))
       .sort((left, right) => {
         const leftOrder = orderByStationId.get(left.station.id);
         const rightOrder = orderByStationId.get(right.station.id);
@@ -620,8 +617,9 @@ export default function AdminDashboard({ username, displayName }: { username: st
         if (rightOrder !== undefined) return 1;
         return left.station.name.localeCompare(right.station.name, "id-ID", { sensitivity: "base" });
       });
-  }, [completionByStationId, completionRows, searchedStationFillingViews, stationMonitoringFilters, stationMonitoringReferenceTime]);
-  const stationFollowUpCounts = useMemo(() => getStationFollowUpCounts(completionRows, stationMonitoringReferenceTime), [completionRows, stationMonitoringReferenceTime]);
+  }, [completionByStationId, completionRows, searchedStationFillingViews, stationMonitoringFilters]);
+  const stationFollowUpCounts = useMemo(() => getStationFollowUpCounts(completionRows), [completionRows]);
+  const stationQcSummary = useMemo(() => getStationQcSummary(completionRows), [completionRows]);
   const filteredAccounts = accounts.filter((account) => accountMatchesAdminSearch(account, query, stationMap));
   const filteredUnprovisionedStations = stations.filter((station) => !accountByStation.has(station.id)
     && (!query || station.name.toLocaleLowerCase("id-ID").includes(query)));
@@ -985,7 +983,7 @@ export default function AdminDashboard({ username, displayName }: { username: st
           </section>}
 
           {!loading && tab === "stations" && <div className="status-tabs filling-mode-tabs" role="tablist" aria-label="Mode Stasiun dan Pengisian">
-            <button role="tab" aria-selected={fillingMode === "master"} className={fillingMode === "master" ? "active" : ""} onClick={() => { setFillingMode("master"); setStationMonitoringReferenceTime(Date.now()); }}>Per Stasiun</button>
+            <button role="tab" aria-selected={fillingMode === "master"} className={fillingMode === "master" ? "active" : ""} onClick={() => setFillingMode("master")}>Per Stasiun</button>
             <button role="tab" aria-selected={fillingMode === "submissions"} className={fillingMode === "submissions" ? "active" : ""} onClick={() => { setSubmissionMonitorMounted(true); setFillingMode("submissions"); }}>Semua Pengisian</button>
           </div>}
 
@@ -994,7 +992,7 @@ export default function AdminDashboard({ username, displayName }: { username: st
           {!loading && searchTab && tab !== "stations" && <label className="admin-search">Cari<input autoComplete="off" value={search} onChange={(event) => setSearch(event.target.value)} placeholder={adminSearchPlaceholder(searchTab)} /></label>}
 
           {!loading && tab === "stations" && fillingMode === "master" && <div className="station-filling-toolbar">
-            <label className="admin-search">Cari<input autoComplete="off" value={search} onChange={(event) => { setSearch(event.target.value); setStationMonitoringReferenceTime(Date.now()); }} placeholder={adminSearchPlaceholder("stations")} /></label>
+            <label className="admin-search">Cari<input autoComplete="off" value={search} onChange={(event) => setSearch(event.target.value)} placeholder={adminSearchPlaceholder("stations")} /></label>
             <AdminBulkExport stations={stations} sites={sites} siteTypes={siteTypes} subtypes={subtypes} onMessage={setMessage} />
           </div>}
 
@@ -1008,13 +1006,15 @@ export default function AdminDashboard({ username, displayName }: { username: st
           {!loading && tab === "stations" && fillingMode === "master" && <StationMonitoringControls
             filters={stationMonitoringFilters}
             counts={stationFollowUpCounts}
+            qcSummary={stationQcSummary}
             visibleCount={filteredStationFillingViews.length}
             totalCount={stations.length}
             loading={completionLoading && completionRows.length === 0}
             available={completionRows.length > 0}
-            onChange={(next) => { setStationMonitoringFilters(next); setStationMonitoringReferenceTime(Date.now()); }}
-            onQuickAction={(key) => { setStationMonitoringFilters((current) => applyStationFollowUpPreset(current, key)); setStationMonitoringReferenceTime(Date.now()); }}
-            onReset={() => { setStationMonitoringFilters(DEFAULT_STATION_MONITORING_FILTERS); setStationMonitoringReferenceTime(Date.now()); }}
+            onChange={setStationMonitoringFilters}
+            onQuickAction={(key) => setStationMonitoringFilters((current) => applyStationFollowUpPreset(current, key))}
+            onQcPending={() => setStationMonitoringFilters((current) => ({ ...current, qc: "pending", sort: "qc-desc" }))}
+            onReset={() => setStationMonitoringFilters(DEFAULT_STATION_MONITORING_FILTERS)}
           />}
 
           {!loading && tab === "stations" && fillingMode === "master" && <div className="admin-list" aria-busy={completionLoading}>
@@ -1048,7 +1048,7 @@ export default function AdminDashboard({ username, displayName }: { username: st
             />)}
             {filteredStationFillingViews.length === 0 && <div className="station-monitoring-empty">
               <p>Tidak ada Stasiun yang sesuai dengan filter saat ini.</p>
-              {hasStationMonitoringFilters(stationMonitoringFilters) && <button type="button" onClick={() => { setStationMonitoringFilters(DEFAULT_STATION_MONITORING_FILTERS); setStationMonitoringReferenceTime(Date.now()); }}>Reset filter</button>}
+              {hasStationMonitoringFilters(stationMonitoringFilters) && <button type="button" onClick={() => setStationMonitoringFilters(DEFAULT_STATION_MONITORING_FILTERS)}>Reset filter</button>}
             </div>}
           </div>}
 
