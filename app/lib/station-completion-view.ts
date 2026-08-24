@@ -1,20 +1,58 @@
-import type { StationCompletionStatus, StationCompletionSummary } from "./station-completion";
+import type {
+  StationCompletionDetailResponse,
+  StationCompletionDetailRow,
+  StationCompletionRowStatus,
+  StationCompletionSummary,
+} from "./station-completion";
 
-const STATUS_LABELS: Record<StationCompletionStatus, string> = {
+const STATUS_LABELS: Record<StationCompletionRowStatus, string> = {
   LENGKAP: "Lengkap",
   TERISI_SEBAGIAN: "Terisi Sebagian",
   BELUM_DIMULAI: "Belum Dimulai",
   PERLU_PERHATIAN: "Perlu Perhatian",
+  KOSONG: "Kosong",
+  GUDANG_TERSEDIA: "Gudang Tersedia",
 };
 
+const DETAIL_STATUS_ORDER = new Map<StationCompletionRowStatus, number>([
+  ["PERLU_PERHATIAN", 0],
+  ["BELUM_DIMULAI", 1],
+  ["KOSONG", 2],
+  ["TERISI_SEBAGIAN", 3],
+  ["GUDANG_TERSEDIA", 4],
+  ["LENGKAP", 5],
+]);
+
 export function stationCompletionStatusLabel(status: string) {
-  return STATUS_LABELS[status as StationCompletionStatus] ?? "Status tidak dikenal";
+  return STATUS_LABELS[status as StationCompletionRowStatus] ?? "Status tidak dikenal";
 }
 
 export function stationCompletionStatusClass(status: string) {
-  return STATUS_LABELS[status as StationCompletionStatus]
+  return STATUS_LABELS[status as StationCompletionRowStatus]
     ? status.toLocaleLowerCase("id-ID").replaceAll("_", "-")
     : "unknown";
+}
+
+export function stationCompletionIncompleteRows(rows: StationCompletionDetailRow[]) {
+  return rows.map((row, index) => ({ row, index }))
+    .filter(({ row }) => row.status !== "LENGKAP" && row.status !== "GUDANG_TERSEDIA")
+    .sort((left, right) => (
+      (DETAIL_STATUS_ORDER.get(left.row.status) ?? Number.MAX_SAFE_INTEGER)
+      - (DETAIL_STATUS_ORDER.get(right.row.status) ?? Number.MAX_SAFE_INTEGER)
+      || left.index - right.index
+    ))
+    .map(({ row }) => row);
+}
+
+export function stationCompletionDetailKey(row: StationCompletionDetailRow) {
+  return `${row.site_id ?? "no-site"}:${row.site_subtype_id ?? "no-subtype"}:${row.submission_id ?? "no-submission"}`;
+}
+
+export function stationCompletionDetailResponse(value: unknown): StationCompletionDetailResponse | null {
+  if (!value || typeof value !== "object") return null;
+  const detail = value as Partial<StationCompletionDetailResponse>;
+  if (typeof detail.station_id !== "string" || !detail.summary || !Array.isArray(detail.rows)) return null;
+  return detail as StationCompletionDetailResponse;
 }
 
 export function stationCompletionCategory(summary: Pick<StationCompletionSummary,

@@ -653,6 +653,8 @@ button[aria-busy="true"] { display: inline-flex; align-items: center; justify-co
 .station-completion-status.terisi-sebagian { border-color: #d9ceb0; background: #f8f0d9; color: #785b18; }
 .station-completion-status.belum-dimulai { border-color: #ced4d1; background: #eef1ef; color: #52635e; }
 .station-completion-status.perlu-perhatian { border-color: #dfbcb6; background: #f8e8e5; color: #8c3f35; }
+.station-completion-status.kosong { border-color: #dcc7a7; background: #faf1df; color: #775622; }
+.station-completion-status.gudang-tersedia { border-color: #bfd7cc; background: #e8f2ed; color: #35634f; }
 .station-completion-status.unknown { border-color: var(--line); background: #f5f6f4; color: var(--muted); }
 .station-completion-body { margin-top: 9px; display: grid; gap: 7px; }
 .station-completion-metrics { display: flex; align-items: baseline; gap: 8px 18px; flex-wrap: wrap; }
@@ -668,6 +670,35 @@ button[aria-busy="true"] { display: inline-flex; align-items: center; justify-co
 .station-completion-error { margin-top: 14px; padding: 10px 12px; display: flex; align-items: center; justify-content: space-between; gap: 12px; border: 1px solid #e3c9c4; border-radius: 7px; background: #fff8f6; color: #7f4239; font-size: 11px; }
 .station-completion-error button { min-height: 32px; padding: 6px 9px; border: 1px solid #d1aaa3; border-radius: 6px; background: white; color: #7f4239; font-size: 10px; font-weight: 800; cursor: pointer; }
 .station-completion-updating { margin: 12px 0 -6px; display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: 10px; }
+.station-completion-detail { padding: 16px; border-top: 1px solid var(--line); background: #fbfcfa; }
+.station-completion-detail-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.station-completion-detail-heading h3 { margin: 0; color: var(--ink); font: 600 17px/1.3 Georgia, serif; }
+.station-completion-detail-heading span { margin-top: 3px; display: block; color: var(--muted); font-size: 10px; }
+.station-completion-detail-heading > strong { color: var(--green-deep); font-size: 10px; }
+.station-completion-gap-list { margin-top: 12px; border-top: 1px solid var(--line); }
+.station-completion-gap { padding: 13px 0; border-bottom: 1px solid var(--line); }
+.station-completion-gap-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.station-completion-gap-heading > div { min-width: 0; }
+.station-completion-gap-heading > div > strong { display: block; color: var(--ink); font-size: 12px; line-height: 1.45; overflow-wrap: anywhere; }
+.station-completion-gap-heading > div > span { margin-top: 2px; display: block; color: var(--muted); font-size: 10px; line-height: 1.4; overflow-wrap: anywhere; }
+.station-completion-gap > p { margin: 8px 0 0; color: var(--muted); font-size: 11px; line-height: 1.5; }
+.station-completion-gap > p + p { margin-top: 2px; }
+.station-completion-gap > p strong { color: var(--green-deep); }
+.station-completion-issues { margin: 8px 0 0; padding-left: 17px; color: #87443b; font-size: 11px; line-height: 1.5; }
+.station-completion-missing { margin-top: 10px; }
+.station-completion-missing > span:not(.sr-only) { color: var(--muted); font-size: 10px; font-weight: 800; }
+.station-completion-missing ul { margin: 6px 0 0; padding-left: 18px; display: grid; gap: 3px; color: var(--ink); font-size: 11px; line-height: 1.45; }
+.station-completion-missing li { overflow-wrap: anywhere; }
+.station-completion-missing button { margin-top: 8px; min-height: 32px; padding: 6px 9px; border: 1px solid #bdd0c8; border-radius: 6px; background: white; color: var(--green-deep); font-size: 10px; font-weight: 800; cursor: pointer; }
+.station-completion-missing button:hover { background: var(--green-soft); }
+.station-completion-missing button:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
+.station-completion-detail-skeleton { margin-top: 13px; display: grid; gap: 8px; }
+.station-completion-detail-skeleton span { width: min(520px, 88%); height: 12px; border-radius: 4px; background: #e6ebe7; }
+.station-completion-detail-skeleton span:nth-child(2) { width: min(430px, 74%); }
+.station-completion-detail-skeleton span:nth-child(3) { width: min(340px, 58%); }
+.station-completion-detail-error { margin-top: 12px; padding: 10px; display: flex; align-items: center; justify-content: space-between; gap: 10px; border-left: 3px solid #b64f42; background: #fff7f5; color: #7f4239; font-size: 11px; }
+.station-completion-detail-error button { min-height: 32px; padding: 6px 9px; border: 1px solid #d1aaa3; border-radius: 6px; background: white; color: #7f4239; font-size: 10px; font-weight: 800; cursor: pointer; }
+.station-completion-complete { margin: 12px 0 0; padding: 10px 12px; border-left: 3px solid var(--green); background: var(--green-soft); color: var(--green-deep); font-size: 11px; line-height: 1.5; }
 .admin-table-wrap { margin-top: 20px; max-width: 100%; overflow: auto; border: 1px solid var(--line); border-radius: 8px; background: white; }
 .admin-list .admin-table-wrap { margin: 0; border-width: 1px 0 0; border-radius: 0; }
 .admin-table-wrap table { width: 100%; border-collapse: collapse; font-size: 10px; }
@@ -946,6 +977,10 @@ button[aria-busy="true"] { display: inline-flex; align-items: center; justify-co
   .station-completion-metrics { gap: 6px 12px; }
   .station-completion-error { align-items: stretch; flex-direction: column; }
   .station-completion-error button { width: 100%; }
+  .station-completion-detail-heading, .station-completion-gap-heading { align-items: flex-start; flex-direction: column; }
+  .station-completion-gap-heading .station-completion-status { align-self: flex-start; }
+  .station-completion-detail-error { align-items: stretch; flex-direction: column; }
+  .station-completion-detail-error button { width: 100%; }
   .submission-filter-grid, .submission-item-list, .submission-info { grid-template-columns: 1fr; }
   .submission-pagination { align-items: stretch; }
   .page-size-control, .pagination-buttons { justify-content: space-between; }

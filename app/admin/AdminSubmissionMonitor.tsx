@@ -70,7 +70,7 @@ export default function AdminSubmissionMonitor({
   stations: NamedRow[];
   siteTypes: NamedRow[];
   onDownload: (row: SubmissionSummary) => Promise<void>;
-  onChanged: () => Promise<void>;
+  onChanged: (stationId?: string) => Promise<void>;
 }) {
   const feedback = useAppFeedback();
   const [rows, setRows] = useState<SubmissionSummary[]>([]);
@@ -248,7 +248,7 @@ export default function AdminSubmissionMonitor({
         listCacheRef.current.clear();
         setExpandedId(null);
         feedback.toast(restoring ? "Submission berhasil dipulihkan." : "Submission berhasil diarsipkan.", "success");
-        await Promise.all([loadList({ force: true }), onChanged()]);
+        await Promise.all([loadList({ force: true }), onChanged(row.station_id)]);
         return true;
       } finally {
         setActionId(null);
@@ -286,7 +286,7 @@ export default function AdminSubmissionMonitor({
         });
         setExpandedId(null);
         feedback.toast("Submission berhasil dihapus permanen.", "success");
-        await Promise.all([loadList({ force: true }), onChanged()]);
+        await Promise.all([loadList({ force: true }), onChanged(row.station_id)]);
         return true;
       } finally {
         setActionId(null);
