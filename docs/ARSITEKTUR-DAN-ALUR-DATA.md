@@ -51,6 +51,23 @@ untuk Subtipe. Numerator adalah kategori dengan minimal satu produk valid
 Aloptama tidak ikut progress. Model ini menghindari N+1 dan mencegah seluruh
 JSONB payload dikirim ketika tabel monitoring dibuka.
 
+## Station Completion backend
+
+`admin_station_completion_summary()` menyediakan ringkasan batch seluruh stasiun,
+sedangkan `admin_station_completion_detail(station_id)` menyediakan rincian Site dan
+Subtipe satu stasiun. Keduanya read-only, hanya untuk Super Admin, dan tidak mengirim
+payload submission mentah.
+
+Expected submission diturunkan dari Site, Subtipe, dan assignment aktif. AWOS Kategori
+III mengikuti `site_subtype_assignments`; tipe Site lain mengikuti aturan runtime aktif
+untuk seluruh tipe. Submission archived dan master inactive tidak masuk perhitungan.
+
+Completion kategori hanya memakai kategori fungsi expected non-Gudang. Metadata
+Aloptama dan field Unit tidak dihitung. Submission yang belum ada tetap berada di
+denominator. Gudang hanya memeriksa keberadaan struktur submission aktif dan tidak
+memiliki persentase kategori. Proposal berstatus `PENDING` dilaporkan sebagai indikator
+QC terpisah tanpa memengaruhi progress.
+
 ## Pengisian
 
 ```text
