@@ -496,8 +496,11 @@ button[aria-busy="true"] { display: inline-flex; align-items: center; justify-co
 .admin-monitoring-progress-track { height: 7px; margin-top: 8px; overflow: hidden; border-radius: 99px; background: #e7eeea; }
 .admin-monitoring-progress-track span { display: block; height: 100%; border-radius: inherit; background: var(--green); }
 .admin-monitoring-progress small { display: block; margin-top: 6px; color: var(--muted); font-size: 9px; }
-.admin-qc-summary { margin-top: 8px; padding: 10px 12px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 14px; border: 1px solid var(--line); border-radius: 7px; background: #fbfdfb; color: var(--muted); font-size: 10px; }
+.admin-qc-summary { margin-top: 8px; padding: 10px 12px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; border: 1px solid var(--line); border-radius: 7px; background: #fbfdfb; color: var(--muted); font-size: 10px; }
+.admin-qc-summary > div { display: flex; align-items: baseline; gap: 8px; }
 .admin-qc-summary strong { color: var(--green-deep); font-size: 11px; }
+.admin-qc-summary b { color: var(--ink); font-family: var(--font-serif); font-size: 18px; font-weight: 500; }
+.admin-qc-summary small { flex-basis: 100%; color: var(--muted); font-size: 9px; }
 .admin-summary-muted { margin: 10px 0 0; color: var(--muted); font-size: 11px; }
 .admin-search { width: min(500px, 100%); margin-top: 22px; display: block; color: var(--muted); font-size: 10px; font-weight: 800; }
 .admin-search input { margin-top: 6px; }

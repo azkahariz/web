@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { buildQcProposalContexts } from "../../../lib/qc-proposal-context";
+import { parseQcPendingSummary } from "../../../lib/qc-pending-summary";
 import { createSupabaseServerClient } from "../../../lib/supabase/server";
 
 type ProposalRow = {
@@ -38,10 +39,17 @@ export async function GET() {
   const { error: authorizationError } = await client.rpc("admin_product_summary");
   if (authorizationError) return errorResponse(authorizationError.code, "Akses QC Produk gagal divalidasi.");
 
-  const { data: proposalData, error: proposalError } = await client.from("product_proposals")
-    .select("id, station_id, submission_id, operator_name, proposed_brand, proposed_model, normalized_brand, normalized_model, status, resolved_product_id, reviewed_by, reviewed_at, review_note, created_at")
-    .order("created_at", { ascending: false });
+  const [proposalResult, pendingSummaryResult] = await Promise.all([
+    client.from("product_proposals")
+      .select("id, station_id, submission_id, operator_name, proposed_brand, proposed_model, normalized_brand, normalized_model, status, resolved_product_id, reviewed_by, reviewed_at, review_note, created_at")
+      .order("created_at", { ascending: false }),
+    client.rpc("admin_pending_product_proposal_summary"),
+  ]);
+  const { data: proposalData, error: proposalError } = proposalResult;
   if (proposalError) return errorResponse(proposalError.code, "Proposal produk gagal dimuat.");
+  if (pendingSummaryResult.error) return errorResponse(pendingSummaryResult.error.code, "Ringkasan QC Pending gagal dimuat.");
+  const pendingSummary = parseQcPendingSummary(pendingSummaryResult.data);
+  if (!pendingSummary) return NextResponse.json({ error: "Contract ringkasan QC Pending tidak valid." }, { status: 500 });
 
   const proposals = (proposalData ?? []) as ProposalRow[];
   const submissionIds = [...new Set(proposals.map((proposal) => proposal.submission_id).filter((id): id is string => Boolean(id)))];
@@ -66,7 +74,7 @@ export async function GET() {
     username: admin.username,
     displayName: admin.display_name?.trim() || admin.username,
   }]));
-  return NextResponse.json({ rows: proposals.map((proposal) => ({
+  return NextResponse.json({ pendingSummary, rows: proposals.map((proposal) => ({
     ...proposal,
     reviewer: proposal.reviewed_by ? adminByAuthUser.get(proposal.reviewed_by) ?? null : null,
     context: contexts.get(proposal.id),

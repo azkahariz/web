@@ -28,6 +28,7 @@ import { parseSiteTypeCompletionRows, siteTypeCompletionRows, summarizeSiteTypeP
 import { adminViewFromSearchParam, adminViewHref, type AdminView } from "../lib/admin-navigation";
 import { hasMixedMergeProposalFamilies, rankMergeProducts, type ProductAlias } from "../lib/product-qc";
 import type { QcProposalContext } from "../lib/qc-proposal-context";
+import { type QcPendingSummary } from "../lib/qc-pending-summary";
 import type { StationCompletionDetailResponse, StationCompletionSummary } from "../lib/station-completion";
 import { createStationCompletionDetailCache } from "../lib/station-completion-detail-cache";
 import {
@@ -270,6 +271,7 @@ export default function AdminDashboard({ username, displayName }: { username: st
   const [qcProductsLoading, setQcProductsLoading] = useState(false);
   const [productTotal, setProductTotal] = useState(0);
   const [proposals, setProposals] = useState<Proposal[]>([]);
+  const [qcPendingSummary, setQcPendingSummary] = useState<QcPendingSummary | null>(null);
   const [audits, setAudits] = useState<Audit[]>([]);
   const [adminIdentities, setAdminIdentities] = useState<AdminIdentity[]>([]);
   const [search, setSearch] = useState("");
@@ -332,12 +334,13 @@ export default function AdminDashboard({ username, displayName }: { username: st
 
   const refreshQcProposals = useCallback(async () => {
     const response = await fetch("/api/admin/product-proposals", { cache: "no-store" });
-    const payload = await response.json().catch(() => ({})) as { rows?: Proposal[]; error?: string };
+    const payload = await response.json().catch(() => ({})) as { rows?: Proposal[]; pendingSummary?: QcPendingSummary; error?: string };
     if (!response.ok) {
       setMessage(payload.error || "Proposal produk gagal dimuat.");
       return false;
     }
     setProposals(payload.rows ?? []);
+    setQcPendingSummary(payload.pendingSummary ?? null);
     return true;
   }, []);
 
@@ -541,7 +544,7 @@ export default function AdminDashboard({ username, displayName }: { username: st
           .select("auth_user_id, username")
           .order("username");
       }
-      const proposalPayload = await proposalResponse.json().catch(() => ({})) as { rows?: Proposal[]; error?: string };
+      const proposalPayload = await proposalResponse.json().catch(() => ({})) as { rows?: Proposal[]; pendingSummary?: QcPendingSummary; error?: string };
       const error = [stationRows, siteRows, siteTypeRows, subtypeRows, submissionRows, accountRows, productSummaryRows, auditRows].find((result) => result.error)?.error;
       if (error || !proposalResponse.ok) setMessage(error ? `Gagal memuat dashboard: ${error.message}` : proposalPayload.error || "Proposal produk gagal dimuat.");
       else {
@@ -554,6 +557,7 @@ export default function AdminDashboard({ username, displayName }: { username: st
         const productSummary = Array.isArray(productSummaryRows.data) ? productSummaryRows.data[0] : productSummaryRows.data;
         setProductTotal(Number(productSummary?.total_count ?? 0));
         setProposals(proposalPayload.rows ?? []);
+        setQcPendingSummary(proposalPayload.pendingSummary ?? null);
         setAudits((auditRows.data ?? []) as Audit[]);
         setAdminIdentities((adminIdentityResult.data ?? []) as AdminIdentity[]);
       }
@@ -1030,7 +1034,7 @@ export default function AdminDashboard({ username, displayName }: { username: st
             <button onClick={() => navigate("products")}><strong>{productTotal}</strong><span>Produk</span></button>
             <button onClick={() => navigate("stations", { fillingMode: "submissions" })}><strong>{submissions.length}</strong><span>Submission</span></button>
             <button onClick={() => navigate("locks")}><strong>{activeLocks.length}</strong><span>Lock aktif</span></button>
-            <button onClick={() => navigate("qc", { qcStatus: "PENDING" })}><strong>{proposals.filter((row) => row.status === "PENDING").length}</strong><span>QC Pending</span></button>
+            <button onClick={() => navigate("qc", { qcStatus: "PENDING" })}><strong>{qcPendingSummary?.totalPending ?? proposals.filter((row) => row.status === "PENDING").length}</strong><span>Pending Proposal</span></button>
             <button onClick={() => navigate("qc", { qcStatus: "APPROVED" })}><strong>{proposals.filter((row) => row.status === "APPROVED").length}</strong><span>Approved</span></button>
             <button onClick={() => navigate("qc", { qcStatus: "MERGED" })}><strong>{proposals.filter((row) => row.status === "MERGED").length}</strong><span>Merged</span></button>
             <button onClick={() => navigate("qc", { qcStatus: "REJECTED" })}><strong>{proposals.filter((row) => row.status === "REJECTED").length}</strong><span>Rejected</span></button>
@@ -1057,7 +1061,13 @@ export default function AdminDashboard({ username, displayName }: { username: st
                   {monitoringSummary.globalProgress !== null && <div className="admin-monitoring-progress-track" role="progressbar" aria-label="Progress kategori global" aria-valuemin={0} aria-valuemax={100} aria-valuenow={monitoringSummary.globalProgress}><span style={{ width: `${monitoringSummary.globalProgress}%` }} /></div>}
                   <small>{monitoringSummary.total} total status</small>
                 </div>
-                <div className="admin-qc-summary" aria-label="Ringkasan QC Produk"><strong>QC Produk</strong><span>{monitoringQcSummary.totalPending} pending pada {monitoringQcSummary.stationCount} stasiun</span><span>{monitoringQcSummary.topStation ? `Terbanyak: ${monitoringQcSummary.topStation.name} (${monitoringQcSummary.topStation.count})` : "Tidak ada QC pending"}</span></div>
+                {qcPendingSummary && <div className="admin-qc-summary" aria-label="Ringkasan QC Produk">
+                  <div><strong>QC Produk</strong><b>{qcPendingSummary.totalPending} QC Pending</b></div>
+                  <span>{qcPendingSummary.pendingPengisian} Pengisian · {qcPendingSummary.pendingGudang} Gudang</span>
+                  <span>{monitoringQcSummary.stationCount} Stasiun memiliki QC Pending pada Pengisian</span>
+                  <span>{qcPendingSummary.pendingTidakDigunakan} Tidak Digunakan Saat Ini</span>
+                  <small>Proposal Pending yang tidak sedang digunakan pada inventaris aktif, tetapi tetap dapat diperiksa untuk menjadi master Product.</small>
+                </div>}
               </>}
           </section>}
 
