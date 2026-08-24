@@ -645,6 +645,29 @@ button[aria-busy="true"] { display: inline-flex; align-items: center; justify-co
 .admin-list > details:has(.row-action-menu[open]) { overflow: visible; }
 .admin-list > details > summary { padding: 16px; display: flex; justify-content: space-between; gap: 12px; cursor: pointer; font-size: 13px; line-height: 1.4; }
 .admin-list > details > summary span { color: var(--muted); font-size: 12px; }
+.admin-list > details > summary.station-completion-summary { display: block; }
+.station-completion-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; }
+.station-completion-heading > strong { min-width: 0; color: var(--ink); font-size: 14px; line-height: 1.4; overflow-wrap: anywhere; }
+.station-completion-status { flex: 0 0 auto; padding: 4px 8px; border: 1px solid transparent; border-radius: 999px; font-size: 9px; font-weight: 900; line-height: 1.35; white-space: nowrap; }
+.station-completion-status.lengkap { border-color: #b9d9c8; background: #e4f2ea; color: #266149; }
+.station-completion-status.terisi-sebagian { border-color: #d9ceb0; background: #f8f0d9; color: #785b18; }
+.station-completion-status.belum-dimulai { border-color: #ced4d1; background: #eef1ef; color: #52635e; }
+.station-completion-status.perlu-perhatian { border-color: #dfbcb6; background: #f8e8e5; color: #8c3f35; }
+.station-completion-status.unknown { border-color: var(--line); background: #f5f6f4; color: var(--muted); }
+.station-completion-body { margin-top: 9px; display: grid; gap: 7px; }
+.station-completion-metrics { display: flex; align-items: baseline; gap: 8px 18px; flex-wrap: wrap; }
+.admin-list > details > summary .station-completion-metrics span { color: var(--muted); font-size: 11px; }
+.station-completion-metrics strong { color: var(--green-deep); font-size: 12px; }
+.station-completion-progress { width: min(420px, 100%); height: 5px; overflow: hidden; border-radius: 999px; background: #e3e8e5; }
+.station-completion-progress > span { height: 100%; display: block; border-radius: inherit; background: var(--green); }
+.station-completion-body > small, .station-completion-unavailable small { color: var(--red); font-size: 10px; }
+.station-completion-skeleton { margin-top: 10px; display: grid; gap: 7px; }
+.station-completion-skeleton span { width: min(420px, 80%); height: 11px; border-radius: 4px; background: #e7ebe8; }
+.station-completion-skeleton span:last-child { width: min(300px, 58%); height: 5px; }
+.station-completion-unavailable { margin-top: 8px; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.station-completion-error { margin-top: 14px; padding: 10px 12px; display: flex; align-items: center; justify-content: space-between; gap: 12px; border: 1px solid #e3c9c4; border-radius: 7px; background: #fff8f6; color: #7f4239; font-size: 11px; }
+.station-completion-error button { min-height: 32px; padding: 6px 9px; border: 1px solid #d1aaa3; border-radius: 6px; background: white; color: #7f4239; font-size: 10px; font-weight: 800; cursor: pointer; }
+.station-completion-updating { margin: 12px 0 -6px; display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: 10px; }
 .admin-table-wrap { margin-top: 20px; max-width: 100%; overflow: auto; border: 1px solid var(--line); border-radius: 8px; background: white; }
 .admin-list .admin-table-wrap { margin: 0; border-width: 1px 0 0; border-radius: 0; }
 .admin-table-wrap table { width: 100%; border-collapse: collapse; font-size: 10px; }
@@ -918,6 +941,11 @@ button[aria-busy="true"] { display: inline-flex; align-items: center; justify-co
   .admin-stats { grid-template-columns: 1fr 1fr; }
   .qc-toolbar { align-items: stretch; flex-direction: column; }
   .station-filling-toolbar { align-items: stretch; flex-direction: column; }
+  .station-completion-heading { align-items: flex-start; flex-direction: column; gap: 7px; }
+  .station-completion-status { white-space: normal; }
+  .station-completion-metrics { gap: 6px 12px; }
+  .station-completion-error { align-items: stretch; flex-direction: column; }
+  .station-completion-error button { width: 100%; }
   .submission-filter-grid, .submission-item-list, .submission-info { grid-template-columns: 1fr; }
   .submission-pagination { align-items: stretch; }
   .page-size-control, .pagination-buttons { justify-content: space-between; }

@@ -11,7 +11,7 @@
     "start": "next start",
     "test": "npm run build && node --experimental-strip-types --test tests/rendered-html.test.mjs tests/master-sync.test.mjs tests/auth-autosave.test.mjs tests/admin-qc.test.mjs tests/admin-products.test.mjs tests/product-dependencies.test.mjs tests/product-reference-move.test.mjs tests/product-merge.test.mjs tests/product-delete.test.mjs tests/product-merge-recommendations.test.mjs tests/product-reference-selection.test.mjs tests/ux-polish.test.mjs tests/admin-export.test.mjs tests/admin-submission-monitoring.test.mjs tests/warehouse.test.mjs tests/station-site-progress.test.mjs tests/station-runtime-master.test.mjs tests/admin-runtime-master.test.mjs tests/export-master.test.mjs tests/export-source-csv.test.mjs tests/site-subtype-family.test.mjs tests/guide-versioning.test.mjs tests/guide-search.test.mjs tests/guide-completeness.test.mjs",
     "lint": "eslint . --ignore-pattern .next",
-    "test:station-completion": "node --test tests/station-completion-engine.test.mjs",
+    "test:station-completion": "node --experimental-strip-types --test tests/station-completion-engine.test.mjs tests/station-completion-master-ui.test.mjs",
     "check": "npm run lint && npm run test && npm run test:station-completion",
     "validate:master": "node scripts/sync-master.mjs --validate-only",
     "sync:master": "node scripts/sync-master.mjs",

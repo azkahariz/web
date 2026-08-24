@@ -25,6 +25,13 @@ import { summarizeSitesByType } from "../lib/admin-summary";
 import { adminViewFromSearchParam, adminViewHref, type AdminView } from "../lib/admin-navigation";
 import { hasMixedMergeProposalFamilies, rankMergeProducts, type ProductAlias } from "../lib/product-qc";
 import type { QcProposalContext } from "../lib/qc-proposal-context";
+import type { StationCompletionSummary } from "../lib/station-completion";
+import {
+  stationCompletionCategory,
+  stationCompletionRows,
+  stationCompletionStatusClass,
+  stationCompletionStatusLabel,
+} from "../lib/station-completion-view";
 import type { SubmissionSummary } from "../lib/submission-monitoring";
 import { getSupabaseBrowserClient } from "../lib/supabase/client";
 
@@ -108,6 +115,8 @@ function proposalCategoryLabel(context: QcProposalContext) {
 const StationFillingCard = memo(function StationFillingCard({
   station,
   view,
+  completion,
+  completionLoading,
   visibleRows,
   expanded,
   busyAction,
@@ -116,14 +125,38 @@ const StationFillingCard = memo(function StationFillingCard({
 }: {
   station: Station;
   view: StationFillingView;
+  completion: StationCompletionSummary | null;
+  completionLoading: boolean;
   visibleRows: StationFillingView["rows"];
   expanded: boolean;
   busyAction: string | null;
   onToggle: (open: boolean) => void;
   onDownload: (station: Station, site: Site, subtype: Subtype) => void;
 }) {
+  const category = completion ? stationCompletionCategory(completion) : null;
   return <details open={expanded} onToggle={(event) => onToggle(event.currentTarget.open)}>
-    <summary><strong>{station.name}</strong><span>{view.siteCount} site {"\u2022"} {view.submissionCount} submission</span></summary>
+    <summary className="station-completion-summary">
+      <div className="station-completion-heading">
+        <strong>{station.name}</strong>
+        {completion && <span className={`station-completion-status ${stationCompletionStatusClass(completion.station_status)}`}>{stationCompletionStatusLabel(completion.station_status)}</span>}
+      </div>
+      {completion ? <div className="station-completion-body">
+        <div className="station-completion-metrics">
+          <span><strong>{completion.site_count}</strong> Site</span>
+          <span><strong>{completion.existing_submission_count} / {completion.expected_submission_count}</strong> Pengisian</span>
+          <span><strong>{category?.label}</strong>{category && category.progress !== null && <> · {category.progress}%</>}</span>
+        </div>
+        {category && category.progress !== null && <div
+          className="station-completion-progress"
+          role="progressbar"
+          aria-label={`Progress kategori ${category.progress} persen`}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={category.progress}
+        ><span style={{ width: `${Math.min(100, Math.max(0, category.progress))}%` }} /></div>}
+        {completion.site_count === 0 && completion.issues[0]?.label && <small>{completion.issues[0].label}</small>}
+      </div> : completionLoading ? <div className="station-completion-skeleton" aria-label="Memuat ringkasan kelengkapan"><span /><span /></div> : <div className="station-completion-unavailable"><span>{view.siteCount} Site (data master)</span><small>Kelengkapan belum tersedia</small></div>}
+    </summary>
     {expanded && <div className="admin-table-wrap station-filling-table"><table><thead><tr><th>Site</th><th>Tipe Site</th><th>Subtipe</th><th>Status</th><th>Versi</th><th>Terakhir Simpan</th><th>Aksi</th></tr></thead><tbody>
       {visibleRows.map(({ site, siteType, subtype, submission }) => <tr key={`${site.id}:${subtype?.id ?? "no-subtype"}`}>
         <td><strong>{site.name}</strong></td>
@@ -146,6 +179,8 @@ const StationFillingCard = memo(function StationFillingCard({
 }, (previous, next) => (
   previous.station === next.station
   && previous.view === next.view
+  && previous.completion === next.completion
+  && previous.completionLoading === next.completionLoading
   && previous.visibleRows === next.visibleRows
   && previous.expanded === next.expanded
   && previous.busyAction === next.busyAction
@@ -184,6 +219,11 @@ export default function AdminDashboard({ username, displayName }: { username: st
   const [credential, setCredential] = useState<{ username: string; password: string; title: string } | null>(null);
   const [credentialVisible, setCredentialVisible] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [completionRows, setCompletionRows] = useState<StationCompletionSummary[]>([]);
+  const [completionLoading, setCompletionLoading] = useState(false);
+  const [completionError, setCompletionError] = useState("");
+  const completionRequestRef = useRef<Promise<void> | null>(null);
+  const completionLoadedRef = useRef(false);
   const [loadedAt, setLoadedAt] = useState(0);
   const [activeAction, setActiveAction] = useState<string | null>(null);
 
@@ -217,6 +257,32 @@ export default function AdminDashboard({ username, displayName }: { username: st
     }
     setProposals(payload.rows ?? []);
     return true;
+  }, []);
+
+  const refreshCompletionSummary = useCallback(async (force = false) => {
+    if (!force && completionLoadedRef.current) return;
+    if (completionRequestRef.current) return completionRequestRef.current;
+
+    const request = (async () => {
+      setCompletionLoading(true);
+      setCompletionError("");
+      try {
+        const client = getSupabaseBrowserClient();
+        if (!client) throw new Error("Konfigurasi Supabase belum tersedia.");
+        const { data, error } = await client.rpc("admin_station_completion_summary");
+        if (error) throw error;
+        setCompletionRows(stationCompletionRows(data));
+        completionLoadedRef.current = true;
+      } catch {
+        setCompletionError("Data kelengkapan belum dapat dimuat.");
+      } finally {
+        setCompletionLoading(false);
+        completionRequestRef.current = null;
+      }
+    })();
+
+    completionRequestRef.current = request;
+    return request;
   }, []);
 
   const refresh = useCallback(async () => {
@@ -285,10 +351,20 @@ export default function AdminDashboard({ username, displayName }: { username: st
     setProductTotal(Number(productSummary?.total_count ?? 0));
   }, []);
 
+  const refreshAfterSubmissionChange = useCallback(async () => {
+    await Promise.all([refresh(), refreshCompletionSummary(true)]);
+  }, [refresh, refreshCompletionSummary]);
+
   useEffect(() => {
     const timer = window.setTimeout(() => void refresh(), 0);
     return () => window.clearTimeout(timer);
   }, [refresh]);
+
+  useEffect(() => {
+    if (tab !== "stations" || fillingMode !== "master") return;
+    const timer = window.setTimeout(() => void refreshCompletionSummary(), 0);
+    return () => window.clearTimeout(timer);
+  }, [fillingMode, refreshCompletionSummary, tab]);
 
   useEffect(() => {
     if (tab !== "qc") return;
@@ -309,6 +385,7 @@ export default function AdminDashboard({ username, displayName }: { username: st
   }, [credential]);
 
   const stationMap = useMemo(() => new Map(stations.map((station) => [station.id, station])), [stations]);
+  const completionByStationId = useMemo(() => new Map(completionRows.map((summary) => [summary.station_id, summary])), [completionRows]);
   const siteMap = useMemo(() => new Map(sites.map((site) => [site.id, site])), [sites]);
   const subtypeMap = useMemo(() => new Map(subtypes.map((subtype) => [subtype.id, subtype])), [subtypes]);
   const accountByStation = useMemo(() => new Map(accounts.map((account) => [account.station_id, account])), [accounts]);
@@ -596,7 +673,7 @@ export default function AdminDashboard({ username, displayName }: { username: st
           {tabs.map((item) => <Link key={item.id} href={adminViewHref(item.id)} className={tab === item.id ? "active" : ""} aria-current={tab === item.id ? "page" : undefined}>{item.label}</Link>)}
         </nav>
         <section className={`admin-content${tab === "accounts" ? " accounts-view" : ""}`}>
-          <div className="admin-heading"><div><p className="kicker">PENGELOLAAN APLIKASI</p><h2>{tabs.find((item) => item.id === tab)?.label}</h2></div>{!(tab === "stations" && fillingMode === "submissions") && tab !== "products" && <AsyncButton className="secondary-button" type="button" loading={loading} loadingText="Memuat..." onClick={() => void refresh()}>Muat ulang</AsyncButton>}</div>
+          <div className="admin-heading"><div><p className="kicker">PENGELOLAAN APLIKASI</p><h2>{tabs.find((item) => item.id === tab)?.label}</h2></div>{!(tab === "stations" && fillingMode === "submissions") && tab !== "products" && <AsyncButton className="secondary-button" type="button" loading={loading || (tab === "stations" && fillingMode === "master" && completionLoading)} loadingText="Memuat..." onClick={() => void (tab === "stations" && fillingMode === "master" ? Promise.all([refresh(), refreshCompletionSummary(true)]) : refresh())}>Muat ulang</AsyncButton>}</div>
           {message && <p className="admin-message" role="status">{message}</p>}
           {loading && <p className="loading-copy">Memuat data admin...</p>}
 
@@ -634,11 +711,20 @@ export default function AdminDashboard({ username, displayName }: { username: st
             <AdminBulkExport stations={stations} sites={sites} siteTypes={siteTypes} subtypes={subtypes} onMessage={setMessage} />
           </div>}
 
-          {!loading && tab === "stations" && fillingMode === "master" && <div className="admin-list">
+          {!loading && tab === "stations" && fillingMode === "master" && completionError && <div className="station-completion-error" role="alert">
+            <span>{completionError}</span>
+            <AsyncButton type="button" loading={completionLoading} loadingText="Memuat..." onClick={() => void refreshCompletionSummary(true)}>Coba muat ulang</AsyncButton>
+          </div>}
+
+          {!loading && tab === "stations" && fillingMode === "master" && completionLoading && completionRows.length > 0 && <p className="station-completion-updating" role="status"><span className="loading-spinner" aria-hidden="true" />Memperbarui ringkasan kelengkapan...</p>}
+
+          {!loading && tab === "stations" && fillingMode === "master" && <div className="admin-list" aria-busy={completionLoading}>
             {filteredStationFillingViews.map(({ station, view, visibleRows }) => <StationFillingCard
               key={station.id}
               station={station}
               view={view}
+              completion={completionByStationId.get(station.id) ?? null}
+              completionLoading={completionLoading && completionRows.length === 0}
               visibleRows={visibleRows}
               expanded={expandedStationId === station.id}
               busyAction={activeAction?.startsWith(`download:${station.id}:`) ? activeAction : null}
@@ -652,7 +738,7 @@ export default function AdminDashboard({ username, displayName }: { username: st
               stations={stations}
               siteTypes={siteTypes}
               onDownload={downloadSubmission}
-              onChanged={refresh}
+              onChanged={refreshAfterSubmissionChange}
             />
           </div>}
 
