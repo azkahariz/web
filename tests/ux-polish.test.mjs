@@ -240,7 +240,7 @@ test("temporary password hanya berada di response sukses dan state dialog", asyn
   assert.match(unified, /subtype\?\.name/);
   assert.match(dashboard, /loadAllAdminRows\(\(from, to\) => client\.from\("sites"\)/);
   assert.match(dashboard, /\.order\("name"\)\s*\.order\("id"\)\s*\.range\(from, to\)/);
-  assert.match(unified, /Belum ada submission/);
+  assert.match(unified, /Pengisian belum tersedia\./);
   assert.match(unified, /stationCompletionStatusLabel\(completion\.status\)/);
   assert.doesNotMatch(dashboard, /buildStationSiteRows/);
   assert.doesNotMatch(dashboard, /\?\? submission\.site_id/);

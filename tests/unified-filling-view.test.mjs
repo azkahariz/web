@@ -93,10 +93,11 @@ test("UI memakai satu daftar Pengisian dan shared detail renderer tanpa view dup
   assert.match(dashboard, /<UnifiedFillingList/);
   assert.doesNotMatch(dashboard, /Yang belum dilengkapi|station-filling-table/);
   assert.match(unified, /<h3>Pengisian<\/h3>/);
-  assert.match(unified, /Belum ada submission/);
+  assert.match(unified, /Pengisian belum tersedia\./);
   assert.match(unified, /Lihat semua \$\{missingCategories\.length\} kategori/);
   assert.match(unified, /Inventaris Gudang tersedia/);
   assert.match(unified, /Tidak ada pengisian non-Gudang yang dinilai/);
+  assert.match(unified, /aria-label=\{`\$\{expanded \? "Tutup" : "Lihat"\}/);
   assert.match(unified, /<SubmissionProgressDetail/);
   assert.match(monitor, /<SubmissionProgressDetail/);
   assert.match(shared, /Progress Barang/);

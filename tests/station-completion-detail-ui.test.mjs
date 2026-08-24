@@ -71,7 +71,7 @@ test("unified detail menampilkan semua status, Gudang netral, issue, dan retry",
   const component = await readFile(new URL("../app/admin/UnifiedFillingList.tsx", import.meta.url), "utf8");
   for (const text of [
     "Pengisian",
-    "Belum ada submission",
+    "Pengisian belum tersedia.",
     "kategori terisi",
     "Lihat semua",
     "Sembunyikan kategori",

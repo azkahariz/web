@@ -124,14 +124,20 @@ export default function UnifiedFillingList({
               {row.isWarehouse ? <small>{submissionId ? "Inventaris Gudang tersedia" : "Belum ada inventaris tercatat"}</small>
                 : completion && <small><strong>{completion.filled_category_count}/{completion.expected_category_count}</strong> kategori terisi{missingCategories.length > 0 ? ` · ${missingCategories.length} belum terisi` : ""}</small>}
             </div>
-            <div className="unified-filling-meta">
-              <span>{submissionId ? `v${completion?.submission_version ?? submission?.version ?? "-"}` : "Belum ada submission"}</span>
-              <small>{submission?.operator_name || "Operator -"} · {compactUpdated(completion?.content_last_saved_at ?? submission?.last_saved_at ?? submission?.updated_at)}</small>
-            </div>
+            <div className="unified-filling-meta">{submissionId ? <>
+              <span>v{completion?.submission_version ?? submission?.version ?? "-"}</span>
+              <small>{submission?.operator_name || "Operator belum tercatat"} · {compactUpdated(completion?.content_last_saved_at ?? submission?.last_saved_at ?? submission?.updated_at)}</small>
+            </> : <span>Pengisian belum tersedia.</span>}</div>
             <div className="unified-filling-actions">
               {openHref && <Link className="table-action" href={openHref} target="_blank" rel="noopener noreferrer">Buka</Link>}
               {subtype && <AsyncButton loading={actionId === downloadActionId} loadingText="Menyiapkan..." onClick={() => void onDownload(row.site, subtype, submissionId ?? undefined)}>Unduh</AsyncButton>}
-              {submissionId && <button className="detail-toggle-text" type="button" aria-expanded={expanded} onClick={() => void toggleDetail(submissionId)}>{expanded ? "Tutup rincian" : "Lihat rincian"}</button>}
+              {submissionId && <button
+                className="detail-toggle-text"
+                type="button"
+                aria-expanded={expanded}
+                aria-label={`${expanded ? "Tutup" : "Lihat"} ${row.isWarehouse ? "inventaris" : "detail"} ${row.site.name}${subtype ? ` ${subtype.name}` : ""}`}
+                onClick={() => void toggleDetail(submissionId)}
+              >{expanded ? "Tutup rincian" : row.isWarehouse ? "Lihat inventaris" : "Lihat rincian"}</button>}
             </div>
           </div>
 
