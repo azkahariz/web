@@ -159,7 +159,7 @@ test("download Browse dan Admin tidak menjalankan lifecycle lock atau write", as
   const saveBeforeDownload = inventory.match(/async function saveBeforeDownload\(\)[\s\S]*?\n  }/)?.[0] ?? "";
   assert.match(saveBeforeDownload, /if \(!sync\.isEditing \|\| !sync\.dirty\) return true;[\s\S]*persistLocalNow\(\)/);
   assert.match(saveBeforeDownload, /sync\.saveNow\(\)/);
-  assert.ok(inventory.indexOf("{!sync.isEditing && renderDownloadMenu()}") < inventory.indexOf("<fieldset className=\"editing-surface\""));
+  assert.ok(inventory.indexOf("{!sync.isEditing && renderDownloadMenu()}") < inventory.indexOf("<fieldset className={`editing-surface${sync.isEditing ? \" is-editing\" : \"\"}`}"));
   assert.match(inventory, /buildInventoryCsv/);
   assert.match(inventory, /buildInventoryJson/);
   assert.doesNotMatch(adminExport, /\.rpc\(|\.insert\(|\.update\(|\.upsert\(|open_submission|release_submission|touch_submission|takeover/);

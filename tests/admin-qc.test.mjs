@@ -270,19 +270,25 @@ test("station product proposal dan admin QC tetap mempertahankan format export l
   assert.match(databaseSync, /function shouldWarnForMissingProduct/);
 });
 
-test("QC merge picker memakai checkbox sebagai konteks rekomendasi dan tetap menyimpan UUID canonical", async () => {
-  const dashboard = await readFile(new URL("../app/admin/AdminDashboard.tsx", import.meta.url), "utf8");
+test("QC merge memakai selection bar dan dialog target dengan ranking canonical existing", async () => {
+  const [dashboard, dialog] = await Promise.all([
+    readFile(new URL("../app/admin/AdminDashboard.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/admin/MergeTargetDialog.tsx", import.meta.url), "utf8"),
+  ]);
   assert.match(dashboard, /selectedPendingProposals/);
   assert.match(dashboard, /rankMergeProducts/);
-  assert.match(dashboard, /Centang usulan QC untuk melihat rekomendasi\./);
-  assert.match(dashboard, /Pilih produk existing tujuan merge/);
-  assert.match(dashboard, /role="combobox"/);
-  assert.match(dashboard, /Kandidat terdekat/);
+  assert.match(dashboard, /qc-selection-bar/);
+  assert.match(dashboard, /Pilih target merge/);
+  assert.match(dashboard, /MergeTargetDialog/);
   assert.match(dashboard, /hasMixedMergeProposalFamilies/);
   assert.match(dashboard, /p_product_id: mergeProductId/);
   assert.match(dashboard, /setSelectedProposals\(\[proposal\.id\]\)/);
   assert.match(dashboard, /Pilih minimal satu proposal untuk di-merge/);
   assert.match(dashboard, /setMergeProductId\(""\)/);
+  assert.match(dialog, /Cari Produk/);
+  assert.match(dialog, /Disarankan/);
+  assert.match(dialog, /onSubmit/);
+  assert.match(dialog, /autoFocus|searchRef\.current\?\.focus/);
 });
 
 test("QC workflow memakai dialog approve satu form dan shortcut merge row", async () => {
@@ -292,7 +298,7 @@ test("QC workflow memakai dialog approve satu form dan shortcut merge row", asyn
   ]);
   assert.match(dashboard, /ApproveProductDialog/);
   assert.match(dashboard, /setApproveDialogProposal\(input\)/);
-  assert.match(dashboard, /mergeInputRef\.current\?\.focus/);
+  assert.match(dashboard, /setMergeDialogOpen\(true\)/);
   assert.match(dialog, /Merk/);
   assert.match(dialog, /Tipe/);
   assert.match(dialog, /Catatan pemeriksaan/);
