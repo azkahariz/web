@@ -296,6 +296,16 @@ test("QC merge memakai selection bar dan dialog target dengan ranking canonical 
   assert.match(dialog, /autoFocus|searchRef\.current\?\.focus/);
 });
 
+test("QC Pending menyembunyikan Hasil QC tanpa mengubah tab resolved", async () => {
+  const dashboard = await readFile(new URL("../app/admin/AdminDashboard.tsx", import.meta.url), "utf8");
+  assert.match(dashboard, /const showQcResult = qcStatus !== "PENDING"/);
+  assert.match(dashboard, /\{showQcResult && <th>Hasil QC<\/th>\}/);
+  assert.match(dashboard, /function renderQcResultCell\(proposal: Proposal\)/);
+  assert.match(dashboard, /\{showQcResult && renderQcResultCell\(proposal\)\}/);
+  assert.match(dashboard, /<tr><td colSpan=\{6\}>Tidak ada proposal pada status ini\.<\/td><\/tr>/);
+  assert.match(dashboard, /proposal\.resolved_product_id \? <><strong>/);
+});
+
 test("QC workflow memakai dialog approve satu form dan shortcut merge row", async () => {
   const [dashboard, dialog] = await Promise.all([
     readFile(new URL("../app/admin/AdminDashboard.tsx", import.meta.url), "utf8"),
