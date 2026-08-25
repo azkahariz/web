@@ -333,6 +333,8 @@ test("sidebar Super Admin memakai URL view sebagai sumber navigasi", async () =>
   assert.match(dashboard, /aria-current=\{tab === item\.id \? "page" : undefined\}/);
   assert.match(styles, /\.admin-nav a \{/);
   assert.doesNotMatch(styles, /\.admin-nav button \{/);
+  assert.match(styles, /\.admin-nav \{ position: sticky;/);
+  assert.match(styles, /\.bottom-actions \{ position: sticky;/);
 });
 
 test("footer attribution memakai link eksternal yang aman pada layout utama", async () => {

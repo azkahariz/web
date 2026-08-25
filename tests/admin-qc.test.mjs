@@ -281,6 +281,23 @@ test("QC merge picker memakai checkbox sebagai konteks rekomendasi dan tetap men
   assert.match(dashboard, /hasMixedMergeProposalFamilies/);
   assert.match(dashboard, /p_product_id: mergeProductId/);
   assert.match(dashboard, /setSelectedProposals\(\[proposal\.id\]\)/);
+  assert.match(dashboard, /Pilih minimal satu proposal untuk di-merge/);
+  assert.match(dashboard, /setMergeProductId\(""\)/);
+});
+
+test("QC workflow memakai dialog approve satu form dan shortcut merge row", async () => {
+  const [dashboard, dialog] = await Promise.all([
+    readFile(new URL("../app/admin/AdminDashboard.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/admin/ApproveProductDialog.tsx", import.meta.url), "utf8"),
+  ]);
+  assert.match(dashboard, /ApproveProductDialog/);
+  assert.match(dashboard, /setApproveDialogProposal\(input\)/);
+  assert.match(dashboard, /mergeInputRef\.current\?\.focus/);
+  assert.match(dialog, /Merk/);
+  assert.match(dialog, /Tipe/);
+  assert.match(dialog, /Catatan pemeriksaan/);
+  assert.match(dialog, /Promise<boolean>/);
+  assert.doesNotMatch(dashboard, /title: "Brand canonical"/);
 });
 
 test("hasil QC menampilkan note APPROVED/MERGED tanpa mengubah fallback REJECTED", async () => {

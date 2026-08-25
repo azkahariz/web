@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import AdminBulkExport from "./AdminBulkExport";
 import AdminProducts from "./AdminProducts";
 import AdminSubmissionMonitor from "./AdminSubmissionMonitor";
+import ApproveProductDialog from "./ApproveProductDialog";
 import StationMonitoringControls from "./StationMonitoringControls";
 import UnifiedFillingList from "./UnifiedFillingList";
 import { useAppFeedback } from "../components/AppFeedback";
@@ -298,13 +299,32 @@ export default function AdminDashboard({ username, displayName }: { username: st
   const [adminIdentities, setAdminIdentities] = useState<AdminIdentity[]>([]);
   const [search, setSearch] = useState("");
   const qcStatus: Proposal["status"] = searchParams.get("qcStatus") === "APPROVED" || searchParams.get("qcStatus") === "MERGED" || searchParams.get("qcStatus") === "REJECTED" ? searchParams.get("qcStatus") as Proposal["status"] : "PENDING";
-  const [selectedProposals, setSelectedProposals] = useState<string[]>([]);
+  const [selectedProposals, setSelectedProposalsState] = useState<string[]>([]);
   const [mergeProductId, setMergeProductId] = useState("");
   const [mergeProductQuery, setMergeProductQuery] = useState("");
   const [mergePickerOpen, setMergePickerOpen] = useState(false);
   const [mergeActiveIndex, setMergeActiveIndex] = useState(-1);
   const mergeBlurTimer = useRef<number | null>(null);
-  const [message, setMessage] = useState("");
+  const mergeInputRef = useRef<HTMLInputElement>(null);
+  const [approveDialogProposal, setApproveDialogProposal] = useState<Proposal | null>(null);
+  const [approveDialogError, setApproveDialogError] = useState("");
+  const [qcValidationMessage, setQcValidationMessage] = useState("");
+  function setSelectedProposals(next: string[] | ((current: string[]) => string[])) {
+    setQcValidationMessage("");
+    setSelectedProposalsState(next);
+  }
+  const [message, setMessageState] = useState("");
+  function setMessage(next: string) {
+    if (next === "Pilih produk tujuan pada kotak merge.") {
+      setQcValidationMessage("Pilih produk tujuan sebelum melakukan merge.");
+      setMergeProductId("");
+      setMergeProductQuery("");
+      setMergePickerOpen(true);
+      window.requestAnimationFrame(() => mergeInputRef.current?.focus());
+      return;
+    }
+    setMessageState(next);
+  }
   const [credential, setCredential] = useState<{ username: string; password: string; title: string } | null>(null);
   const [credentialVisible, setCredentialVisible] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -753,6 +773,7 @@ export default function AdminDashboard({ username, displayName }: { username: st
   const mergeKeyboardOptions = normalizedMergeQuery ? mergeSearchResults : [...mergeRecommendationRanks.map(({ product }) => product), ...activeProducts];
 
   function selectMergeProduct(product: Pick<Product, "id" | "brand" | "model">) {
+    setQcValidationMessage("");
     setMergeProductId(product.id);
     setMergeProductQuery(`${product.brand} - ${product.model}`);
     setMergePickerOpen(false);
@@ -811,9 +832,11 @@ export default function AdminDashboard({ username, displayName }: { username: st
     const client = getSupabaseBrowserClient();
     if (!client) return null;
     setMessage("");
+    setQcValidationMessage("");
+    setApproveDialogError("");
     const { data, error } = await client.rpc(name, args);
     if (error) {
-      setMessage(error.message);
+      setQcValidationMessage(error.message);
       return null;
     }
     const result = data as QcMutationResult;
@@ -823,6 +846,10 @@ export default function AdminDashboard({ username, displayName }: { username: st
     ]);
     setSelectedProposals((current) => current.filter((id) => !completedIds.has(id)));
     await refreshQcProposals();
+    setMergeProductId("");
+    setMergeProductQuery("");
+    setMergePickerOpen(false);
+    setQcValidationMessage("");
     if (result.conflicts.length) {
       const conflictMessage = result.conflicts.length === 1
         ? qcConflictMessage(result.conflicts[0])
@@ -846,26 +873,24 @@ export default function AdminDashboard({ username, displayName }: { username: st
     });
   }
 
-  async function approve(proposal: Proposal) {
-    const brand = await feedback.prompt({ title: "Brand canonical", inputLabel: "Brand", initialValue: proposal.proposed_brand, required: true, confirmLabel: "Berikutnya" });
-    if (!brand) return;
-    const model = await feedback.prompt({ title: "Tipe/model canonical", inputLabel: "Tipe/model", initialValue: proposal.proposed_model, required: true, confirmLabel: "Berikutnya" });
-    if (!model) return;
-    const note = await feedback.prompt({ title: "Catatan pemeriksaan", inputLabel: "Catatan (opsional)", confirmLabel: "Berikutnya" });
-    if (note === null) return;
-    await feedback.confirmAction({ title: "Setujui produk baru?", description: `${brand} - ${model}`, confirmLabel: "Setujui" }, async () => {
-      const result = await qcRpc("admin_approve_product_proposal_v2", { p_proposal_id: proposal.id, p_canonical_brand: brand, p_canonical_model: model, p_review_note: note || null });
-      if (result?.outcome === "processed") {
-        await Promise.all([loadQcProducts(), refreshProductSummary()]);
-        feedback.toast("Proposal disetujui sebagai produk baru.", "success");
-      }
-      return result?.outcome === "processed";
-    });
+  async function approve(input: Proposal | { brand: string; model: string; note: string }) {
+    if ("id" in input) {
+      setApproveDialogError("");
+      setApproveDialogProposal(input);
+      return false;
+    }
+    if (!approveDialogProposal) return false;
+    const result = await qcRpc("admin_approve_product_proposal_v2", { p_proposal_id: approveDialogProposal.id, p_canonical_brand: input.brand, p_canonical_model: input.model, p_review_note: input.note || null });
+    if (result?.outcome === "processed") {
+      await Promise.all([loadQcProducts(), refreshProductSummary()]);
+      feedback.toast("Proposal disetujui sebagai produk baru.", "success");
+    }
+    return result?.outcome === "processed";
   }
 
   async function merge(ids: string[]) {
     if (!ids.length || !mergeProductId) {
-      setMessage("Pilih proposal dan produk tujuan terlebih dahulu.");
+      setQcValidationMessage(!ids.length ? "Pilih minimal satu proposal untuk di-merge." : "Pilih produk tujuan sebelum melakukan merge.");
       return;
     }
     const target = productMap.get(mergeProductId);
@@ -1057,6 +1082,10 @@ export default function AdminDashboard({ username, displayName }: { username: st
     if (options?.condition && options.condition !== "all") params.set("condition", options.condition);
     router.push(`/admin?${params.toString()}`);
     setSearch("");
+    setQcValidationMessage("");
+    setMergeProductId("");
+    setMergeProductQuery("");
+    setMergePickerOpen(false);
     if (options?.fillingMode) {
       if (options.fillingMode === "submissions") setSubmissionMonitorMounted(true);
     }
@@ -1082,11 +1111,15 @@ export default function AdminDashboard({ username, displayName }: { username: st
 
   function changeQcStatus(next: Proposal["status"]) {
     setSelectedProposals([]);
+    setQcValidationMessage("");
+    setMergeProductId("");
+    setMergeProductQuery("");
     updateAdminQuery({ qcStatus: next === "PENDING" ? null : next, qcContext: null });
   }
 
   function changeQcContext(next: QcContextFilter) {
     setSelectedProposals([]);
+    setQcValidationMessage("");
     updateAdminQuery({ qcContext: next });
   }
 
@@ -1273,6 +1306,7 @@ export default function AdminDashboard({ username, displayName }: { username: st
             </div>
             {qcStatus === "PENDING" && <div className="bulk-merge"><div className="qc-merge-combobox">
               <input
+                ref={mergeInputRef}
                 aria-activedescendant={mergeActiveIndex >= 0 ? `qc-merge-option-${mergeActiveIndex}` : undefined}
                 aria-autocomplete="list"
                 aria-controls="qc-merge-options"
@@ -1283,7 +1317,7 @@ export default function AdminDashboard({ username, displayName }: { username: st
                 value={mergeProductQuery}
                 onFocus={() => { if (mergeProductId) setMergeProductQuery(""); openMergePicker(); }}
                 onBlur={closeMergePicker}
-                onChange={(event) => { setMergeProductQuery(event.target.value); setMergePickerOpen(true); setMergeActiveIndex(-1); }}
+                onChange={(event) => { setQcValidationMessage(""); setMergeProductQuery(event.target.value); setMergeProductId(""); setMergePickerOpen(true); setMergeActiveIndex(-1); }}
                 onKeyDown={(event) => {
                   if (event.key === "ArrowDown") { event.preventDefault(); openMergePicker(); setMergeActiveIndex((current) => mergeKeyboardOptions.length ? Math.min(current + 1, mergeKeyboardOptions.length - 1) : -1); }
                   else if (event.key === "ArrowUp") { event.preventDefault(); openMergePicker(); setMergeActiveIndex((current) => mergeKeyboardOptions.length ? Math.max(current - 1, 0) : -1); }
@@ -1304,7 +1338,7 @@ export default function AdminDashboard({ username, displayName }: { username: st
                 </>}
               </div>}
               {mixedMergeSelection && <p className="qc-merge-warning">Usulan yang dipilih tampak memiliki Merk/Tipe yang berbeda. Periksa kembali sebelum menggabungkan.</p>}
-            </div><AsyncButton className="primary-button" disabled={!selectedProposals.length || !mergeProductId} loading={activeAction === "qc:merge"} loadingText={`Memproses ${selectedProposals.length} item...`} onClick={() => void runAction("qc:merge", () => merge(selectedProposals))}>Gabungkan Semua ({selectedProposals.length})</AsyncButton></div>}
+              </div>{qcValidationMessage && <p className="qc-validation-message" role="alert">{qcValidationMessage}</p>}<AsyncButton className="primary-button" disabled={!selectedProposals.length || !mergeProductId} loading={activeAction === "qc:merge"} loadingText={`Memproses ${selectedProposals.length} item...`} onClick={() => void runAction("qc:merge", () => merge(selectedProposals))}>Gabungkan Semua ({selectedProposals.length})</AsyncButton></div>}
             <div className="admin-table-wrap qc-proposals-table"><table><thead><tr>{qcStatus === "PENDING" && <th>Pilih</th>}<th>Usulan Brand / Tipe</th><th>Stasiun / Operator</th><th>Site / Subtipe / Kategori</th><th>Tanggal</th><th>Hasil QC</th><th>Aksi</th></tr></thead><tbody>
               {filteredProposals.map((proposal) => <tr key={proposal.id}>{qcStatus === "PENDING" && <td><input type="checkbox" checked={selectedProposals.includes(proposal.id)} onChange={(event) => setSelectedProposals((current) => event.target.checked ? [...current, proposal.id] : current.filter((id) => id !== proposal.id))} /></td>}<td><strong>{proposal.proposed_brand}</strong><small>{proposal.proposed_model}</small></td><td>{stationMap.get(proposal.station_id)?.name}<small>{proposal.operator_name || "-"}</small></td><td className="qc-proposal-context"><strong>{proposal.context.siteName ?? (proposal.context.state === "missing-submission" ? "Konteks submission tidak tersedia" : proposal.context.state === "unavailable" ? "-" : "Site tidak ditemukan")}</strong>{proposal.context.state !== "missing-submission" && proposal.context.state !== "unavailable" && <small>{proposal.context.subtypeName ?? "Subtipe tidak ditemukan"}</small>}<small title={proposal.context.categories.join(" · ") || undefined}>{proposalCategoryLabel(proposal.context)}</small></td><td>{new Date(proposal.created_at).toLocaleDateString("id-ID")}</td><td className="qc-result-cell">{proposal.resolved_product_id ? <><strong>{`${productMap.get(proposal.resolved_product_id)?.brand ?? ""} - ${productMap.get(proposal.resolved_product_id)?.model ?? ""}`}</strong>{proposal.review_note?.trim() && <small className="qc-result-note">Catatan: {proposal.review_note}</small>}</> : proposal.review_note || "-"}{proposal.status !== "PENDING" && proposal.reviewer && <small className="qc-reviewer">Diproses oleh {proposal.reviewer.displayName}{proposal.reviewed_at ? ` · ${new Date(proposal.reviewed_at).toLocaleString("id-ID")}` : ""}</small>}</td><td className="table-actions">{proposal.status === "PENDING" && <><button onClick={() => void approve(proposal)}>Approve Baru</button><button onClick={() => { setSelectedProposals([proposal.id]); setMessage("Pilih produk tujuan pada kotak merge."); }}>Merge</button><button className="danger-inline" onClick={() => void reject(proposal)}>Tolak</button></>}</td></tr>)}
               {!filteredProposals.length && <tr><td colSpan={qcStatus === "PENDING" ? 7 : 6}>Tidak ada proposal pada status ini.</td></tr>}
@@ -1349,6 +1383,7 @@ export default function AdminDashboard({ username, displayName }: { username: st
           </section>
         </div>
       )}
+      {approveDialogProposal && <ApproveProductDialog initialBrand={approveDialogProposal.proposed_brand} initialModel={approveDialogProposal.proposed_model} error={approveDialogError || qcValidationMessage} onClose={() => { setApproveDialogProposal(null); setApproveDialogError(""); setQcValidationMessage(""); }} onSubmit={approve} />}
       <FooterAttribution />
     </main>
   );
