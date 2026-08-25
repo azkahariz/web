@@ -278,7 +278,8 @@ test("QC merge memakai selection bar dan dialog target dengan ranking canonical 
   assert.match(dashboard, /selectedPendingProposals/);
   assert.match(dashboard, /rankMergeProducts/);
   assert.match(dashboard, /qc-selection-bar/);
-  assert.match(dashboard, /Pilih target merge/);
+  assert.match(dashboard, /Gabungkan \{selectedPendingProposals\.length\} pilihan/);
+  assert.match(dashboard, /Gabungkan ini/);
   assert.match(dashboard, /MergeTargetDialog/);
   assert.match(dashboard, /hasMixedMergeProposalFamilies/);
   assert.match(dashboard, /p_product_id: mergeProductId/);
@@ -286,6 +287,10 @@ test("QC merge memakai selection bar dan dialog target dengan ranking canonical 
   assert.match(dashboard, /Pilih minimal satu proposal untuk di-merge/);
   assert.match(dashboard, /setMergeProductId\(""\)/);
   assert.match(dialog, /Cari Produk/);
+  assert.match(dialog, /selectedProduct: ProductOption \| null/);
+  assert.match(dialog, /!selectedProduct && <div className="qc-merge-dialog-results"/);
+  assert.match(dialog, /normalizedQuery && !visibleProducts\.length/);
+  assert.match(dialog, /onQueryChange\(""\)/);
   assert.match(dialog, /Disarankan/);
   assert.match(dialog, /onSubmit/);
   assert.match(dialog, /autoFocus|searchRef\.current\?\.focus/);

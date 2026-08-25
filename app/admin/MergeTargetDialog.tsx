@@ -11,6 +11,7 @@ type MergeTargetDialogProps = {
   proposals: ProposalContext[];
   recommendations: Recommendation[];
   products: ProductOption[];
+  selectedProduct: ProductOption | null;
   query: string;
   selectedProductId: string;
   loadingProducts: boolean;
@@ -26,6 +27,7 @@ export default function MergeTargetDialog({
   proposals,
   recommendations,
   products,
+  selectedProduct,
   query,
   selectedProductId,
   loadingProducts,
@@ -39,7 +41,6 @@ export default function MergeTargetDialog({
   const searchRef = useRef<HTMLInputElement>(null);
   const [note, setNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const selectedProduct = products.find((product) => product.id === selectedProductId) ?? null;
   const normalizedQuery = query.trim();
   const visibleProducts = normalizedQuery || !recommendations.length ? products : recommendations.map((item) => item.product);
 
@@ -69,15 +70,15 @@ export default function MergeTargetDialog({
       <label>Produk existing tujuan
         <input ref={searchRef} autoComplete="off" aria-label="Cari produk existing tujuan merge" placeholder="Cari Produk" value={query} onChange={(event) => onQueryChange(event.target.value)} />
       </label>
-      {selectedProduct && <p className="qc-merge-selected-target"><strong>Tujuan:</strong> {selectedProduct.brand} - {selectedProduct.model}</p>}
-      <div className="qc-merge-dialog-results" role="listbox" aria-label="Hasil produk tujuan merge">
+      {selectedProduct && <p className="qc-merge-selected-target"><strong>Tujuan:</strong> {selectedProduct.brand} - {selectedProduct.model} <button type="button" onClick={() => onQueryChange("")}>Ganti</button></p>}
+      {!selectedProduct && <div className="qc-merge-dialog-results" role="listbox" aria-label="Hasil produk tujuan merge">
         {!normalizedQuery && recommendations.length > 0 && <p className="qc-merge-section-label">{recommendations[0]?.kind === "nearest" ? "Kandidat terdekat" : "Disarankan"}</p>}
         {loadingProducts ? <p className="qc-merge-message">Memuat produk...</p> : visibleProducts.map((product) => {
           const recommendation = !normalizedQuery ? recommendations.find((item) => item.product.id === product.id) : null;
           return <button key={product.id} type="button" role="option" aria-selected={selectedProductId === product.id} onClick={() => onSelectProduct(product)}><strong>{product.brand}</strong><span>{product.model}</span>{recommendation && <small>{recommendation.confidence}</small>}</button>;
         })}
-        {!loadingProducts && !visibleProducts.length && <p className="qc-merge-message">Produk tidak ditemukan.</p>}
-      </div>
+        {!loadingProducts && normalizedQuery && !visibleProducts.length && <p className="qc-merge-message">Produk tidak ditemukan.</p>}
+      </div>}
       <label>Catatan merge (opsional)<textarea value={note} onChange={(event) => setNote(event.target.value)} rows={3} /></label>
       {validationMessage && <p className="app-dialog-error" role="alert">{validationMessage}</p>}
       <div className="app-dialog-actions">

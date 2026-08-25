@@ -936,7 +936,8 @@ button[aria-busy="true"] { display: inline-flex; align-items: center; justify-co
 .qc-merge-proposal-context strong, .qc-merge-proposal-context span, .qc-merge-proposal-context small { display: block; }
 .qc-merge-proposal-context strong { font-size: 11px; }
 .qc-merge-proposal-context span, .qc-merge-proposal-context small { color: var(--muted); font-size: 10px; line-height: 1.4; }
-.qc-merge-selected-target { padding: 9px 10px; border-left: 3px solid var(--green); background: var(--green-soft); color: var(--green-deep) !important; }
+.qc-merge-selected-target { padding: 9px 10px; display: flex; align-items: center; justify-content: space-between; gap: 10px; border-left: 3px solid var(--green); background: var(--green-soft); color: var(--green-deep) !important; }
+.qc-merge-selected-target button { flex: 0 0 auto; min-height: 30px; padding: 5px 8px; border: 1px solid #9ab9ae; border-radius: 5px; background: white; color: var(--green-deep); font-size: 10px; font-weight: 800; cursor: pointer; }
 .qc-merge-dialog-results { min-height: 120px; max-height: min(320px, 34vh); margin-top: 10px; overflow: auto; padding: 6px; border: 1px solid var(--line); border-radius: 7px; background: #fff; }
 .qc-merge-dialog-results button { width: 100%; padding: 9px 10px; display: grid; gap: 2px; border: 0; border-radius: 6px; background: white; color: var(--ink); text-align: left; cursor: pointer; }
 .qc-merge-dialog-results button:hover, .qc-merge-dialog-results button:focus-visible, .qc-merge-dialog-results button[aria-selected="true"] { background: var(--green-soft); }
