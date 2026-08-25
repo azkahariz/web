@@ -270,17 +270,67 @@ test("station product proposal dan admin QC tetap mempertahankan format export l
   assert.match(databaseSync, /function shouldWarnForMissingProduct/);
 });
 
-test("QC merge picker memakai checkbox sebagai konteks rekomendasi dan tetap menyimpan UUID canonical", async () => {
-  const dashboard = await readFile(new URL("../app/admin/AdminDashboard.tsx", import.meta.url), "utf8");
+test("QC merge memakai selection bar dan dialog target dengan ranking canonical existing", async () => {
+  const [dashboard, dialog] = await Promise.all([
+    readFile(new URL("../app/admin/AdminDashboard.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/admin/MergeTargetDialog.tsx", import.meta.url), "utf8"),
+  ]);
   assert.match(dashboard, /selectedPendingProposals/);
   assert.match(dashboard, /rankMergeProducts/);
-  assert.match(dashboard, /Centang usulan QC untuk melihat rekomendasi\./);
-  assert.match(dashboard, /Pilih produk existing tujuan merge/);
-  assert.match(dashboard, /role="combobox"/);
-  assert.match(dashboard, /Kandidat terdekat/);
+  assert.match(dashboard, /qc-selection-bar/);
+  assert.match(dashboard, /Gabungkan \{selectedPendingProposals\.length\} pilihan/);
+  assert.match(dashboard, /Gabungkan ini/);
+  assert.match(dashboard, /MergeTargetDialog/);
   assert.match(dashboard, /hasMixedMergeProposalFamilies/);
   assert.match(dashboard, /p_product_id: mergeProductId/);
   assert.match(dashboard, /setSelectedProposals\(\[proposal\.id\]\)/);
+  assert.match(dashboard, /Pilih minimal satu proposal untuk di-merge/);
+  assert.match(dashboard, /setMergeProductId\(""\)/);
+  assert.match(dialog, /Cari Produk/);
+  assert.match(dialog, /selectedProduct: ProductOption \| null/);
+  assert.match(dialog, /!selectedProduct && <div className="qc-merge-dialog-results"/);
+  assert.match(dialog, /normalizedQuery && !visibleProducts\.length/);
+  assert.match(dialog, /onQueryChange\(""\)/);
+  assert.match(dialog, /Disarankan/);
+  assert.match(dialog, /onSubmit/);
+  assert.match(dialog, /autoFocus|searchRef\.current\?\.focus/);
+});
+
+test("QC Pending menyembunyikan Hasil QC tanpa mengubah tab resolved", async () => {
+  const dashboard = await readFile(new URL("../app/admin/AdminDashboard.tsx", import.meta.url), "utf8");
+  assert.match(dashboard, /const showQcResult = qcStatus !== "PENDING"/);
+  assert.match(dashboard, /\{showQcResult && <th>Hasil QC<\/th>\}/);
+  assert.match(dashboard, /function renderQcResultCell\(proposal: Proposal\)/);
+  assert.match(dashboard, /\{showQcResult && renderQcResultCell\(proposal\)\}/);
+  assert.match(dashboard, /<tr><td colSpan=\{6\}>Tidak ada proposal pada status ini\.<\/td><\/tr>/);
+  assert.match(dashboard, /proposal\.resolved_product_id \? <><strong>/);
+});
+
+test("QC tidak lagi merender workflow rekonsiliasi Spreadsheet legacy", async () => {
+  const [dashboard, guide] = await Promise.all([
+    readFile(new URL("../app/admin/AdminDashboard.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/admin/panduan/page.tsx", import.meta.url), "utf8"),
+  ]);
+  assert.doesNotMatch(dashboard, /pendingSpreadsheet|exportProducts|editCanonical|admin_update_canonical_product/);
+  assert.doesNotMatch(dashboard, /Unduh Produk Baru untuk Spreadsheet|Perubahan master yang perlu masuk Spreadsheet|Koreksi canonical/);
+  assert.doesNotMatch(guide, /Perubahan master yang perlu masuk Spreadsheet|Koreksi canonical/);
+  assert.match(guide, /buka menu <strong>Produk<\/strong> lalu pilih <strong>Edit<\/strong>/);
+  assert.match(guide, /nama sebelumnya disimpan sebagai nama alternatif/);
+});
+
+test("QC workflow memakai dialog approve satu form dan shortcut merge row", async () => {
+  const [dashboard, dialog] = await Promise.all([
+    readFile(new URL("../app/admin/AdminDashboard.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/admin/ApproveProductDialog.tsx", import.meta.url), "utf8"),
+  ]);
+  assert.match(dashboard, /ApproveProductDialog/);
+  assert.match(dashboard, /setApproveDialogProposal\(input\)/);
+  assert.match(dashboard, /setMergeDialogOpen\(true\)/);
+  assert.match(dialog, /Merk/);
+  assert.match(dialog, /Tipe/);
+  assert.match(dialog, /Catatan pemeriksaan/);
+  assert.match(dialog, /Promise<boolean>/);
+  assert.doesNotMatch(dashboard, /title: "Brand canonical"/);
 });
 
 test("hasil QC menampilkan note APPROVED/MERGED tanpa mengubah fallback REJECTED", async () => {

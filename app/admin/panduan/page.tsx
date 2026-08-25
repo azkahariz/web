@@ -360,9 +360,9 @@ export default async function AdminGuidePage() {
           <h4>Bulk merge dan beberapa Admin</h4>
           <p>Centang beberapa proposal yang benar-benar menuju Produk yang sama. Jika pilihan terlihat berasal dari Merk/Tipe berbeda, aplikasi menampilkan peringatan. Bila Admin lain sudah memproses sebagian proposal, proposal yang masih PENDING tetap dapat berhasil sedangkan yang sudah berubah dilewati dan dilaporkan.</p>
           <p>Tab hasil menampilkan Produk tujuan, Catatan QC, pemeriksa, dan waktu pemeriksaan. Tindakan pertama yang selesai menjadi hasil resmi; Admin berikutnya akan melihat konflik, bukan menimpa hasil tersebut.</p>
-          <h4>Koreksi Produk hasil QC</h4>
-          <p>Bagian <strong>Perubahan master yang perlu masuk Spreadsheet</strong> menampilkan Produk yang belum ditandai selesai direkonsiliasi. <strong>Koreksi canonical</strong> memperbaiki Brand/Tipe utama dan mencatat tindakan pada Audit Admin. Gunakan hanya untuk koreksi nama, bukan untuk menyatukan dua Produk.</p>
-          <p>Aplikasi tidak menetapkan penanggung jawab rekonsiliasi perubahan master ke Spreadsheet atau koreksi nama utama. Ikuti ketentuan internal yang berlaku sebelum menyatakan rekonsiliasi selesai.</p>
+          <h4>Perbaikan Produk hasil QC</h4>
+          <p>Untuk memperbaiki Merk atau Tipe Produk setelah QC, buka menu <strong>Produk</strong> lalu pilih <strong>Edit</strong>. Produk tetap sama, nama sebelumnya disimpan sebagai nama alternatif, dan tindakan tercatat pada Audit Admin.</p>
+          <p>Gunakan <strong>Gabungkan</strong> di menu Produk bila dua Produk ternyata mewakili Produk yang sama. Jangan gunakan Edit untuk menyatukan dua Produk.</p>
         </section>
 
         <section id="master-produk" className="guide-article" data-guide-keywords="master produk, daftar produk, tambah produk, edit produk, filter produk">

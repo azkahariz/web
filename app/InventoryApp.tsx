@@ -888,7 +888,7 @@ export default function InventoryApp({
               {sync.status === "read-only" && <button className="secondary-button" onClick={startEditing}>Coba lagi</button>}
             </div>
           )}
-          <fieldset className="editing-surface" disabled={locationReady && !sync.canEdit} onInputCapture={sync.touchActivity} onChangeCapture={sync.touchActivity}>
+          <fieldset className={`editing-surface${sync.isEditing ? " is-editing" : ""}`} disabled={locationReady && !sync.canEdit} onInputCapture={sync.touchActivity} onChangeCapture={sync.touchActivity}>
           {mode === "site" && selectedSite && !warehouseMode && !remediationRequired && (
             <SiteMetadataForm
               value={siteMetadata}

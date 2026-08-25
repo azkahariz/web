@@ -31,7 +31,8 @@ digunakan sebagai tempat pengisian maupun deployment.
 Master data:
 
 ```text
-Spreadsheet -> CSV -> generated data -> Supabase
+Import atau recovery legacy: Spreadsheet -> CSV -> Supabase
+Runtime aplikasi: Supabase -> Station User / Super Admin
 ```
 
 Pengisian:
@@ -46,8 +47,9 @@ QC produk:
 Produk tidak ditemukan -> Proposal -> Super Admin -> Approve / Merge / Reject
 ```
 
-Spreadsheet adalah source of truth untuk master. Supabase menyimpan akun,
-submission, lock, QC, dan audit operasional.
+Supabase adalah source of truth runtime untuk master, akun, submission, lock, QC,
+dan audit operasional. Spreadsheet hanya merupakan sumber legacy untuk import
+atau recovery yang dikendalikan; bukan workflow operasional saat ini.
 
 ## Baca sesuai peran
 

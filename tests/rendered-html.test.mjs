@@ -333,6 +333,19 @@ test("sidebar Super Admin memakai URL view sebagai sumber navigasi", async () =>
   assert.match(dashboard, /aria-current=\{tab === item\.id \? "page" : undefined\}/);
   assert.match(styles, /\.admin-nav a \{/);
   assert.doesNotMatch(styles, /\.admin-nav button \{/);
+  assert.match(styles, /\.admin-nav \{ position: sticky; top: 78px;/);
+  assert.match(styles, /\.editing-surface\.is-editing \.bottom-actions \{ position: fixed;/);
+});
+
+test("action pengisian menjadi dock tetap hanya saat mode edit desktop", async () => {
+  const [inventory, styles] = await Promise.all([
+    readFile(new URL("../app/InventoryApp.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
+  ]);
+  assert.match(inventory, /editing-surface\$\{sync\.isEditing \? " is-editing" : ""\}/);
+  assert.match(styles, /\.editing-surface\.is-editing \{ padding-bottom: 110px;/);
+  assert.match(styles, /\.editing-surface\.is-editing \.bottom-actions \{ position: fixed;/);
+  assert.match(styles, /\.editing-surface\.is-editing \.bottom-actions \{ position: static;/);
 });
 
 test("footer attribution memakai link eksternal yang aman pada layout utama", async () => {
