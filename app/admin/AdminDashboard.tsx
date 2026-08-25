@@ -23,7 +23,6 @@ import {
   filterStationFillingRows,
   loadAllAdminRows,
 } from "../lib/admin-view";
-import { csvCell, downloadText } from "../lib/download";
 import { formatCategoryLabel } from "../lib/category-label";
 import { logoutCurrentBrowser } from "../lib/local-logout";
 import { parseSiteTypeCompletionRows, siteTypeCompletionRows, summarizeSiteTypeProgress, summarizeSitesByType, summarizeStationMonitoring, summarizeQc } from "../lib/admin-summary";
@@ -67,7 +66,7 @@ type Submission = {
   lock_last_activity_at: string | null; last_saved_at: string | null; updated_at: string;
 };
 type Account = { id: string; station_id: string; username: string; active: boolean; updated_at: string };
-type Product = { id: string; brand: string; model: string; active: boolean; source_origin: string; spreadsheet_synced: boolean };
+type Product = { id: string; brand: string; model: string; active: boolean };
 type QcProductAlias = ProductAlias;
 type QcProductAliasRow = { product_id: string; brand_alias: string; model_alias: string };
 type Proposal = {
@@ -351,7 +350,7 @@ export default function AdminDashboard({ username, displayName }: { username: st
     setQcProductsLoading(true);
     try {
       const [productResult, aliasResult] = await Promise.all([
-        client.from("products").select("id, brand, model, active, source_origin, spreadsheet_synced").order("brand").order("model"),
+        client.from("products").select("id, brand, model, active").order("brand").order("model"),
         client.from("product_aliases").select("product_id, brand_alias, model_alias"),
       ]);
       const error = productResult.error ?? aliasResult.error;
@@ -676,7 +675,6 @@ export default function AdminDashboard({ username, displayName }: { username: st
   const activeProducts = useMemo(() => products.filter((product) => product.active), [products]);
   const activeLocks = submissions.filter((submission) => submission.locked_by_session_id && submission.lock_last_activity_at
     && new Date(submission.lock_last_activity_at).getTime() >= loadedAt - 5 * 60_000);
-  const pendingSpreadsheet = products.filter((product) => !product.spreadsheet_synced);
   const query = search.trim().toLocaleLowerCase("id-ID");
   const stationFillingViews = useMemo(() => stations.map((station) => ({
     station,
@@ -908,18 +906,6 @@ export default function AdminDashboard({ username, displayName }: { username: st
     });
   }
 
-  async function editCanonical(product: Product) {
-    const brand = await feedback.prompt({ title: "Koreksi brand canonical", inputLabel: "Brand", initialValue: product.brand, required: true, confirmLabel: "Berikutnya" });
-    if (!brand) return;
-    const model = await feedback.prompt({ title: "Koreksi tipe/model canonical", inputLabel: "Tipe/model", initialValue: product.model, required: true, confirmLabel: "Berikutnya" });
-    if (!model) return;
-    await feedback.confirmAction({ title: "Simpan koreksi?", description: "Produk akan masuk daftar rekonsiliasi Spreadsheet.", confirmLabel: "Simpan" }, async () => {
-      const ok = await rpc("admin_update_canonical_product", { p_product_id: product.id, p_brand: brand, p_model: model });
-      if (ok) feedback.toast("Produk diperbarui dan perlu disinkronkan ke Spreadsheet.", "success");
-      return ok;
-    });
-  }
-
   async function accountAction(body: Record<string, unknown>, confirmation: string) {
     await feedback.confirmAction({ title: "Konfirmasi aksi akun", description: confirmation, confirmLabel: "Lanjutkan", danger: body.action === "set-active" }, async () => {
       setMessage("");
@@ -945,11 +931,6 @@ export default function AdminDashboard({ username, displayName }: { username: st
   function closeCredentialDialog() {
     setCredentialVisible(false);
     setCredential(null);
-  }
-
-  function exportProducts() {
-    const rows = [["product_id", "Merk", "Tipe", "active"], ...pendingSpreadsheet.map((product) => [product.id, product.brand, product.model, product.active])];
-    downloadText("products-qc-pending-spreadsheet.csv", `\uFEFF${rows.map((row) => row.map((value) => csvCell(String(value))).join(",")).join("\r\n")}`, "text/csv;charset=utf-8");
   }
 
   async function downloadRow(station: Station, site: Site, subtype: Subtype, submissionId?: string) {
@@ -1298,7 +1279,7 @@ export default function AdminDashboard({ username, displayName }: { username: st
           </tbody></table></div>}
 
           {!loading && tab === "qc" && <>
-            <div className="qc-toolbar"><div className="status-tabs">{(["PENDING", "APPROVED", "MERGED", "REJECTED"] as const).map((status) => <button key={status} className={qcStatus === status ? "active" : ""} onClick={() => changeQcStatus(status)}>{status} ({proposals.filter((row) => row.status === status).length})</button>)}</div><button className="secondary-button" disabled={!pendingSpreadsheet.length} onClick={exportProducts}>Unduh Produk Baru untuk Spreadsheet ({pendingSpreadsheet.length})</button></div>
+            <div className="qc-toolbar"><div className="status-tabs">{(["PENDING", "APPROVED", "MERGED", "REJECTED"] as const).map((status) => <button key={status} className={qcStatus === status ? "active" : ""} onClick={() => changeQcStatus(status)}>{status} ({proposals.filter((row) => row.status === status).length})</button>)}</div></div>
             <div className="qc-context-filter">
               <label>Jenis Stasiun<select value={activeMonitoringFilters.stationCategoryId} onChange={(event) => changeMonitoringFilters({ ...activeMonitoringFilters, stationCategoryId: event.target.value, siteTypeId: "all" })}><option value="all">Semua jenis stasiun</option>{stationCategoryOptions.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select></label>
               <label>Tipe Site<select value={activeMonitoringFilters.siteTypeId} onChange={(event) => changeMonitoringFilters({ ...activeMonitoringFilters, siteTypeId: event.target.value })}><option value="all">Semua tipe site</option>{scopedSiteTypes.map((siteType) => <option key={siteType.id} value={siteType.id}>{siteType.name}</option>)}</select></label>
@@ -1314,11 +1295,6 @@ export default function AdminDashboard({ username, displayName }: { username: st
             <div className={`admin-table-wrap qc-proposals-table${selectedPendingProposals.length ? " has-selection" : ""}`}><table><thead><tr>{qcStatus === "PENDING" && <th>Pilih</th>}<th>Usulan Brand / Tipe</th><th>Stasiun / Operator</th><th>Site / Subtipe / Kategori</th><th>Tanggal</th>{showQcResult && <th>Hasil QC</th>}<th>Aksi</th></tr></thead><tbody>
               {filteredProposals.map((proposal) => <tr key={proposal.id}>{qcStatus === "PENDING" && <td><input type="checkbox" checked={selectedProposals.includes(proposal.id)} onChange={(event) => setSelectedProposals((current) => event.target.checked ? [...current, proposal.id] : current.filter((id) => id !== proposal.id))} /></td>}<td><strong>{proposal.proposed_brand}</strong><small>{proposal.proposed_model}</small></td><td>{stationMap.get(proposal.station_id)?.name}<small>{proposal.operator_name || "-"}</small></td><td className="qc-proposal-context"><strong>{proposal.context.siteName ?? (proposal.context.state === "missing-submission" ? "Konteks submission tidak tersedia" : proposal.context.state === "unavailable" ? "-" : "Site tidak ditemukan")}</strong>{proposal.context.state !== "missing-submission" && proposal.context.state !== "unavailable" && <small>{proposal.context.subtypeName ?? "Subtipe tidak ditemukan"}</small>}<small title={proposal.context.categories.join(" · ") || undefined}>{proposalCategoryLabel(proposal.context)}</small></td><td>{new Date(proposal.created_at).toLocaleDateString("id-ID")}</td>{showQcResult && renderQcResultCell(proposal)}<td className="table-actions">{proposal.status === "PENDING" && <><button onClick={() => void approve(proposal)}>Approve Baru</button><button onClick={() => { setSelectedProposals([proposal.id]); }}>Gabungkan ini</button><button className="danger-inline" onClick={() => void reject(proposal)}>Tolak</button></>}</td></tr>)}
               {!filteredProposals.length && <tr><td colSpan={6}>Tidak ada proposal pada status ini.</td></tr>}
-            </tbody></table></div>
-            <div className="admin-subheading"><div><strong>Perubahan master yang perlu masuk Spreadsheet</strong><span>Produk QC baru atau koreksi canonical yang belum direkonsiliasi.</span></div></div>
-            <div className="admin-table-wrap"><table><thead><tr><th>Product ID</th><th>Brand</th><th>Tipe</th><th>Sumber</th><th>Aksi</th></tr></thead><tbody>
-              {pendingSpreadsheet.map((product) => <tr key={product.id}><td><code>{product.id}</code></td><td>{product.brand}</td><td>{product.model}</td><td>{product.source_origin}</td><td><AsyncButton loading={activeAction === `qc:canonical:${product.id}`} loadingText="Menyimpan..." onClick={() => void runAction(`qc:canonical:${product.id}`, () => editCanonical(product))}>Koreksi canonical</AsyncButton></td></tr>)}
-              {!pendingSpreadsheet.length && <tr><td colSpan={5}>Semua produk sudah sinkron dengan Spreadsheet.</td></tr>}
             </tbody></table></div>
           </>}
 

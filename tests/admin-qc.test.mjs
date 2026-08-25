@@ -306,6 +306,18 @@ test("QC Pending menyembunyikan Hasil QC tanpa mengubah tab resolved", async () 
   assert.match(dashboard, /proposal\.resolved_product_id \? <><strong>/);
 });
 
+test("QC tidak lagi merender workflow rekonsiliasi Spreadsheet legacy", async () => {
+  const [dashboard, guide] = await Promise.all([
+    readFile(new URL("../app/admin/AdminDashboard.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/admin/panduan/page.tsx", import.meta.url), "utf8"),
+  ]);
+  assert.doesNotMatch(dashboard, /pendingSpreadsheet|exportProducts|editCanonical|admin_update_canonical_product/);
+  assert.doesNotMatch(dashboard, /Unduh Produk Baru untuk Spreadsheet|Perubahan master yang perlu masuk Spreadsheet|Koreksi canonical/);
+  assert.doesNotMatch(guide, /Perubahan master yang perlu masuk Spreadsheet|Koreksi canonical/);
+  assert.match(guide, /buka menu <strong>Produk<\/strong> lalu pilih <strong>Edit<\/strong>/);
+  assert.match(guide, /nama sebelumnya disimpan sebagai nama alternatif/);
+});
+
 test("QC workflow memakai dialog approve satu form dan shortcut merge row", async () => {
   const [dashboard, dialog] = await Promise.all([
     readFile(new URL("../app/admin/AdminDashboard.tsx", import.meta.url), "utf8"),

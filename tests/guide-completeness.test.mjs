@@ -217,7 +217,7 @@ test("klarifikasi bisnis dan kebijakan tetap netral", async () => {
   assert.match(stationGuide, /Mulai Interval dan Akhir Interval[\s\S]*Aplikasi belum menetapkan arti bisnis resmi/);
   assert.match(adminGuide, /Aplikasi tidak menetapkan pihak pemberi persetujuan; ikuti ketentuan internal yang berlaku/);
   assert.match(adminGuide, /Aplikasi tidak menetapkan kanal pengiriman resmi; ikuti ketentuan internal yang berlaku/);
-  assert.match(adminGuide, /Aplikasi tidak menetapkan penanggung jawab rekonsiliasi[\s\S]*Ikuti ketentuan internal yang berlaku/);
+  assert.match(adminGuide, /Untuk memperbaiki Merk atau Tipe Produk setelah QC[\s\S]*buka menu <strong>Produk<\/strong> lalu pilih <strong>Edit<\/strong>/);
 });
 
 test("pencarian representatif mengarah ke section yang valid dan terisolasi", async () => {
