@@ -28,6 +28,14 @@ export const GUIDE_ROUTES: Record<GuideAudience, string> = {
 // then use "update" or "important". "minor" changes do not trigger BARU.
 export const GUIDE_UPDATES: readonly GuideUpdate[] = [
   {
+    version: "2026.08.25.1",
+    date: "2026-08-25",
+    audience: "admin",
+    level: "update",
+    title: "Ringkasan dan filter monitoring diperbarui",
+    summary: "Ringkasan monitoring kini memiliki shortcut kondisi dan Tipe Site, dengan filter Jenis Stasiun, Tipe Site, serta konteks QC yang lebih jelas.",
+  },
+  {
     version: "2026.08.22.1",
     date: "2026-08-22",
     audience: "all",

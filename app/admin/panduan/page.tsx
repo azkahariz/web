@@ -247,6 +247,10 @@ export default async function AdminGuidePage() {
             <div><dt>Lock aktif</dt><dd>Jumlah data yang masih mempunyai sesi edit aktif.</dd></div>
             <div><dt>QC Pending, Approved, Merged, Rejected</dt><dd>Jumlah proposal pada masing-masing hasil pemeriksaan.</dd></div>
           </dl>
+          <h4>Ringkasan Monitoring Pengisian</h4>
+          <p>Bagian ini merangkum Stasiun berdasarkan kondisi pengisian: <strong>Belum Dimulai</strong>, <strong>Terisi &lt;50%</strong>, <strong>Terisi 50–99%</strong>, dan <strong>Lengkap</strong>. <strong>Tidak Dinilai</strong> ditampilkan sebagai informasi sekunder bila progress tidak dapat dihitung.</p>
+          <p>Klik kartu kondisi untuk membuka <strong>Stasiun &amp; Pengisian</strong> dengan filter yang sesuai. Kartu <strong>Site berdasarkan Tipe Site</strong> juga dapat diklik untuk membuka daftar Stasiun yang memiliki Tipe Site tersebut.</p>
+          <p>Progress hanya menghitung kategori yang memang menjadi target pengisian. <strong>Gudang</strong> tidak mengurangi progress kelengkapan; Gudang ditampilkan sebagai jumlah kategori dan Unit.</p>
           <p>Klik <strong>Muat ulang</strong> bila ingin mengambil kondisi terbaru. Menu samping menggunakan link sehingga halaman dapat dibuka di tab baru, di-bookmark, dan dipertahankan setelah refresh.</p>
         </section>
 
@@ -257,10 +261,13 @@ export default async function AdminGuidePage() {
             <li>Buka menu <strong>Stasiun &amp; Pengisian</strong>.</li>
             <li>Pilih tab <strong>Master Pengisian</strong>.</li>
             <li>Cari nama Stasiun, Site, Tipe Site, atau Subtipe.</li>
+            <li>Gunakan filter <strong>Jenis Stasiun</strong> untuk memilih Meteorologi, Klimatologi, Geofisika, Balai, atau Pusat.</li>
+            <li>Pilih <strong>Tipe Site</strong>. Pilihan ini mengikuti Jenis Stasiun yang dipilih.</li>
             <li>Buka baris Stasiun untuk melihat jumlah Site dan Submission.</li>
             <li>Periksa kolom Site, Tipe Site, Subtipe, Status, Versi, dan Terakhir Simpan.</li>
             <li>Buka menu <strong>Aksi</strong>, lalu pilih <strong>Buka</strong> atau <strong>Unduh</strong>.</li>
           </ol>
+          <p>Filter <strong>Kondisi Pengisian</strong> membantu menemukan Belum Dimulai, Terisi &lt;50%, Terisi 50–99%, atau Lengkap. Pilihan <strong>Reset</strong> mengembalikan semua filter ke keadaan awal.</p>
           <p><strong>Sudah ada data</strong> berarti kombinasi Site-Subtipe mempunyai Submission aktif. <strong>Belum ada submission</strong> berarti master tersedia tetapi belum ada data pengisian.</p>
           <p>Jumlah Site menghitung Site utama, bukan jumlah Subtipe. Karena itu satu Site AWOS dengan beberapa Subtipe tetap dihitung sebagai satu Site.</p>
         </section>
@@ -274,7 +281,7 @@ export default async function AdminGuidePage() {
             <li>Pada <strong>Stasiun &amp; Pengisian</strong>, pilih tab <strong>Submission</strong>.</li>
             <li>Pilih <strong>Aktif</strong> atau <strong>Diarsipkan</strong>.</li>
             <li>Cari Stasiun, Site, Subtipe, atau Operator.</li>
-            <li>Gunakan filter Stasiun, Status progress, Tipe Site, dan Terakhir diperbarui.</li>
+            <li>Gunakan filter Jenis Stasiun, Tipe Site, dan konteks QC bila sedang melihat PENDING.</li>
             <li>Klik judul kolom untuk mengurutkan Stasiun, Site, Tipe Site, Subtipe, Progres, Versi, Operator, atau Terakhir Diperbarui.</li>
             <li>Atur <strong>Baris per halaman</strong>, lalu gunakan <strong>Sebelumnya</strong> dan <strong>Berikutnya</strong>.</li>
             <li>Klik baris untuk melihat kategori, item, versi, waktu simpan, QC Pending, dan alasan arsip.</li>

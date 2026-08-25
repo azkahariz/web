@@ -33,7 +33,7 @@ test("Station seen menyembunyikan notice dan memakai route normal", () => {
 
 test("pencarian Panduan memicu notice baru untuk Station dan Admin", () => {
   assert.equal(getLatestGuideNoticeVersion("station"), "2026.08.22.1");
-  assert.equal(getLatestGuideNoticeVersion("admin"), "2026.08.22.1");
+  assert.equal(getLatestGuideNoticeVersion("admin"), "2026.08.25.1");
   assert.equal(isGuideNoticeUnseen("station", "2026.08.21.3"), true);
   assert.equal(isGuideNoticeUnseen("admin", "2026.08.21.3"), true);
 });
@@ -135,6 +135,11 @@ test("panduan Admin menjelaskan pekerjaan dan tindakan Produk berisiko", async (
   assert.match(source, /Mau melakukan apa\?/);
   assert.match(source, /Baru pertama kali menjadi Super Admin\?/);
   assert.match(source, /Bagaimana melihat progres satu Stasiun\?/);
+  assert.match(source, /Ringkasan Monitoring Pengisian/);
+  assert.match(source, /Jenis Stasiun/);
+  assert.match(source, /konteks QC/i);
+  assert.match(source, /Tidak Dinilai/);
+  assert.match(source, /Gudang.*tidak mengurangi progress kelengkapan/);
   assert.match(source, /Bagaimana mencari, membuka, dan memperbaiki Submission\?/);
   assert.match(source, /Arsipkan Submission/);
   assert.match(source, /Pulihkan Submission/);
@@ -184,8 +189,9 @@ test("Yang Baru memakai bahasa umum tanpa jargon developer", async () => {
   assert.match(registry, /Panduan sekarang lebih mudah dicari/);
   assert.match(registry, /Cek penggunaan Produk lebih lengkap/);
   assert.match(registry, /Produk yang salah dapat diperbaiki/);
+  assert.match(registry, /Ringkasan dan filter monitoring diperbarui/);
   assert.equal(getGuideUpdates("station").length, 5);
-  assert.equal(getGuideUpdates("admin").length, 7);
+  assert.equal(getGuideUpdates("admin").length, 8);
 });
 
 test("panduan Station mendokumentasikan field dan state sesuai label aplikasi", async () => {
