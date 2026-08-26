@@ -34,8 +34,9 @@ test("Product dependency preflight tetap read-only, beridentitas stabil, dan han
   }
   assert.match(referencesRoute, /pageSize/);
   assert.match(referencesRoute, /archiveScope/);
-  for (const text of ["Dependency", "Referensi", "QC History", "Alias", "Item langsung", "Site aktif", "Submission aktif", "Hasil QC terkait", "Alias produk", "Referensi arsip", "Sedang diedit"]) assert.match(component, new RegExp(text));
-  for (const helper of ["Item inventaris yang langsung memilih produk ini", "Site yang saat ini menggunakan produk ini", "Submission aktif yang menggunakan produk ini", "Proposal QC yang telah diarahkan ke produk ini", "Nama alternatif yang mengarah ke produk ini", "Referensi pada submission yang sudah diarsipkan"]) assert.match(component, new RegExp(helper));
+  for (const text of ["Dependency", "Referensi Langsung", "QC History", "Alias", "Item langsung", "Site terkait", "Submission terkait", "Hasil QC terkait", "Alias produk", "Referensi arsip", "Sedang diedit"]) assert.match(component, new RegExp(text));
+  assert.match(component, /Hubungan hasil QC diarahkan otomatis saat Produk digabung/);
+  for (const helper of ["Item inventaris yang langsung memilih produk ini", "Site aktif dengan item langsung atau hasil QC terkait", "Submission aktif dengan item langsung atau hasil QC terkait", "Proposal QC yang telah diarahkan ke produk ini", "Nama alternatif yang mengarah ke produk ini", "Referensi pada submission yang sudah diarsipkan"]) assert.match(component, new RegExp(helper));
   assert.match(component, /expectedSubmissionVersion/);
   assert.match(component, /referencePageSize/);
   assert.match(component, /function DependencyPagination/);
@@ -46,7 +47,7 @@ test("Product dependency preflight tetap read-only, beridentitas stabil, dan han
   assert.doesNotMatch(component, /Merge Product|Split Product|Hapus Produk/);
   assert.match(component, /product-usage-dialog/);
   assert.match(component, /product-usage-pagination/);
-  assert.match(component, /Belum ada referensi pada scope ini/);
+  assert.match(component, /Belum ada referensi langsung pada scope ini/);
   assert.match(component, /aria-busy=\{usageLoading \|\| dependenciesLoading \|\| referencesLoading\}/);
   assert.match(component, /setDependencyPage\(1\)/);
   assert.match(component, /setReferencePageSize\(50\)/);

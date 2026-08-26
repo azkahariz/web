@@ -172,6 +172,7 @@ try {
 
     const plan = await preflight(tx, adminId, source.id, target.id);
     assert.equal(plan.status, "ready");
+    assert.equal(plan.resolvedQcProposalCount, 1, "Preflight harus menjelaskan hasil QC yang akan diarahkan.");
     assert.deepEqual(
       { references: plan.referenceCount, units: plan.unitCount, submissions: plan.submissionCount },
       { references: 5, units: 13, submissions: 2 },
@@ -194,8 +195,11 @@ try {
     assert.equal(archivedAfter.version, 6);
     const [sourceAfter] = await tx`select active, merged_into_product_id from public.products where id = ${source.id}`;
     assert.deepEqual(sourceAfter, { active: false, merged_into_product_id: target.id });
-    const [proposalAfter] = await tx`select resolved_product_id from public.product_proposals where id = ${proposal.id}`;
-    assert.equal(proposalAfter.resolved_product_id, source.id, "QC history harus tetap menunjuk UUID historis.");
+    const [proposalAfter] = await tx`select status, resolved_product_id, proposed_brand, proposed_model, reviewed_at, review_note from public.product_proposals where id = ${proposal.id}`;
+    assert.deepEqual(proposalAfter, {
+      status: "APPROVED", resolved_product_id: target.id, proposed_brand: "Historical", proposed_model: "Source",
+      reviewed_at: null, review_note: null,
+    }, "QC proposal dipertahankan, tetapi canonical Product-nya harus diarahkan ke target.");
     const [canonical] = await tx`select public.resolve_canonical_product_id(${source.id}) as id`;
     assert.equal(canonical.id, target.id);
     const resolvedRows = await asAdmin(tx, adminId, () => tx`select * from public.resolve_canonical_products(${[source.id, target.id]}::uuid[])`);
@@ -205,7 +209,7 @@ try {
     const [targetDependencies] = await asAdmin(tx, adminId, () => tx`select public.admin_product_dependencies(${target.id}) as data`);
     assert.equal(sourceDependencies.data.preflight.currentDirectReferenceCount, 0);
     assert.equal(sourceDependencies.data.preflight.currentSiteCount, 0);
-    assert.equal(sourceDependencies.data.preflight.resolvedQcProposalCount, 1, "Source historis tetap menampilkan QC history miliknya.");
+    assert.equal(sourceDependencies.data.preflight.resolvedQcProposalCount, 0, "Source merged tidak lagi menjadi canonical Product hasil QC.");
     assert.equal(sourceDependencies.data.product.mergedIntoProduct.id, target.id);
     assert.equal(targetDependencies.data.preflight.currentDirectReferenceCount, 8);
     assert.equal(targetDependencies.data.preflight.currentSiteCount, 3);
@@ -223,6 +227,45 @@ try {
     const audits = await tx`select metadata from public.admin_audit_log where action = 'PRODUCT_MERGE' and target_id = ${source.id}`;
     assert.equal(audits.length, 1);
     assert.equal(audits[0].metadata.referenceCount, 5);
+    assert.equal(audits[0].metadata.qcActions.repointed, 1);
+
+    const qcOnlySource = await createProduct("QC Only Source");
+    const qcOnlyTarget = await createProduct("QC Only Target");
+    const qcOnlyProposalRows = await tx`
+      insert into public.product_proposals (station_id, created_by_auth_user, proposed_brand, proposed_model, normalized_brand, normalized_model, status, resolved_product_id, reviewed_by, reviewed_at, review_note)
+      values
+        (${station.id}, ${stationUserId}, 'QC Only', 'One', 'qc only', 'one', 'APPROVED', ${qcOnlySource.id}, ${adminId}, now(), 'Tetap ada'),
+        (${station.id}, ${stationUserId}, 'QC Only', 'Two', 'qc only', 'two', 'MERGED', ${qcOnlySource.id}, ${adminId}, now(), 'Tetap ada')
+      returning id, status, proposed_brand, proposed_model, reviewed_by, reviewed_at, review_note
+    `;
+    const qcOnlyPlan = await preflight(tx, adminId, qcOnlySource.id, qcOnlyTarget.id);
+    assert.equal(qcOnlyPlan.status, "ready", "Produk hasil Approve Baru tanpa item langsung tetap harus mergeable.");
+    assert.equal(qcOnlyPlan.referenceCount, 0);
+    assert.equal(qcOnlyPlan.resolvedQcProposalCount, 2);
+    const qcOnlyResult = await merge(tx, adminId, qcOnlySource.id, qcOnlyTarget.id, qcOnlyPlan.preflightToken);
+    assert.equal(qcOnlyResult.status, "merged");
+    assert.equal(qcOnlyResult.qcActions.repointed, 2);
+    const qcOnlyAfter = await tx`select id, status, resolved_product_id, proposed_brand, proposed_model, reviewed_by, reviewed_at, review_note from public.product_proposals where id = any(${qcOnlyProposalRows.map((row) => row.id)}) order by id`;
+    for (const row of qcOnlyAfter) {
+      const before = qcOnlyProposalRows.find((proposalRow) => proposalRow.id === row.id);
+      assert.deepEqual({ ...row, resolved_product_id: undefined }, { ...before, resolved_product_id: undefined }, "Isi dan riwayat QC tidak boleh berubah.");
+      assert.equal(row.resolved_product_id, qcOnlyTarget.id);
+    }
+
+    const qcStaleSource = await createProduct("QC Stale Source");
+    const qcStaleTarget = await createProduct("QC Stale Target");
+    await tx`
+      insert into public.product_proposals (station_id, created_by_auth_user, proposed_brand, proposed_model, normalized_brand, normalized_model, status, resolved_product_id)
+      values (${station.id}, ${stationUserId}, 'QC Stale', 'One', 'qc stale', 'one', 'APPROVED', ${qcStaleSource.id})`;
+    const qcStalePlan = await preflight(tx, adminId, qcStaleSource.id, qcStaleTarget.id);
+    await tx`
+      insert into public.product_proposals (station_id, created_by_auth_user, proposed_brand, proposed_model, normalized_brand, normalized_model, status, resolved_product_id)
+      values (${station.id}, ${stationUserId}, 'QC Stale', 'Two', 'qc stale', 'two', 'MERGED', ${qcStaleSource.id})`;
+    assert.equal((await merge(tx, adminId, qcStaleSource.id, qcStaleTarget.id, qcStalePlan.preflightToken)).status, "state_changed");
+    const [qcStaleSourceAfter] = await tx`select active, merged_into_product_id from public.products where id = ${qcStaleSource.id}`;
+    assert.deepEqual(qcStaleSourceAfter, { active: true, merged_into_product_id: null }, "Token stale tidak boleh menyebabkan merge parsial.");
+    const [qcStaleAfter] = await tx`select count(*)::integer as count from public.product_proposals where resolved_product_id = ${qcStaleSource.id}`;
+    assert.equal(qcStaleAfter.count, 2, "Token stale tidak boleh memindahkan sebagian hasil QC.");
 
     const zeroSource = await createProduct("Zero Source", false);
     const zeroTarget = await createProduct("Zero Target");

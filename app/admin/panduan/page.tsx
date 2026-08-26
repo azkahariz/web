@@ -178,7 +178,7 @@ const glossary = [
   ["Proposal Produk", "Usulan Produk dari pengguna Stasiun yang perlu diperiksa Admin."],
   ["QC Produk", "Proses memeriksa proposal lalu menyetujui, menggabungkan, atau menolaknya."],
   ["Alias", "Nama alternatif yang mengarah ke Produk utama yang sama."],
-  ["Referensi", "Item inventaris yang menunjuk ke sebuah Produk."],
+  ["Referensi Langsung", "Item inventaris yang langsung menunjuk ke sebuah Produk."],
   ["Dependency/Penggunaan", "Seluruh keterkaitan yang membuat Produk masih dibutuhkan atau harus dipertahankan."],
   ["Nonaktif", "Produk biasa yang tidak ditawarkan untuk pengisian baru tetapi masih disimpan."],
   ["Digabungkan", "Produk lama yang sudah diarahkan ke Produk tujuan dan dipertahankan sebagai riwayat."],
@@ -396,19 +396,20 @@ export default async function AdminGuidePage() {
           <ol>
             <li>Cari Produk pada menu <strong>Produk</strong>.</li>
             <li>Klik angka <strong>N referensi</strong> pada kolom Penggunaan.</li>
-            <li>Periksa tab <strong>Dependency</strong>, <strong>Referensi</strong>, <strong>QC History</strong>, dan <strong>Alias</strong>.</li>
+            <li>Periksa tab <strong>Dependency</strong>, <strong>Referensi Langsung</strong>, <strong>QC History</strong>, dan <strong>Alias</strong>.</li>
           </ol>
           <dl className="guide-field-list guide-unit-fields">
             <div><dt>Item langsung</dt><dd>Item inventaris aktif yang langsung memilih Produk tersebut.</dd></div>
-            <div><dt>Site aktif</dt><dd>Jumlah Site aktif yang memakai Produk.</dd></div>
-            <div><dt>Submission aktif</dt><dd>Jumlah Submission aktif yang memakai Produk.</dd></div>
+            <div><dt>Site terkait</dt><dd>Jumlah Site aktif dengan item langsung atau hasil QC yang diarahkan ke Produk.</dd></div>
+            <div><dt>Submission terkait</dt><dd>Jumlah Submission aktif dengan item langsung atau hasil QC yang diarahkan ke Produk.</dd></div>
             <div><dt>Hasil QC terkait</dt><dd>Proposal yang telah diselesaikan dan diarahkan ke Produk.</dd></div>
             <div><dt>Alias produk</dt><dd>Nama alternatif yang mengarah ke Produk.</dd></div>
             <div><dt>Referensi arsip</dt><dd>Penggunaan pada Submission yang sudah diarsipkan.</dd></div>
           </dl>
           <p className="guide-direct-answer"><strong>Item langsung = 0 tidak selalu berarti Produk tidak digunakan.</strong> QC, Alias, arsip, dan hubungan penggabungan juga dapat membuat Produk harus dipertahankan.</p>
-          <h4>Tab Referensi</h4>
-          <p>Setiap baris menampilkan Stasiun, Site, Tipe Site, Subtipe, versi Submission, Kategori, dan jumlah Unit. Referensi yang diarsipkan atau sedang dikunci tidak dapat dipilih.</p>
+          <h4>Tab Referensi Langsung</h4>
+          <p>Tab ini hanya berisi item inventory yang langsung menunjuk Produk. Setiap baris menampilkan Stasiun, Site, Tipe Site, Subtipe, versi Submission, Kategori, dan jumlah Unit. Referensi yang diarsipkan atau sedang dikunci tidak dapat dipilih.</p>
+          <p>Hubungan hasil QC tidak muncul sebagai item pada tab ini. Saat Produk digabung, hasil QC terkait diarahkan otomatis ke Produk tujuan tanpa mengubah riwayat pemeriksaannya.</p>
           <p>Checkbox paling atas memilih atau membatalkan seluruh referensi yang dapat dipilih pada halaman saat ini. Pilihan dari halaman lain tetap tersimpan. Tanda sebagian berarti hanya beberapa item halaman ini yang dipilih. Klik <strong>Batalkan semua</strong> untuk mengosongkan seluruh pilihan lintas halaman.</p>
         </section>
 
@@ -417,7 +418,7 @@ export default async function AdminGuidePage() {
           <h3>Beberapa item memilih Produk yang salah</h3>
           <ol>
             <li>Buka <strong>Penggunaan Produk</strong> pada Produk sumber.</li>
-            <li>Pilih tab <strong>Referensi</strong>.</li>
+            <li>Pilih tab <strong>Referensi Langsung</strong>.</li>
             <li>Centang item yang ingin diperbaiki, termasuk dari beberapa halaman bila perlu.</li>
             <li>Klik <strong>Pindahkan Referensi</strong>.</li>
             <li>Cari Produk tujuan aktif menggunakan Merk atau Tipe, lalu pilih.</li>
@@ -440,7 +441,7 @@ export default async function AdminGuidePage() {
             <li>Periksa Item, Unit, Site, Submission, dan Alias sumber pada ringkasan.</li>
             <li>Klik <strong>Gabungkan Produk</strong>.</li>
           </ol>
-          <p>Semua referensi aktif Produk sumber dipindahkan ke tujuan. Produk sumber menjadi <strong>Digabungkan</strong>, tidak hilang, dan nama lamanya menjadi Alias tujuan. Submission arsip dan riwayat QC tidak diubah.</p>
+          <p>Semua referensi aktif Produk sumber dipindahkan ke tujuan. Hasil QC terkait juga diarahkan ke Produk tujuan tanpa mengubah proposal, status, catatan, atau riwayat pemeriksaannya. Produk sumber menjadi <strong>Digabungkan</strong>, tidak hilang, dan nama lamanya menjadi Alias tujuan. Submission arsip tidak diubah.</p>
           <p>Jika target yang dipilih ternyata sudah Digabungkan, aplikasi menunjukkan Produk tujuan terakhir yang akan digunakan. Rekomendasi mempertimbangkan Merk, Tipe, dan Alias, tetapi keputusan tetap berada pada Admin.</p>
           <div className="guide-warning"><strong>Hati-hati</strong><p>Gabungkan tidak mempunyai Undo atau Unmerge otomatis. Pastikan sumber dan tujuan memang Produk yang sama, bukan hanya mirip atau digunakan pada Kategori yang sama.</p></div>
           <h4 id="move-vs-merge">Apa beda Pindahkan Referensi dan Gabungkan Produk?</h4>

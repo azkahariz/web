@@ -487,7 +487,7 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
         <p className="product-usage-name"><strong>{usageProduct.brand}</strong><span>{usageProduct.model}</span>{dependencies && <small>{dependencies.product.mergedIntoProduct ? "Digabungkan" : dependencies.product.active ? "Aktif" : "Nonaktif"} · {productSourceLabel(dependencies.product.sourceOrigin)}</small>}</p>
         {dependencies?.product.mergedIntoProduct && <p className="product-merged-notice">Produk ini telah digabungkan ke <strong>{dependencies.product.mergedIntoProduct.brand}</strong> · {dependencies.product.mergedIntoProduct.model}</p>}
         <div className="product-dependency-tabs" role="tablist" aria-label="Detail dependency produk">
-          {[['summary', 'Dependency'], ['references', 'Referensi'], ['qc', 'QC History'], ['aliases', 'Alias']].map(([tab, label]) => <button key={tab} type="button" role="tab" aria-selected={dependencyTab === tab} className={dependencyTab === tab ? "is-active" : ""} onClick={() => selectDependencyTab(tab as DependencyTab)}>{label}</button>)}
+          {[['summary', 'Dependency'], ['references', 'Referensi Langsung'], ['qc', 'QC History'], ['aliases', 'Alias']].map(([tab, label]) => <button key={tab} type="button" role="tab" aria-selected={dependencyTab === tab} className={dependencyTab === tab ? "is-active" : ""} onClick={() => selectDependencyTab(tab as DependencyTab)}>{label}</button>)}
         </div>
         <div className="product-usage-content" aria-busy={usageLoading || dependenciesLoading || referencesLoading}>
           {dependencyTab === "summary" && <>
@@ -498,8 +498,8 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
           {dependencies && <>
             <div className="product-dependency-summary">
               <div><small>Item langsung</small><strong>{dependencies.preflight.currentDirectReferenceCount}</strong><p>Item inventaris yang langsung memilih produk ini</p></div>
-              <div><small>Site aktif</small><strong>{dependencies.preflight.currentSiteCount}</strong><p>Site yang saat ini menggunakan produk ini</p></div>
-              <div><small>Submission aktif</small><strong>{dependencies.preflight.currentSubmissionCount}</strong><p>Submission aktif yang menggunakan produk ini</p></div>
+              <div><small>Site terkait</small><strong>{dependencies.preflight.currentSiteCount}</strong><p>Site aktif dengan item langsung atau hasil QC terkait</p></div>
+              <div><small>Submission terkait</small><strong>{dependencies.preflight.currentSubmissionCount}</strong><p>Submission aktif dengan item langsung atau hasil QC terkait</p></div>
               <div><small>Hasil QC terkait</small><strong>{dependencies.preflight.resolvedQcProposalCount}</strong><p>Proposal QC yang telah diarahkan ke produk ini</p></div>
               <div><small>Alias produk</small><strong>{dependencies.preflight.aliasCount}</strong><p>Nama alternatif yang mengarah ke produk ini</p></div>
               <div><small>Referensi arsip</small><strong>{dependencies.preflight.archivedDirectReferenceCount}</strong><p>Referensi pada submission yang sudah diarsipkan</p></div>
@@ -516,6 +516,7 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
           </>}
           </>}
           {dependencyTab === "references" && <>
+            <p className="product-reference-scope">Hanya item inventory yang langsung menunjuk Produk ini yang dapat dipindahkan. Hubungan hasil QC diarahkan otomatis saat Produk digabung.</p>
             {!references && referencesLoading && <p className="product-usage-state" role="status"><span className="product-usage-spinner" aria-hidden="true" />Memuat referensi...</p>}
             {dependenciesError && <p className="app-dialog-error" role="alert">{dependenciesError}</p>}
             {references && <><DependencyPagination page={references.page} pageSize={referencePageSize} total={references.totalCount} loading={referencesLoading} label="referensi" onPage={(nextPage) => void loadReferences(usageProduct, nextPage, referencePageSize)} onPageSize={(nextPageSize) => { setReferencePageSize(nextPageSize); void loadReferences(usageProduct, 1, nextPageSize); }} />
@@ -536,7 +537,7 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
                   <label className="product-reference-check"><input type="checkbox" aria-label={`Pilih referensi ${row.stationName} ${row.siteName}`} checked={selectedReferences.has(key)} disabled={!eligible} onChange={() => toggleReference(row)} /></label>
                   <div><strong>{row.stationName}</strong><span>{row.siteName} · {row.siteTypeName} · {row.siteSubtypeName}</span><small>Submission v{row.expectedSubmissionVersion} · {[row.categoryName, ...row.functionCategories].filter(Boolean).map(formatCategoryLabel).join(" · ")} · {row.unitCount} unit</small>{row.activeLock && <em>Sedang diedit{row.lockOwnerDisplayName ? `: ${row.lockOwnerDisplayName}` : ""}</em>}{row.archivedAt && <em>Diarsipkan</em>}</div>
                 </div>;
-              })}{!references.rows.length && <p>Belum ada referensi pada scope ini.</p>}</div></>}
+              })}{!references.rows.length && <p>Belum ada referensi langsung pada scope ini.</p>}</div></>}
           </>}
           {dependencyTab === "qc" && <div className="product-reference-list">{dependenciesLoading && <p className="product-usage-state" role="status"><span className="product-usage-spinner" aria-hidden="true" />Memuat QC history...</p>}{dependencies?.qcProposals.map((proposal) => <div key={proposal.proposalId}><strong>{proposal.proposedBrand} · {proposal.proposedModel}</strong><span>{proposal.status}{proposal.reviewerName ? ` · ${proposal.reviewerName}` : ""}</span>{proposal.reviewNote && <small>Catatan: {proposal.reviewNote}</small>}</div>)}{dependencies && !dependencies.qcProposals.length && <p>Belum ada proposal QC yang resolved ke produk ini.</p>}</div>}
           {dependencyTab === "aliases" && <div className="product-reference-list">{dependenciesLoading && <p className="product-usage-state" role="status"><span className="product-usage-spinner" aria-hidden="true" />Memuat alias...</p>}{dependencies?.aliases.map((alias) => <div key={alias.aliasId}><strong>{alias.brand}</strong><span>{alias.model}</span>{alias.sourceProposalId && <small>Asal proposal QC</small>}</div>)}{dependencies && !dependencies.aliases.length && <p>Produk ini belum memiliki alias.</p>}</div>}
