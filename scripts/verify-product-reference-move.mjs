@@ -17,6 +17,10 @@ function reference(submission, itemId, expectedVersion = submission.version) {
   return { submissionId: submission.id, expectedSubmissionVersion: expectedVersion, itemId };
 }
 
+function qcReference(proposal) {
+  return { referenceType: "QC_RESULT", proposalId: proposal.id, expectedProposalUpdatedAt: proposal.updated_at.toISOString() };
+}
+
 function findItem(payload, itemId) {
   return Object.values(payload.inventory ?? {}).flat().find((item) => item.id === itemId);
 }
@@ -117,6 +121,15 @@ try {
         `;
       }
       return submission;
+    }
+
+    async function createResolvedQc(submission, label, status = "APPROVED") {
+      const [proposal] = await tx`
+        insert into public.product_proposals (station_id, submission_id, created_by_auth_user, proposed_brand, proposed_model, normalized_brand, normalized_model, status, resolved_product_id, reviewed_by, reviewed_at, review_note)
+        values (${station.id}, ${submission.id}, ${stationUserId}, ${`QC ${label}`}, ${`Model ${label}`}, ${`qc ${label}`}, ${`model ${label}`}, ${status}, ${products.source.id}, ${adminId}, now(), ${`Note ${label}`})
+        returning id, submission_id, status, resolved_product_id, reviewed_by, reviewed_at, review_note, created_at, updated_at
+      `;
+      return proposal;
     }
 
     await tx`set local role authenticated`;
@@ -258,6 +271,42 @@ try {
     assert.equal((await callMove(tx, adminId, products.q330.id, products.q330plus.id, [reference(exactCanonical, "q330-exact")])).status, "moved");
     const [exactAfter] = await tx`select payload from public.submissions where id = ${exactCanonical.id}`;
     assert.equal(findItem(exactAfter.payload, "q330-exact").productId, products.q330plus.id, "UUID Q330 dan Q330+ harus tetap dibedakan secara exact.");
+
+    const qcSubmission = await createSubmission([], { version: 4 });
+    const qcOne = await createResolvedQc(qcSubmission, "one");
+    const qcTwo = await createResolvedQc(qcSubmission, "two", "MERGED");
+    const qcThree = await createResolvedQc(qcSubmission, "three");
+    const qcOnly = await callMove(tx, adminId, products.source.id, products.target.id, [qcReference(qcOne), qcReference(qcThree)]);
+    assert.equal(qcOnly.status, "moved");
+    const qcAfter = await tx`select id, status, resolved_product_id, reviewed_by, reviewed_at, review_note, submission_id, created_at from public.product_proposals where id in (${qcOne.id}, ${qcTwo.id}, ${qcThree.id}) order by id`;
+    const qcById = new Map(qcAfter.map((row) => [row.id, row]));
+    assert.equal(qcById.get(qcOne.id).resolved_product_id, products.target.id);
+    assert.equal(qcById.get(qcThree.id).resolved_product_id, products.target.id);
+    assert.equal(qcById.get(qcTwo.id).resolved_product_id, products.source.id, "QC tidak terpilih pada Submission sama harus tetap di sumber.");
+    assert.equal(qcById.get(qcOne.id).status, "APPROVED");
+    assert.equal(qcById.get(qcThree.id).review_note, "Note three");
+    const [qcSubmissionAfter] = await tx`select payload, version from public.submissions where id = ${qcSubmission.id}`;
+    assert.deepEqual(qcSubmissionAfter.payload, qcSubmission.payload, "QC-only tidak boleh mengubah payload Submission.");
+    assert.equal(qcSubmissionAfter.version, 4, "QC-only tidak boleh menaikkan version Submission.");
+
+    const mixedSubmission = await createSubmission([{ id: "mixed-direct", productId: products.source.id, brand: products.source.brand, model: products.source.model }], { version: 6 });
+    const mixedQc = await createResolvedQc(mixedSubmission, "mixed");
+    const mixedMove = await callMove(tx, adminId, products.source.id, products.target.id, [reference(mixedSubmission, "mixed-direct"), qcReference(mixedQc)]);
+    assert.equal(mixedMove.status, "moved");
+    const [mixedAfter] = await tx`select payload, version from public.submissions where id = ${mixedSubmission.id}`;
+    assert.equal(findItem(mixedAfter.payload, "mixed-direct").productId, products.target.id);
+    assert.equal(mixedAfter.version, 7);
+    const [mixedQcAfter] = await tx`select resolved_product_id from public.product_proposals where id = ${mixedQc.id}`;
+    assert.equal(mixedQcAfter.resolved_product_id, products.target.id);
+
+    const staleQcSubmission = await createSubmission([], { version: 2 });
+    const staleQc = await createResolvedQc(staleQcSubmission, "stale");
+    const staleQcSelection = qcReference(staleQc);
+    await tx`update public.product_proposals set status = 'REJECTED', review_note = 'Changed after selection' where id = ${staleQc.id}`;
+    const staleQcMove = await callMove(tx, adminId, products.source.id, products.target.id, [staleQcSelection]);
+    assert.equal(staleQcMove.status, "reference_changed");
+    const [staleQcAfter] = await tx`select resolved_product_id from public.product_proposals where id = ${staleQc.id}`;
+    assert.equal(staleQcAfter.resolved_product_id, products.source.id, "Stale QC tidak boleh berpindah.");
 
     const [sourceAfter] = await tx`select active from public.products where id = ${products.source.id}`;
     assert.equal(sourceAfter.active, true, "Pemindahan referensi tidak boleh menonaktifkan Produk sumber.");
