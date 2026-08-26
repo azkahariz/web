@@ -363,8 +363,57 @@ try {
     `;
     assert.equal((await preflight(tx, adminId, collisionSource.id, collisionTarget.id)).status, "alias_collision");
 
+    const rollbackSource = await createProduct("Rollback Source");
+    const rollbackTarget = await createProduct("Rollback Target");
+    const rollbackSubmission = await createSubmission([
+      { id: "rollback-reference", productId: rollbackSource.id, brand: rollbackSource.brand, model: rollbackSource.model, quantity: 1 },
+    ], { version: 7 });
+    const [rollbackProposal] = await tx`
+      insert into public.product_proposals (station_id, submission_id, created_by_auth_user, proposed_brand, proposed_model, normalized_brand, normalized_model, status, resolved_product_id)
+      values (${station.id}, ${rollbackSubmission.id}, ${stationUserId}, 'Rollback', 'QC', 'rollback', 'qc', 'APPROVED', ${rollbackSource.id})
+      returning id
+    `;
+    await tx`
+      insert into public.product_aliases (product_id, brand_alias, model_alias, normalized_brand, normalized_model)
+      values (${rollbackSource.id}, 'Rollback Alias', 'QC', 'rollback alias', 'qc')
+    `;
+    const rollbackPlan = await preflight(tx, adminId, rollbackSource.id, rollbackTarget.id);
+    assert.equal(rollbackPlan.status, "ready");
+    const rollbackPayload = structuredClone(rollbackSubmission.payload);
+    await tx.unsafe(`
+      create function public.verify_product_merge_rollback_audit_failure()
+      returns trigger
+      language plpgsql
+      as $$ begin raise exception 'verify product merge forced audit failure'; end $$;
+      create trigger verify_product_merge_rollback_audit_failure
+      before insert on public.admin_audit_log
+      for each row execute function public.verify_product_merge_rollback_audit_failure();
+    `);
+    await asAdmin(tx, adminId, () => tx.unsafe(`
+      do $$
+      begin
+        perform public.admin_merge_product(${literal(rollbackSource.id)}::uuid, ${literal(rollbackTarget.id)}::uuid, ${literal(rollbackPlan.preflightToken)});
+        raise exception 'merge unexpectedly succeeded despite forced audit failure';
+      exception when others then
+        if sqlerrm <> 'verify product merge forced audit failure' then raise; end if;
+      end $$;
+    `));
+    await tx`drop trigger verify_product_merge_rollback_audit_failure on public.admin_audit_log`;
+    await tx`drop function public.verify_product_merge_rollback_audit_failure()`;
+    const [rollbackSourceAfter] = await tx`select active, merged_into_product_id from public.products where id = ${rollbackSource.id}`;
+    assert.deepEqual(rollbackSourceAfter, { active: true, merged_into_product_id: null });
+    const [rollbackProposalAfter] = await tx`select resolved_product_id from public.product_proposals where id = ${rollbackProposal.id}`;
+    assert.equal(rollbackProposalAfter.resolved_product_id, rollbackSource.id);
+    const [rollbackSubmissionAfter] = await tx`select payload, version from public.submissions where id = ${rollbackSubmission.id}`;
+    assert.deepEqual(rollbackSubmissionAfter.payload, rollbackPayload);
+    assert.equal(rollbackSubmissionAfter.version, 7);
+    const [rollbackAliasCount] = await tx`select count(*)::integer as count from public.product_aliases where product_id = ${rollbackSource.id}`;
+    assert.equal(rollbackAliasCount.count, 1);
+    const [rollbackAuditCount] = await tx`select count(*)::integer as count from public.admin_audit_log where target_id = ${rollbackSource.id} and action = 'PRODUCT_MERGE'`;
+    assert.equal(rollbackAuditCount.count, 0, "Kegagalan dalam transaksi tidak boleh menulis audit parsial.");
+
     const [auditTotal] = await tx`select count(*)::integer as count from public.admin_audit_log where action = 'PRODUCT_MERGE'`;
-    assert.equal(auditTotal.count, 5, "Hanya merge sukses yang boleh menulis satu audit per operasi.");
+    assert.equal(auditTotal.count, 6, "Hanya merge sukses yang boleh menulis satu audit per operasi.");
     throw new Error(rollbackMarker);
   });
 } catch (error) {
