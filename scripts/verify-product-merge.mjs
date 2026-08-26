@@ -45,6 +45,16 @@ async function asAdmin(tx, adminId, query) {
   }
 }
 
+async function asStationUser(tx, stationUserId, query) {
+  await tx`set local role authenticated`;
+  await tx`select set_config('request.jwt.claim.sub', ${stationUserId}, true)`;
+  try {
+    return await query();
+  } finally {
+    await tx`reset role`;
+  }
+}
+
 async function preflight(tx, adminId, sourceId, targetId) {
   return asAdmin(tx, adminId, async () => {
     const [row] = await tx`select public.admin_product_merge_preflight(${sourceId}, ${targetId}) as data`;
@@ -115,16 +125,38 @@ try {
     await tx.unsafe(`do $$ begin perform public.admin_product_merge_preflight(${literal(unauthorizedSource.id)}::uuid, ${literal(unauthorizedTarget.id)}::uuid); raise exception 'station_merge_was_not_blocked'; exception when insufficient_privilege then null; end $$;`);
     await tx`reset role`;
 
-    const [source] = await tx`
-      insert into public.products (brand, model, active, source_origin, spreadsheet_synced)
-      values ('R. M. Young', 'Sensor Arah dan Kecepatan Angin 5106', true, 'ADMIN', false)
-      returning id, brand, model, active
-    `;
     const [target] = await tx`
       insert into public.products (brand, model, active, source_origin, spreadsheet_synced)
       values ('R. M. Young', 'Marine Wind Monitor 05106', true, 'ADMIN', false)
       returning id, brand, model, active
     `;
+    const approvalContext = await createSubmission([]);
+    const approvalProposalRows = await asStationUser(tx, stationUserId, () => tx`
+      select * from public.create_product_proposal(
+        ${approvalContext.site_id}, ${siteSubtype.id},
+        'R. M. Young', 'Sensor Arah dan Kecepatan Angin 5106',
+        'Verifier Station', 'approve-then-merge'
+      )
+    `);
+    const approvalProposalId = approvalProposalRows[0]?.proposal_id;
+    assert.ok(approvalProposalId, "Station User harus dapat membuat proposal Pending.");
+    const approvalResult = await asAdmin(tx, adminId, () => tx`
+      select public.admin_approve_product_proposal(
+        ${approvalProposalId}, 'R. M. Young', 'Sensor Arah dan Kecepatan Angin 5106', 'Disetujui untuk merge verifier'
+      ) as product_id
+    `);
+    const sourceProductId = approvalResult[0]?.product_id;
+    assert.ok(sourceProductId, "Approve Baru harus membuat canonical Product.");
+    const [source] = await tx`
+      select id, brand, model, active from public.products where id = ${sourceProductId}
+    `;
+    const [proposal] = await tx`
+      select id, status, resolved_product_id, proposed_brand, proposed_model, reviewed_by, reviewed_at, review_note
+      from public.product_proposals where id = ${approvalProposalId}
+    `;
+    assert.equal(proposal.status, "APPROVED");
+    assert.equal(proposal.resolved_product_id, source.id);
+    const proposalBefore = structuredClone(proposal);
     const other = await createProduct("Other");
     const richItem = {
       id: "rich-source",
@@ -157,10 +189,6 @@ try {
     ]);
     const archived = await createSubmission([{ id: "archived", productId: source.id, brand: source.brand, model: source.model, quantity: 9 }], { archived: true, version: 6 });
     const archivedBefore = structuredClone(archived.payload);
-    const [proposal] = await tx`
-      insert into public.product_proposals (station_id, submission_id, created_by_auth_user, proposed_brand, proposed_model, normalized_brand, normalized_model, status, resolved_product_id)
-      values (${station.id}, ${first.id}, ${stationUserId}, 'Historical', 'Source', 'historical', 'source', 'APPROVED', ${source.id}) returning id
-    `;
     await tx`
       insert into public.product_aliases (product_id, brand_alias, model_alias, normalized_brand, normalized_model, source_proposal_id)
       values (${source.id}, 'Old Source Brand', 'Old Source Model', 'old source brand', 'old source model', ${proposal.id})
@@ -172,6 +200,7 @@ try {
 
     const plan = await preflight(tx, adminId, source.id, target.id);
     assert.equal(plan.status, "ready");
+    assert.equal(plan.resolvedQcProposalCount, 1, "Preflight harus menjelaskan hasil QC yang akan diarahkan.");
     assert.deepEqual(
       { references: plan.referenceCount, units: plan.unitCount, submissions: plan.submissionCount },
       { references: 5, units: 13, submissions: 2 },
@@ -194,8 +223,13 @@ try {
     assert.equal(archivedAfter.version, 6);
     const [sourceAfter] = await tx`select active, merged_into_product_id from public.products where id = ${source.id}`;
     assert.deepEqual(sourceAfter, { active: false, merged_into_product_id: target.id });
-    const [proposalAfter] = await tx`select resolved_product_id from public.product_proposals where id = ${proposal.id}`;
-    assert.equal(proposalAfter.resolved_product_id, source.id, "QC history harus tetap menunjuk UUID historis.");
+    const [proposalAfter] = await tx`select id, status, resolved_product_id, proposed_brand, proposed_model, reviewed_by, reviewed_at, review_note from public.product_proposals where id = ${proposal.id}`;
+    assert.deepEqual(
+      { ...proposalAfter, resolved_product_id: undefined },
+      { ...proposalBefore, resolved_product_id: undefined },
+      "Approve Baru harus mempertahankan UUID, status, reviewer, waktu, catatan, dan isi proposal setelah merge.",
+    );
+    assert.equal(proposalAfter.resolved_product_id, target.id, "Hasil QC harus diarahkan ke target canonical.");
     const [canonical] = await tx`select public.resolve_canonical_product_id(${source.id}) as id`;
     assert.equal(canonical.id, target.id);
     const resolvedRows = await asAdmin(tx, adminId, () => tx`select * from public.resolve_canonical_products(${[source.id, target.id]}::uuid[])`);
@@ -205,7 +239,7 @@ try {
     const [targetDependencies] = await asAdmin(tx, adminId, () => tx`select public.admin_product_dependencies(${target.id}) as data`);
     assert.equal(sourceDependencies.data.preflight.currentDirectReferenceCount, 0);
     assert.equal(sourceDependencies.data.preflight.currentSiteCount, 0);
-    assert.equal(sourceDependencies.data.preflight.resolvedQcProposalCount, 1, "Source historis tetap menampilkan QC history miliknya.");
+    assert.equal(sourceDependencies.data.preflight.resolvedQcProposalCount, 0, "Source merged tidak lagi menjadi canonical Product hasil QC.");
     assert.equal(sourceDependencies.data.product.mergedIntoProduct.id, target.id);
     assert.equal(targetDependencies.data.preflight.currentDirectReferenceCount, 8);
     assert.equal(targetDependencies.data.preflight.currentSiteCount, 3);
@@ -223,6 +257,45 @@ try {
     const audits = await tx`select metadata from public.admin_audit_log where action = 'PRODUCT_MERGE' and target_id = ${source.id}`;
     assert.equal(audits.length, 1);
     assert.equal(audits[0].metadata.referenceCount, 5);
+    assert.equal(audits[0].metadata.qcActions.repointed, 1);
+
+    const qcOnlySource = await createProduct("QC Only Source");
+    const qcOnlyTarget = await createProduct("QC Only Target");
+    const qcOnlyProposalRows = await tx`
+      insert into public.product_proposals (station_id, created_by_auth_user, proposed_brand, proposed_model, normalized_brand, normalized_model, status, resolved_product_id, reviewed_by, reviewed_at, review_note)
+      values
+        (${station.id}, ${stationUserId}, 'QC Only', 'One', 'qc only', 'one', 'APPROVED', ${qcOnlySource.id}, ${adminId}, now(), 'Tetap ada'),
+        (${station.id}, ${stationUserId}, 'QC Only', 'Two', 'qc only', 'two', 'MERGED', ${qcOnlySource.id}, ${adminId}, now(), 'Tetap ada')
+      returning id, status, proposed_brand, proposed_model, reviewed_by, reviewed_at, review_note
+    `;
+    const qcOnlyPlan = await preflight(tx, adminId, qcOnlySource.id, qcOnlyTarget.id);
+    assert.equal(qcOnlyPlan.status, "ready", "Produk hasil Approve Baru tanpa item langsung tetap harus mergeable.");
+    assert.equal(qcOnlyPlan.referenceCount, 0);
+    assert.equal(qcOnlyPlan.resolvedQcProposalCount, 2);
+    const qcOnlyResult = await merge(tx, adminId, qcOnlySource.id, qcOnlyTarget.id, qcOnlyPlan.preflightToken);
+    assert.equal(qcOnlyResult.status, "merged");
+    assert.equal(qcOnlyResult.qcActions.repointed, 2);
+    const qcOnlyAfter = await tx`select id, status, resolved_product_id, proposed_brand, proposed_model, reviewed_by, reviewed_at, review_note from public.product_proposals where id = any(${qcOnlyProposalRows.map((row) => row.id)}) order by id`;
+    for (const row of qcOnlyAfter) {
+      const before = qcOnlyProposalRows.find((proposalRow) => proposalRow.id === row.id);
+      assert.deepEqual({ ...row, resolved_product_id: undefined }, { ...before, resolved_product_id: undefined }, "Isi dan riwayat QC tidak boleh berubah.");
+      assert.equal(row.resolved_product_id, qcOnlyTarget.id);
+    }
+
+    const qcStaleSource = await createProduct("QC Stale Source");
+    const qcStaleTarget = await createProduct("QC Stale Target");
+    await tx`
+      insert into public.product_proposals (station_id, created_by_auth_user, proposed_brand, proposed_model, normalized_brand, normalized_model, status, resolved_product_id)
+      values (${station.id}, ${stationUserId}, 'QC Stale', 'One', 'qc stale', 'one', 'APPROVED', ${qcStaleSource.id})`;
+    const qcStalePlan = await preflight(tx, adminId, qcStaleSource.id, qcStaleTarget.id);
+    await tx`
+      insert into public.product_proposals (station_id, created_by_auth_user, proposed_brand, proposed_model, normalized_brand, normalized_model, status, resolved_product_id)
+      values (${station.id}, ${stationUserId}, 'QC Stale', 'Two', 'qc stale', 'two', 'MERGED', ${qcStaleSource.id})`;
+    assert.equal((await merge(tx, adminId, qcStaleSource.id, qcStaleTarget.id, qcStalePlan.preflightToken)).status, "state_changed");
+    const [qcStaleSourceAfter] = await tx`select active, merged_into_product_id from public.products where id = ${qcStaleSource.id}`;
+    assert.deepEqual(qcStaleSourceAfter, { active: true, merged_into_product_id: null }, "Token stale tidak boleh menyebabkan merge parsial.");
+    const [qcStaleAfter] = await tx`select count(*)::integer as count from public.product_proposals where resolved_product_id = ${qcStaleSource.id}`;
+    assert.equal(qcStaleAfter.count, 2, "Token stale tidak boleh memindahkan sebagian hasil QC.");
 
     const zeroSource = await createProduct("Zero Source", false);
     const zeroTarget = await createProduct("Zero Target");
@@ -320,8 +393,57 @@ try {
     `;
     assert.equal((await preflight(tx, adminId, collisionSource.id, collisionTarget.id)).status, "alias_collision");
 
+    const rollbackSource = await createProduct("Rollback Source");
+    const rollbackTarget = await createProduct("Rollback Target");
+    const rollbackSubmission = await createSubmission([
+      { id: "rollback-reference", productId: rollbackSource.id, brand: rollbackSource.brand, model: rollbackSource.model, quantity: 1 },
+    ], { version: 7 });
+    const [rollbackProposal] = await tx`
+      insert into public.product_proposals (station_id, submission_id, created_by_auth_user, proposed_brand, proposed_model, normalized_brand, normalized_model, status, resolved_product_id)
+      values (${station.id}, ${rollbackSubmission.id}, ${stationUserId}, 'Rollback', 'QC', 'rollback', 'qc', 'APPROVED', ${rollbackSource.id})
+      returning id
+    `;
+    await tx`
+      insert into public.product_aliases (product_id, brand_alias, model_alias, normalized_brand, normalized_model)
+      values (${rollbackSource.id}, 'Rollback Alias', 'QC', 'rollback alias', 'qc')
+    `;
+    const rollbackPlan = await preflight(tx, adminId, rollbackSource.id, rollbackTarget.id);
+    assert.equal(rollbackPlan.status, "ready");
+    const rollbackPayload = structuredClone(rollbackSubmission.payload);
+    await tx.unsafe(`
+      create function public.verify_product_merge_rollback_audit_failure()
+      returns trigger
+      language plpgsql
+      as $$ begin raise exception 'verify product merge forced audit failure'; end $$;
+      create trigger verify_product_merge_rollback_audit_failure
+      before insert on public.admin_audit_log
+      for each row execute function public.verify_product_merge_rollback_audit_failure();
+    `);
+    await asAdmin(tx, adminId, () => tx.unsafe(`
+      do $$
+      begin
+        perform public.admin_merge_product(${literal(rollbackSource.id)}::uuid, ${literal(rollbackTarget.id)}::uuid, ${literal(rollbackPlan.preflightToken)});
+        raise exception 'merge unexpectedly succeeded despite forced audit failure';
+      exception when others then
+        if sqlerrm <> 'verify product merge forced audit failure' then raise; end if;
+      end $$;
+    `));
+    await tx`drop trigger verify_product_merge_rollback_audit_failure on public.admin_audit_log`;
+    await tx`drop function public.verify_product_merge_rollback_audit_failure()`;
+    const [rollbackSourceAfter] = await tx`select active, merged_into_product_id from public.products where id = ${rollbackSource.id}`;
+    assert.deepEqual(rollbackSourceAfter, { active: true, merged_into_product_id: null });
+    const [rollbackProposalAfter] = await tx`select resolved_product_id from public.product_proposals where id = ${rollbackProposal.id}`;
+    assert.equal(rollbackProposalAfter.resolved_product_id, rollbackSource.id);
+    const [rollbackSubmissionAfter] = await tx`select payload, version from public.submissions where id = ${rollbackSubmission.id}`;
+    assert.deepEqual(rollbackSubmissionAfter.payload, rollbackPayload);
+    assert.equal(rollbackSubmissionAfter.version, 7);
+    const [rollbackAliasCount] = await tx`select count(*)::integer as count from public.product_aliases where product_id = ${rollbackSource.id}`;
+    assert.equal(rollbackAliasCount.count, 1);
+    const [rollbackAuditCount] = await tx`select count(*)::integer as count from public.admin_audit_log where target_id = ${rollbackSource.id} and action = 'PRODUCT_MERGE'`;
+    assert.equal(rollbackAuditCount.count, 0, "Kegagalan dalam transaksi tidak boleh menulis audit parsial.");
+
     const [auditTotal] = await tx`select count(*)::integer as count from public.admin_audit_log where action = 'PRODUCT_MERGE'`;
-    assert.equal(auditTotal.count, 5, "Hanya merge sukses yang boleh menulis satu audit per operasi.");
+    assert.equal(auditTotal.count, 6, "Hanya merge sukses yang boleh menulis satu audit per operasi.");
     throw new Error(rollbackMarker);
   });
 } catch (error) {

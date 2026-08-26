@@ -44,6 +44,8 @@ type ProductDependencies = {
   aliases: Array<{ aliasId: string; brand: string; model: string; sourceProposalId: string | null }>;
 };
 type ProductReference = {
+  referenceType: "DIRECT" | "QC_RESULT";
+  referenceId: string;
   submissionId: string;
   expectedSubmissionVersion: number;
   stationName: string;
@@ -57,6 +59,11 @@ type ProductReference = {
   archivedAt: string | null;
   activeLock: boolean;
   lockOwnerDisplayName: string | null;
+  proposalId: string | null;
+  expectedProposalUpdatedAt: string | null;
+  qcStatus: "APPROVED" | "MERGED" | null;
+  proposedBrand: string | null;
+  proposedModel: string | null;
 };
 type ProductReferences = { rows: ProductReference[]; totalCount: number; page: number; pageSize: number };
 type DependencyTab = "summary" | "references" | "qc" | "aliases";
@@ -393,11 +400,12 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
     openUsage(product, tab);
   }
 
-  const selectedMoveReferences = useMemo(() => [...selectedReferences.values()].flatMap((reference): MoveReferenceIdentity[] => reference.itemId ? [{
-    submissionId: reference.submissionId,
-    expectedSubmissionVersion: reference.expectedSubmissionVersion,
-    itemId: reference.itemId,
-  }] : []), [selectedReferences]);
+  const selectedMoveReferences = useMemo(() => [...selectedReferences.values()].flatMap((reference): MoveReferenceIdentity[] => {
+    if (reference.referenceType === "QC_RESULT" && reference.proposalId && reference.expectedProposalUpdatedAt) return [{ referenceType: "QC_RESULT", proposalId: reference.proposalId, expectedProposalUpdatedAt: reference.expectedProposalUpdatedAt }];
+    return reference.itemId ? [{ referenceType: "DIRECT", submissionId: reference.submissionId, expectedSubmissionVersion: reference.expectedSubmissionVersion, itemId: reference.itemId }] : [];
+  }), [selectedReferences]);
+  const selectedDirectCount = useMemo(() => [...selectedReferences.values()].filter((reference) => reference.referenceType === "DIRECT").length, [selectedReferences]);
+  const selectedQcCount = selectedReferences.size - selectedDirectCount;
 
   function applyPageSize(value: string | number) {
     if (pageSizeCancelRef.current) {
@@ -498,8 +506,8 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
           {dependencies && <>
             <div className="product-dependency-summary">
               <div><small>Item langsung</small><strong>{dependencies.preflight.currentDirectReferenceCount}</strong><p>Item inventaris yang langsung memilih produk ini</p></div>
-              <div><small>Site aktif</small><strong>{dependencies.preflight.currentSiteCount}</strong><p>Site yang saat ini menggunakan produk ini</p></div>
-              <div><small>Submission aktif</small><strong>{dependencies.preflight.currentSubmissionCount}</strong><p>Submission aktif yang menggunakan produk ini</p></div>
+              <div><small>Site terkait</small><strong>{dependencies.preflight.currentSiteCount}</strong><p>Site aktif dengan item langsung atau hasil QC terkait</p></div>
+              <div><small>Submission terkait</small><strong>{dependencies.preflight.currentSubmissionCount}</strong><p>Submission aktif dengan item langsung atau hasil QC terkait</p></div>
               <div><small>Hasil QC terkait</small><strong>{dependencies.preflight.resolvedQcProposalCount}</strong><p>Proposal QC yang telah diarahkan ke produk ini</p></div>
               <div><small>Alias produk</small><strong>{dependencies.preflight.aliasCount}</strong><p>Nama alternatif yang mengarah ke produk ini</p></div>
               <div><small>Referensi arsip</small><strong>{dependencies.preflight.archivedDirectReferenceCount}</strong><p>Referensi pada submission yang sudah diarsipkan</p></div>
@@ -516,17 +524,18 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
           </>}
           </>}
           {dependencyTab === "references" && <>
+            <p className="product-reference-scope">Pilih referensi yang ingin dipindahkan ke Produk tujuan.<br />Referensi dapat berupa item langsung atau hasil QC. Produk sumber, alias, dan riwayat tetap dipertahankan.</p>
             {!references && referencesLoading && <p className="product-usage-state" role="status"><span className="product-usage-spinner" aria-hidden="true" />Memuat referensi...</p>}
             {dependenciesError && <p className="app-dialog-error" role="alert">{dependenciesError}</p>}
             {references && <><DependencyPagination page={references.page} pageSize={referencePageSize} total={references.totalCount} loading={referencesLoading} label="referensi" onPage={(nextPage) => void loadReferences(usageProduct, nextPage, referencePageSize)} onPageSize={(nextPageSize) => { setReferencePageSize(nextPageSize); void loadReferences(usageProduct, 1, nextPageSize); }} />
               <div className="product-reference-selection-toolbar">
                 <CurrentPageReferenceCheckbox checked={referencePageSelection.checked} indeterminate={referencePageSelection.indeterminate} disabled={referencePageSelection.disabled} onChange={() => setSelectedReferences((current) => toggleCurrentPageSelection(references.rows, current))} />
                 <div className="product-reference-selection-summary">
-                  {selectedReferences.size > 0 && <strong>{selectedReferences.size} item dipilih</strong>}
+                  {selectedReferences.size > 0 && <strong>{selectedReferences.size} referensi dipilih · {selectedDirectCount} referensi langsung · {selectedQcCount} hasil QC</strong>}
                 </div>
                 <div className="product-reference-selection-actions">
                   {selectedReferences.size > 0 && <button className="product-reference-clear-selection" type="button" onClick={() => setSelectedReferences(clearProductReferenceSelection())}>Batalkan semua</button>}
-                  <button className="primary-button" type="button" disabled={!selectedReferences.size} onClick={() => setMoveDialogOpen(true)}>Pindahkan Referensi</button>
+                  <button className="primary-button" type="button" disabled={!selectedReferences.size} onClick={() => setMoveDialogOpen(true)}>{selectedReferences.size ? `Pindahkan ${selectedReferences.size} Referensi` : "Pindahkan Referensi"}</button>
                 </div>
               </div>
               <div className="product-reference-list">{references.rows.map((row) => {
@@ -534,9 +543,9 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
                 const key = productReferenceSelectionKey(row);
                 return <div className={`product-reference-row${selectedReferences.has(key) ? " is-selected" : ""}`} key={key}>
                   <label className="product-reference-check"><input type="checkbox" aria-label={`Pilih referensi ${row.stationName} ${row.siteName}`} checked={selectedReferences.has(key)} disabled={!eligible} onChange={() => toggleReference(row)} /></label>
-                  <div><strong>{row.stationName}</strong><span>{row.siteName} · {row.siteTypeName} · {row.siteSubtypeName}</span><small>Submission v{row.expectedSubmissionVersion} · {[row.categoryName, ...row.functionCategories].filter(Boolean).map(formatCategoryLabel).join(" · ")} · {row.unitCount} unit</small>{row.activeLock && <em>Sedang diedit{row.lockOwnerDisplayName ? `: ${row.lockOwnerDisplayName}` : ""}</em>}{row.archivedAt && <em>Diarsipkan</em>}</div>
+                  <div><span className={`product-reference-type ${row.referenceType === "QC_RESULT" ? "qc" : "direct"}`}>{row.referenceType === "QC_RESULT" ? "Hasil QC" : "Item Langsung"}</span><strong>{row.stationName}</strong><span>{row.siteName} · {row.siteTypeName} · {row.siteSubtypeName}</span>{row.referenceType === "QC_RESULT" ? <small>Submission v{row.expectedSubmissionVersion} · {row.qcStatus} · {row.proposedBrand} · {row.proposedModel}</small> : <small>Submission v{row.expectedSubmissionVersion} · {[row.categoryName, ...row.functionCategories].filter(Boolean).map(formatCategoryLabel).join(" · ")} · {row.unitCount} unit</small>}{row.activeLock && <em>Sedang diedit{row.lockOwnerDisplayName ? `: ${row.lockOwnerDisplayName}` : ""}</em>}</div>
                 </div>;
-              })}{!references.rows.length && <p>Belum ada referensi pada scope ini.</p>}</div></>}
+              })}{!references.rows.length && <p>Belum ada referensi yang dapat dipindahkan pada submission aktif.</p>}</div></>}
           </>}
           {dependencyTab === "qc" && <div className="product-reference-list">{dependenciesLoading && <p className="product-usage-state" role="status"><span className="product-usage-spinner" aria-hidden="true" />Memuat QC history...</p>}{dependencies?.qcProposals.map((proposal) => <div key={proposal.proposalId}><strong>{proposal.proposedBrand} · {proposal.proposedModel}</strong><span>{proposal.status}{proposal.reviewerName ? ` · ${proposal.reviewerName}` : ""}</span>{proposal.reviewNote && <small>Catatan: {proposal.reviewNote}</small>}</div>)}{dependencies && !dependencies.qcProposals.length && <p>Belum ada proposal QC yang resolved ke produk ini.</p>}</div>}
           {dependencyTab === "aliases" && <div className="product-reference-list">{dependenciesLoading && <p className="product-usage-state" role="status"><span className="product-usage-spinner" aria-hidden="true" />Memuat alias...</p>}{dependencies?.aliases.map((alias) => <div key={alias.aliasId}><strong>{alias.brand}</strong><span>{alias.model}</span>{alias.sourceProposalId && <small>Asal proposal QC</small>}</div>)}{dependencies && !dependencies.aliases.length && <p>Produk ini belum memiliki alias.</p>}</div>}

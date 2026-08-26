@@ -71,3 +71,22 @@ test("Product reference move memakai preflight atomik dan hanya mengubah direct 
   assert.match(css, /\.product-move-dialog/);
   assert.match(packageJson, /verify:product-reference-move/);
 });
+
+test("Product reference move dapat memilih hasil QC resolved tanpa Product Merge", async () => {
+  const [migration, component, apiHelper] = await Promise.all([
+    readFile(new URL("../supabase/migrations/20260901120000_product_reference_move_qc_results.sql", import.meta.url), "utf8"),
+    readFile(new URL("../app/admin/AdminProducts.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/lib/admin-product-api.ts", import.meta.url), "utf8"),
+  ]);
+  assert.match(migration, /admin_product_references/);
+  assert.match(migration, /'QC_RESULT'/);
+  assert.match(migration, /proposal\.status in \('APPROVED',\s*'MERGED'\)/);
+  assert.match(migration, /update public\.product_proposals set resolved_product_id=p_target_product_id/);
+  assert.match(migration, /for update of p/);
+  assert.match(migration, /for update of s/);
+  assert.doesNotMatch(migration, /update public\.products set/i);
+  assert.doesNotMatch(migration, /update public\.product_aliases set/i);
+  assert.match(apiHelper, /expectedProposalUpdatedAt/);
+  assert.match(component, /referensi dipilih.*referensi langsung.*hasil QC/s);
+  assert.match(component, /row\.referenceType === "QC_RESULT"/);
+});

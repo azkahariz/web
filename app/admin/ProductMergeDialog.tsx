@@ -17,6 +17,7 @@ type MergePlan = {
   siteCount?: number;
   submissionCount?: number;
   sourceAliasCount?: number;
+  resolvedQcProposalCount?: number;
 };
 
 export default function ProductMergeDialog({ source, onClose, onMerged }: {
@@ -122,7 +123,9 @@ export default function ProductMergeDialog({ source, onClose, onMerged }: {
       const canonicalTarget = result.result.target
         ? { ...target, id: result.result.target.id, brand: result.result.target.brand, model: result.result.target.model }
         : target;
-      feedback.toast(`${result.result.referenceCount ?? 0} item berhasil dialihkan ke ${canonicalTarget.brand} / ${canonicalTarget.model}.`, "success");
+      const directReferenceCount = result.result.referenceCount ?? 0;
+      const qcReferenceCount = result.result.resolvedQcProposalCount ?? 0;
+      feedback.toast(`${directReferenceCount} item dan ${qcReferenceCount} hasil QC berhasil diarahkan ke ${canonicalTarget.brand} / ${canonicalTarget.model}.`, "success");
       await onMerged(canonicalTarget);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Produk gagal digabungkan.");
@@ -156,8 +159,8 @@ export default function ProductMergeDialog({ source, onClose, onMerged }: {
         {plan?.status === "ready" && plan.target && <div className="product-move-plan product-merge-plan">
           <p><small>Produk tujuan</small><strong>{plan.target.brand}</strong><span>{plan.target.model}</span></p>
           {plan.targetResolved && <small className="product-merge-resolved">Pilihan sebelumnya juga sudah digabungkan. Sistem memakai Produk tujuan terakhir.</small>}
-          <dl><div><dt>Item</dt><dd>{plan.referenceCount}</dd></div><div><dt>Unit</dt><dd>{plan.unitCount}</dd></div><div><dt>Site</dt><dd>{plan.siteCount}</dd></div><div><dt>Submission</dt><dd>{plan.submissionCount}</dd></div><div><dt>Alias sumber</dt><dd>{plan.sourceAliasCount}</dd></div></dl>
-          <p className="product-merge-warning"><strong>Tindakan ini tidak dapat dibatalkan dari UI.</strong> Semua referensi aktif Produk sumber akan dipindahkan, Produk sumber dinonaktifkan sebagai riwayat, dan nama lamanya menjadi alias Produk tujuan. Submission arsip dan riwayat QC tidak diubah.</p>
+          <dl><div><dt>Item</dt><dd>{plan.referenceCount}</dd></div><div><dt>Unit</dt><dd>{plan.unitCount}</dd></div><div><dt>Site</dt><dd>{plan.siteCount}</dd></div><div><dt>Submission</dt><dd>{plan.submissionCount}</dd></div><div><dt>Hasil QC</dt><dd>{plan.resolvedQcProposalCount ?? 0}</dd></div><div><dt>Alias sumber</dt><dd>{plan.sourceAliasCount}</dd></div></dl>
+          <p className="product-merge-warning"><strong>Tindakan ini tidak dapat dibatalkan dari UI.</strong> Semua referensi aktif Produk sumber akan dipindahkan, hasil QC terkait diarahkan ke Produk tujuan, Produk sumber dinonaktifkan sebagai riwayat, dan nama lamanya menjadi alias Produk tujuan. Submission arsip tidak diubah; riwayat QC tetap utuh.</p>
         </div>}
         {message && <p className={plan && plan.status !== "ready" ? "product-move-conflict" : "app-dialog-error"} role="alert">{message}</p>}
       </div>

@@ -3,8 +3,9 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 test("Product merge memakai canonical forwarding, preflight atomik, dan UX Super Admin", async () => {
-  const [migration, apiHelper, preflightRoute, mergeRoute, productsRoute, pickerRoute, component, dialog, hook, css, packageJson] = await Promise.all([
+  const [migration, qcMergeMigration, apiHelper, preflightRoute, mergeRoute, productsRoute, pickerRoute, component, dialog, hook, css, packageJson] = await Promise.all([
     readFile(new URL("../supabase/migrations/20260824120000_product_merge.sql", import.meta.url), "utf8"),
+    readFile(new URL("../supabase/migrations/20260831120000_product_merge_qc_references.sql", import.meta.url), "utf8"),
     readFile(new URL("../app/lib/admin-product-api.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/admin/products/[id]/merge-preflight/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/admin/products/[id]/merge/route.ts", import.meta.url), "utf8"),
@@ -44,7 +45,12 @@ test("Product merge memakai canonical forwarding, preflight atomik, dan UX Super
   assert.match(migration, /alias_collision/);
   assert.match(migration, /Merged Product cannot be edited/);
   assert.match(migration, /Merged Product status cannot be changed/);
-  assert.match(migration, /proposal\.resolved_product_id = p_product_id/, "QC history tetap disimpan pada UUID historis.");
+  assert.match(qcMergeMigration, /function public\.product_merge_validation_with_qc/);
+  assert.match(qcMergeMigration, /lock table public\.product_proposals in share row exclusive mode/);
+  assert.match(qcMergeMigration, /proposal\.resolved_product_id = p_source_product_id/);
+  assert.match(qcMergeMigration, /set resolved_product_id = v_target\.id/);
+  assert.match(qcMergeMigration, /'qcActions', jsonb_build_object\('repointed', v_qc_repointed\)/);
+  assert.match(qcMergeMigration, /p_preflight_token <> v_plan ->> 'preflightToken'/);
   assert.match(migration, /resolve_canonical_product_id\(coalesce/);
   assert.match(migration, /grant execute on function public\.admin_merge_product/);
 
@@ -73,8 +79,9 @@ test("Product merge memakai canonical forwarding, preflight atomik, dan UX Super
   assert.match(dialog, /excludeProductId: source\.id/);
   assert.match(dialog, /merge-preflight/);
   assert.match(dialog, /preflightToken/);
-  assert.match(dialog, /Semua referensi aktif Produk sumber akan dipindahkan/);
-  assert.match(dialog, /Submission arsip dan riwayat QC tidak diubah/);
+  assert.match(dialog, /hasil QC terkait diarahkan ke Produk tujuan/);
+  assert.match(dialog, /Submission arsip tidak diubah; riwayat QC tetap utuh/);
+  assert.match(dialog, /resolvedQcProposalCount/);
   assert.match(dialog, /disabled=\{plan\?\.status !== "ready" \|\| preflightLoading\}/);
   assert.match(pickerRoute, /resolveProductId/);
   assert.match(pickerRoute, /resolve_canonical_products/);
