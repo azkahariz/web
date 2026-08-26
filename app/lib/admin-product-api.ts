@@ -6,9 +6,14 @@ import { createSupabaseServerClient } from "./supabase/server";
 type RpcError = { code?: string | null };
 
 export type ProductMoveReference = {
+  referenceType: "DIRECT";
   submissionId: string;
   expectedSubmissionVersion: number;
   itemId: string;
+} | {
+  referenceType: "QC_RESULT";
+  proposalId: string;
+  expectedProposalUpdatedAt: string;
 };
 
 export const PRODUCT_UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -26,11 +31,16 @@ export function parseProductMoveRequest(body: unknown): { targetProductId: strin
   if (!Array.isArray(value.references) || value.references.length === 0 || value.references.length > 500) return null;
   const references = value.references.map((reference) => {
     if (!reference || typeof reference !== "object") return null;
-    const row = reference as { submissionId?: unknown; expectedSubmissionVersion?: unknown; itemId?: unknown };
+    const row = reference as { referenceType?: unknown; submissionId?: unknown; expectedSubmissionVersion?: unknown; itemId?: unknown; proposalId?: unknown; expectedProposalUpdatedAt?: unknown };
+    if (row.referenceType === "QC_RESULT") {
+      if (typeof row.proposalId !== "string" || !PRODUCT_UUID_PATTERN.test(row.proposalId) || typeof row.expectedProposalUpdatedAt !== "string" || !row.expectedProposalUpdatedAt.trim()) return null;
+      return { referenceType: "QC_RESULT" as const, proposalId: row.proposalId, expectedProposalUpdatedAt: row.expectedProposalUpdatedAt.trim() };
+    }
+    if (row.referenceType !== undefined && row.referenceType !== "DIRECT") return null;
     if (typeof row.submissionId !== "string" || !PRODUCT_UUID_PATTERN.test(row.submissionId)) return null;
     if (!Number.isInteger(row.expectedSubmissionVersion) || Number(row.expectedSubmissionVersion) < 0) return null;
     if (typeof row.itemId !== "string" || !row.itemId.trim() || row.itemId.length > 200) return null;
-    return { submissionId: row.submissionId, expectedSubmissionVersion: Number(row.expectedSubmissionVersion), itemId: row.itemId.trim() };
+    return { referenceType: "DIRECT" as const, submissionId: row.submissionId, expectedSubmissionVersion: Number(row.expectedSubmissionVersion), itemId: row.itemId.trim() };
   });
   if (references.some((reference) => reference === null)) return null;
   return { targetProductId: value.targetProductId, references: references as ProductMoveReference[] };

@@ -159,7 +159,7 @@ const troubleshooting = [
 
 const faqs = [
   ["Apa beda Nonaktifkan dan Hapus Permanen?", "Nonaktifkan menyembunyikan Produk dari pengisian baru tetapi mempertahankan data. Hapus Permanen menghilangkan Produk dan tidak dapat dipulihkan melalui aplikasi.", "#produk-tidak-digunakan"],
-  ["Apa beda Pindahkan Referensi dan Gabungkan Produk?", "Pindahkan Referensi hanya mengubah item yang dipilih. Gabungkan menyatakan seluruh Produk sumber sama dengan Produk tujuan.", "#move-vs-merge"],
+  ["Apa beda Pindahkan Referensi dan Gabungkan Produk?", "Pindahkan Referensi hanya mengarahkan referensi yang dipilih. Gabungkan menyatakan seluruh Produk sumber sama dengan Produk tujuan.", "#move-vs-merge"],
   ["Kenapa Produk dengan 0 referensi belum tentu bisa dihapus?", "Produk mungkin masih terkait dengan QC, Alias, arsip, atau hubungan penggabungan.", "#produk-tidak-digunakan"],
   ["Kenapa Produk Digabungkan masih terlihat?", "Produk sumber dipertahankan sebagai riwayat dan menunjukkan Produk tujuan yang sekarang digunakan.", "#menggabungkan-produk"],
   ["Bagaimana kalau Produk yang dicari tidak muncul?", "Ubah Status ke Semua status, periksa filter Sumber, lalu cari kembali. Target pemindahan dan penggabungan harus Produk aktif.", "#master-produk"],
@@ -178,7 +178,7 @@ const glossary = [
   ["Proposal Produk", "Usulan Produk dari pengguna Stasiun yang perlu diperiksa Admin."],
   ["QC Produk", "Proses memeriksa proposal lalu menyetujui, menggabungkan, atau menolaknya."],
   ["Alias", "Nama alternatif yang mengarah ke Produk utama yang sama."],
-  ["Referensi Langsung", "Item inventaris yang langsung menunjuk ke sebuah Produk."],
+  ["Referensi", "Item inventaris langsung dan hasil QC yang diarahkan ke sebuah Produk."],
   ["Dependency/Penggunaan", "Seluruh keterkaitan yang membuat Produk masih dibutuhkan atau harus dipertahankan."],
   ["Nonaktif", "Produk biasa yang tidak ditawarkan untuk pengisian baru tetapi masih disimpan."],
   ["Digabungkan", "Produk lama yang sudah diarahkan ke Produk tujuan dan dipertahankan sebagai riwayat."],
@@ -396,7 +396,7 @@ export default async function AdminGuidePage() {
           <ol>
             <li>Cari Produk pada menu <strong>Produk</strong>.</li>
             <li>Klik angka <strong>N referensi</strong> pada kolom Penggunaan.</li>
-            <li>Periksa tab <strong>Dependency</strong>, <strong>Referensi Langsung</strong>, <strong>QC History</strong>, dan <strong>Alias</strong>.</li>
+            <li>Periksa tab <strong>Dependency</strong>, <strong>Referensi</strong>, <strong>QC History</strong>, dan <strong>Alias</strong>.</li>
           </ol>
           <dl className="guide-field-list guide-unit-fields">
             <div><dt>Item langsung</dt><dd>Item inventaris aktif yang langsung memilih Produk tersebut.</dd></div>
@@ -407,9 +407,8 @@ export default async function AdminGuidePage() {
             <div><dt>Referensi arsip</dt><dd>Penggunaan pada Submission yang sudah diarsipkan.</dd></div>
           </dl>
           <p className="guide-direct-answer"><strong>Item langsung = 0 tidak selalu berarti Produk tidak digunakan.</strong> QC, Alias, arsip, dan hubungan penggabungan juga dapat membuat Produk harus dipertahankan.</p>
-          <h4>Tab Referensi Langsung</h4>
-          <p>Tab ini hanya berisi item inventory yang langsung menunjuk Produk. Setiap baris menampilkan Stasiun, Site, Tipe Site, Subtipe, versi Submission, Kategori, dan jumlah Unit. Referensi yang diarsipkan atau sedang dikunci tidak dapat dipilih.</p>
-          <p>Hubungan hasil QC tidak muncul sebagai item pada tab ini. Saat Produk digabung, hasil QC terkait diarahkan otomatis ke Produk tujuan tanpa mengubah riwayat pemeriksaannya.</p>
+          <h4>Tab Referensi</h4>
+          <p>Tab ini berisi item inventory yang langsung menunjuk Produk dan hasil QC APPROVED atau MERGED yang diarahkan ke Produk. Setiap baris menampilkan Stasiun, Site, Tipe Site, dan Subtipe. Referensi yang sedang dikunci tidak dapat dipilih.</p>
           <p>Checkbox paling atas memilih atau membatalkan seluruh referensi yang dapat dipilih pada halaman saat ini. Pilihan dari halaman lain tetap tersimpan. Tanda sebagian berarti hanya beberapa item halaman ini yang dipilih. Klik <strong>Batalkan semua</strong> untuk mengosongkan seluruh pilihan lintas halaman.</p>
         </section>
 
@@ -418,14 +417,14 @@ export default async function AdminGuidePage() {
           <h3>Beberapa item memilih Produk yang salah</h3>
           <ol>
             <li>Buka <strong>Penggunaan Produk</strong> pada Produk sumber.</li>
-            <li>Pilih tab <strong>Referensi Langsung</strong>.</li>
-            <li>Centang item yang ingin diperbaiki, termasuk dari beberapa halaman bila perlu.</li>
+            <li>Pilih tab <strong>Referensi</strong>.</li>
+            <li>Centang referensi langsung atau hasil QC yang ingin diperbaiki, termasuk dari beberapa halaman bila perlu.</li>
             <li>Klik <strong>Pindahkan Referensi</strong>.</li>
             <li>Cari Produk tujuan aktif menggunakan Merk atau Tipe, lalu pilih.</li>
-            <li>Periksa jumlah Item, Unit, Site, dan Submission.</li>
+            <li>Periksa jumlah referensi langsung, hasil QC, Site, dan Submission.</li>
             <li>Klik <strong>Pindahkan N Item</strong>.</li>
           </ol>
-          <p>Hanya Produk yang ditunjuk item terpilih yang berubah. Unit, nomor seri, kondisi, tahun, catatan, Kategori, dan metadata lainnya tetap.</p>
+          <p>Referensi langsung memperbarui Produk pada item terpilih. Hasil QC hanya mengubah Produk tujuan pada proposal; status, catatan, riwayat, Unit, nomor seri, kondisi, tahun, Kategori, dan metadata lainnya tetap.</p>
           <p>Jika salah satu data berubah, diarsipkan, atau sedang diedit, pemindahan dibatalkan dan tidak ada pilihan yang berubah sebagian. Muat ulang Referensi lalu pilih kembali.</p>
           <div className="guide-warning"><strong>Hati-hati</strong><p>Periksa Produk sumber, target, dan seluruh item terpilih. Pindahkan hanya item yang benar-benar salah menunjuk Produk.</p></div>
         </section>

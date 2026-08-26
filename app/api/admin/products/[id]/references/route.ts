@@ -15,15 +15,11 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
   const size = pageSize(url.searchParams.get("pageSize"));
   if (size === null) return NextResponse.json({ error: "Baris per halaman harus 50, 100, atau 200." }, { status: 400 });
   const page = Math.max(1, Number.parseInt(url.searchParams.get("page") || "1", 10) || 1);
-  const archiveScope = ["ALL", "CURRENT", "ARCHIVED"].includes((url.searchParams.get("archive") || "ALL").toUpperCase())
-    ? (url.searchParams.get("archive") || "ALL").toUpperCase()
-    : "ALL";
-  const { data, error } = await auth.client.rpc("admin_product_direct_references", {
+  const { data, error } = await auth.client.rpc("admin_product_references", {
     p_product_id: id,
     p_page: page,
     p_page_size: size,
     p_search: url.searchParams.get("search")?.trim() || null,
-    p_archive_scope: archiveScope,
   });
   if (error) return productDependencyRpcError(error, "Referensi produk gagal dimuat.");
   return NextResponse.json({ references: data });

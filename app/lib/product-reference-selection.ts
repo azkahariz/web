@@ -1,4 +1,6 @@
 export type SelectableProductReference = {
+  referenceType?: "DIRECT" | "QC_RESULT";
+  referenceId?: string;
   submissionId: string;
   expectedSubmissionVersion: number;
   itemId: string | null;
@@ -6,11 +8,13 @@ export type SelectableProductReference = {
   activeLock: boolean;
 };
 
-export function productReferenceSelectionKey(reference: Pick<SelectableProductReference, "submissionId" | "expectedSubmissionVersion" | "itemId">) {
+export function productReferenceSelectionKey(reference: Pick<SelectableProductReference, "submissionId" | "expectedSubmissionVersion" | "itemId" | "referenceId">) {
+  if (reference.referenceId) return reference.referenceId;
   return `${reference.submissionId}:${reference.expectedSubmissionVersion}:${reference.itemId ?? ""}`;
 }
 
 export function isProductReferenceSelectable(reference: SelectableProductReference) {
+  if (reference.referenceType === "QC_RESULT") return !reference.activeLock;
   return Boolean(reference.itemId && !reference.archivedAt && !reference.activeLock);
 }
 

@@ -3,8 +3,9 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 test("Product dependency preflight tetap read-only, beridentitas stabil, dan hanya untuk Super Admin", async () => {
-  const [migration, dependenciesRoute, referencesRoute, component, packageJson] = await Promise.all([
+  const [migration, unifiedReferencesMigration, dependenciesRoute, referencesRoute, component, packageJson] = await Promise.all([
     readFile(new URL("../supabase/migrations/20260821120000_product_reference_preflight.sql", import.meta.url), "utf8"),
+    readFile(new URL("../supabase/migrations/20260901120000_product_reference_move_qc_results.sql", import.meta.url), "utf8"),
     readFile(new URL("../app/api/admin/products/[id]/dependencies/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/admin/products/[id]/references/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/admin/AdminProducts.tsx", import.meta.url), "utf8"),
@@ -33,9 +34,11 @@ test("Product dependency preflight tetap read-only, beridentitas stabil, dan han
     assert.match(route, /productDependencyRpcError/);
   }
   assert.match(referencesRoute, /pageSize/);
-  assert.match(referencesRoute, /archiveScope/);
-  for (const text of ["Dependency", "Referensi Langsung", "QC History", "Alias", "Item langsung", "Site terkait", "Submission terkait", "Hasil QC terkait", "Alias produk", "Referensi arsip", "Sedang diedit"]) assert.match(component, new RegExp(text));
-  assert.match(component, /Hubungan hasil QC diarahkan otomatis saat Produk digabung/);
+  assert.match(referencesRoute, /admin_product_references/);
+  assert.match(unifiedReferencesMigration, /reference_type[\s\S]*QC_RESULT/);
+  assert.match(unifiedReferencesMigration, /proposal\.resolved_product_id/);
+  for (const text of ["Dependency", "Referensi", "QC History", "Alias", "Item langsung", "Site terkait", "Submission terkait", "Hasil QC terkait", "Alias produk", "Referensi arsip", "Sedang diedit"]) assert.match(component, new RegExp(text));
+  assert.match(component, /hasil QC yang ingin diarahkan/);
   for (const helper of ["Item inventaris yang langsung memilih produk ini", "Site aktif dengan item langsung atau hasil QC terkait", "Submission aktif dengan item langsung atau hasil QC terkait", "Proposal QC yang telah diarahkan ke produk ini", "Nama alternatif yang mengarah ke produk ini", "Referensi pada submission yang sudah diarsipkan"]) assert.match(component, new RegExp(helper));
   assert.match(component, /expectedSubmissionVersion/);
   assert.match(component, /referencePageSize/);
@@ -47,7 +50,7 @@ test("Product dependency preflight tetap read-only, beridentitas stabil, dan han
   assert.doesNotMatch(component, /Merge Product|Split Product|Hapus Produk/);
   assert.match(component, /product-usage-dialog/);
   assert.match(component, /product-usage-pagination/);
-  assert.match(component, /Belum ada referensi langsung pada scope ini/);
+  assert.match(component, /Belum ada referensi yang dapat dipindahkan/);
   assert.match(component, /aria-busy=\{usageLoading \|\| dependenciesLoading \|\| referencesLoading\}/);
   assert.match(component, /setDependencyPage\(1\)/);
   assert.match(component, /setReferencePageSize\(50\)/);

@@ -5,9 +5,14 @@ import AsyncButton from "../components/AsyncButton";
 import { useAppFeedback } from "../components/AppFeedback";
 
 export type MoveReferenceIdentity = {
+  referenceType: "DIRECT";
   submissionId: string;
   expectedSubmissionVersion: number;
   itemId: string;
+} | {
+  referenceType: "QC_RESULT";
+  proposalId: string;
+  expectedProposalUpdatedAt: string;
 };
 
 type Product = { id: string; brand: string; model: string; active: boolean; source_origin: string };
@@ -16,6 +21,8 @@ type MovePlan = {
   source?: { id: string; brand: string; model: string };
   target?: { id: string; brand: string; model: string };
   referenceCount?: number;
+  directReferenceCount?: number;
+  qcResultCount?: number;
   unitCount?: number;
   siteCount?: number;
   submissionCount?: number;
@@ -130,8 +137,8 @@ export default function ProductReferenceMoveDialog({ source, references, onClose
         {preflightLoading && <p className="product-usage-state" role="status"><span className="product-usage-spinner" aria-hidden="true" />Memeriksa referensi terbaru...</p>}
         {plan?.status === "ready" && plan.target && <div className="product-move-plan">
           <p><small>Ke</small><strong>{plan.target.brand}</strong><span>{plan.target.model}</span></p>
-          <dl><div><dt>Item</dt><dd>{plan.referenceCount}</dd></div><div><dt>Unit</dt><dd>{plan.unitCount}</dd></div><div><dt>Site</dt><dd>{plan.siteCount}</dd></div><div><dt>Submission</dt><dd>{plan.submissionCount}</dd></div></dl>
-          <p className="product-move-warning">Brand dan Tipe Produk pada item terpilih akan mengikuti Produk tujuan. Data unit, nomor seri, kondisi, tahun, catatan, dan metadata lainnya tidak berubah.</p>
+          <dl><div><dt>Referensi</dt><dd>{plan.referenceCount}</dd></div><div><dt>Langsung</dt><dd>{plan.directReferenceCount ?? 0}</dd></div><div><dt>Hasil QC</dt><dd>{plan.qcResultCount ?? 0}</dd></div><div><dt>Site</dt><dd>{plan.siteCount}</dd></div></dl>
+          <p className="product-move-warning">Referensi langsung memperbarui Merk dan Tipe pada item terpilih. Hasil QC hanya diarahkan ke Produk tujuan. Data unit, nomor seri, kondisi, tahun, catatan, dan metadata lainnya tidak berubah.</p>
         </div>}
         {message && <p className={plan && plan.status !== "ready" ? "product-move-conflict" : "app-dialog-error"} role="alert">{message}</p>}
       </div>
