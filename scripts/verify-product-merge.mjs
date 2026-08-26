@@ -45,6 +45,16 @@ async function asAdmin(tx, adminId, query) {
   }
 }
 
+async function asStationUser(tx, stationUserId, query) {
+  await tx`set local role authenticated`;
+  await tx`select set_config('request.jwt.claim.sub', ${stationUserId}, true)`;
+  try {
+    return await query();
+  } finally {
+    await tx`reset role`;
+  }
+}
+
 async function preflight(tx, adminId, sourceId, targetId) {
   return asAdmin(tx, adminId, async () => {
     const [row] = await tx`select public.admin_product_merge_preflight(${sourceId}, ${targetId}) as data`;
@@ -115,16 +125,38 @@ try {
     await tx.unsafe(`do $$ begin perform public.admin_product_merge_preflight(${literal(unauthorizedSource.id)}::uuid, ${literal(unauthorizedTarget.id)}::uuid); raise exception 'station_merge_was_not_blocked'; exception when insufficient_privilege then null; end $$;`);
     await tx`reset role`;
 
-    const [source] = await tx`
-      insert into public.products (brand, model, active, source_origin, spreadsheet_synced)
-      values ('R. M. Young', 'Sensor Arah dan Kecepatan Angin 5106', true, 'ADMIN', false)
-      returning id, brand, model, active
-    `;
     const [target] = await tx`
       insert into public.products (brand, model, active, source_origin, spreadsheet_synced)
       values ('R. M. Young', 'Marine Wind Monitor 05106', true, 'ADMIN', false)
       returning id, brand, model, active
     `;
+    const approvalContext = await createSubmission([]);
+    const approvalProposalRows = await asStationUser(tx, stationUserId, () => tx`
+      select * from public.create_product_proposal(
+        ${approvalContext.site_id}, ${siteSubtype.id},
+        'R. M. Young', 'Sensor Arah dan Kecepatan Angin 5106',
+        'Verifier Station', 'approve-then-merge'
+      )
+    `);
+    const approvalProposalId = approvalProposalRows[0]?.proposal_id;
+    assert.ok(approvalProposalId, "Station User harus dapat membuat proposal Pending.");
+    const approvalResult = await asAdmin(tx, adminId, () => tx`
+      select public.admin_approve_product_proposal(
+        ${approvalProposalId}, 'R. M. Young', 'Sensor Arah dan Kecepatan Angin 5106', 'Disetujui untuk merge verifier'
+      ) as product_id
+    `);
+    const sourceProductId = approvalResult[0]?.product_id;
+    assert.ok(sourceProductId, "Approve Baru harus membuat canonical Product.");
+    const [source] = await tx`
+      select id, brand, model, active from public.products where id = ${sourceProductId}
+    `;
+    const [proposal] = await tx`
+      select id, status, resolved_product_id, proposed_brand, proposed_model, reviewed_by, reviewed_at, review_note
+      from public.product_proposals where id = ${approvalProposalId}
+    `;
+    assert.equal(proposal.status, "APPROVED");
+    assert.equal(proposal.resolved_product_id, source.id);
+    const proposalBefore = structuredClone(proposal);
     const other = await createProduct("Other");
     const richItem = {
       id: "rich-source",
@@ -157,10 +189,6 @@ try {
     ]);
     const archived = await createSubmission([{ id: "archived", productId: source.id, brand: source.brand, model: source.model, quantity: 9 }], { archived: true, version: 6 });
     const archivedBefore = structuredClone(archived.payload);
-    const [proposal] = await tx`
-      insert into public.product_proposals (station_id, submission_id, created_by_auth_user, proposed_brand, proposed_model, normalized_brand, normalized_model, status, resolved_product_id)
-      values (${station.id}, ${first.id}, ${stationUserId}, 'Historical', 'Source', 'historical', 'source', 'APPROVED', ${source.id}) returning id
-    `;
     await tx`
       insert into public.product_aliases (product_id, brand_alias, model_alias, normalized_brand, normalized_model, source_proposal_id)
       values (${source.id}, 'Old Source Brand', 'Old Source Model', 'old source brand', 'old source model', ${proposal.id})
@@ -195,11 +223,13 @@ try {
     assert.equal(archivedAfter.version, 6);
     const [sourceAfter] = await tx`select active, merged_into_product_id from public.products where id = ${source.id}`;
     assert.deepEqual(sourceAfter, { active: false, merged_into_product_id: target.id });
-    const [proposalAfter] = await tx`select status, resolved_product_id, proposed_brand, proposed_model, reviewed_at, review_note from public.product_proposals where id = ${proposal.id}`;
-    assert.deepEqual(proposalAfter, {
-      status: "APPROVED", resolved_product_id: target.id, proposed_brand: "Historical", proposed_model: "Source",
-      reviewed_at: null, review_note: null,
-    }, "QC proposal dipertahankan, tetapi canonical Product-nya harus diarahkan ke target.");
+    const [proposalAfter] = await tx`select id, status, resolved_product_id, proposed_brand, proposed_model, reviewed_by, reviewed_at, review_note from public.product_proposals where id = ${proposal.id}`;
+    assert.deepEqual(
+      { ...proposalAfter, resolved_product_id: undefined },
+      { ...proposalBefore, resolved_product_id: undefined },
+      "Approve Baru harus mempertahankan UUID, status, reviewer, waktu, catatan, dan isi proposal setelah merge.",
+    );
+    assert.equal(proposalAfter.resolved_product_id, target.id, "Hasil QC harus diarahkan ke target canonical.");
     const [canonical] = await tx`select public.resolve_canonical_product_id(${source.id}) as id`;
     assert.equal(canonical.id, target.id);
     const resolvedRows = await asAdmin(tx, adminId, () => tx`select * from public.resolve_canonical_products(${[source.id, target.id]}::uuid[])`);
