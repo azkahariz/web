@@ -38,7 +38,8 @@ test("Product dependency preflight tetap read-only, beridentitas stabil, dan han
   assert.match(unifiedReferencesMigration, /reference_type[\s\S]*QC_RESULT/);
   assert.match(unifiedReferencesMigration, /proposal\.resolved_product_id/);
   for (const text of ["Dependency", "Referensi", "QC History", "Alias", "Item langsung", "Site terkait", "Submission terkait", "Hasil QC terkait", "Alias produk", "Referensi arsip", "Sedang diedit"]) assert.match(component, new RegExp(text));
-  assert.match(component, /hasil QC yang ingin diarahkan/);
+  assert.match(component, /Referensi dapat berupa item langsung atau hasil QC/);
+  assert.match(component, /product-reference-type/);
   for (const helper of ["Item inventaris yang langsung memilih produk ini", "Site aktif dengan item langsung atau hasil QC terkait", "Submission aktif dengan item langsung atau hasil QC terkait", "Proposal QC yang telah diarahkan ke produk ini", "Nama alternatif yang mengarah ke produk ini", "Referensi pada submission yang sudah diarsipkan"]) assert.match(component, new RegExp(helper));
   assert.match(component, /expectedSubmissionVersion/);
   assert.match(component, /referencePageSize/);

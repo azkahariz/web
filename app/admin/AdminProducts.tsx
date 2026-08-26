@@ -524,7 +524,7 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
           </>}
           </>}
           {dependencyTab === "references" && <>
-            <p className="product-reference-scope">Pilih referensi langsung atau hasil QC yang ingin diarahkan ke Produk tujuan. Produk sumber, alias, dan riwayat tidak digabung atau dinonaktifkan.</p>
+            <p className="product-reference-scope">Pilih referensi yang ingin dipindahkan ke Produk tujuan.<br />Referensi dapat berupa item langsung atau hasil QC. Produk sumber, alias, dan riwayat tetap dipertahankan.</p>
             {!references && referencesLoading && <p className="product-usage-state" role="status"><span className="product-usage-spinner" aria-hidden="true" />Memuat referensi...</p>}
             {dependenciesError && <p className="app-dialog-error" role="alert">{dependenciesError}</p>}
             {references && <><DependencyPagination page={references.page} pageSize={referencePageSize} total={references.totalCount} loading={referencesLoading} label="referensi" onPage={(nextPage) => void loadReferences(usageProduct, nextPage, referencePageSize)} onPageSize={(nextPageSize) => { setReferencePageSize(nextPageSize); void loadReferences(usageProduct, 1, nextPageSize); }} />
@@ -535,7 +535,7 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
                 </div>
                 <div className="product-reference-selection-actions">
                   {selectedReferences.size > 0 && <button className="product-reference-clear-selection" type="button" onClick={() => setSelectedReferences(clearProductReferenceSelection())}>Batalkan semua</button>}
-                  <button className="primary-button" type="button" disabled={!selectedReferences.size} onClick={() => setMoveDialogOpen(true)}>Pindahkan Referensi</button>
+                  <button className="primary-button" type="button" disabled={!selectedReferences.size} onClick={() => setMoveDialogOpen(true)}>{selectedReferences.size ? `Pindahkan ${selectedReferences.size} Referensi` : "Pindahkan Referensi"}</button>
                 </div>
               </div>
               <div className="product-reference-list">{references.rows.map((row) => {
@@ -543,7 +543,7 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
                 const key = productReferenceSelectionKey(row);
                 return <div className={`product-reference-row${selectedReferences.has(key) ? " is-selected" : ""}`} key={key}>
                   <label className="product-reference-check"><input type="checkbox" aria-label={`Pilih referensi ${row.stationName} ${row.siteName}`} checked={selectedReferences.has(key)} disabled={!eligible} onChange={() => toggleReference(row)} /></label>
-                  <div><strong>{row.stationName}</strong><span>{row.siteName} · {row.siteTypeName} · {row.siteSubtypeName}</span>{row.referenceType === "QC_RESULT" ? <small>Hasil QC {row.qcStatus} · {row.proposedBrand} · {row.proposedModel}</small> : <small>Submission v{row.expectedSubmissionVersion} · {[row.categoryName, ...row.functionCategories].filter(Boolean).map(formatCategoryLabel).join(" · ")} · {row.unitCount} unit</small>}{row.activeLock && <em>Sedang diedit{row.lockOwnerDisplayName ? `: ${row.lockOwnerDisplayName}` : ""}</em>}</div>
+                  <div><span className={`product-reference-type ${row.referenceType === "QC_RESULT" ? "qc" : "direct"}`}>{row.referenceType === "QC_RESULT" ? "Hasil QC" : "Item Langsung"}</span><strong>{row.stationName}</strong><span>{row.siteName} · {row.siteTypeName} · {row.siteSubtypeName}</span>{row.referenceType === "QC_RESULT" ? <small>Submission v{row.expectedSubmissionVersion} · {row.qcStatus} · {row.proposedBrand} · {row.proposedModel}</small> : <small>Submission v{row.expectedSubmissionVersion} · {[row.categoryName, ...row.functionCategories].filter(Boolean).map(formatCategoryLabel).join(" · ")} · {row.unitCount} unit</small>}{row.activeLock && <em>Sedang diedit{row.lockOwnerDisplayName ? `: ${row.lockOwnerDisplayName}` : ""}</em>}</div>
                 </div>;
               })}{!references.rows.length && <p>Belum ada referensi yang dapat dipindahkan pada submission aktif.</p>}</div></>}
           </>}
