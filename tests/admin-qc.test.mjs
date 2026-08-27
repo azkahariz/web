@@ -346,6 +346,7 @@ test("QC multi-admin memakai RPC atomik dan revalidation terarah", async () => {
   const dashboard = await readFile(new URL("../app/admin/AdminDashboard.tsx", import.meta.url), "utf8");
   const route = await readFile(new URL("../app/api/admin/product-proposals/route.ts", import.meta.url), "utf8");
   const migration = await readFile(new URL("../supabase/migrations/20260818120000_multi_super_admin_qc.sql", import.meta.url), "utf8");
+  const listMigration = await readFile(new URL("../supabase/migrations/20260902130000_admin_list_product_proposals.sql", import.meta.url), "utf8");
   assert.match(migration, /add column if not exists display_name text/);
   assert.match(migration, /admin_approve_product_proposal_v2/);
   assert.match(migration, /admin_merge_product_proposals_v2/);
@@ -357,8 +358,9 @@ test("QC multi-admin memakai RPC atomik dan revalidation terarah", async () => {
   assert.match(dashboard, /Proposal ini sudah diproses/);
   assert.match(dashboard, /setSelectedProposals\(\(current\) => current\.filter/);
   assert.match(dashboard, /Diproses oleh \{proposal\.reviewer\.displayName\}/);
-  assert.match(route, /reviewed_by, reviewed_at/);
-  assert.match(route, /displayName: admin\.display_name\?\.trim\(\) \|\| admin\.username/);
+  assert.match(route, /admin_list_product_proposals/);
+  assert.match(listMigration, /reviewed_by, proposal\.reviewed_at/);
+  assert.match(listMigration, /reviewer_display_name/);
 });
 
 test("provisioning Super Admin individual aman, idempotent, dan private", async () => {
