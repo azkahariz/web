@@ -13,8 +13,8 @@ function assert(value, message) {
 async function createAuthUser(tx, prefix) {
   const id = randomUUID();
   await tx`
-    insert into auth.users (id, aud, role, email, encrypted_password, confirmed_at, raw_app_meta_data, raw_user_meta_data, created_at, updated_at)
-    values (${id}, 'authenticated', 'authenticated', ${`${prefix}-${id}@verify.invalid`}, '', now(),
+    insert into auth.users (id, aud, role, email, encrypted_password, raw_app_meta_data, raw_user_meta_data, created_at, updated_at)
+    values (${id}, 'authenticated', 'authenticated', ${`${prefix}-${id}@verify.invalid`}, '',
       '{"provider":"email","providers":["email"]}'::jsonb, '{}'::jsonb, now(), now())
   `;
   return id;
@@ -53,7 +53,7 @@ try {
     const [approved] = await tx`insert into public.product_proposals (station_id, submission_id, created_by_auth_user, proposed_brand, proposed_model, normalized_brand, normalized_model, status, resolved_product_id) values (${stationA.id}, ${submissionMid.id}, ${adminAuthId}, 'Approved', 'Usage', 'approved', 'usage', 'APPROVED', ${productA.id}) returning id`;
     const [merged] = await tx`insert into public.product_proposals (station_id, submission_id, created_by_auth_user, proposed_brand, proposed_model, normalized_brand, normalized_model, status, resolved_product_id) values (${stationB.id}, ${submissionB.id}, ${adminAuthId}, 'Merged', 'Usage', 'merged', 'usage', 'MERGED', ${productA.id}) returning id`;
     const [pending] = await tx`insert into public.product_proposals (station_id, submission_id, created_by_auth_user, proposed_brand, proposed_model, normalized_brand, normalized_model, status) values (${stationA.id}, ${submissionWarehouse.id}, ${adminAuthId}, 'Pending', 'Usage', 'pending', 'usage', 'PENDING') returning id`;
-    await tx`update public.submissions set payload = ${tx.json({ inventory: { Sensor: [{ productProposalId: approved.id }] } })} where id = ${submissionMid.id}`;
+    await tx`update public.submissions set payload = ${tx.json({ inventory: { Sensor: [{ productProposalId: approved.id, functionCategories: ['Sensor Tekanan Udara'] }] } })} where id = ${submissionMid.id}`;
     await tx`update public.submissions set payload = ${tx.json({ inventory: { Sensor: [{ productId: productA.id }, { productId: productB.id }, { productProposalId: merged.id }] } })} where id = ${submissionB.id}`;
     await tx`update public.submissions set payload = ${tx.json({ inventory: { Persediaan: [{ productId: productA.id }, { productProposalId: pending.id }] } })} where id = ${submissionWarehouse.id}`;
 
@@ -64,6 +64,18 @@ try {
     assert(usage.stationCount === 2 && usage.siteCount === 3, "Station/Site usage harus didedupe dari lokasi aktif.");
     assert(usage.totalCount === 4 && usage.referenceCount === 6, "Direct, APPROVED, MERGED, dan Gudang harus dihitung; PENDING/archived tidak.");
     assert(usage.rows.length === 2 && usage.page === 1 && usage.pageSize === 2, "Pagination usage page pertama tidak benar.");
+    const [allUsageResult] = await tx`select public.admin_product_usage(${productA.id}, 1, 50, null) as data`;
+    const allUsage = allUsageResult.data;
+    const approvedUsage = allUsage.rows.find((row) => row.siteSubtypeId === mid.id);
+    assert(approvedUsage?.categories?.join(',') === 'Sensor Tekanan Udara', "Kategori QC harus berasal dari occurrence productProposalId yang resolved.");
+    const directUsage = allUsage.rows.find((row) => row.siteSubtypeId === tdz.id && row.siteId === siteA.id);
+    assert(directUsage?.categories?.join(',') === 'Sensor', "Kategori direct harus berasal dari inventory item, bukan Product master.");
+    const [referenceResult] = await tx`select public.admin_product_references(${productA.id}, 1, 50, null) as data`;
+    const references = referenceResult.data;
+    const directReference = references.rows.find((row) => row.referenceType === 'DIRECT' && row.submissionId === submissionB.id);
+    const qcReference = references.rows.find((row) => row.referenceType === 'QC_RESULT' && row.proposalId === approved.id);
+    assert(directReference?.categories?.join(',') === 'Sensor', "Referensi direct harus mengembalikan kategori occurrence item.");
+    assert(qcReference?.categories?.join(',') === 'Sensor Tekanan Udara', "Referensi QC harus mengembalikan kategori occurrence productProposalId.");
     const [usagePageTwo] = await tx`select public.admin_product_usage(${productA.id}, 2, 2, null) as data`;
     assert(usagePageTwo.data.rows.length === 2 && usagePageTwo.data.page === 2, "Pagination usage page kedua tidak benar.");
     const [usageB] = await tx`select public.admin_product_usage(${productB.id}, 1, 50, null) as data`;

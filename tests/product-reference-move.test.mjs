@@ -59,7 +59,8 @@ test("Product reference move memakai preflight atomik dan hanya mengubah direct 
   assert.match(component, /Pilih semua referensi di halaman ini/);
   assert.match(component, /Batalkan semua/);
   assert.match(component, /Submission v\{row\.expectedSubmissionVersion\}/);
-  assert.match(component, /row\.categoryName/);
+  assert.match(component, /formatReferenceContext/);
+  assert.match(component, /categories: row\.categories/);
   assert.match(dialog, /activeOnly: "1"/);
   assert.match(dialog, /excludeProductId: source\.id/);
   assert.match(dialog, /move-preflight/);
