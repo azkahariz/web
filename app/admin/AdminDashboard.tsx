@@ -343,7 +343,6 @@ export default function AdminDashboard({ username, displayName }: { username: st
   const [completionDetailErrors, setCompletionDetailErrors] = useState<Record<string, string>>({});
   const completionRequestRef = useRef<Promise<void> | null>(null);
   const completionLoadedRef = useRef(false);
-  const siteTypeCompletionRequestRef = useRef<Promise<void> | null>(null);
   const siteTypeCompletionLoadedRef = useRef(false);
   const completionDetailCacheRef = useRef(createStationCompletionDetailCache<StationCompletionDetailResponse>());
   const [unifiedSubmissionDetails, setUnifiedSubmissionDetails] = useState<Record<string, SubmissionDetail>>({});
@@ -414,26 +413,39 @@ export default function AdminDashboard({ username, displayName }: { username: st
     return !payload.listError;
   }, [qcContextFilter, qcPage, qcPageSize, qcStatus, search, setQcPage, stationMonitoringFilters.siteTypeId, stationMonitoringFilters.stationCategoryId]);
 
-  const refreshStationCompletionSummary = useCallback(async (force = false) => {
-    if (!force && completionLoadedRef.current) return;
+  const refreshCompletionSummary = useCallback(async (force = false) => {
+    if (!force && completionLoadedRef.current && siteTypeCompletionLoadedRef.current) return;
     if (completionRequestRef.current) return completionRequestRef.current;
 
     const request = (async () => {
       setCompletionLoading(true);
+      setSiteTypeCompletionLoading(true);
       setCompletionError("");
+      setSiteTypeCompletionError("");
       try {
         const client = getSupabaseBrowserClient();
         if (!client) throw new Error("Konfigurasi Supabase belum tersedia.");
-        const stationResult = await client.rpc("admin_station_completion_summary");
-        const stationRows = stationResult.error ? null : parseStationCompletionRows(stationResult.data);
+        const result = await client.rpc("admin_completion_monitoring_summary");
+        const payload = result.data && typeof result.data === "object" && !Array.isArray(result.data)
+          ? result.data as { station_summary?: unknown; site_type_summary?: unknown }
+          : null;
+        const stationRows = result.error ? null : parseStationCompletionRows(payload?.station_summary);
+        const siteTypeRows = result.error ? null : parseSiteTypeCompletionRows(payload?.site_type_summary);
         if (stationRows) setCompletionRows(stationRows);
-        if (stationResult.error || !stationRows) throw stationResult.error ?? new Error("Contract ringkasan monitoring stasiun tidak valid.");
+        if (siteTypeRows) setSiteTypeCompletionRowsState(siteTypeRows);
+        if (result.error || !stationRows || !siteTypeRows) {
+          throw result.error ?? new Error("Contract ringkasan monitoring completion tidak valid.");
+        }
         setCompletionLoaded(true);
+        setSiteTypeCompletionLoaded(true);
         completionLoadedRef.current = true;
+        siteTypeCompletionLoadedRef.current = true;
       } catch {
         setCompletionError("Data kelengkapan belum dapat dimuat.");
+        setSiteTypeCompletionError("Progress Tipe Site belum dapat dimuat.");
       } finally {
         setCompletionLoading(false);
+        setSiteTypeCompletionLoading(false);
         completionRequestRef.current = null;
       }
     })();
@@ -442,40 +454,8 @@ export default function AdminDashboard({ username, displayName }: { username: st
     return request;
   }, []);
 
-  const refreshSiteTypeCompletionSummary = useCallback(async (force = false) => {
-    if (!force && siteTypeCompletionLoadedRef.current) return;
-    if (siteTypeCompletionRequestRef.current) return siteTypeCompletionRequestRef.current;
-
-    const request = (async () => {
-      setSiteTypeCompletionLoading(true);
-      setSiteTypeCompletionError("");
-      try {
-        const client = getSupabaseBrowserClient();
-        if (!client) throw new Error("Konfigurasi Supabase belum tersedia.");
-        const siteTypeResult = await client.rpc("admin_site_type_completion_summary");
-        const siteTypeRows = siteTypeResult.error ? null : parseSiteTypeCompletionRows(siteTypeResult.data);
-        if (siteTypeRows) setSiteTypeCompletionRowsState(siteTypeRows);
-        if (siteTypeResult.error || !siteTypeRows) throw siteTypeResult.error ?? new Error("Contract ringkasan Tipe Site tidak valid.");
-        setSiteTypeCompletionLoaded(true);
-        siteTypeCompletionLoadedRef.current = true;
-      } catch {
-        setSiteTypeCompletionError("Progress Tipe Site belum dapat dimuat.");
-      } finally {
-        setSiteTypeCompletionLoading(false);
-        siteTypeCompletionRequestRef.current = null;
-      }
-    })();
-
-    siteTypeCompletionRequestRef.current = request;
-    return request;
-  }, []);
-
-  const refreshCompletionSummary = useCallback(async (force = false) => {
-    await Promise.all([
-      refreshStationCompletionSummary(force),
-      refreshSiteTypeCompletionSummary(force),
-    ]);
-  }, [refreshSiteTypeCompletionSummary, refreshStationCompletionSummary]);
+  const refreshStationCompletionSummary = refreshCompletionSummary;
+  const refreshSiteTypeCompletionSummary = refreshCompletionSummary;
 
   const loadCompletionDetail = useCallback(async (stationId: string, force = false) => {
     const cached = completionDetailCacheRef.current.get(stationId);
