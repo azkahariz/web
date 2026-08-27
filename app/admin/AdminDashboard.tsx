@@ -54,6 +54,7 @@ import {
 } from "../lib/station-completion-view";
 import type { SubmissionDetail, SubmissionSummary } from "../lib/submission-monitoring";
 import { getSupabaseBrowserClient } from "../lib/supabase/client";
+import type { QcProposalStatusSummary } from "../lib/qc-proposal-status-summary";
 
 type Station = { id: string; name: string; active: boolean; station_category_id: string | null };
 type Site = { id: string; station_id: string; site_type_id: string; name: string; active: boolean };
@@ -294,11 +295,20 @@ export default function AdminDashboard({ username, displayName }: { username: st
   const [qcProductsLoading, setQcProductsLoading] = useState(false);
   const [productTotal, setProductTotal] = useState(0);
   const [proposals, setProposals] = useState<Proposal[]>([]);
+  const [pendingProposalIds, setPendingProposalIds] = useState<ReadonlySet<string>>(() => new Set());
   const [qcPendingSummary, setQcPendingSummary] = useState<QcPendingSummary | null>(null);
+  const [qcStatusSummary, setQcStatusSummary] = useState<QcProposalStatusSummary | null>(null);
+  const [qcPendingSummaryError, setQcPendingSummaryError] = useState("");
+  const [qcStatusSummaryError, setQcStatusSummaryError] = useState("");
   const [audits, setAudits] = useState<Audit[]>([]);
   const [adminIdentities, setAdminIdentities] = useState<AdminIdentity[]>([]);
   const [search, setSearch] = useState("");
   const qcStatus: Proposal["status"] = searchParams.get("qcStatus") === "APPROVED" || searchParams.get("qcStatus") === "MERGED" || searchParams.get("qcStatus") === "REJECTED" ? searchParams.get("qcStatus") as Proposal["status"] : "PENDING";
+  const [qcPage, setQcPage] = useState(1);
+  const [qcPageSize] = useState(50);
+  const [qcTotalCount, setQcTotalCount] = useState(0);
+  const [qcListLoading, setQcListLoading] = useState(false);
+  const [qcListError, setQcListError] = useState("");
   const [selectedProposals, setSelectedProposalsState] = useState<string[]>([]);
   const [mergeProductId, setMergeProductId] = useState("");
   const [mergeProductQuery, setMergeProductQuery] = useState("");
@@ -365,17 +375,44 @@ export default function AdminDashboard({ username, displayName }: { username: st
     }
   }, []);
 
+  const refreshPendingProposalIds = useCallback(async () => {
+    const client = getSupabaseBrowserClient();
+    if (!client) return;
+    const result = await loadAllAdminRows((from, to) => client.from("product_proposals")
+      .select("id")
+      .eq("status", "PENDING")
+      .order("id")
+      .range(from, to));
+    if (!result.error) setPendingProposalIds(new Set(((result.data ?? []) as { id: string }[]).map((row) => row.id)));
+  }, []);
+
   const refreshQcProposals = useCallback(async () => {
-    const response = await fetch("/api/admin/product-proposals", { cache: "no-store" });
-    const payload = await response.json().catch(() => ({})) as { rows?: Proposal[]; pendingSummary?: QcPendingSummary; error?: string };
+    const params = new URLSearchParams({ status: qcStatus, page: String(qcPage), pageSize: String(qcPageSize) });
+    if (search.trim()) params.set("search", search.trim());
+    if (stationMonitoringFilters.stationCategoryId !== "all") params.set("stationCategoryId", stationMonitoringFilters.stationCategoryId);
+    if (stationMonitoringFilters.siteTypeId !== "all") params.set("siteTypeId", stationMonitoringFilters.siteTypeId);
+    if (qcContextFilter !== "all") params.set("qcContext", qcContextFilter);
+    setQcListLoading(true);
+    const response = await fetch(`/api/admin/product-proposals?${params.toString()}`, { cache: "no-store" });
+    const payload = await response.json().catch(() => ({})) as { rows?: Proposal[]; totalCount?: number; page?: number; pendingSummary?: QcPendingSummary; statusSummary?: QcProposalStatusSummary; listError?: string; pendingSummaryError?: string; statusSummaryError?: string; error?: string };
     if (!response.ok) {
       setMessage(payload.error || "Proposal produk gagal dimuat.");
+      setQcListLoading(false);
       return false;
     }
-    setProposals(payload.rows ?? []);
-    setQcPendingSummary(payload.pendingSummary ?? null);
-    return true;
-  }, []);
+    setQcListError(payload.listError ?? "");
+    if (!payload.listError && Array.isArray(payload.rows)) {
+      setProposals(payload.rows);
+      setQcTotalCount(typeof payload.totalCount === "number" && Number.isInteger(payload.totalCount) && payload.totalCount >= 0 ? payload.totalCount : 0);
+      if (typeof payload.page === "number" && Number.isInteger(payload.page) && payload.page >= 1 && payload.page !== qcPage) setQcPage(payload.page);
+    }
+    setQcPendingSummaryError(payload.pendingSummaryError ?? "");
+    if (payload.pendingSummary) setQcPendingSummary(payload.pendingSummary);
+    setQcStatusSummaryError(payload.statusSummaryError ?? "");
+    if (payload.statusSummary) setQcStatusSummary(payload.statusSummary);
+    setQcListLoading(false);
+    return !payload.listError;
+  }, [qcContextFilter, qcPage, qcPageSize, qcStatus, search, setQcPage, stationMonitoringFilters.siteTypeId, stationMonitoringFilters.stationCategoryId]);
 
   const refreshStationCompletionSummary = useCallback(async (force = false) => {
     if (!force && completionLoadedRef.current) return;
@@ -549,7 +586,7 @@ export default function AdminDashboard({ username, displayName }: { username: st
     if (!client) return;
     setLoading(true);
     try {
-      const [stationRows, siteRows, siteTypeRows, subtypeRows, submissionRows, accountRows, productSummaryRows, proposalResponse, auditRows] = await Promise.all([
+      const [stationRows, siteRows, siteTypeRows, subtypeRows, submissionRows, accountRows, productSummaryRows, pendingProposalRows, auditRows] = await Promise.all([
         client.from("stations").select("id, name, active, station_category_id").order("name"),
       loadAllAdminRows((from, to) => client.from("sites")
         .select("id, station_id, site_type_id, name, active")
@@ -566,7 +603,11 @@ export default function AdminDashboard({ username, displayName }: { username: st
         .range(from, to)),
       client.from("station_accounts").select("id, station_id, username, active, updated_at").order("username"),
       client.rpc("admin_product_summary"),
-      fetch("/api/admin/product-proposals", { cache: "no-store" }),
+      loadAllAdminRows((from, to) => client.from("product_proposals")
+        .select("id")
+        .eq("status", "PENDING")
+        .order("id")
+        .range(from, to)),
       client.from("admin_audit_log").select("id, admin_auth_user_id, action, target_type, target_id, metadata, created_at").order("created_at", { ascending: false }).limit(250),
       ]);
       let adminIdentityResult = await client.from("super_admins")
@@ -577,9 +618,8 @@ export default function AdminDashboard({ username, displayName }: { username: st
           .select("auth_user_id, username")
           .order("username");
       }
-      const proposalPayload = await proposalResponse.json().catch(() => ({})) as { rows?: Proposal[]; pendingSummary?: QcPendingSummary; error?: string };
-      const error = [stationRows, siteRows, siteTypeRows, subtypeRows, submissionRows, accountRows, productSummaryRows, auditRows].find((result) => result.error)?.error;
-      if (error || !proposalResponse.ok) setMessage(error ? `Gagal memuat dashboard: ${error.message}` : proposalPayload.error || "Proposal produk gagal dimuat.");
+      const error = [stationRows, siteRows, siteTypeRows, subtypeRows, submissionRows, accountRows, productSummaryRows, pendingProposalRows, auditRows].find((result) => result.error)?.error;
+      if (error) setMessage(`Gagal memuat dashboard: ${error.message}`);
       else {
         setStations((stationRows.data ?? []) as Station[]);
         setSites((siteRows.data ?? []) as Site[]);
@@ -589,8 +629,7 @@ export default function AdminDashboard({ username, displayName }: { username: st
         setAccounts((accountRows.data ?? []) as Account[]);
         const productSummary = Array.isArray(productSummaryRows.data) ? productSummaryRows.data[0] : productSummaryRows.data;
         setProductTotal(Number(productSummary?.total_count ?? 0));
-        setProposals(proposalPayload.rows ?? []);
-        setQcPendingSummary(proposalPayload.pendingSummary ?? null);
+        setPendingProposalIds(new Set(((pendingProposalRows.data ?? []) as { id: string }[]).map((row) => row.id)));
         setAudits((auditRows.data ?? []) as Audit[]);
         setAdminIdentities((adminIdentityResult.data ?? []) as AdminIdentity[]);
       }
@@ -637,6 +676,12 @@ export default function AdminDashboard({ username, displayName }: { username: st
     const timer = window.setTimeout(() => void refresh(), 0);
     return () => window.clearTimeout(timer);
   }, [refresh]);
+
+  useEffect(() => {
+    if (loading) return;
+    const timer = window.setTimeout(() => void refreshQcProposals(), 0);
+    return () => window.clearTimeout(timer);
+  }, [loading, refreshQcProposals]);
 
   useEffect(() => {
     if (tab !== "summary" && (tab !== "stations" || fillingMode !== "master")) return;
@@ -723,10 +768,6 @@ export default function AdminDashboard({ username, displayName }: { username: st
   const stationQcSummary = useMemo(() => getStationQcSummary(completionRows), [completionRows]);
   const monitoringSummary = useMemo(() => summarizeStationMonitoring(completionRows), [completionRows]);
   const monitoringQcSummary = useMemo(() => summarizeQc(completionRows), [completionRows]);
-  const pendingProposalIds = useMemo(
-    () => new Set(proposals.filter((proposal) => proposal.status === "PENDING").map((proposal) => proposal.id)),
-    [proposals],
-  );
   const filteredAccounts = accounts.filter((account) => accountMatchesAdminSearch(account, query, stationMap));
   const filteredUnprovisionedStations = stations.filter((station) => !accountByStation.has(station.id)
     && (!query || station.name.toLocaleLowerCase("id-ID").includes(query)));
@@ -740,12 +781,8 @@ export default function AdminDashboard({ username, displayName }: { username: st
   }, [activeMonitoringFilters.stationCategoryId, sites, siteTypes, stations]);
   const siteTypeProgress = useMemo(() => summarizeSiteTypeProgress(siteTypeCompletionRowsState), [siteTypeCompletionRowsState]);
   const siteTypeProgressById = useMemo(() => new Map(siteTypeProgress.map((row) => [row.site_type_id, row])), [siteTypeProgress]);
-  const filteredProposals = proposals.filter((proposal) => proposal.status === qcStatus
-    && (qcContextFilter === "all" || proposal.context.qcContext === qcContextFilter)
-    && (activeMonitoringFilters.stationCategoryId === "all" || proposal.context.stationCategoryId === activeMonitoringFilters.stationCategoryId)
-    && (activeMonitoringFilters.siteTypeId === "all" || proposal.context.siteTypeId === activeMonitoringFilters.siteTypeId)
-    && (!query
-    || `${proposal.proposed_brand} ${proposal.proposed_model} ${stationMap.get(proposal.station_id)?.name ?? ""} ${proposal.context.siteName ?? ""} ${proposal.context.subtypeName ?? ""} ${proposal.context.categories.join(" ")}`.toLocaleLowerCase("id-ID").includes(query)));
+  const filteredProposals = proposals;
+  const qcPageCount = Math.max(1, Math.ceil(qcTotalCount / qcPageSize));
   const searchTab = (tab === "stations" && fillingMode === "master") || tab === "accounts" || tab === "qc" ? tab : null;
   const selectedPendingProposals = useMemo(() => selectedProposals.map((id) => proposals.find((proposal) => proposal.id === id))
     .filter((proposal): proposal is Proposal => proposal?.status === "PENDING"), [proposals, selectedProposals]);
@@ -835,7 +872,7 @@ export default function AdminDashboard({ username, displayName }: { username: st
       ...result.conflicts.map((conflict) => conflict.proposalId),
     ]);
     setSelectedProposals((current) => current.filter((id) => !completedIds.has(id)));
-    await refreshQcProposals();
+    await Promise.all([refreshQcProposals(), refreshPendingProposalIds()]);
     setMergeProductId("");
     setMergeProductQuery("");
     setMergeDialogOpen(false);
@@ -1068,6 +1105,7 @@ export default function AdminDashboard({ username, displayName }: { username: st
   }
 
   function changeMonitoringFilters(next: StationMonitoringFilters) {
+    if (tab === "qc") setQcPage(1);
     updateAdminQuery({
       stationCategory: next.stationCategoryId,
       siteType: next.siteTypeId,
@@ -1083,6 +1121,7 @@ export default function AdminDashboard({ username, displayName }: { username: st
   }
 
   function changeQcStatus(next: Proposal["status"]) {
+    setQcPage(1);
     setSelectedProposals([]);
     setQcValidationMessage("");
     setMergeProductId("");
@@ -1092,6 +1131,7 @@ export default function AdminDashboard({ username, displayName }: { username: st
   }
 
   function changeQcContext(next: QcContextFilter) {
+    setQcPage(1);
     setSelectedProposals([]);
     setQcValidationMessage("");
     setMergeDialogOpen(false);
@@ -1133,11 +1173,13 @@ export default function AdminDashboard({ username, displayName }: { username: st
             <button onClick={() => navigate("products")}><strong>{productTotal}</strong><span>Produk</span></button>
             <button onClick={() => navigate("stations", { fillingMode: "submissions" })}><strong>{submissions.length}</strong><span>Submission</span></button>
             <button onClick={() => navigate("locks")}><strong>{activeLocks.length}</strong><span>Lock aktif</span></button>
-            <button onClick={() => navigate("qc", { qcStatus: "PENDING" })}><strong>{qcPendingSummary?.totalPending ?? proposals.filter((row) => row.status === "PENDING").length}</strong><span>Pending Proposal</span></button>
-            <button onClick={() => navigate("qc", { qcStatus: "APPROVED" })}><strong>{proposals.filter((row) => row.status === "APPROVED").length}</strong><span>Approved</span></button>
-            <button onClick={() => navigate("qc", { qcStatus: "MERGED" })}><strong>{proposals.filter((row) => row.status === "MERGED").length}</strong><span>Merged</span></button>
-            <button onClick={() => navigate("qc", { qcStatus: "REJECTED" })}><strong>{proposals.filter((row) => row.status === "REJECTED").length}</strong><span>Rejected</span></button>
+            <button onClick={() => navigate("qc", { qcStatus: "PENDING" })}><strong>{qcStatusSummary?.PENDING ?? "-"}</strong><span>Pending Proposal</span></button>
+            <button onClick={() => navigate("qc", { qcStatus: "APPROVED" })}><strong>{qcStatusSummary?.APPROVED ?? "-"}</strong><span>Approved</span></button>
+            <button onClick={() => navigate("qc", { qcStatus: "MERGED" })}><strong>{qcStatusSummary?.MERGED ?? "-"}</strong><span>Merged</span></button>
+            <button onClick={() => navigate("qc", { qcStatus: "REJECTED" })}><strong>{qcStatusSummary?.REJECTED ?? "-"}</strong><span>Rejected</span></button>
           </div>}
+
+          {!loading && tab === "summary" && qcStatusSummaryError && <div className="station-completion-error" role="alert"><span>{qcStatusSummaryError}</span><button type="button" onClick={() => void refreshQcProposals()}>Coba muat ulang</button></div>}
 
           {!loading && tab === "summary" && <section className="admin-monitoring-summary" aria-labelledby="monitoring-summary-heading">
             <div className="admin-section-heading"><h3 id="monitoring-summary-heading">Ringkasan Monitoring Pengisian</h3><span>{monitoringSummary.total} stasiun aktif</span></div>
@@ -1160,6 +1202,7 @@ export default function AdminDashboard({ username, displayName }: { username: st
                   {monitoringSummary.globalProgress !== null && <div className="admin-monitoring-progress-track" role="progressbar" aria-label="Progress kategori global" aria-valuemin={0} aria-valuemax={100} aria-valuenow={monitoringSummary.globalProgress}><span style={{ width: `${monitoringSummary.globalProgress}%` }} /></div>}
                   <small>{monitoringSummary.total} total status</small>
                 </div>
+                {qcPendingSummaryError && <p className="admin-summary-muted" role="alert">{qcPendingSummaryError}</p>}
                 {qcPendingSummary && <div className="admin-qc-summary" aria-label="Ringkasan QC Produk">
                   <div><strong>QC Produk</strong><b>{qcPendingSummary.totalPending} QC Pending</b></div>
                   <div className="admin-summary-links"><button type="button" onClick={() => navigate("qc", { qcStatus: "PENDING", qcContext: "pengisian" })}>{qcPendingSummary.pendingPengisian} Pengisian</button><button type="button" onClick={() => navigate("qc", { qcStatus: "PENDING", qcContext: "gudang" })}>{qcPendingSummary.pendingGudang} Gudang</button><button type="button" onClick={() => navigate("qc", { qcStatus: "PENDING", qcContext: "tidak-digunakan-saat-ini" })}>{qcPendingSummary.pendingTidakDigunakan} Tidak Digunakan Saat Ini</button></div>
@@ -1279,7 +1322,9 @@ export default function AdminDashboard({ username, displayName }: { username: st
           </tbody></table></div>}
 
           {!loading && tab === "qc" && <>
-            <div className="qc-toolbar"><div className="status-tabs">{(["PENDING", "APPROVED", "MERGED", "REJECTED"] as const).map((status) => <button key={status} className={qcStatus === status ? "active" : ""} onClick={() => changeQcStatus(status)}>{status} ({proposals.filter((row) => row.status === status).length})</button>)}</div></div>
+            <div className="qc-toolbar"><div className="status-tabs">{(["PENDING", "APPROVED", "MERGED", "REJECTED"] as const).map((status) => <button key={status} className={qcStatus === status ? "active" : ""} onClick={() => changeQcStatus(status)}>{status} ({qcStatusSummary?.[status] ?? "-"})</button>)}</div></div>
+            {qcStatusSummaryError && <div className="station-completion-error" role="alert"><span>{qcStatusSummaryError}</span><button type="button" onClick={() => void refreshQcProposals()}>Coba muat ulang ringkasan</button></div>}
+            {qcListError && <div className="station-completion-error" role="alert"><span>{qcListError}</span><button type="button" onClick={() => void refreshQcProposals()}>Coba muat ulang daftar</button></div>}
             <div className="qc-context-filter">
               <label>Jenis Stasiun<select value={activeMonitoringFilters.stationCategoryId} onChange={(event) => changeMonitoringFilters({ ...activeMonitoringFilters, stationCategoryId: event.target.value, siteTypeId: "all" })}><option value="all">Semua jenis stasiun</option>{stationCategoryOptions.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select></label>
               <label>Tipe Site<select value={activeMonitoringFilters.siteTypeId} onChange={(event) => changeMonitoringFilters({ ...activeMonitoringFilters, siteTypeId: event.target.value })}><option value="all">Semua tipe site</option>{scopedSiteTypes.map((siteType) => <option key={siteType.id} value={siteType.id}>{siteType.name}</option>)}</select></label>
@@ -1296,6 +1341,10 @@ export default function AdminDashboard({ username, displayName }: { username: st
               {filteredProposals.map((proposal) => <tr key={proposal.id}>{qcStatus === "PENDING" && <td><input type="checkbox" checked={selectedProposals.includes(proposal.id)} onChange={(event) => setSelectedProposals((current) => event.target.checked ? [...current, proposal.id] : current.filter((id) => id !== proposal.id))} /></td>}<td><strong>{proposal.proposed_brand}</strong><small>{proposal.proposed_model}</small></td><td>{stationMap.get(proposal.station_id)?.name}<small>{proposal.operator_name || "-"}</small></td><td className="qc-proposal-context"><strong>{proposal.context.siteName ?? (proposal.context.state === "missing-submission" ? "Konteks submission tidak tersedia" : proposal.context.state === "unavailable" ? "-" : "Site tidak ditemukan")}</strong>{proposal.context.state !== "missing-submission" && proposal.context.state !== "unavailable" && <small>{proposal.context.subtypeName ?? "Subtipe tidak ditemukan"}</small>}<small title={proposal.context.categories.join(" · ") || undefined}>{proposalCategoryLabel(proposal.context)}</small></td><td>{new Date(proposal.created_at).toLocaleDateString("id-ID")}</td>{showQcResult && renderQcResultCell(proposal)}<td className="table-actions">{proposal.status === "PENDING" && <><button onClick={() => void approve(proposal)}>Approve Baru</button><button onClick={() => { setSelectedProposals([proposal.id]); }}>Gabungkan ini</button><button className="danger-inline" onClick={() => void reject(proposal)}>Tolak</button></>}</td></tr>)}
               {!filteredProposals.length && <tr><td colSpan={6}>Tidak ada proposal pada status ini.</td></tr>}
             </tbody></table></div>
+            <div className="submission-pagination qc-proposal-pagination" aria-label="Pagination proposal QC">
+              <span>{qcTotalCount ? `${(qcPage - 1) * qcPageSize + 1}-${Math.min(qcPage * qcPageSize, qcTotalCount)} dari ${qcTotalCount} proposal` : "Tidak ada proposal"}</span>
+              <div><button type="button" disabled={qcPage <= 1 || qcListLoading} onClick={() => setQcPage((current) => Math.max(1, current - 1))}>Sebelumnya</button><span>Halaman {qcPage} dari {qcPageCount}</span><button type="button" disabled={qcPage >= qcPageCount || qcListLoading} onClick={() => setQcPage((current) => current + 1)}>Berikutnya</button></div>
+            </div>
           </>}
 
           {!loading && tab === "audit" && <div className="admin-table-wrap"><table><thead><tr><th>Waktu</th><th>Admin</th><th>Aksi</th><th>Target</th><th>Metadata</th></tr></thead><tbody>{audits.map((audit) => { const actor = adminIdentityMap.get(audit.admin_auth_user_id); return <tr key={audit.id}><td>{new Date(audit.created_at).toLocaleString("id-ID")}</td><td>{actor?.displayName ?? audit.admin_auth_user_id.slice(0, 8)}{actor && actor.displayName !== actor.username && <small>{actor.username}</small>}</td><td><span className="status-pill">{audit.action}</span></td><td>{audit.target_type}<small>{audit.target_id?.slice(0, 8) ?? "-"}</small></td><td><code>{JSON.stringify(audit.metadata)}</code></td></tr>; })}</tbody></table></div>}

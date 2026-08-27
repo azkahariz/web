@@ -26,6 +26,7 @@
     "provision:super-admins": "node --env-file-if-exists=.env.local scripts/provision-super-admins.mjs",
     "verify:auth-autosave": "node --env-file-if-exists=.env.local scripts/verify-auth-autosave.mjs",
     "verify:admin-qc": "node --env-file-if-exists=.env.local scripts/verify-admin-qc.mjs",
+    "verify:product-proposal-summary": "node --env-file-if-exists=.env.local scripts/verify-product-proposal-summary.mjs",
     "verify:admin-products": "node --env-file-if-exists=.env.local scripts/verify-admin-products.mjs",
     "verify:product-usage": "node --env-file-if-exists=.env.local scripts/verify-product-usage.mjs",
     "verify:product-dependencies": "node --env-file-if-exists=.env.local scripts/verify-product-dependencies.mjs",

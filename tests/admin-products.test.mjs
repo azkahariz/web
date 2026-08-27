@@ -135,13 +135,14 @@ test("master Produk memakai RPC Super Admin, filter/sorting server-side, dan gua
   assert.match(pickerRoute, /\.range\(\(page - 1\) \* PRODUCT_PICKER_PAGE_SIZE, page \* PRODUCT_PICKER_PAGE_SIZE - 1\)/);
   const qcContextRoute = await readFile(new URL("../app/api/admin/product-proposals/route.ts", import.meta.url), "utf8");
   const qcContext = await readFile(new URL("../app/lib/qc-proposal-context.ts", import.meta.url), "utf8");
+  const qcListMigration = await readFile(new URL("../supabase/migrations/20260902130000_admin_list_product_proposals.sql", import.meta.url), "utf8");
   assert.match(qcContextRoute, /admin_product_summary/);
-  assert.match(qcContextRoute, /\.in\("id", submissionIds\)/);
-  assert.match(qcContextRoute, /select\("id, site_id, site_subtype_id, payload, archived_at"\)/);
-  assert.match(qcContextRoute, /buildQcProposalContexts/);
+  assert.match(qcContextRoute, /admin_list_product_proposals/);
+  assert.match(qcListMigration, /submission_inventory_facts/);
+  assert.match(qcListMigration, /p_page_size/);
   assert.match(qcContext, /productProposalId/);
   assert.match(qcContext, /functionCategories/);
-  assert.match(dashboard, /fetch\("\/api\/admin\/product-proposals"/);
+  assert.match(dashboard, /fetch\(`\/api\/admin\/product-proposals\?\$\{params\.toString\(\)\}`/);
   assert.match(dashboard, /proposal\.context\.categories/);
   assert.match(component, /Cari Merk atau Tipe/);
   assert.match(component, /statusFilter/);
