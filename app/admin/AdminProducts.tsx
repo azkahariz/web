@@ -10,7 +10,7 @@ import {
   type AdminProductStatusFilter,
 } from "../lib/admin-product-list";
 import { clearProductReferenceSelection, getCurrentPageSelectionState, isProductReferenceSelectable, productReferenceSelectionKey, toggleCurrentPageSelection } from "../lib/product-reference-selection";
-import { formatCategoryLabel } from "../lib/category-label";
+import { formatReferenceContext } from "../lib/product-reference-context";
 import { normalizeSubmissionPageSize, SUBMISSION_PAGE_SIZE, SUBMISSION_PAGE_SIZE_MAX, SUBMISSION_PAGE_SIZE_MIN, SUBMISSION_PAGE_SIZE_OPTIONS } from "../lib/submission-monitoring";
 import ProductReferenceMoveDialog, { type MoveReferenceIdentity } from "./ProductReferenceMoveDialog";
 import ProductMergeDialog from "./ProductMergeDialog";
@@ -19,7 +19,7 @@ import ProductDeleteDialog from "./ProductDeleteDialog";
 type Product = { id: string; brand: string; model: string; active: boolean; source_origin: string; usage_count: number; merged_into_product_id?: string; merged_target?: { id: string; brand: string; model: string } };
 type Summary = { total_count: number; active_count: number; inactive_count: number };
 type ProductUsage = {
-  rows: Array<{ stationName: string; siteName: string; siteTypeName: string; subtypeName: string; referenceCount: number }>;
+  rows: Array<{ stationName: string; siteName: string; siteTypeName: string; subtypeName: string; categories: string[]; referenceCount: number }>;
   totalCount: number;
   stationCount: number;
   siteCount: number;
@@ -52,7 +52,8 @@ type ProductReference = {
   siteName: string;
   siteTypeName: string;
   siteSubtypeName: string;
-  categoryName: string;
+  categoryName: string | null;
+  categories: string[];
   functionCategories: string[];
   itemId: string | null;
   unitCount: number;
@@ -518,7 +519,7 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
           <p className="product-usage-summary">{usage.stationCount} Stasiun · {usage.siteCount} Site · {usage.referenceCount} referensi</p>
           <DependencyPagination page={dependencyPage} pageSize={dependencyPageSize} total={usage.totalCount} loading={usageLoading} label="Site" onPage={(nextPage) => { setDependencyPage(nextPage); void loadUsage(usageProduct, nextPage, dependencyPageSize); }} onPageSize={changeDependencyPageSize} />
           <div className="product-usage-list">
-            {usage.rows.map((row) => <div key={`${row.stationName}:${row.siteName}:${row.subtypeName}`}><strong>{row.stationName}</strong><span>{row.siteName} · {row.siteTypeName} · {row.subtypeName}</span><small>{row.referenceCount} referensi</small></div>)}
+            {usage.rows.map((row) => <div key={`${row.stationName}:${row.siteName}:${row.subtypeName}`}><strong>{row.stationName}</strong><span title={row.categories.join(", ") || undefined}>{formatReferenceContext({ siteName: row.siteName, siteTypeName: row.siteTypeName, siteSubtypeName: row.subtypeName, categories: row.categories })}</span><small>{row.referenceCount} referensi</small></div>)}
             {!usage.rows.length && <p>Produk ini belum memiliki penggunaan pada submission aktif.</p>}
           </div>
           </>}
@@ -543,7 +544,7 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
                 const key = productReferenceSelectionKey(row);
                 return <div className={`product-reference-row${selectedReferences.has(key) ? " is-selected" : ""}`} key={key}>
                   <label className="product-reference-check"><input type="checkbox" aria-label={`Pilih referensi ${row.stationName} ${row.siteName}`} checked={selectedReferences.has(key)} disabled={!eligible} onChange={() => toggleReference(row)} /></label>
-                  <div><span className={`product-reference-type ${row.referenceType === "QC_RESULT" ? "qc" : "direct"}`}>{row.referenceType === "QC_RESULT" ? "Hasil QC" : "Item Langsung"}</span><strong>{row.stationName}</strong><span>{row.siteName} · {row.siteTypeName} · {row.siteSubtypeName}</span>{row.referenceType === "QC_RESULT" ? <small>Submission v{row.expectedSubmissionVersion} · {row.qcStatus} · {row.proposedBrand} · {row.proposedModel}</small> : <small>Submission v{row.expectedSubmissionVersion} · {[row.categoryName, ...row.functionCategories].filter(Boolean).map(formatCategoryLabel).join(" · ")} · {row.unitCount} unit</small>}{row.activeLock && <em>Sedang diedit{row.lockOwnerDisplayName ? `: ${row.lockOwnerDisplayName}` : ""}</em>}</div>
+                  <div><span className={`product-reference-type ${row.referenceType === "QC_RESULT" ? "qc" : "direct"}`}>{row.referenceType === "QC_RESULT" ? "Hasil QC" : "Item Langsung"}</span><strong>{row.stationName}</strong><span title={row.categories.join(", ") || undefined}>{formatReferenceContext({ siteName: row.siteName, siteTypeName: row.siteTypeName, siteSubtypeName: row.siteSubtypeName, categories: row.categories })}</span>{row.referenceType === "QC_RESULT" ? <small>Submission v{row.expectedSubmissionVersion} · {row.qcStatus} · {row.proposedBrand} · {row.proposedModel}</small> : <small>Submission v{row.expectedSubmissionVersion} · {row.unitCount} unit</small>}{row.activeLock && <em>Sedang diedit{row.lockOwnerDisplayName ? `: ${row.lockOwnerDisplayName}` : ""}</em>}</div>
                 </div>;
               })}{!references.rows.length && <p>Belum ada referensi yang dapat dipindahkan pada submission aktif.</p>}</div></>}
           </>}

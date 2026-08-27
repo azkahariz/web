@@ -3,9 +3,10 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 test("Product dependency preflight tetap read-only, beridentitas stabil, dan hanya untuk Super Admin", async () => {
-  const [migration, unifiedReferencesMigration, dependenciesRoute, referencesRoute, component, packageJson] = await Promise.all([
+  const [migration, unifiedReferencesMigration, categoryContextMigration, dependenciesRoute, referencesRoute, component, packageJson] = await Promise.all([
     readFile(new URL("../supabase/migrations/20260821120000_product_reference_preflight.sql", import.meta.url), "utf8"),
     readFile(new URL("../supabase/migrations/20260901120000_product_reference_move_qc_results.sql", import.meta.url), "utf8"),
+    readFile(new URL("../supabase/migrations/20260904120000_product_reference_category_context.sql", import.meta.url), "utf8"),
     readFile(new URL("../app/api/admin/products/[id]/dependencies/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/admin/products/[id]/references/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/admin/AdminProducts.tsx", import.meta.url), "utf8"),
@@ -37,11 +38,19 @@ test("Product dependency preflight tetap read-only, beridentitas stabil, dan han
   assert.match(referencesRoute, /admin_product_references/);
   assert.match(unifiedReferencesMigration, /reference_type[\s\S]*QC_RESULT/);
   assert.match(unifiedReferencesMigration, /proposal\.resolved_product_id/);
+  assert.match(categoryContextMigration, /function public\.submission_product_reference_category_rows/);
+  assert.match(categoryContextMigration, /product_proposal_id/);
+  assert.match(categoryContextMigration, /submission_category_canonical_label/);
+  assert.match(categoryContextMigration, /array_agg\(distinct category_label/);
+  assert.match(categoryContextMigration, /'categories', categories/);
+  assert.doesNotMatch(categoryContextMigration, /\b(update|delete|insert into)\s+public\.(products|submissions|product_aliases|product_proposals)\b/i);
   for (const text of ["Dependency", "Referensi", "QC History", "Alias", "Item langsung", "Site terkait", "Submission terkait", "Hasil QC terkait", "Alias produk", "Referensi arsip", "Sedang diedit"]) assert.match(component, new RegExp(text));
   assert.match(component, /Referensi dapat berupa item langsung atau hasil QC/);
   assert.match(component, /product-reference-type/);
   for (const helper of ["Item inventaris yang langsung memilih produk ini", "Site aktif dengan item langsung atau hasil QC terkait", "Submission aktif dengan item langsung atau hasil QC terkait", "Proposal QC yang telah diarahkan ke produk ini", "Nama alternatif yang mengarah ke produk ini", "Referensi pada submission yang sudah diarsipkan"]) assert.match(component, new RegExp(helper));
   assert.match(component, /expectedSubmissionVersion/);
+  assert.match(component, /formatReferenceContext/);
+  assert.match(component, /categories: row\.categories/);
   assert.match(component, /referencePageSize/);
   assert.match(component, /function DependencyPagination/);
   assert.match(component, /label="Site"/);
