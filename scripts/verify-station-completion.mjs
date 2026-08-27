@@ -221,11 +221,24 @@ try {
       end
       $$;
     `);
+    await tx.unsafe(`
+      do $$
+      begin
+        perform public.admin_completion_monitoring_summary();
+        raise exception 'completion_monitoring_admin_rpc_was_not_blocked';
+      exception when insufficient_privilege then null;
+      end
+      $$;
+    `);
     await tx`reset role`;
     await tx`set local role authenticated`;
     await tx`select set_config('request.jwt.claim.sub', ${adminAuthId}, true)`;
 
     const [response] = await tx`select public.admin_station_completion_summary() as result`;
+    const [siteTypeResponse] = await tx`select public.admin_site_type_completion_summary() as result`;
+    const [combinedResponse] = await tx`select public.admin_completion_monitoring_summary() as result`;
+    assert.deepEqual(combinedResponse.result.station_summary, response.result, "Summary Station gabungan harus identik dengan RPC legacy.");
+    assert.deepEqual(combinedResponse.result.site_type_summary, siteTypeResponse.result, "Summary Tipe Site gabungan harus identik dengan RPC legacy.");
     const rows = response.result.rows;
 
     const complete = byName(rows, completeStation.name);
@@ -380,7 +393,7 @@ try {
   });
 } catch (error) {
   if (error instanceof Error && error.message === rollbackMarker) {
-    console.log("Station completion verifier passed: 23 deterministic scenarios, warehouse exclusion, authorization, identities, detail gaps, and canonical progress equivalence.");
+    console.log("Station completion verifier passed: 23 deterministic scenarios, combined/legacy parity, warehouse exclusion, authorization, identities, detail gaps, and canonical progress equivalence.");
   } else {
     throw error;
   }

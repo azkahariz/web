@@ -237,8 +237,9 @@ test("UI monitoring hanya hidup di Per Stasiun dan perubahan kontrol tidak meman
     readFile(new URL("../app/admin/StationMonitoringControls.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/admin/UnifiedFillingList.tsx", import.meta.url), "utf8"),
   ]);
-  assert.equal(dashboard.match(/client\.rpc\("admin_station_completion_summary"\)/g)?.length, 1);
-  assert.equal(dashboard.match(/client\.rpc\("admin_site_type_completion_summary"\)/g)?.length, 1);
+  assert.equal(dashboard.match(/client\.rpc\("admin_completion_monitoring_summary"\)/g)?.length, 1);
+  assert.doesNotMatch(dashboard, /client\.rpc\("admin_station_completion_summary"\)/);
+  assert.doesNotMatch(dashboard, /client\.rpc\("admin_site_type_completion_summary"\)/);
   assert.match(dashboard, /fillingMode === "master" && <StationMonitoringControls/);
   assert.match(dashboard, /applyStationMonitoring\([\s\S]*completionRows/);
   assert.match(dashboard, /changeMonitoringFilters/);
@@ -278,6 +279,29 @@ test("refresh summary tidak mengubah state filter dan detail tetap lazy", async 
   assert.match(dashboard, /Coba muat ulang/);
   assert.match(dashboard, /refreshStationCompletionSummary\(true\)/);
   assert.match(dashboard, /refreshSiteTypeCompletionSummary\(true\)/);
-  assert.match(dashboard, /client\.rpc\("admin_station_completion_summary"\)/);
-  assert.match(dashboard, /client\.rpc\("admin_site_type_completion_summary"\)/);
+  assert.match(dashboard, /client\.rpc\("admin_completion_monitoring_summary"\)/);
+});
+
+test("RPC monitoring gabungan memakai satu detail materialized dan mempertahankan RPC legacy", async () => {
+  const migration = await readFile(new URL("../supabase/migrations/20260903120000_optimize_station_completion.sql", import.meta.url), "utf8");
+  const combined = migration.match(/create or replace function public\.admin_completion_monitoring_summary[\s\S]*?comment on function public\.admin_completion_monitoring_summary/)?.[0] ?? "";
+  assert.equal(combined.match(/station_completion_rows\(null\)/g)?.length, 1);
+  assert.match(combined, /detail as materialized/);
+  assert.match(combined, /'station_summary'/);
+  assert.match(combined, /'site_type_summary'/);
+  assert.match(combined, /perform public\.require_super_admin\(\)/);
+  assert.match(migration, /grant execute on function public\.admin_completion_monitoring_summary\(\) to authenticated/);
+  assert.doesNotMatch(combined, /\b(insert|update|delete)\b/i);
+  assert.doesNotMatch(migration, /drop function public\.admin_(station|site_type)_completion_summary/);
+});
+
+test("completion rows memperluas inventory sekali per Submission dan memakai hasil pre-aggregation", async () => {
+  const migration = await readFile(new URL("../supabase/migrations/20260903120000_optimize_station_completion.sql", import.meta.url), "utf8");
+  const rows = migration.match(/create or replace function public\.station_completion_rows[\s\S]*?comment on function public\.station_completion_rows/)?.[0] ?? "";
+  assert.equal(rows.match(/submission_inventory_facts\(submission\.payload\)/g)?.length, 1);
+  assert.match(rows, /inventory_facts as materialized/);
+  assert.match(rows, /inventory_summary as materialized/);
+  assert.match(rows, /array_agg\(distinct fact\.category_label\)/);
+  assert.match(rows, /left join inventory_summary/);
+  assert.doesNotMatch(rows, /submission_category_coverage/);
 });

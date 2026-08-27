@@ -91,7 +91,7 @@ test("response null atau malformed tidak membuat UI crash", () => {
 
 test("Master Pengisian memakai satu summary batch tanpa eager detail atau metadata", async () => {
   const dashboard = await readFile(new URL("../app/admin/AdminDashboard.tsx", import.meta.url), "utf8");
-  assert.equal(dashboard.match(/client\.rpc\("admin_station_completion_summary"\)/g)?.length, 1);
+  assert.equal(dashboard.match(/client\.rpc\("admin_completion_monitoring_summary"\)/g)?.length, 1);
   const initialCompletionEffect = dashboard.match(/useEffect\(\(\) => \{\s*if \(tab !== "summary"[\s\S]*?\}, \[fillingMode, refreshCompletionSummary, tab\]\);/)?.[0] ?? "";
   assert.match(initialCompletionEffect, /refreshCompletionSummary/);
   assert.doesNotMatch(initialCompletionEffect, /admin_station_completion_detail|loadCompletionDetail/);
