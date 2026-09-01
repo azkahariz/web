@@ -1201,9 +1201,12 @@ export default function AdminDashboard({ username, displayName }: { username: st
             {siteTypeCompletionLoaded ? <div className="admin-site-type-grid">
               {siteTypeSummary.byType.map((siteType) => {
                 const progress = siteTypeProgressById.get(siteType.id);
-                const progressLabel = progress?.is_warehouse ? "Tidak Dinilai" : progress?.category_progress === null || !progress ? "-" : `${progress.category_progress}%`;
+                const progressLabel = progress?.is_warehouse
+                  ? progress.warehouse_progress_percent === null ? "-" : `${progress.warehouse_progress_percent}%`
+                  : progress?.category_progress === null || !progress ? "-" : `${progress.category_progress}%`;
                 const categoryLabel = progress && !progress.is_warehouse ? `${progress.filled_category_count} / ${progress.expected_category_count} Kategori` : "";
-                return <button type="button" className="admin-site-type-item" key={siteType.id} onClick={() => navigate("stations", { fillingMode: "master", siteTypeId: siteType.id })}><span>{siteType.name}<small>{siteType.count} Site{categoryLabel ? ` · ${categoryLabel}` : ""}</small></span><strong>{progressLabel}</strong></button>;
+                const title = progress?.is_warehouse ? "Persentase Stasiun yang sudah memiliki Submission Gudang" : undefined;
+                return <button type="button" className="admin-site-type-item" key={siteType.id} title={title} onClick={() => navigate("stations", { fillingMode: "master", siteTypeId: siteType.id })}><span>{siteType.name}<small>{siteType.count} Site{categoryLabel ? ` · ${categoryLabel}` : ""}</small></span><strong>{progressLabel}</strong></button>;
               })}
             </div> : <p className="admin-summary-muted">{siteTypeCompletionError ? "Progress Tipe Site belum tersedia." : "Memuat progress Tipe Site..."}</p>}
           </section>}

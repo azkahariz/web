@@ -12,7 +12,7 @@ import {
   STATION_CATEGORIES,
   sortStationCompletionSummaries,
 } from "../app/lib/station-monitoring.ts";
-import { parseSiteTypeCompletionRows, summarizeSiteTypeProgress, summarizeStationMonitoring, summarizeQc } from "../app/lib/admin-summary.ts";
+import { parseSiteTypeCompletionRows, summarizeSiteTypeProgress, summarizeStationMonitoring, summarizeQc, warehouseSubmissionProgressPercent } from "../app/lib/admin-summary.ts";
 import { parseStationCompletionRows } from "../app/lib/station-completion-view.ts";
 
 function summary(name, status, progress, overrides = {}) {
@@ -172,7 +172,7 @@ test("QC summary memilih station terbanyak dan site type Gudang netral", () => {
     { station_name: "A", pending_qc_count: 2 },
     { station_name: "C", pending_qc_count: 0 },
   ]), { stationCount: 2, totalPending: 4, topStation: { name: "A", count: 2 } });
-  assert.equal(summarizeSiteTypeProgress([{
+  const [warehouse] = summarizeSiteTypeProgress([{
     site_type_id: "warehouse",
     site_type_name: "Gudang",
     site_count: 1,
@@ -180,7 +180,54 @@ test("QC summary memilih station terbanyak dan site type Gudang netral", () => {
     filled_category_count: 0,
     category_progress: 0,
     is_warehouse: true,
-  }])[0].category_progress, null);
+    warehouse_station_count: 10,
+    warehouse_submitted_station_count: 6,
+    warehouse_progress_percent: 60,
+  }]);
+  assert.equal(warehouse.category_progress, null);
+  assert.equal(warehouse.warehouse_progress_percent, 60);
+});
+
+test("progress Submission Gudang memakai distinct Station dan pembulatan kartu", () => {
+  assert.equal(warehouseSubmissionProgressPercent(0, 10), 0);
+  assert.equal(warehouseSubmissionProgressPercent(6, 10), 60);
+  assert.equal(warehouseSubmissionProgressPercent(10, 10), 100);
+  assert.equal(warehouseSubmissionProgressPercent(5, 8), 63);
+  assert.equal(warehouseSubmissionProgressPercent(0, 0), null);
+  assert.equal(warehouseSubmissionProgressPercent(null, 10), null);
+});
+
+test("metric Gudang tidak mengubah completion Station atau progress global", () => {
+  const completionRows = [
+    summary("Partial", "TERISI_SEBAGIAN", 50, { expected_category_count: 10, filled_category_count: 5 }),
+    summary("Complete", "LENGKAP", 100, { expected_category_count: 10, filled_category_count: 10 }),
+  ];
+  const before = summarizeStationMonitoring(completionRows);
+  summarizeSiteTypeProgress([{
+    site_type_id: "warehouse",
+    site_type_name: "Gudang",
+    site_count: 10,
+    expected_category_count: 0,
+    filled_category_count: 0,
+    category_progress: null,
+    is_warehouse: true,
+    warehouse_station_count: 10,
+    warehouse_submitted_station_count: 6,
+    warehouse_progress_percent: 60,
+  }]);
+  assert.deepEqual(summarizeStationMonitoring(completionRows), before);
+  assert.deepEqual(before, {
+    notStarted: 0,
+    partialUnder50: 0,
+    partial50to99: 1,
+    complete: 1,
+    notAssessed: 0,
+    attention: 0,
+    total: 2,
+    expectedCategoryCount: 20,
+    filledCategoryCount: 15,
+    globalProgress: 75,
+  });
 });
 
 test("parser menerima bentuk JSONB rows aktual dan menolak respons malformed", () => {
@@ -293,6 +340,20 @@ test("RPC monitoring gabungan memakai satu detail materialized dan mempertahanka
   assert.match(migration, /grant execute on function public\.admin_completion_monitoring_summary\(\) to authenticated/);
   assert.doesNotMatch(combined, /\b(insert|update|delete)\b/i);
   assert.doesNotMatch(migration, /drop function public\.admin_(station|site_type)_completion_summary/);
+});
+
+test("RPC Gudang menghitung current Submission per distinct Station tanpa payload traversal", async () => {
+  const migration = await readFile(new URL("../supabase/migrations/20260905120000_gudang_submission_progress.sql", import.meta.url), "utf8");
+  const functions = migration.split("comment on function")[0];
+  assert.match(migration, /count\(distinct site\.station_id\)::integer as warehouse_station_count/);
+  assert.match(migration, /count\(distinct submission\.station_id\) filter \(where submission\.id is not null\)::integer as warehouse_submitted_station_count/);
+  assert.match(migration, /submission\.archived_at is null/);
+  assert.match(migration, /station_completion_is_warehouse_site_type\(site\.site_type_id\)/);
+  assert.match(migration, /warehouse_submitted_station_count \* 100\.0 \/ warehouse_counts\.warehouse_station_count/);
+  assert.doesNotMatch(functions, /submission_inventory_facts|payload\s*->|jsonb_array_elements/);
+  assert.doesNotMatch(functions, /\b(insert|update|delete)\b/i);
+  assert.match(migration, /create or replace function public\.admin_site_type_completion_summary\(\)/);
+  assert.match(migration, /create or replace function public\.admin_completion_monitoring_summary\(\)/);
 });
 
 test("completion rows memperluas inventory sekali per Submission dan memakai hasil pre-aggregation", async () => {

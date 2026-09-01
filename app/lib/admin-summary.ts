@@ -10,6 +10,9 @@ export type SiteTypeCompletionSummary = {
   filled_category_count: number;
   category_progress: number | null;
   is_warehouse: boolean;
+  warehouse_station_count: number | null;
+  warehouse_submitted_station_count: number | null;
+  warehouse_progress_percent: number | null;
 };
 
 export type MonitoringStationSummary = {
@@ -67,23 +70,41 @@ export function summarizeSiteTypeProgress(rows: SiteTypeCompletionSummary[]) {
     category_progress: row.is_warehouse || row.expected_category_count === 0
       ? null
       : Math.round((row.filled_category_count * 100) / row.expected_category_count),
+    warehouse_progress_percent: row.is_warehouse
+      ? warehouseSubmissionProgressPercent(row.warehouse_submitted_station_count, row.warehouse_station_count)
+      : null,
   }));
+}
+
+export function warehouseSubmissionProgressPercent(submitted: number | null, total: number | null) {
+  if (submitted === null || total === null || total <= 0 || submitted < 0 || submitted > total) return null;
+  return Math.round((submitted * 100) / total);
 }
 
 export function siteTypeCompletionRows(value: unknown): SiteTypeCompletionSummary[] {
   if (!value || typeof value !== "object" || !("rows" in value)) return [];
   const rows = (value as { rows?: unknown }).rows;
   if (!Array.isArray(rows)) return [];
-  return rows.filter((row): row is SiteTypeCompletionSummary => {
-    if (!row || typeof row !== "object") return false;
+  return rows.flatMap((row) => {
+    if (!row || typeof row !== "object") return [];
     const item = row as Partial<SiteTypeCompletionSummary>;
-    return typeof item.site_type_id === "string"
+    const valid = typeof item.site_type_id === "string"
       && typeof item.site_type_name === "string"
       && Number.isFinite(item.site_count)
       && Number.isFinite(item.expected_category_count)
       && Number.isFinite(item.filled_category_count)
       && (item.category_progress === null || Number.isFinite(item.category_progress))
-      && typeof item.is_warehouse === "boolean";
+      && typeof item.is_warehouse === "boolean"
+      && (item.warehouse_station_count === undefined || item.warehouse_station_count === null || Number.isFinite(item.warehouse_station_count))
+      && (item.warehouse_submitted_station_count === undefined || item.warehouse_submitted_station_count === null || Number.isFinite(item.warehouse_submitted_station_count))
+      && (item.warehouse_progress_percent === undefined || item.warehouse_progress_percent === null || Number.isFinite(item.warehouse_progress_percent));
+    if (!valid) return [];
+    return [{
+      ...item,
+      warehouse_station_count: item.warehouse_station_count ?? null,
+      warehouse_submitted_station_count: item.warehouse_submitted_station_count ?? null,
+      warehouse_progress_percent: item.warehouse_progress_percent ?? null,
+    } as SiteTypeCompletionSummary];
   });
 }
 

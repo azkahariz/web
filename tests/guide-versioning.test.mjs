@@ -139,7 +139,8 @@ test("panduan Admin menjelaskan pekerjaan dan tindakan Produk berisiko", async (
   assert.match(source, /Jenis Stasiun/);
   assert.match(source, /konteks QC/i);
   assert.match(source, /Tidak Dinilai/);
-  assert.match(source, /Gudang.*tidak mengurangi progress kelengkapan/);
+  assert.match(source, /Gudang.*tetap tidak dinilai dalam completeness/);
+  assert.match(source, /persentase pada kartu Gudang menunjukkan proporsi Stasiun/);
   assert.match(source, /Bagaimana mencari, membuka, dan memperbaiki Submission\?/);
   assert.match(source, /Arsipkan Submission/);
   assert.match(source, /Pulihkan Submission/);
