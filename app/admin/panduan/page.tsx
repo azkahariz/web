@@ -250,7 +250,7 @@ export default async function AdminGuidePage() {
           <h4>Ringkasan Monitoring Pengisian</h4>
           <p>Bagian ini merangkum Stasiun berdasarkan kondisi pengisian: <strong>Belum Dimulai</strong>, <strong>Terisi &lt;50%</strong>, <strong>Terisi 50–99%</strong>, dan <strong>Lengkap</strong>. <strong>Tidak Dinilai</strong> ditampilkan sebagai informasi sekunder bila progress tidak dapat dihitung.</p>
           <p>Klik kartu kondisi untuk membuka <strong>Stasiun &amp; Pengisian</strong> dengan filter yang sesuai. Kartu <strong>Site berdasarkan Tipe Site</strong> juga dapat diklik untuk membuka daftar Stasiun yang memiliki Tipe Site tersebut.</p>
-          <p>Progress hanya menghitung kategori yang memang menjadi target pengisian. <strong>Gudang</strong> tidak mengurangi progress kelengkapan; Gudang ditampilkan sebagai jumlah kategori dan Unit.</p>
+          <p>Progress hanya menghitung kategori yang memang menjadi target pengisian. <strong>Gudang</strong> tetap tidak dinilai dalam completeness; persentase pada kartu Gudang menunjukkan proporsi Stasiun yang sudah memiliki Submission Gudang.</p>
           <p>Klik <strong>Muat ulang</strong> bila ingin mengambil kondisi terbaru. Menu samping menggunakan link sehingga halaman dapat dibuka di tab baru, di-bookmark, dan dipertahankan setelah refresh.</p>
         </section>
 
@@ -290,7 +290,7 @@ export default async function AdminGuidePage() {
             <div><dt>Kosong</dt><dd>Belum ada kategori target yang terisi.</dd></div>
             <div><dt>Terisi Sebagian</dt><dd>Sudah ada kategori target yang terisi, tetapi belum seluruhnya.</dd></div>
             <div><dt>Lengkap</dt><dd>Seluruh kategori target pada profil sudah terisi.</dd></div>
-            <div><dt>Gudang</dt><dd>Progress ditampilkan sebagai jumlah kategori dan Unit, bukan persentase target.</dd></div>
+            <div><dt>Gudang</dt><dd>Persentase pada Ringkasan menunjukkan proporsi Stasiun yang sudah memiliki Submission Gudang, bukan persentase kelengkapan kategori.</dd></div>
             <div><dt>Belum terpetakan</dt><dd>Profil belum menyediakan target kategori untuk menghitung progress.</dd></div>
           </dl>
           <h4>Membuka dan mengedit</h4>

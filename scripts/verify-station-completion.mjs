@@ -239,6 +239,32 @@ try {
     const [combinedResponse] = await tx`select public.admin_completion_monitoring_summary() as result`;
     assert.deepEqual(combinedResponse.result.station_summary, response.result, "Summary Station gabungan harus identik dengan RPC legacy.");
     assert.deepEqual(combinedResponse.result.site_type_summary, siteTypeResponse.result, "Summary Tipe Site gabungan harus identik dengan RPC legacy.");
+    const [warehouseOracle] = await tx`
+      with warehouse_sites as (
+        select site.id, site.station_id
+        from public.sites as site
+        join public.stations as station on station.id = site.station_id and station.active
+        join public.site_types as site_type on site_type.id = site.site_type_id and site_type.active
+        where site.active
+          and site.site_type_id = ${WAREHOUSE_TYPE_ID}
+      )
+      select count(distinct site.station_id)::integer as station_count,
+        count(distinct submission.station_id) filter (where submission.id is not null)::integer as submitted_station_count
+      from warehouse_sites as site
+      left join public.submissions as submission
+        on submission.station_id = site.station_id
+       and submission.site_id = site.id
+       and submission.archived_at is null
+    `;
+    const warehouseSiteType = combinedResponse.result.site_type_summary.rows.find((row) => row.is_warehouse);
+    assert.ok(warehouseSiteType, "Summary Gudang harus tersedia.");
+    assert.equal(warehouseSiteType.warehouse_station_count, warehouseOracle.station_count);
+    assert.equal(warehouseSiteType.warehouse_submitted_station_count, warehouseOracle.submitted_station_count);
+    assert.equal(
+      warehouseSiteType.warehouse_progress_percent,
+      warehouseOracle.station_count === 0 ? null : Math.round((warehouseOracle.submitted_station_count * 100) / warehouseOracle.station_count),
+    );
+    assert.equal(warehouseSiteType.category_progress, null, "Gudang tetap tidak mempunyai category completeness.");
     const rows = response.result.rows;
 
     const complete = byName(rows, completeStation.name);
@@ -393,7 +419,7 @@ try {
   });
 } catch (error) {
   if (error instanceof Error && error.message === rollbackMarker) {
-    console.log("Station completion verifier passed: 23 deterministic scenarios, combined/legacy parity, warehouse exclusion, authorization, identities, detail gaps, and canonical progress equivalence.");
+    console.log("Station completion verifier passed: 23 deterministic scenarios, combined/legacy parity, distinct-Station Gudang progress, warehouse exclusion, authorization, identities, detail gaps, and canonical progress equivalence.");
   } else {
     throw error;
   }

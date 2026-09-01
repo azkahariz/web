@@ -21,6 +21,20 @@ function median(values) {
   return sorted[Math.floor(sorted.length / 2)];
 }
 
+function withoutGudangProgressFields(summary) {
+  const gudangFields = new Set([
+    "warehouse_station_count",
+    "warehouse_submitted_station_count",
+    "warehouse_progress_percent",
+  ]);
+  return {
+    ...summary,
+    rows: summary.rows.map((row) => Object.fromEntries(
+      Object.entries(row).filter(([key]) => !gudangFields.has(key)),
+    )),
+  };
+}
+
 async function timed(query, runs = 5) {
   await query();
   const durations = [];
@@ -149,7 +163,7 @@ try {
 
   const [legacySiteType] = await runAdmin("select public.admin_site_type_completion_summary_benchmark_legacy() as value");
   const [optimizedSiteType] = await runAdmin("select public.admin_site_type_completion_summary() as value");
-  assert.deepEqual(optimizedSiteType.value, legacySiteType.value, "SEMANTIC PARITY gagal pada Site Type summary.");
+  assert.deepEqual(withoutGudangProgressFields(optimizedSiteType.value), legacySiteType.value, "SEMANTIC PARITY gagal pada Site Type summary.");
 
   const benchmark = {
     legacyStation: await timed(() => sql`select * from public.station_completion_summary_rows_benchmark_legacy(null)`),
