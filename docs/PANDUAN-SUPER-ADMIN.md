@@ -1,6 +1,11 @@
 # Panduan Super Admin
 
-Terakhir diperbarui: 13 Agustus 2026. Dashboard tersedia setelah login dengan
+> **Status: Current supporting documentation**
+> Referensi developer canonical: [Flow Admin dan QC](./08-FLOW-ADMIN-DAN-QC.md),
+> [Product Master dan Referensi](./09-PRODUCT-MASTER-DAN-REFERENSI.md), dan
+> [Completion dan Monitoring](./10-COMPLETION-DAN-MONITORING.md).
+
+Terakhir diperbarui: 3 September 2026. Dashboard tersedia setelah login dengan
 akun aktif di `super_admins`. Baca [SOP Perubahan Production](SOP-PERUBAHAN-PRODUCTION.md)
 sebelum menjalankan tindakan yang mengubah data.
 
@@ -14,14 +19,16 @@ sebelum menjalankan tindakan yang mengubah data.
 - **QC Produk**: pemeriksaan usulan Brand/Tipe.
 - **Audit Admin**: rekam tindakan administrasi yang berisiko.
 
+Panduan Super Admin di aplikasi dapat dipakai untuk langkah UI yang sedang
+berjalan. Dokumen ini menjelaskan perilaku dan batas tindakan utamanya.
+
 ### Dependency Produk
 
 Klik **N referensi** pada Produk untuk membuka detail read-only: direct reference
 current dan arsip, riwayat QC yang sudah resolved, alias, serta lock editor yang
 masih aktif. Nilai `0 referensi` bukan jaminan produk aman dihapus karena masih
-mungkin memiliki alias, riwayat QC, atau referensi arsip. Pemindahan, merge, dan
-penghapusan Produk belum tersedia; fitur tersebut akan memakai preflight ini pada
-tahap berikutnya.
+mungkin memiliki alias, riwayat QC, atau referensi arsip. Gunakan hasil ini
+sebagai preflight sebelum pemindahan, merge, atau penghapusan Produk.
 
 ## Stasiun dan Pengisian
 
@@ -129,6 +136,22 @@ tetap dapat dilakukan. Semua perubahan Produk tercatat di Audit Admin.
 Produk APPROVED dari QC dan target MERGED langsung memakai master yang sama.
 Station User tidak mengubah master ini secara langsung; input baru mereka tetap
 masuk sebagai proposal QC.
+
+### Pindahkan Referensi, Gabungkan, dan Hapus Produk
+
+- **Pindahkan Referensi** memindahkan referensi yang dipilih dari Produk sumber
+  ke Produk tujuan. Gunakan untuk koreksi subset referensi dan periksa jenis
+  referensi yang didukung pada preflight.
+- **Gabungkan Produk** menyatukan Produk sumber ke Produk tujuan: referensi yang
+  didukung dan alias dikonsolidasikan, Produk sumber masuk state final sebagai
+  riwayat. Ini bukan sekadar rename dan berbeda dari Pindahkan Referensi.
+- **Nonaktifkan** menghentikan pilihan baru tanpa menghapus riwayat. **Hapus
+  Permanen** hanya tersedia untuk Produk nonaktif yang lulus preflight
+  dependency; Produk dengan referensi, alias, atau riwayat yang menghalangi tidak
+  dapat dihapus.
+
+Ketiga tindakan memakai dialog preflight/konfirmasi dan tercatat di Audit Admin.
+Jangan menganggap `0 referensi` sebagai izin otomatis untuk hapus permanen.
 
 ## Gudang pada Master dan Submission
 

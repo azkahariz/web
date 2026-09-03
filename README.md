@@ -4,9 +4,12 @@ Aloptama Collect adalah aplikasi untuk mengelola metadata Site dan inventaris
 perangkat Aloptama BMKG. Station User mengisi data Site sesuai stasiunnya,
 sedangkan Super Admin mengelola akun, submission, lock, dan QC produk.
 
-Production: https://aloptama-collect.vercel.app
+Production: https://aloptama-collect.azkahariz.com
 
-Hosting resmi: **Vercel**.
+Runtime production canonical: **Hostinger Managed Next.js**. Vercel dipakai
+untuk Preview branch dan hostname legacy
+`https://aloptama-collect.vercel.app`, yang mengarahkan pengguna dengan 307 ke
+URL canonical.
 
 Status dokumentasi: **Production / Pilot**. Aplikasi telah digunakan untuk
 data nyata. Jangan mengubah data, UUID, schema, atau secret tanpa prosedur
@@ -15,13 +18,22 @@ yang benar.
 Arsitektur singkat:
 
 ```text
-Browser -> Next.js di Vercel -> Supabase Auth + PostgreSQL
-       -> localStorage sebagai cadangan draf
-Spreadsheet/CSV -> master data -> aplikasi dan Supabase
+Browser -> Next.js di Hostinger -> Supabase Auth + PostgreSQL
+       -> localStorage sebagai cadangan draf browser
+Supabase -> runtime master, Submission, Product, dan audit
 ```
 
-Mulai dari [docs/MULAI-DI-SINI.md](docs/MULAI-DI-SINI.md) untuk menentukan
-panduan sesuai peran.
+Supabase adalah runtime source of truth. CSV, Spreadsheet, dan
+`app/data.generated.json` hanya artefak legacy untuk import, recovery,
+provenance, atau test; bukan master runtime.
+
+## Dokumentasi Developer
+
+Mulai dari [docs/00-MULAI-DI-SINI.md](docs/00-MULAI-DI-SINI.md). Untuk tugas
+spesifik, gunakan [Setup Development](docs/03-SETUP-DEVELOPMENT.md),
+[Deployment](docs/11-DEPLOYMENT-DAN-INFRASTRUKTUR.md),
+[Runbook Production](docs/13-RUNBOOK-PRODUCTION.md), dan
+[Handover Checklist](docs/17-HANDOVER-CHECKLIST.md).
 
 ## Quick Start Developer
 
@@ -33,7 +45,7 @@ npm.cmd run check
 ```
 
 Jangan commit `.env.local`, `private-output/`, credential CSV, atau nilai
-secret. Panduan pengembangan dan prosedur production ada di
+secret. Panduan praktis pendukung tersedia di
 [docs/PANDUAN-PENGEMBANG.md](docs/PANDUAN-PENGEMBANG.md) dan
 [docs/SOP-PERUBAHAN-PRODUCTION.md](docs/SOP-PERUBAHAN-PRODUCTION.md).
 

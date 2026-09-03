@@ -1,7 +1,16 @@
 # Panduan Pengembang
 
-Terakhir diperbarui: 13 Agustus 2026. Baca [SOP Perubahan Production](SOP-PERUBAHAN-PRODUCTION.md)
-sebelum mengubah aplikasi karena production sudah berisi data nyata.
+> **Status: Current supporting documentation**
+> Dokumentasi developer canonical dimulai dari
+> [Mulai di Sini](./00-MULAI-DI-SINI.md). Gunakan
+> [Setup Development](./03-SETUP-DEVELOPMENT.md),
+> [Struktur Codebase](./04-STRUKTUR-CODEBASE.md),
+> [Testing](./12-TESTING-DAN-VERIFICATION.md), dan
+> [Runbook Production](./13-RUNBOOK-PRODUCTION.md) sebagai rujukan detail.
+
+Terakhir diperbarui: 3 September 2026. Baca
+[SOP Perubahan Production](SOP-PERUBAHAN-PRODUCTION.md) sebelum mengubah
+aplikasi karena production sudah berisi data nyata.
 
 ## Menjalankan lokal
 
@@ -19,9 +28,9 @@ Node.js minimal 22.13 diperlukan. Local URL biasanya `http://localhost:3000`.
 Gunakan alur berikut untuk perubahan baru:
 
 ```text
-main -> feature branch -> implement -> validate/test/build -> commit
-     -> push -> Vercel Preview -> smoke test -> merge main
-     -> production smoke test -> hapus branch yang sudah merged
+main -> feature/fix branch -> implement -> verification -> commit -> push
+     -> Preview bila relevan -> PR -> merge main -> production smoke
+     -> hapus branch yang sudah merged
 ```
 
 Branch bukan arsip permanen. History commit tetap tersimpan setelah branch
@@ -31,19 +40,22 @@ unik atau pekerjaan aktif.
 ## Hosting dan deployment
 
 - Development: `http://localhost:3000` melalui `npm.cmd run dev`.
-- Preview: Vercel Preview Deployment dari feature branch.
-- Production resmi: https://aloptama-collect.vercel.app
+- Preview: Vercel Preview Deployment dari feature branch bila tersedia.
+- Production canonical: https://aloptama-collect.azkahariz.com pada Hostinger
+  Managed Next.js.
+- Vercel mempertahankan Preview dan hostname legacy yang memberi redirect 307
+  ke production canonical.
 
-Flow resmi adalah feature branch -> GitHub -> Vercel Preview -> test dan smoke
-test -> merge `main` -> Vercel Production. ChatGPT Sites sudah tidak digunakan
-untuk deployment production.
+Setelah PR di-merge ke `main`, verifikasi deployment Hostinger dan lakukan
+production smoke test yang sesuai scope. Topologi dan otoritas deployment
+dirinci di [Deployment dan Infrastruktur](./11-DEPLOYMENT-DAN-INFRASTRUKTUR.md).
 
 ## Environment
 
 Salin format dari `.env.example` ke `.env.local`; jangan commit nilainya.
 
 - `NEXT_PUBLIC_SUPABASE_URL` dan `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` boleh
-  tersedia di browser/Vercel.
+  tersedia di browser.
 - `SUPABASE_SECRET_KEY` hanya untuk route server dan script provisioning.
 - `SUPABASE_DB_URL` hanya untuk workflow database tepercaya seperti sync master
   dan verification.
@@ -219,12 +231,18 @@ keadaan semula. Jangan memakai database production untuk regression test.
 
 ## Migration dan deploy
 
-Buat migration baru; jangan edit migration yang sudah applied. Uji lokal dahulu,
-lalu periksa `migration list --linked` dan jalankan
-`db push --linked --dry-run`. Setelah review, terapkan ke environment yang
-sesuai dan lakukan smoke test. Uji Vercel Preview dari branch fitur, lalu merge
-ke `main` setelah review. Jangan menjalankan migration production dalam workflow
-housekeeping. Production resmi adalah https://aloptama-collect.vercel.app.
+Migration yang sudah diterapkan ke production bersifat immutable: buat migration
+baru untuk perubahan database berikutnya. Uji lokal, review kompatibilitas,
+jalankan verifier yang relevan, dan gunakan `migration list --linked` serta
+`db push --linked --dry-run` sebelum pengajuan apply.
+
+Developer dapat melakukan analisis read-only dan koreksi row-level terbatas
+(`INSERT`, `UPDATE`, atau `DELETE` biasa dengan scope kecil) sesuai persetujuan.
+Azka Hariz tetap berwenang untuk schema/migration, apply migration production,
+RPC/RLS/Auth, credential, restore, serta cleanup destructive atau dependency-heavy.
+Jangan menjalankan perubahan production pada workflow housekeeping. Lihat
+[Database dan Supabase](./05-DATABASE-SUPABASE.md) dan
+[Runbook Production](./13-RUNBOOK-PRODUCTION.md).
 
 Jangan ubah timeout lock lima menit, lifecycle Browse/Edit, format CSV/JSON,
 RLS, atau pagination data besar tanpa audit consumer dan regression test.
@@ -284,8 +302,9 @@ Progress Site tetap expected-category based dan membership kombinasi dapat
 memenuhi dua numerator. Profil `Gudang` adalah allowed catalog;
 monitoring Gudang memakai category/unit count dan tidak memiliki completeness.
 
-Master Gudang disinkronkan melalui CSV dan `npm.cmd run sync:master`. UUID
-existing harus dipertahankan. Migration warehouse hanya mengganti helper/RPC
-monitoring dan wajib diuji lokal/Preview sebelum diterapkan ke production.
+CSV Gudang hanya dipakai untuk import legacy/recovery eksplisit; master runtime
+tetap berada di Supabase dan UUID existing harus dipertahankan. Perubahan
+migration Gudang wajib diuji lokal/Preview dan mengikuti otoritas production di
+atas.
 
 ← [Arsitektur dan Alur Data](ARSITEKTUR-DAN-ALUR-DATA.md) | → [Master Data](MASTER-DATA.md)
