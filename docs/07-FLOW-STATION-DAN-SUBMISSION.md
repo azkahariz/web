@@ -261,4 +261,4 @@ Permanent delete adalah Admin operation khusus dan bukan cara Station User mengo
 
 ## Lanjutan Dokumentasi
 
-Admin, QC, Product, dan Completion dibahas pada batch dokumentasi berikutnya. Tidak ada link Batch 3 pada tahap ini karena file tersebut belum dibuat.
+[Flow Admin dan QC](./08-FLOW-ADMIN-DAN-QC.md)
