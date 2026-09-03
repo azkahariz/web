@@ -1,5 +1,13 @@
 # Changelog
 
+> [!NOTE]
+> **Status: HISTORICAL**
+>
+> Dokumen ini merangkum milestone pada periode tertentu, bukan behavior runtime
+> saat ini. Untuk implementasi current, mulai dari
+> [Mulai di Sini](./00-MULAI-DI-SINI.md) dan
+> [History dan Legacy](./16-HISTORY-DAN-LEGACY.md).
+
 Tanggal mengikuti Git history. Ini ringkasan milestone, bukan daftar seluruh
 commit.
 

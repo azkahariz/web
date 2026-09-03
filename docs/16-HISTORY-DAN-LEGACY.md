@@ -110,6 +110,12 @@ Tidak ada kandidat di atas yang otomatis aman dihapus. Setiap removal perlu inve
 
 [Security dan Secrets](./15-SECURITY-DAN-SECRETS.md)
 
+## Catatan Milestone Historis
+
+[Changelog](./CHANGELOG.md) merangkum milestone awal berdasarkan tanggal Git.
+Gunakan hanya sebagai riwayat; kontrak runtime current tetap mengikuti source,
+test, migration efektif, dan dokumentasi canonical.
+
 ## Baca Selanjutnya
 
 [Handover Checklist](./17-HANDOVER-CHECKLIST.md)
