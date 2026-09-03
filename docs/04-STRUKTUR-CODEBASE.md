@@ -215,4 +215,4 @@ Use the closest domain test as the first regression target. Do not rely on an un
 
 ## Baca Selanjutnya
 
-Setelah memilih fitur dari Quick Map, baca source/test/migration terkait. Database, Auth, dan Submission detail dibahas pada Batch 2 dokumentasi.
+[Database dan Supabase](./05-DATABASE-SUPABASE.md)
