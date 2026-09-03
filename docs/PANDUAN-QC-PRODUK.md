@@ -1,5 +1,10 @@
 # Panduan QC Produk
 
+> **Status: Current supporting documentation**
+> Semantik Product/QC canonical dijelaskan di
+> [Flow Admin dan QC](./08-FLOW-ADMIN-DAN-QC.md) serta
+> [Product Master dan Referensi](./09-PRODUCT-MASTER-DAN-REFERENSI.md).
+
 Terakhir diperbarui: 18 Agustus 2026. QC Produk dipakai Super Admin untuk
 memeriksa Brand/Tipe yang tidak ditemukan Station User.
 

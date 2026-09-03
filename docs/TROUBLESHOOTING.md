@@ -1,6 +1,14 @@
 # Troubleshooting
 
-Terakhir diperbarui: 12 Agustus 2026.
+> **Status: Current supporting documentation**
+> Diagnosis developer yang lebih lengkap ada di
+> [Troubleshooting canonical](./14-TROUBLESHOOTING.md).
+
+Terakhir diperbarui: 3 September 2026.
+
+Mulai dari gejala, tentukan layer yang gagal, kumpulkan bukti, lalu bandingkan
+dengan source/RPC authoritative. Jangan mengubah data production hanya untuk
+menghilangkan pesan UI.
 
 ## Untuk pengguna
 
@@ -79,6 +87,9 @@ jika perlu.
 - Progress "Belum terpetakan": periksa relasi Subtipe ke `item_profiles` serta
   `profile_items` aktif. Jangan memperbaikinya dengan memasukkan metadata ke
   denominator.
+- Progress Gudang bukan category completeness. Periksa jumlah Station dengan
+  Submission Gudang current terhadap Station yang memiliki Site Gudang; jangan
+  menghitung item atau kuantitas sebagai persentase kelengkapan.
 - Detail gagal tetapi list tampil: list dan detail adalah request terpisah.
   Periksa RPC `admin_get_submission_detail`, session Super Admin, dan jaringan;
   klik Muat ulang untuk menghapus cache detail halaman.
@@ -86,8 +97,13 @@ jika perlu.
   row per halaman dan response list tidak mempunyai field `payload`.
 - Supabase environment salah: periksa hanya nama variable dan availability,
   jangan menampilkan nilainya.
-- Vercel build gagal: lihat log build, jalankan `npm.cmd run check` lokal, lalu
-  periksa Preview sebelum merge.
+- Count QC berbeda dari jumlah row halaman: gunakan aggregate status server,
+  bukan `.length` dari list terpaginated.
+- Product merge/reference tampak salah: bedakan referensi DIRECT (`productId`)
+  dari QC_RESULT (`resolved_product_id`) dan audit preflight sebelum mutation.
+- Build Preview Vercel gagal: lihat log Preview dan jalankan `npm.cmd run check`
+  lokal. Untuk production Hostinger, periksa deployment SHA/log Hostinger dan
+  lakukan smoke test pada URL canonical.
 - Lock/version/Auth bermasalah: jalankan verification yang relevan dan baca
   [Arsitektur dan Alur Data](ARSITEKTUR-DAN-ALUR-DATA.md); jangan force reset
   database sebagai langkah pertama.

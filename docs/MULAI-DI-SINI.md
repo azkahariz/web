@@ -1,5 +1,7 @@
 # Mulai di Sini
 
+> **Status: COMPATIBILITY POINTER**
+
 Dokumen ini dipertahankan untuk kompatibilitas link lama dari README dan panduan operator.
 
 Untuk onboarding developer terbaru, gunakan dokumen canonical:

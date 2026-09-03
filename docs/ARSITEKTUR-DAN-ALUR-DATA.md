@@ -1,18 +1,20 @@
 # Arsitektur dan Alur Data
 
-Terakhir diperbarui: 20 Agustus 2026.
+> **Status: Current supporting documentation**
+> Arsitektur canonical ada di [Arsitektur](./02-ARSITEKTUR.md) dan
+> [Database Supabase](./05-DATABASE-SUPABASE.md).
+
+Terakhir diperbarui: 3 September 2026.
 
 ```text
-Spreadsheet / CSV
-        |
-        +--> generate-data.ps1 --> app/data.generated.json
-        |
-        `--> sync-master.mjs --> Supabase PostgreSQL
-
 Browser
-  |-- Next.js / Vercel
+  |-- Cloudflare DNS --> Next.js production di Hostinger
+  |-- Vercel Preview / legacy 307 compatibility
   |-- localStorage (cadangan draf perangkat)
   `-- Supabase Auth + RLS + RPC --> runtime master / submissions / lock / QC / audit
+
+CSV / Spreadsheet legacy
+  `-- import/recovery/provenance eksplisit, bukan authority runtime
 ```
 
 ## Master data dan data pengisian
@@ -21,10 +23,14 @@ Browser
 subtipe, profil barang, barang, dan produk. Supabase production adalah master
 authoritative untuk runtime aplikasi.
 
-`app/data.generated.json` adalah hasil generate yang dilacak Git. Sinkronisasi
-master mengirim input CSV ke tabel master Supabase; export master hanya membaca
-tabel tersebut dan menghasilkan snapshot CSV, bukan perubahan balik otomatis.
-Artefak generated tidak dipakai untuk runtime Station User.
+`app/data.generated.json` adalah hasil generate yang dilacak Git untuk
+test/recovery. Import CSV ke Supabase hanya dilakukan sebagai operasi legacy atau
+recovery yang eksplisit; export master membaca Supabase dan menghasilkan snapshot
+CSV tanpa mengubah runtime master. Artefak generated tidak dipakai untuk runtime
+Station User.
+
+Kategori Station memakai relasi `stations.station_category_id` ke
+`station_categories`; nama Station bukan sumber klasifikasi.
 
 Station User membaca `station_runtime_master()` yang mengidentifikasi akun dari
 `auth.uid()`, lalu mengembalikan hanya Site aktif milik stasiun tersebut,
@@ -94,9 +100,12 @@ submission aktif milik stasiunnya melalui RLS existing.
 
 ## QC dan ekspor
 
-Usulan produk disimpan sebagai proposal terpisah. QC dapat approve produk baru,
-merge ke canonical product, atau reject. CSV/JSON Station dan Admin memakai
-serializer bersama. Bulk export membuat ZIP di browser dari data baca saja.
+Usulan produk disimpan sebagai Product Proposal terpisah. Item menyimpan
+`productProposalId`; hasil APPROVED/MERGED menunjuk Product canonical melalui
+`resolved_product_id`, sedangkan referensi langsung memakai `productId`. QC dapat
+approve produk baru, merge proposal ke Product canonical, atau reject. Pindahkan
+Referensi dan Gabungkan Produk adalah operasi berbeda. CSV/JSON Station dan Admin
+memakai serializer bersama; bulk export membuat ZIP dari data baca saja.
 
 ## Gudang Stasiun/Balai
 
@@ -119,6 +128,11 @@ infrastruktur Submission existing.
 
 Gudang dimiliki dan ditampilkan dalam scope Station/Balai yang sama dengan Site
 biasa. Tidak ada alur Gudang yang hanya tersedia untuk Super Admin.
+
+Gudang dikeluarkan dari category completeness. Ringkasan Admin tetap dapat
+menampilkan progress informasional berupa jumlah Station dengan Submission
+Gudang current dibanding jumlah Station yang mempunyai Site Gudang; angka itu
+bukan kelengkapan item atau kategori Gudang.
 
 Lihat [Master Data](MASTER-DATA.md), [Panduan QC Produk](PANDUAN-QC-PRODUK.md),
 dan [Panduan Pengembang](PANDUAN-PENGEMBANG.md).
