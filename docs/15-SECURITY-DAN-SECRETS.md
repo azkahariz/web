@@ -47,6 +47,10 @@ Key publik dipakai untuk membuat client browser/server session normal bersama UR
 
 `SUPABASE_DB_URL` dan `SUPABASE_DB_POOLER_URL` digunakan tooling developer/verifier/administrative sesuai script. Jangan otomatis menambahkannya ke runtime Hostinger karena aplikasi runtime tidak membuktikan memerlukannya. Full URL dengan credential tidak boleh di-commit atau dicetak.
 
+## Recovery Configuration Principle
+
+Source code recovery from GitHub and database recovery from Supabase Scheduled Backups do not recover provider-held environment values or account access automatically. Public identifiers can be reconstructed where documented. Server secrets and database credentials must be recovered from authorized provider storage where available or rotated securely by Azka Hariz; never copy their values into this runbook. See [OP-009 dan OP-010](./OPERATOR-INPUT-WORKSHEET.md).
+
 ## Browser vs Server Boundary
 
 Client hanya boleh memanggil kontrak publik yang sudah diauthorize. Server route boleh menggunakan credential elevated hanya ketika source membutuhkannya dan tetap harus membatasi tindakan. Service/admin key tidak pernah menjadi solusi untuk bypass RLS dari browser.

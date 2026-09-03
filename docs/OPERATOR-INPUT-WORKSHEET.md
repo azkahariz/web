@@ -10,7 +10,7 @@ Worksheet ini adalah source canonical untuk fakta operasional yang tidak dapat d
 
 **Developer Knowledge Transfer** dapat selesai saat dokumentasi, latihan, dan batas access developer cukup. **Full Operational Ownership Transfer** bukan target saat ini dan belum selesai selama risiko continuity owner masih ada.
 
-`OP-001`, `OP-002`, `OP-003`, `OP-004`, `OP-006`, `OP-010`, dan `OP-012` menyimpan blocker continuity. `OP-005` dan `OP-011` direkomendasikan sebelum handover. `OP-007` tidak berlaku untuk scope ini; `OP-008` dan `OP-009` sudah didefinisikan.
+`OP-001`, `OP-002`, `OP-003`, `OP-004`, `OP-006`, dan `OP-012` menyimpan blocker continuity. `OP-005`, `OP-010`, dan `OP-011` direkomendasikan sebelum handover. `OP-007` tidak berlaku untuk scope ini; `OP-008` dan `OP-009` sudah didefinisikan.
 
 ## GitHub
 
@@ -232,8 +232,8 @@ Untuk Supabase secret/DB credentials, GitHub, Hostinger, Cloudflare, dan Vercel,
 
 ### OP-010 - Backup and Recovery Plan
 
-**Status:** BELUM DIISI
-**Handover impact:** HANDOVER BLOCKER
+**Status:** SUDAH DIISI
+**Handover impact:** RECOMMENDED BEFORE HANDOVER
 **Category:** BACKUP / RECOVERY
 
 **Pertanyaan**
@@ -242,11 +242,33 @@ Mekanisme backup/recovery apa yang tersedia untuk source, database production, e
 **Isi operator**
 | Area | Mechanism/process location | Restore authority | Last restore test | Retention/notes |
 | --- | --- | --- | --- | --- |
-| Source repository | GitHub stores source; not a DB/environment/account recovery strategy | BELUM DITETAPKAN | NOT YET DOCUMENTED | Formal plan needed |
-| Supabase database | UNKNOWN / NOT YET DOCUMENTED | BELUM DITETAPKAN | NOT YET DOCUMENTED | Audit actual provider capability first |
-| Environment/secrets | NOT YET DOCUMENTED | BELUM DITETAPKAN | NOT YET DOCUMENTED | Formal plan needed |
+| Source repository | GitHub `main` and history; not a DB/environment/account recovery strategy | Azka Hariz | NOT YET DOCUMENTED | Source recovery is separate from production data recovery |
+| Supabase database | Scheduled physical backup; daily restore path confirmed | Azka Hariz only | BELUM DIUJI | Pro plan; 7 daily restore points visible during operator verification; PITR not enabled |
+| Environment/secrets | Recover from authorized provider storage where available, or rotate securely | Azka Hariz only | NOT YET DOCUMENTED | Never record secret values in docs |
 | Provider accounts | Per-account continuity listed in OP-001 through OP-006 | Azka Hariz currently | NOT YET DOCUMENTED | No formal recovery plan |
 | DNS/domain | Cloudflare/registrar continuity listed in OP-004/OP-006 | Azka Hariz currently | NOT YET DOCUMENTED | No formal recovery plan |
+
+#### Production Database Backup
+
+- Operator dashboard verification date: 2026-09-03
+- Project: `aloptama-collect` (`khzfwsdyxfsojecoqgjt`), `ap-southeast-1`; observed health `ACTIVE_HEALTHY`; organization plan indicator `PRO`
+- Mechanism: Supabase Scheduled Backups, physical, daily around the project region's midnight
+- Scheduled retention: 7 days for Pro according to [Supabase Database Backups](https://supabase.com/docs/guides/platform/backups); seven consecutive restore points (27 Aug through 02 Sep 2026) were visible at verification
+- Production restore path: confirmed through the dashboard `Restore` action
+- Restore to new project: available as `BETA`; suitable candidate for a future isolated recovery exercise
+- PITR: available as a provider add-on, but **not enabled** on this project
+- Validation status: recovery mechanism and restore path confirmed; controlled recovery exercise **BELUM DIUJI**
+
+#### Scope and Limitations
+
+Database backups do not include Supabase Storage objects. Source audit found no runtime Supabase Storage use in Aloptama Collect. Historical/provider-side Storage objects, if any, require separate verification if Storage is introduced or reused later.
+
+Without PITR, the documented mechanism uses daily restore points. A formal business RPO and RTO have not been defined; the actual data-loss window and restore duration depend on incident timing, provider restore duration, and application verification.
+
+#### Remaining Recommendation
+
+- Perform one controlled restore exercise to a separate/non-production project, then verify representative schema, data, RPC, and Auth behavior without directing canonical traffic to it.
+- Record exercise result and define formal RPO/RTO later if operational requirements require them.
 
 **Digunakan oleh:** `17`.
 
@@ -289,6 +311,6 @@ Siapa primary/backup contact untuk incident production, recovery, dan escalation
 | OP-007 | TIDAK BERLAKU | OUT OF SCOPE |
 | OP-008 | SUDAH DIISI | CAN BE COMPLETED LATER |
 | OP-009 | SUDAH DIISI | CAN BE COMPLETED LATER |
-| OP-010 | BELUM DIISI | HANDOVER BLOCKER |
+| OP-010 | SUDAH DIISI | RECOMMENDED BEFORE HANDOVER |
 | OP-011 | SUDAH DIISI | RECOMMENDED BEFORE HANDOVER |
 | OP-012 | SUDAH DIISI | HANDOVER BLOCKER |

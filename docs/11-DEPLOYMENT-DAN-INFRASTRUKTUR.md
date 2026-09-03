@@ -46,6 +46,8 @@ Supabase adalah batas backend operasional: Auth untuk sesi, PostgreSQL untuk dat
 
 Operator input: [OP-003](./OPERATOR-INPUT-WORKSHEET.md) mencatat ownership, project reference, maintainer, dan recovery Supabase. Jangan menaruh password, secret key, atau connection string lengkap di Markdown.
 
+Operator verified the production project `aloptama-collect` (`khzfwsdyxfsojecoqgjt`) in `ap-southeast-1` as `ACTIVE_HEALTHY` on 2026-09-03; the organization plan indicator was `PRO`. Supabase Scheduled Backups are active as daily physical backups, with a confirmed dashboard restore path. PITR is available as an add-on but is not enabled. See [OP-010](./OPERATOR-INPUT-WORKSHEET.md) for the retention, authority, Storage limitation, and untested isolated-exercise details.
+
 ## Cloudflare DNS
 
 Operator input: [OP-004](./OPERATOR-INPUT-WORKSHEET.md) mencatat ownership/access Cloudflare. Cloudflare dipakai sebagai authoritative DNS berdasarkan fakta operasional yang terdokumentasi, sedangkan repository hanya membuktikan hostname canonical. Jangan menyimpulkan Cloudflare meng-host Next.js. Sebelum perubahan DNS, verifikasi target custom domain dari Hostinger.

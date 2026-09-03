@@ -112,8 +112,9 @@ Checklist ini adalah bukti transfer, bukan sekadar daftar baca. Isi setiap kotak
 
 ## Q. Backup / Recovery Knowledge
 
-- [ ] BACKUP/RECOVERY PROCEDURE NOT YET FORMALLY DOCUMENTED telah diselesaikan atau diterima sebagai risiko operator.
-- [ ] OP-010 owner backup, retention, restore test, dan recovery runbook telah dicatat.
+- [x] Production database backup mechanism, daily physical schedule, and restore path are identified in OP-010.
+- [x] Restore authority is Azka Hariz; PITR state is documented as not enabled.
+- [ ] Controlled recovery exercise to a separate/non-production project has been performed and its result recorded.
 
 ## R. Legacy / Compatibility
 
@@ -134,7 +135,7 @@ Checklist ini adalah bukti transfer, bukan sekadar daftar baca. Isi setiap kotak
 
 ## U. Outstanding Operator Inputs
 
-Worksheet canonical: [Operator Input Worksheet](./OPERATOR-INPUT-WORKSHEET.md). Status fakta operator dan dampak continuity dibedakan: informasi dapat `SUDAH DIISI` sementara absence backup/recovery tetap menjadi **HANDOVER BLOCKER**. Billing tidak termasuk scope handover developer.
+Worksheet canonical: [Operator Input Worksheet](./OPERATOR-INPUT-WORKSHEET.md). Status fakta operator dan dampak continuity dibedakan: ownership/account recovery yang belum memiliki backup dapat tetap menjadi **HANDOVER BLOCKER**, sementara recovery exercise yang belum dilakukan adalah rekomendasi. Billing tidak termasuk scope handover developer.
 
 | Document | Topic | Required operator input | Status |
 | --- | --- | --- | --- |
@@ -147,7 +148,7 @@ Worksheet canonical: [Operator Input Worksheet](./OPERATOR-INPUT-WORKSHEET.md). 
 | OP-007 | Billing/renewal | TIDAK BERLAKU | OUT OF SCOPE |
 | OP-008 | Production mutation approvals | SUDAH DIISI | CAN BE COMPLETED LATER |
 | OP-009 | Credential rotation ownership | SUDAH DIISI | CAN BE COMPLETED LATER |
-| OP-010 | Backup/recovery plan | BELUM DIISI | HANDOVER BLOCKER |
+| OP-010 | Backup/recovery plan | SUDAH DIISI | RECOMMENDED BEFORE HANDOVER |
 | OP-011 | Logs, auto-deploy, observability | SUDAH DIISI | RECOMMENDED BEFORE HANDOVER |
 | OP-012 | Emergency contacts/escalation | SUDAH DIISI | HANDOVER BLOCKER |
 
@@ -155,7 +156,7 @@ Worksheet canonical: [Operator Input Worksheet](./OPERATOR-INPUT-WORKSHEET.md). 
 
 Current intentional model: developers maintain source through GitHub collaboration, have Supabase Developer membership where granted, and may perform limited data-level production operations defined in OP-008. Azka Hariz remains GitHub owner, Hostinger production operator, Supabase Owner, Cloudflare/DNS operator, registrar operator, Vercel operator, credential-rotation owner, and primary escalation.
 
-This does not make developer training incomplete. It means production infrastructure ownership is intentionally retained and has documented continuity risks: no confirmed GitHub recovery/backup owner, Hostinger and Cloudflare single-account operation without confirmed recovery, no confirmed Supabase backup Owner/recovery, no backup registrar operator, no formal backup/recovery plan, and no backup emergency contact.
+This does not make developer training incomplete. It means production infrastructure ownership is intentionally retained and has documented continuity risks: no confirmed GitHub recovery/backup owner, Hostinger and Cloudflare single-account operation without confirmed recovery, no confirmed Supabase backup Owner/account recovery, no backup registrar operator, and no backup emergency contact. OP-010 now records a confirmed database recovery path; its controlled recovery exercise remains pending.
 
 ## V. Sign-Off
 

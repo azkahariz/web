@@ -115,6 +115,20 @@ STOP bila project Supabase salah, migration mengandung DML tak terduga, worktree
 
 Lihat [OP-001 sampai OP-012](./OPERATOR-INPUT-WORKSHEET.md) untuk ownership, recovery, approval, observability, dan emergency contact. Repository tidak dapat membuktikan informasi manusia/dasbor ini.
 
+## Database Recovery and Unintended DML
+
+Production database recovery is available through Supabase Scheduled Backups: physical, daily, with dashboard restore confirmed by the operator on 2026-09-03. PITR is not enabled, so this is not a confirmed arbitrary point-in-time restore capability. Full restore can replace newer valid changes and may require downtime; do not use it casually to recover one row.
+
+If unintended production `INSERT`, `UPDATE`, or `DELETE` occurs:
+
+1. Stop further unnecessary writes.
+2. Record the affected table/row scope and incident time.
+3. Escalate to Azka Hariz.
+4. Assess whether a targeted/manual correction is safer than a full database restore.
+5. Inspect the available backup restore point before deciding.
+
+Database restore, recovery migration, schema/RPC/RLS/Auth repair, credential rotation, and destructive recovery remain owner-only. Developers may analyze, collect evidence, and prepare a proposed code or migration fix. The recovery mechanism is confirmed, but an isolated restore exercise has not yet been performed; see [OP-010](./OPERATOR-INPUT-WORKSHEET.md).
+
 ## Source of Truth untuk Dokumen Ini
 
 - `package.json`, `supabase/migrations/`, verifier di `scripts/`, dan test di `tests/`.
