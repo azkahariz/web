@@ -201,4 +201,4 @@ Do not use a volatile production count as a regression fixture or business invar
 
 ## Lanjutan Dokumentasi
 
-Deployment, testing, runbook, troubleshooting, dan security dibahas pada batch dokumentasi berikutnya. Tidak ada link Batch 4 pada tahap ini karena file tersebut belum dibuat.
+[Deployment dan Infrastruktur](./11-DEPLOYMENT-DAN-INFRASTRUKTUR.md)

@@ -72,8 +72,12 @@ Secara operasional:
 | [Arsitektur](./02-ARSITEKTUR.md) | memahami request path dan batas sistem |
 | [Setup Development](./03-SETUP-DEVELOPMENT.md) | menyalakan lingkungan lokal |
 | [Struktur Codebase](./04-STRUKTUR-CODEBASE.md) | menemukan implementation suatu fitur |
+| [Database Supabase](./05-DATABASE-SUPABASE.md) dan [Auth](./06-AUTH-DAN-OTORISASI.md) | memahami data, migration, dan akses |
+| [Submission](./07-FLOW-STATION-DAN-SUBMISSION.md) dan [Admin/QC](./08-FLOW-ADMIN-DAN-QC.md) | memahami workflow operasional |
+| [Product](./09-PRODUCT-MASTER-DAN-REFERENSI.md) dan [Completion](./10-COMPLETION-DAN-MONITORING.md) | memahami master Product dan progress |
+| [Deployment](./11-DEPLOYMENT-DAN-INFRASTRUKTUR.md) sampai [Security](./15-SECURITY-DAN-SECRETS.md) | menjalankan release, verifikasi, dan operasi aman |
 
-Database, Auth detail, Submission, Product/QC, Completion, deployment runbook, dan troubleshooting dibahas pada batch dokumentasi berikutnya.
+Pilih dokumen sesuai area kerja; tidak perlu membaca seluruh detail dalam satu sesi onboarding.
 
 ## Urutan Onboarding Developer Baru
 
