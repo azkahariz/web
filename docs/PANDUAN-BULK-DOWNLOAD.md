@@ -1,5 +1,9 @@
 # Panduan Bulk Download
 
+> **Status: Current supporting documentation**
+> Lifecycle Admin dan export canonical dijelaskan di
+> [Flow Admin dan QC](./08-FLOW-ADMIN-DAN-QC.md).
+
 Terakhir diperbarui: 12 Agustus 2026. Fitur ini hanya tersedia untuk Super
 Admin.
 

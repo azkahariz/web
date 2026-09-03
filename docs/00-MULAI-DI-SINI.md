@@ -82,6 +82,17 @@ Secara operasional:
 
 Pilih dokumen sesuai area kerja; tidak perlu membaca seluruh detail dalam satu sesi onboarding.
 
+## Tata Kelola Dokumentasi
+
+- Perbarui chapter canonical terkait setiap kali behavior bisnis berubah.
+- Perbarui Panduan aplikasi untuk perubahan yang terlihat oleh pengguna.
+- Buat ADR untuk keputusan arsitektur material, bukan perubahan rutin.
+- Pertahankan incident dan changelog sebagai sejarah; beri status historical
+  ketika isinya tidak lagi menjelaskan runtime current.
+- Dokumen supporting yang tumpang tindih harus menunjuk chapter canonical.
+- Migration yang sudah diterapkan tidak boleh diedit; perubahan berikutnya
+  memakai migration baru.
+
 ## Urutan Onboarding Developer Baru
 
 1. Baca dokumen ini dan [Overview Sistem](./01-OVERVIEW-SISTEM.md).

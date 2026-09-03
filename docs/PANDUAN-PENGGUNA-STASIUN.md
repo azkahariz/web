@@ -1,9 +1,13 @@
 # Panduan Pengguna Stasiun
 
-Terakhir diperbarui: 12 Agustus 2026. Baca [Mulai di Sini](MULAI-DI-SINI.md)
+> **Status: Current supporting documentation**
+> Lifecycle canonical Station dan Submission dijelaskan di
+> [Flow Station dan Submission](./07-FLOW-STATION-DAN-SUBMISSION.md).
+
+Terakhir diperbarui: 3 September 2026. Baca [Mulai di Sini](MULAI-DI-SINI.md)
 untuk istilah dasar.
 
-Akses resmi aplikasi: https://aloptama-collect.vercel.app
+Akses resmi aplikasi: https://aloptama-collect.azkahariz.com
 
 ## Yang perlu dilakukan
 
@@ -19,8 +23,8 @@ Akses resmi aplikasi: https://aloptama-collect.vercel.app
    Bila jumlah lebih dari satu, isi Nomor Seri, Kondisi, Tahun Pasang, dan
    Catatan untuk setiap unit.
 6. Aplikasi menyimpan draf di browser dan mengirim perubahan otomatis sekitar
-   lima detik setelah perubahan terakhir. Tekan **Simpan** untuk mengirim
-   sekarang.
+   lima detik setelah perubahan terakhir, dengan batas tunggu maksimum sekitar
+   18 detik selama perubahan berlanjut. Tekan **Simpan** untuk mengirim sekarang.
 7. Setelah selesai, tekan **Selesai Mengedit**. Aplikasi melakukan final save
    dan melepas lock untuk session ini.
 
@@ -65,6 +69,8 @@ Lihat [Panduan QC Produk](PANDUAN-QC-PRODUK.md) untuk penjelasan status.
 - Data sedang diedit orang lain: aplikasi read-only. Tekan **Coba lagi** untuk
   meminta lock berdasarkan kondisi server terbaru. Jangan perlu logout atau
   reload halaman.
+- Selama Edit aktif, aplikasi memperbarui aktivitas lock secara berkala. Lock
+  yang tidak aktif selama lima menit dapat dianggap kedaluwarsa oleh server.
 - **Muat versi terbaru** hanya memuat payload dan versi server; tombol ini tidak
   mengambil lock.
 - Version conflict: jangan langsung menimpa. Muat versi terbaru dan periksa

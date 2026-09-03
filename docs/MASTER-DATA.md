@@ -1,5 +1,9 @@
 # Master Data
 
+> **Status: Current supporting documentation**
+> Model database dan source of truth canonical dijelaskan di
+> [Database Supabase](./05-DATABASE-SUPABASE.md).
+
 Terakhir diperbarui: 15 Agustus 2026. **Supabase production adalah authoritative
 master source of truth.** Perubahan master rutin dilakukan melalui aplikasi
 Super Admin. CSV, Spreadsheet, dan `app/data.generated.json` adalah artefak
