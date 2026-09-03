@@ -145,4 +145,4 @@ Menghapus satu baris Git saja tidak membuat credential yang pernah terpapar menj
 
 ## Lanjutan Dokumentasi
 
-Batch berikutnya membahas History/Legacy, ADR, diagram, dan Handover Checklist. File Batch 5 belum dibuat.
+[History dan Legacy](./16-HISTORY-DAN-LEGACY.md)

@@ -180,6 +180,10 @@ Do not use a volatile production count as a regression fixture or business invar
 - Global progress is weighted category total, not average percentage.
 - Completion summary must remain set-based and avoid repeated global JSON traversal.
 
+## Architecture Decision Records
+
+[ADR-003 Gudang Informational Only](./adr/ADR-003-GUDANG-INFORMATIONAL-ONLY.md) dan [ADR-006 Completion Set-Based Architecture](./adr/ADR-006-COMPLETION-SET-BASED-ARCHITECTURE.md) menjelaskan rationale guardrail ini.
+
 ## Hal yang Tidak Boleh Dilakukan
 
 - Jangan count Gudang item/category/quantity untuk card Gudang progress.

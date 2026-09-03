@@ -175,6 +175,10 @@ Guardrail current:
 - Jangan update `resolved_product_id` dari client/table direct.
 - Jangan global-rewrite payload untuk QC_RESULT movement.
 - Jangan use Product Merge untuk sekadar satu reference correction.
+
+## Architecture Decision Records
+
+[ADR-004 Product Reference Model](./adr/ADR-004-PRODUCT-REFERENCE-MODEL.md) dan [ADR-005 QC History Preservation](./adr/ADR-005-QC-HISTORY-PRESERVATION.md) menjelaskan rationale permanen untuk dual reference dan preservation history.
 - Jangan resolve source/target Product berdasarkan Brand/Model string.
 - Jangan remove stale guard, active-lock guard, atau preflight token.
 

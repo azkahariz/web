@@ -146,6 +146,10 @@ Jangan membuat data production hanya untuk smoke test kecuali feature memerlukan
 - Browser hanya menerima konfigurasi publik; secret tetap server-only.
 - Supabase migration dan app deploy adalah dua operasi berbeda.
 
+## Architecture Decision Record
+
+[ADR-008 Hostinger Canonical and Vercel Compatibility](./adr/ADR-008-HOSTINGER-CANONICAL-VERCEL-COMPATIBILITY.md) menyimpan rationale topology canonical/legacy.
+
 ## Hal yang Tidak Boleh Dilakukan
 
 - Jangan edit DNS sebagai respons pertama terhadap build/runtime failure.

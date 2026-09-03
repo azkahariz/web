@@ -76,6 +76,8 @@ Secara operasional:
 | [Submission](./07-FLOW-STATION-DAN-SUBMISSION.md) dan [Admin/QC](./08-FLOW-ADMIN-DAN-QC.md) | memahami workflow operasional |
 | [Product](./09-PRODUCT-MASTER-DAN-REFERENSI.md) dan [Completion](./10-COMPLETION-DAN-MONITORING.md) | memahami master Product dan progress |
 | [Deployment](./11-DEPLOYMENT-DAN-INFRASTRUKTUR.md) sampai [Security](./15-SECURITY-DAN-SECRETS.md) | menjalankan release, verifikasi, dan operasi aman |
+| [History](./16-HISTORY-DAN-LEGACY.md) dan [Handover](./17-HANDOVER-CHECKLIST.md) | memahami compatibility dan membuktikan transfer |
+| [ADR](./adr/README.md) dan [Diagrams](./diagrams/README.md) | rationale keputusan dan referensi visual |
 
 Pilih dokumen sesuai area kerja; tidak perlu membaca seluruh detail dalam satu sesi onboarding.
 
