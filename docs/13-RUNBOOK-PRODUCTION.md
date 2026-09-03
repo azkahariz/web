@@ -10,6 +10,8 @@
 
 Pastikan repository, branch, SHA feature, dan target production benar; worktree bersih; `origin/main` terbaru; test/build relevan lulus; compatibility migration dipahami; serta ada otorisasi eksplisit untuk setiap mutation production. Read-only production query berbeda dari izin untuk mutation.
 
+Policy current ada pada [OP-008](./OPERATOR-INPUT-WORKSHEET.md): developer boleh melakukan read-only analysis dan koreksi row-level terbatas; schema, migration, RPC/RLS/Auth, destructive cleanup, credential rotation, dan DNS adalah owner-only. Jangan memperluas izin row-level menjadi bulk/cascade/dependency-heavy mutation.
+
 ## Standard Release - Application Only
 
 1. Verifikasi feature branch dan Preview.
@@ -111,7 +113,7 @@ STOP bila project Supabase salah, migration mengandung DML tak terduga, worktree
 
 ## Operator Contacts / Ownership
 
-Lihat [OP-001 sampai OP-012](./OPERATOR-INPUT-WORKSHEET.md) untuk ownership, billing/recovery, approval, dan emergency contact. Repository tidak dapat membuktikan informasi manusia/dasbor ini.
+Lihat [OP-001 sampai OP-012](./OPERATOR-INPUT-WORKSHEET.md) untuk ownership, recovery, approval, observability, dan emergency contact. Repository tidak dapat membuktikan informasi manusia/dasbor ini.
 
 ## Source of Truth untuk Dokumen Ini
 

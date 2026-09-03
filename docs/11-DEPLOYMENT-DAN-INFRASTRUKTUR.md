@@ -38,6 +38,8 @@ flowchart TD
 
 Operator input: [OP-002 dan OP-011](./OPERATOR-INPUT-WORKSHEET.md) mencatat ownership/access Hostinger serta project, log, dan auto-deploy. Repository tidak menyimpan konfigurasi dashboard tersebut.
 
+Current operating model: Azka Hariz adalah operator Hostinger production. Developer memelihara source dan tidak memerlukan access Hostinger untuk workflow normal; deploy, environment, dan emergency redeploy diescalate ke operator.
+
 ## Supabase
 
 Supabase adalah batas backend operasional: Auth untuk sesi, PostgreSQL untuk data, RPC untuk operasi domain, dan RLS/authorization untuk pembatasan akses. Migration berada di `supabase/migrations/`, tetapi status production harus diverifikasi melalui Supabase CLI atau dashboard saat operasi.

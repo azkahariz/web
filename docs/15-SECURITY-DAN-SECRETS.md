@@ -65,23 +65,23 @@ Lihat [OP-008 dan OP-012](./OPERATOR-INPUT-WORKSHEET.md) untuk authority mutatio
 
 ## GitHub Access
 
-Lihat [OP-001 dan OP-007](./OPERATOR-INPUT-WORKSHEET.md) untuk owner organisasi/repository, backup, recovery, dan billing. Gunakan credential workstation yang sudah sah; jangan menyimpan PAT plaintext di repo.
+Lihat [OP-001](./OPERATOR-INPUT-WORKSHEET.md) untuk owner repository, collaborator model, backup, dan recovery. Gunakan credential workstation yang sudah sah; jangan menyimpan PAT plaintext di repo.
 
 ## Hostinger Access
 
-Lihat [OP-002, OP-007, dan OP-011](./OPERATOR-INPUT-WORKSHEET.md) untuk owner, deployer, environment, log, recovery, dan billing Hostinger tanpa menulis password.
+Lihat [OP-002 dan OP-011](./OPERATOR-INPUT-WORKSHEET.md) untuk owner-only Hostinger production authority, deployer, environment, log, dan recovery tanpa menulis password. Developer tidak memerlukan akses Hostinger untuk workflow source normal.
 
 ## Supabase Dashboard Access
 
-Lihat [OP-003 dan OP-007](./OPERATOR-INPUT-WORKSHEET.md) untuk owner, maintainer, recovery, dan billing Supabase. Jangan menyimpan secret/API key di dokumen handover.
+Lihat [OP-003](./OPERATOR-INPUT-WORKSHEET.md) untuk owner, Developer membership, maintainer, dan recovery Supabase. Jangan menginfer capability production hanya dari nama role; lihat OP-008 untuk policy mutation.
 
 ## Cloudflare Access
 
-Lihat [OP-004, OP-006, OP-007, dan OP-008](./OPERATOR-INPUT-WORKSHEET.md) untuk zone/DNS owner, registrar, billing, recovery, dan approval DNS.
+Lihat [OP-004, OP-006, dan OP-008](./OPERATOR-INPUT-WORKSHEET.md) untuk zone/DNS owner, registrar continuity, recovery, dan approval DNS. Developer tidak memiliki akses DNS pada model saat ini.
 
 ## Vercel Access
 
-Lihat [OP-005 dan OP-007](./OPERATOR-INPUT-WORKSHEET.md) untuk project owner, Preview maintainer, recovery, dan billing Vercel. Vercel bukan canonical runtime, tetapi akses masih diperlukan untuk Preview/legacy compatibility.
+Lihat [OP-005](./OPERATOR-INPUT-WORKSHEET.md) untuk project owner, Preview maintainer, dan recovery Vercel. Vercel bukan canonical runtime; developer dapat memakai Preview URL dari workflow PR bila tersedia tanpa provider access langsung.
 
 ## Local `.env`
 
@@ -119,8 +119,8 @@ Menghapus satu baris Git saja tidak membuat credential yang pernah terpapar menj
 ## Handover Access Checklist
 
 - [ ] developer baru memiliki GitHub access;
-- [ ] owner/backup Hostinger, Supabase, Cloudflare, dan Vercel tercatat;
-- [ ] recovery method dan billing owner diketahui;
+- [ ] owner/backup Hostinger, Supabase, Cloudflare, dan Vercel dibaca dari worksheet;
+- [ ] recovery status dan escalation path dipahami; billing berada di luar scope developer handover;
 - [ ] MFA diaktifkan jika provider mendukung dan operator telah mengonfirmasi;
 - [ ] akses maintainer lama direview;
 - [ ] lokasi secret runtime terdokumentasi tanpa nilainya;

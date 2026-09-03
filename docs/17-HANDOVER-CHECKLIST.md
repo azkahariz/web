@@ -12,7 +12,7 @@ Checklist ini adalah bukti transfer, bukan sekadar daftar baca. Isi setiap kotak
 
 ## Definition of Done
 
-Handover COMPLETE bila docs 00-17 telah direview, akses kritis ditransfer, input operator diselesaikan atau diterima formal, developer baru dapat boot local dan menjalankan verification, dapat menjelaskan flow kritis/release/troubleshooting, dan ownership/recovery production eksplisit.
+**Developer Knowledge Transfer** COMPLETE bila docs 00-17 telah direview, developer dapat boot local/menjalankan verification/menjelaskan flow kritis, dan batas escalation/authority production dipahami. **Full Operational Ownership Transfer** adalah target terpisah; ia membutuhkan owner/recovery continuity dan bukan target model saat ini.
 
 ## A. Repository dan Source Code
 
@@ -91,17 +91,18 @@ Handover COMPLETE bila docs 00-17 telah direview, akses kritis ditransfer, input
 - [ ] Developer baru mengetahui lokasi secret, tanpa menerima nilainya dalam Markdown/chat.
 - [ ] Developer baru memahami rotation dan leak response.
 
-## N. Account Ownership dan Access Transfer
+## N. Account Ownership, Access, dan Escalation
 
-- [ ] GitHub, Hostinger, Supabase, Cloudflare, dan Vercel access baru telah diuji.
-- [ ] Primary/backup owner dan recovery method telah dicatat oleh operator.
-- [ ] MFA state telah dikonfirmasi bila provider mendukung.
+- [ ] Developer baru memiliki GitHub Collaborator access yang cukup untuk normal source workflow.
+- [ ] Developer baru memahami bahwa Hostinger, Cloudflare, Vercel, registrar, credential rotation, dan owner-only mutation dieksekusi melalui escalation ke Azka Hariz.
+- [ ] Supabase organization membership/role developer telah diverifikasi bila developer membutuhkan access tersebut.
+- [ ] Owner continuity risk, 2FA/recovery status, dan backup path dibaca dari worksheet tanpa meminta secret.
 
-## O. Billing / Subscription Ownership
+## O. Billing / Subscription Scope
 
-- [ ] Billing owner, renewal responsibility, dan recovery ownership Hostinger telah dicatat.
-- [ ] Billing owner Supabase, Cloudflare, Vercel, dan domain registrar (bila terpisah) telah dicatat.
-- [ ] Tidak ada detail kartu pembayaran dalam repository/dokumentasi.
+- [ ] OP-007 dibaca sebagai `TIDAK BERLAKU` untuk scope technical developer handover.
+- [ ] Tidak ada detail pembayaran, kartu, auto-renew, atau payer identity dalam repository/dokumentasi.
+- [ ] Developer memahami provider/domain expiration dapat berdampak operasional dan harus diescalate ke owner.
 
 ## P. Domain dan DNS
 
@@ -133,22 +134,28 @@ Handover COMPLETE bila docs 00-17 telah direview, akses kritis ditransfer, input
 
 ## U. Outstanding Operator Inputs
 
-Worksheet canonical: [Operator Input Worksheet](./OPERATOR-INPUT-WORKSHEET.md). Semua input awal berstatus **BELUM DIISI**. Ownership/recovery/billing provider kritis adalah **HANDOVER BLOCKER** sampai operator mengonfirmasi; detail observability non-kritis dapat dilengkapi setelah handover bila diterima formal.
+Worksheet canonical: [Operator Input Worksheet](./OPERATOR-INPUT-WORKSHEET.md). Status fakta operator dan dampak continuity dibedakan: informasi dapat `SUDAH DIISI` sementara absence backup/recovery tetap menjadi **HANDOVER BLOCKER**. Billing tidak termasuk scope handover developer.
 
 | Document | Topic | Required operator input | Status |
 | --- | --- | --- | --- |
-| OP-001 | GitHub ownership/access/recovery | BELUM DIISI | HANDOVER BLOCKER |
-| OP-002 | Hostinger ownership/access/recovery | BELUM DIISI | HANDOVER BLOCKER |
-| OP-003 | Supabase ownership/access/recovery | BELUM DIISI | HANDOVER BLOCKER |
-| OP-004 | Cloudflare ownership/access/recovery | BELUM DIISI | HANDOVER BLOCKER |
-| OP-005 | Vercel Preview/legacy access | BELUM DIISI | RECOMMENDED BEFORE HANDOVER |
-| OP-006 | Domain registrar/renewal | BELUM DIISI | HANDOVER BLOCKER |
-| OP-007 | Billing/renewal matrix | BELUM DIISI | HANDOVER BLOCKER |
-| OP-008 | Production mutation approvals | BELUM DIISI | HANDOVER BLOCKER |
-| OP-009 | Credential rotation ownership | BELUM DIISI | HANDOVER BLOCKER |
+| OP-001 | GitHub ownership/access/recovery | SUDAH DIISI SEBAGIAN | HANDOVER BLOCKER |
+| OP-002 | Hostinger ownership/access/recovery | SUDAH DIISI | HANDOVER BLOCKER |
+| OP-003 | Supabase ownership/access/recovery | SUDAH DIISI SEBAGIAN | HANDOVER BLOCKER |
+| OP-004 | Cloudflare ownership/access/recovery | SUDAH DIISI | HANDOVER BLOCKER |
+| OP-005 | Vercel Preview/legacy access | SUDAH DIISI | RECOMMENDED BEFORE HANDOVER |
+| OP-006 | Domain registrar continuity | SUDAH DIISI | HANDOVER BLOCKER |
+| OP-007 | Billing/renewal | TIDAK BERLAKU | OUT OF SCOPE |
+| OP-008 | Production mutation approvals | SUDAH DIISI | CAN BE COMPLETED LATER |
+| OP-009 | Credential rotation ownership | SUDAH DIISI | CAN BE COMPLETED LATER |
 | OP-010 | Backup/recovery plan | BELUM DIISI | HANDOVER BLOCKER |
-| OP-011 | Logs, auto-deploy, observability | BELUM DIISI | RECOMMENDED BEFORE HANDOVER |
-| OP-012 | Emergency contacts/escalation | BELUM DIISI | HANDOVER BLOCKER |
+| OP-011 | Logs, auto-deploy, observability | SUDAH DIISI | RECOMMENDED BEFORE HANDOVER |
+| OP-012 | Emergency contacts/escalation | SUDAH DIISI | HANDOVER BLOCKER |
+
+## Owner Continuity Risk
+
+Current intentional model: developers maintain source through GitHub collaboration, have Supabase Developer membership where granted, and may perform limited data-level production operations defined in OP-008. Azka Hariz remains GitHub owner, Hostinger production operator, Supabase Owner, Cloudflare/DNS operator, registrar operator, Vercel operator, credential-rotation owner, and primary escalation.
+
+This does not make developer training incomplete. It means production infrastructure ownership is intentionally retained and has documented continuity risks: no confirmed GitHub recovery/backup owner, Hostinger and Cloudflare single-account operation without confirmed recovery, no confirmed Supabase backup Owner/recovery, no backup registrar operator, no formal backup/recovery plan, and no backup emergency contact.
 
 ## V. Sign-Off
 
@@ -170,7 +177,7 @@ Worksheet canonical: [Operator Input Worksheet](./OPERATOR-INPUT-WORKSHEET.md). 
 ## Source of Truth untuk Dokumen Ini
 
 - Docs 00-16, `package.json`, source/runtime helpers, migrations, tests, dan runbook current.
-- [Operator Input Worksheet](./OPERATOR-INPUT-WORKSHEET.md) -> provider ownership, billing, recovery, backup, dan approval values.
+- [Operator Input Worksheet](./OPERATOR-INPUT-WORKSHEET.md) -> provider ownership, recovery, backup, approval, dan observability values.
 
 ## Kembali ke Awal
 
