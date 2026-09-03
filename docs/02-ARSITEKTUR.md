@@ -117,7 +117,7 @@ Migration mendefinisikan schema/RPC production. Jangan memperlakukan migration l
 
 ## Deployment Topology
 
-Production canonical mengarah ke Hostinger. Repository membuktikan URL canonical dan compatibility redirect, tetapi tidak menyimpan dashboard deployment Hostinger atau record DNS. [PERLU INPUT OPERATOR] untuk runbook final: owner akun, auto-deploy trigger, Node runtime selection, log location, rollback process, dan Cloudflare record/proxy mode.
+Production canonical mengarah ke Hostinger. Repository membuktikan URL canonical dan compatibility redirect, tetapi tidak menyimpan dashboard deployment Hostinger atau record DNS. Lihat [OP-002, OP-004, dan OP-011](./OPERATOR-INPUT-WORKSHEET.md) untuk ownership, auto-deploy, runtime selection, log/rollback process, serta Cloudflare record/proxy mode.
 
 Supabase migration harus diterapkan dengan gate eksplisit sebelum frontend production yang bergantung pada schema/RPC baru. Preview branch Vercel berguna untuk smoke test UI, tetapi Preview sukses bukan bukti production database atau Hostinger deployment sukses.
 

@@ -61,27 +61,27 @@ RLS, `auth.uid()`, role check, dan RPC guard adalah defense-in-depth. Jangan han
 
 ## Production Access
 
-[PERLU INPUT OPERATOR] Catat siapa yang berhak melakukan mutation production, emergency approver, dan jalur audit/approval. Repository tidak dapat membuktikan identitas manusia atau policy operasional.
+Lihat [OP-008 dan OP-012](./OPERATOR-INPUT-WORKSHEET.md) untuk authority mutation production, emergency approver, dan jalur audit/approval.
 
 ## GitHub Access
 
-[PERLU INPUT OPERATOR] Catat owner organisasi/repository, backup maintainer, recovery method, dan billing owner. Gunakan credential workstation yang sudah sah; jangan menyimpan PAT plaintext di repo.
+Lihat [OP-001 dan OP-007](./OPERATOR-INPUT-WORKSHEET.md) untuk owner organisasi/repository, backup, recovery, dan billing. Gunakan credential workstation yang sudah sah; jangan menyimpan PAT plaintext di repo.
 
 ## Hostinger Access
 
-[PERLU INPUT OPERATOR] Catat owner akun, deployer, editor environment, log access, recovery, dan billing owner tanpa menulis password.
+Lihat [OP-002, OP-007, dan OP-011](./OPERATOR-INPUT-WORKSHEET.md) untuk owner, deployer, environment, log, recovery, dan billing Hostinger tanpa menulis password.
 
 ## Supabase Dashboard Access
 
-[PERLU INPUT OPERATOR] Catat organization/project owner, authorized maintainer, recovery, dan billing owner. Jangan menyimpan secret/API key di dokumen handover.
+Lihat [OP-003 dan OP-007](./OPERATOR-INPUT-WORKSHEET.md) untuk owner, maintainer, recovery, dan billing Supabase. Jangan menyimpan secret/API key di dokumen handover.
 
 ## Cloudflare Access
 
-[PERLU INPUT OPERATOR] Catat zone owner, DNS editor, recovery, dan billing owner. Perubahan DNS harus mengikuti approval operasional.
+Lihat [OP-004, OP-006, OP-007, dan OP-008](./OPERATOR-INPUT-WORKSHEET.md) untuk zone/DNS owner, registrar, billing, recovery, dan approval DNS.
 
 ## Vercel Access
 
-[PERLU INPUT OPERATOR] Catat project owner, Preview maintainer, recovery, dan billing owner. Vercel bukan canonical runtime, tetapi akses masih diperlukan untuk Preview/legacy compatibility.
+Lihat [OP-005 dan OP-007](./OPERATOR-INPUT-WORKSHEET.md) untuk project owner, Preview maintainer, recovery, dan billing Vercel. Vercel bukan canonical runtime, tetapi akses masih diperlukan untuk Preview/legacy compatibility.
 
 ## Local `.env`
 
@@ -104,7 +104,7 @@ Sebelum commit, periksa diff dan lakukan secret scan yang mencari JWT-like value
 5. Verifikasi credential lama tidak lagi berlaku dan aplikasi sehat.
 6. Catat incident dan review access.
 
-[PERLU INPUT OPERATOR] Detail menu/provider dan pemilik rotation harus dikelola operator, bukan ditebak dari repository.
+Lihat [OP-009](./OPERATOR-INPUT-WORKSHEET.md) untuk provider procedure dan owner credential rotation.
 
 ## Incident jika Secret Bocor
 

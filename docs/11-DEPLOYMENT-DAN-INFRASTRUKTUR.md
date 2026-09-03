@@ -36,17 +36,17 @@ flowchart TD
 
 [TERBUKTI DARI REPOSITORY] Aplikasi adalah Next.js dan membutuhkan Node `>=22.13.0`. Perintah runtime yang tersedia adalah `npm run build` dan `npm run start`.
 
-[PERLU INPUT OPERATOR] Hostinger account owner, project/site identifier, pihak yang boleh deploy, pihak yang boleh mengubah environment, lokasi deployment log, serta status auto-deploy branch `main` harus dicatat pada handover operator. Repository tidak menyimpan konfigurasi dashboard tersebut.
+Operator input: [OP-002 dan OP-011](./OPERATOR-INPUT-WORKSHEET.md) mencatat ownership/access Hostinger serta project, log, dan auto-deploy. Repository tidak menyimpan konfigurasi dashboard tersebut.
 
 ## Supabase
 
 Supabase adalah batas backend operasional: Auth untuk sesi, PostgreSQL untuk data, RPC untuk operasi domain, dan RLS/authorization untuk pembatasan akses. Migration berada di `supabase/migrations/`, tetapi status production harus diverifikasi melalui Supabase CLI atau dashboard saat operasi.
 
-[PERLU INPUT OPERATOR] Catat organization/project owner, production project reference, maintainer yang diizinkan, dan mekanisme pemulihan akses dashboard. Jangan menaruh password, secret key, atau connection string lengkap di Markdown.
+Operator input: [OP-003](./OPERATOR-INPUT-WORKSHEET.md) mencatat ownership, project reference, maintainer, dan recovery Supabase. Jangan menaruh password, secret key, atau connection string lengkap di Markdown.
 
 ## Cloudflare DNS
 
-[PERLU INPUT OPERATOR] Cloudflare dipakai sebagai authoritative DNS berdasarkan fakta operasional yang terdokumentasi, sedangkan repository hanya membuktikan hostname canonical. Jangan menyimpulkan Cloudflare meng-host Next.js. Sebelum perubahan DNS, verifikasi target custom domain dari Hostinger.
+Operator input: [OP-004](./OPERATOR-INPUT-WORKSHEET.md) mencatat ownership/access Cloudflare. Cloudflare dipakai sebagai authoritative DNS berdasarkan fakta operasional yang terdokumentasi, sedangkan repository hanya membuktikan hostname canonical. Jangan menyimpulkan Cloudflare meng-host Next.js. Sebelum perubahan DNS, verifikasi target custom domain dari Hostinger.
 
 Catat owner akun, owner zone, pihak yang boleh mengubah DNS, dan mode record/proxy yang berlaku. Jangan hard-code IP yang mudah berubah.
 
@@ -120,17 +120,17 @@ Jangan membuat data production hanya untuk smoke test kecuali feature memerlukan
 
 ## Observability yang Tersedia
 
-[TERBUKTI DARI REPOSITORY] Error aplikasi dapat dilacak dari response/API/RPC dan test/verifier. [PERLU INPUT OPERATOR] Lokasi log Hostinger, Vercel, Supabase, alerting, retensi, dan pihak on-call tidak dapat dibuktikan dari Git.
+[TERBUKTI DARI REPOSITORY] Error aplikasi dapat dilacak dari response/API/RPC dan test/verifier. Operator input: [OP-011 dan OP-012](./OPERATOR-INPUT-WORKSHEET.md) mencatat lokasi log, alerting, retensi, dan on-call.
 
 ## Ownership dan Access Matrix
 
 | System | Owner | Backup Owner | Required Role | Recovery Method |
 | --- | --- | --- | --- | --- |
-| GitHub | [PERLU INPUT OPERATOR] | [PERLU INPUT OPERATOR] | [PERLU INPUT OPERATOR] | [PERLU INPUT OPERATOR] |
-| Hostinger | [PERLU INPUT OPERATOR] | [PERLU INPUT OPERATOR] | [PERLU INPUT OPERATOR] | [PERLU INPUT OPERATOR] |
-| Supabase | [PERLU INPUT OPERATOR] | [PERLU INPUT OPERATOR] | [PERLU INPUT OPERATOR] | [PERLU INPUT OPERATOR] |
-| Cloudflare | [PERLU INPUT OPERATOR] | [PERLU INPUT OPERATOR] | [PERLU INPUT OPERATOR] | [PERLU INPUT OPERATOR] |
-| Vercel | [PERLU INPUT OPERATOR] | [PERLU INPUT OPERATOR] | [PERLU INPUT OPERATOR] | [PERLU INPUT OPERATOR] |
+| GitHub | OP-001 | OP-001 | OP-001 | OP-001 |
+| Hostinger | OP-002 | OP-002 | OP-002 | OP-002 |
+| Supabase | OP-003 | OP-003 | OP-003 | OP-003 |
+| Cloudflare | OP-004 | OP-004 | OP-004 | OP-004 |
+| Vercel | OP-005 | OP-005 | OP-005 | OP-005 |
 
 ## Hal yang Harus Diverifikasi di Dashboard
 

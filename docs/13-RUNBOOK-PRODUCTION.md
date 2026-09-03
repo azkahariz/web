@@ -71,7 +71,7 @@ Kumpulkan symptom, URL/route, waktu, SHA, peran user, response/error aman, serta
 
 ## Hostinger Deployment Failure
 
-1. Verifikasi SHA `main` dan status deployment. [PERLU INPUT OPERATOR] Lokasi dashboard/log Hostinger.
+1. Verifikasi SHA `main` dan status deployment. Lihat [OP-011](./OPERATOR-INPUT-WORKSHEET.md) untuk lokasi dashboard/log Hostinger.
 2. Bedakan build failure dan runtime failure.
 3. Reproduksi `npm ci` dan `npm run build` local bila relevan.
 4. Pastikan nama environment runtime tersedia tanpa mencetak nilainya.
@@ -111,7 +111,7 @@ STOP bila project Supabase salah, migration mengandung DML tak terduga, worktree
 
 ## Operator Contacts / Ownership
 
-[PERLU INPUT OPERATOR] Catat emergency contact, GitHub/Hostinger/Supabase/Cloudflare/Vercel owner dan backup owner, termasuk billing/recovery owner. Repository tidak dapat membuktikan informasi manusia/dasbor ini.
+Lihat [OP-001 sampai OP-012](./OPERATOR-INPUT-WORKSHEET.md) untuk ownership, billing/recovery, approval, dan emergency contact. Repository tidak dapat membuktikan informasi manusia/dasbor ini.
 
 ## Source of Truth untuk Dokumen Ini
 

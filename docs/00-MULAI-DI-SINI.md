@@ -78,6 +78,7 @@ Secara operasional:
 | [Deployment](./11-DEPLOYMENT-DAN-INFRASTRUKTUR.md) sampai [Security](./15-SECURITY-DAN-SECRETS.md) | menjalankan release, verifikasi, dan operasi aman |
 | [History](./16-HISTORY-DAN-LEGACY.md) dan [Handover](./17-HANDOVER-CHECKLIST.md) | memahami compatibility dan membuktikan transfer |
 | [ADR](./adr/README.md) dan [Diagrams](./diagrams/README.md) | rationale keputusan dan referensi visual |
+| [Operator Input Worksheet](./OPERATOR-INPUT-WORKSHEET.md) | hanya untuk owner/operator sebelum sign-off handover |
 
 Pilih dokumen sesuai area kerja; tidak perlu membaca seluruh detail dalam satu sesi onboarding.
 

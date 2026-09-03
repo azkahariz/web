@@ -112,7 +112,7 @@ Handover COMPLETE bila docs 00-17 telah direview, akses kritis ditransfer, input
 ## Q. Backup / Recovery Knowledge
 
 - [ ] BACKUP/RECOVERY PROCEDURE NOT YET FORMALLY DOCUMENTED telah diselesaikan atau diterima sebagai risiko operator.
-- [ ] [PERLU INPUT OPERATOR] Owner backup, retention, restore test, dan recovery runbook telah dicatat.
+- [ ] OP-010 owner backup, retention, restore test, dan recovery runbook telah dicatat.
 
 ## R. Legacy / Compatibility
 
@@ -133,20 +133,22 @@ Handover COMPLETE bila docs 00-17 telah direview, akses kritis ditransfer, input
 
 ## U. Outstanding Operator Inputs
 
-Semua input awal berstatus **BELUM DIISI**. Ownership/recovery/billing provider kritis adalah **HANDOVER BLOCKER** sampai operator mengonfirmasi; detail observability non-kritis dapat dilengkapi setelah handover bila diterima formal.
+Worksheet canonical: [Operator Input Worksheet](./OPERATOR-INPUT-WORKSHEET.md). Semua input awal berstatus **BELUM DIISI**. Ownership/recovery/billing provider kritis adalah **HANDOVER BLOCKER** sampai operator mengonfirmasi; detail observability non-kritis dapat dilengkapi setelah handover bila diterima formal.
 
 | Document | Topic | Required operator input | Status |
 | --- | --- | --- | --- |
-| 11 | Hostinger | owner, project, deployer, env editor, log, auto-deploy | BELUM DIISI - BLOCKER |
-| 11 | Supabase | owner, project reference, maintainers, recovery | BELUM DIISI - BLOCKER |
-| 11 | Cloudflare | account/zone owner, DNS editor, proxy mode | BELUM DIISI - BLOCKER |
-| 11 | Vercel/GitHub | owners, backup owners, roles, recovery | BELUM DIISI - BLOCKER |
-| 11 | Observability | log, alerting, retention, on-call | BELUM DIISI - CAN BE COMPLETED LATER |
-| 13/14 | Hostinger operations | dashboard/log location | BELUM DIISI - CAN BE COMPLETED LATER |
-| 13 | Emergency contacts | contact, backup, billing/recovery owner | BELUM DIISI - BLOCKER |
-| 15 | Production authority | mutation approver and audit path | BELUM DIISI - BLOCKER |
-| 15 | Credential rotation | provider procedure and rotation owner | BELUM DIISI - BLOCKER |
-| 17 | Backup/recovery | backup owner, retention, restore test, runbook | BELUM DIISI - BLOCKER |
+| OP-001 | GitHub ownership/access/recovery | BELUM DIISI | HANDOVER BLOCKER |
+| OP-002 | Hostinger ownership/access/recovery | BELUM DIISI | HANDOVER BLOCKER |
+| OP-003 | Supabase ownership/access/recovery | BELUM DIISI | HANDOVER BLOCKER |
+| OP-004 | Cloudflare ownership/access/recovery | BELUM DIISI | HANDOVER BLOCKER |
+| OP-005 | Vercel Preview/legacy access | BELUM DIISI | RECOMMENDED BEFORE HANDOVER |
+| OP-006 | Domain registrar/renewal | BELUM DIISI | HANDOVER BLOCKER |
+| OP-007 | Billing/renewal matrix | BELUM DIISI | HANDOVER BLOCKER |
+| OP-008 | Production mutation approvals | BELUM DIISI | HANDOVER BLOCKER |
+| OP-009 | Credential rotation ownership | BELUM DIISI | HANDOVER BLOCKER |
+| OP-010 | Backup/recovery plan | BELUM DIISI | HANDOVER BLOCKER |
+| OP-011 | Logs, auto-deploy, observability | BELUM DIISI | RECOMMENDED BEFORE HANDOVER |
+| OP-012 | Emergency contacts/escalation | BELUM DIISI | HANDOVER BLOCKER |
 
 ## V. Sign-Off
 
@@ -168,7 +170,7 @@ Semua input awal berstatus **BELUM DIISI**. Ownership/recovery/billing provider 
 ## Source of Truth untuk Dokumen Ini
 
 - Docs 00-16, `package.json`, source/runtime helpers, migrations, tests, dan runbook current.
-- [PERLU INPUT OPERATOR] Provider ownership, billing, recovery, backup, dan approval values.
+- [Operator Input Worksheet](./OPERATOR-INPUT-WORKSHEET.md) -> provider ownership, billing, recovery, backup, dan approval values.
 
 ## Kembali ke Awal
 

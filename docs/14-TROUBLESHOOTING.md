@@ -131,7 +131,7 @@ flowchart TD
 ### Hostinger Deployment Gagal
 
 **Kemungkinan layer:** deployment build/runtime/environment.
-**Cek pertama:** SHA `main`, status/log deployment, build vs runtime, dan nama env tanpa nilainya. [PERLU INPUT OPERATOR] Lokasi log dashboard harus disediakan operator.
+**Cek pertama:** SHA `main`, status/log deployment, build vs runtime, dan nama env tanpa nilainya. Lihat [OP-011](./OPERATOR-INPUT-WORKSHEET.md) untuk lokasi log dashboard.
 **Jangan lakukan:** ubah DNS terlebih dahulu.
 
 ### Legacy Vercel Redirect Salah
