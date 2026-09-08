@@ -114,17 +114,23 @@ PostgREST list dapat dibatasi 1000 row. Menghitung `.filter().length` di client 
 
 `admin_approve_product_proposal_v2` mengunci/memvalidasi proposal PENDING, membuat Product canonical, membuat alias yang relevan, lalu mengisi status review, reviewer, waktu review, note, dan `resolved_product_id`. UUID Product Proposal asli serta `submission_id`/`station_id` tetap menjadi history.
 
+Approve Baru tidak boleh membuat canonical Product yang normalized Brand/Model-nya sudah ada. Kondisi itu adalah conflict terstruktur: proposal tetap PENDING dan Admin diarahkan memakai Gabungkan ini ke Product existing. Pemeriksaan duplicate dan insert Product dilakukan sebagai satu keputusan transaction.
+
 Payload item yang menyimpan `productProposalId` tidak perlu berubah menjadi `productId`; resolver membaca `resolved_product_id` untuk menampilkan canonical result.
 
 ## Resolve ke Product Existing
 
 Flow QC bernama Merge memilih satu atau beberapa proposal PENDING dan target `products.id` existing melalui `admin_merge_product_proposals_v2`. Ia mengubah proposal menjadi `MERGED`, mengisi `resolved_product_id`, menyimpan reviewer/note, dan membuat alias sesuai kontrak QC.
 
+Jika target yang dipilih baru saja menjadi source Product Merge, QC Merge mengikuti rantai `merged_into_product_id` ke canonical Product aktif terbaru. Target inactive yang tidak mempunyai canonical successor tetap ditolak.
+
 Istilah ini berbeda dari **Produk -> Gabungkan Produk**. QC Merge menyelesaikan proposal ke katalog existing; Product Merge menggabungkan dua Product canonical beserta dependency mereka.
 
 ## Reject
 
 `admin_reject_product_proposal_v2` hanya berlaku pada PENDING. Ia menulis `REJECTED`, reviewer/waktu review, dan review note wajib. Tidak ada Product canonical baru, alias baru, atau `resolved_product_id` hasil Reject. Item Submission tetap memegang historical `productProposalId`.
+
+REJECTED adalah terminal untuk UUID proposal tersebut: refresh, save, autosave, dan reconciliation tidak dapat mengubah UUID yang sama kembali menjadi PENDING. Brand/Model yang sama pada item atau kategori lain dapat memiliki UUID proposal berbeda dan tetap membutuhkan keputusan QC sendiri.
 
 ## Audit dan Reviewer Metadata
 

@@ -28,6 +28,8 @@ Alias bukan Product Proposal dan bukan direct reference Submission. Alias tidak 
 
 Product yang dibuat dengan Approve Baru dapat memiliki banyak proposal history yang `resolved_product_id`-nya menunjuk Product tersebut.
 
+Approve Baru menggunakan identity normalized Brand/Model yang sama dengan pengelolaan Product. Jika canonical Product sudah ada, proposal tidak diubah dan Admin harus menyelesaikannya melalui QC Merge. QC Merge menerima Product UUID pilihan, tetapi menyimpan `resolved_product_id` canonical terbaru bila target pilihan sudah digabungkan sebelumnya.
+
 ## Product Provenance
 
 `source_origin` memberi provenance, misalnya master legacy, QC, atau Admin sesuai value yang divalidasi current schema/RPC. `spreadsheet_synced` adalah metadata legacy/provenance; ia bukan instruksi untuk menyinkronkan runtime master ke Spreadsheet dan bukan indikator kualitas canonical.

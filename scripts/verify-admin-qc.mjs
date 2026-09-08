@@ -178,6 +178,22 @@ try {
     const rejected = await tx`select public.admin_reject_product_proposal(${proposalIds.reject}, 'Data produk tidak valid') as rejected`;
     assert(rejected[0]?.rejected === true, "Reject proposal gagal.");
 
+    const unchangedAfterReject = await tx`
+      select * from public.admin_save_submission(
+        ${stationOpen[0].submission_id}, ${adminSession}, ${adminSaved[0].version},
+        ${tx.json({
+          schemaVersion: 1,
+          inventory: {
+            adminVerifier: true,
+            Produk: Object.values(proposalIds).map((proposalId, index) => ({ id: `qc-${index}`, productProposalId: proposalId })),
+          },
+        })}, 'Verifier Admin'
+      )
+    `;
+    assert(unchangedAfterReject[0]?.status === "saved", "Save payload unchanged setelah Reject gagal.");
+    const [rejectedAfterSave] = await tx`select status from public.product_proposals where id = ${proposalIds.reject}`;
+    assert(rejectedAfterSave?.status === "REJECTED", "Save/autosave tidak boleh mengubah Proposal REJECTED menjadi PENDING.");
+
     const proposalStates = await tx`select status, count(*)::integer as count from public.product_proposals where id = any(${Object.values(proposalIds)}::uuid[]) group by status`;
     const stateMap = new Map(proposalStates.map((row) => [row.status, row.count]));
     assert(stateMap.get("MERGED") === 4 && stateMap.get("APPROVED") === 1 && stateMap.get("REJECTED") === 1, "Status QC tidak sesuai.");
@@ -243,6 +259,50 @@ try {
     assert(concurrencyState.same_status === "REJECTED" && concurrencyState.same_reviewer === admin.auth_user_id, "Admin B tidak boleh menimpa hasil Admin A.");
     assert(concurrencyState.conflict_status === "REJECTED" && concurrencyState.safe_status === "MERGED", "Bulk partial tidak boleh menimpa proposal konflik.");
     assert(!concurrencyState.losing_product_exists, "Conflict approve tidak boleh membuat canonical product.");
+
+    await tx`reset role`;
+    const [duplicateCanonicalProposal] = await tx`
+      insert into public.product_proposals (
+        station_id, submission_id, created_by_auth_user, operator_name,
+        proposed_brand, proposed_model, normalized_brand, normalized_model, proposal_note
+      ) values (
+        ${scope.station_id}, ${stationOpen[0].submission_id}, ${scope.auth_user_id}, 'Verifier Duplicate',
+        'Campbell Scientific', 'CR1000X', 'campbellscientific', 'cr1000x', 'duplicate canonical'
+      ) returning id
+    `;
+    const duplicateCanonicalId = duplicateCanonicalProposal.id;
+    await tx`set local role authenticated`;
+    await tx`select set_config('request.jwt.claim.sub', ${admin.auth_user_id}, true)`;
+    const duplicateCanonical = await tx`select public.admin_approve_product_proposal_v2(${duplicateCanonicalId}, 'Campbell-Scientific', 'CR 1000 X', null) as result`;
+    assert(duplicateCanonical[0]?.result?.outcome === "conflict", "Approve Baru terhadap canonical existing harus conflict, bukan melempar raw unique violation.");
+    assert(duplicateCanonical[0]?.result?.conflicts?.[0]?.reason === "CANONICAL_PRODUCT_EXISTS", "Conflict duplicate canonical harus terklasifikasi.");
+    assert(duplicateCanonical[0]?.result?.conflicts?.[0]?.existingProductId === canonical.id, "Conflict duplicate harus mengarahkan ke Product existing.");
+    assert((await tx`select status from public.product_proposals where id = ${duplicateCanonicalId}`)[0]?.status === "PENDING", "Conflict duplicate tidak boleh mengubah Proposal.");
+
+    await tx`reset role`;
+    const [staleTarget] = await tx`
+      insert into public.products (brand, model, active, source_origin, spreadsheet_synced)
+      values (${`Verifier Stale ${randomUUID()}`}, 'Target', false, 'ADMIN', false)
+      returning id
+    `;
+    await tx`update public.products set merged_into_product_id = ${canonical.id} where id = ${staleTarget.id}`;
+    await tx`reset role`;
+    const [staleTargetProposalRow] = await tx`
+      insert into public.product_proposals (
+        station_id, submission_id, created_by_auth_user, operator_name,
+        proposed_brand, proposed_model, normalized_brand, normalized_model, proposal_note
+      ) values (
+        ${scope.station_id}, ${stationOpen[0].submission_id}, ${scope.auth_user_id}, 'Verifier Stale',
+        'Verifier Stale Proposal', ${`Model-${randomUUID()}`}, 'verifierstaleproposal', ${randomUUID().replaceAll("-", "")}, 'stale target'
+      ) returning id
+    `;
+    await tx`set local role authenticated`;
+    await tx`select set_config('request.jwt.claim.sub', ${admin.auth_user_id}, true)`;
+    const staleTargetResult = await tx`select public.admin_merge_product_proposals_v2(array[${staleTargetProposalRow.id}]::uuid[], ${staleTarget.id}, null) as result`;
+    assert(staleTargetResult[0]?.result?.outcome === "processed", "QC Merge harus mengikuti target yang sudah digabung ke canonical aktif.");
+    assert(staleTargetResult[0]?.result?.productId === canonical.id && staleTargetResult[0]?.result?.targetResolved === true, "QC Merge harus melaporkan canonical successor aktual.");
+    const [staleTargetProposal] = await tx`select status, resolved_product_id from public.product_proposals where id = ${staleTargetProposalRow.id}`;
+    assert(staleTargetProposal.status === "MERGED" && staleTargetProposal.resolved_product_id === canonical.id, "QC Merge harus menyimpan resolved_product_id canonical terbaru.");
 
     const actorAudits = await tx`
       select admin_auth_user_id, action, target_id, metadata

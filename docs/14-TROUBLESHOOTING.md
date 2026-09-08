@@ -98,6 +98,24 @@ flowchart TD
 **Cek pertama:** bandingkan aggregate status RPC dengan list yang dipaginasi.
 **Jangan lakukan:** menghitung total dari page client saja.
 
+### Proposal REJECTED Terlihat Muncul Lagi
+
+**Kemungkinan layer:** proposal berbeda dengan Brand/Model sama, status list, atau history QC.
+**Cek pertama:** bandingkan proposal UUID, kategori/item, `created_at`, `reviewed_at`, audit `QC_REJECT`, DB status, status summary, dan list PENDING. UUID berbeda pada kategori berbeda bukan transisi REJECTED ke PENDING.
+**Jangan lakukan:** mengubah semua proposal bernama sama menjadi REJECTED atau menghapus history.
+
+### Approve Baru Gagal
+
+**Kemungkinan layer:** canonical Product normalized sudah ada, proposal telah diproses, atau authorization.
+**Cek pertama:** proposal UUID/status dan exact normalized Brand/Model canonical. Jika Product sudah ada, gunakan Gabungkan ini; jangan mencoba membuat duplicate canonical.
+**Jangan lakukan:** menghapus Product existing atau melemahkan unique/duplicate guard.
+
+### QC Merge Gagal
+
+**Kemungkinan layer:** proposal bukan lagi PENDING, target tidak tersedia/inactive, atau target berubah karena Product Merge concurrent.
+**Cek pertama:** proposal UUID/status, Product target UUID, dan canonical successor. Refresh queue bila reviewer lain sudah memproses proposal.
+**Jangan lakukan:** update `resolved_product_id` manual atau mengabaikan stale conflict.
+
 ### Product Reference Salah
 
 **Kemungkinan layer:** canonical product, direct JSON product ID, proposal resolution.
