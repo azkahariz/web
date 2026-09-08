@@ -27,7 +27,8 @@ import { formatCategoryLabel } from "../lib/category-label";
 import { logoutCurrentBrowser } from "../lib/local-logout";
 import { parseSiteTypeCompletionRows, siteTypeCompletionRows, summarizeSiteTypeProgress, summarizeSitesByType, summarizeStationMonitoring, summarizeQc } from "../lib/admin-summary";
 import { adminViewFromSearchParam, adminViewHref, type AdminView } from "../lib/admin-navigation";
-import { hasMixedMergeProposalFamilies, normalizeProductText, rankMergeProducts, type ProductAlias } from "../lib/product-qc";
+import { hasMixedMergeProposalFamilies } from "../lib/product-qc";
+import { QC_MERGE_TARGET_PAGE_SIZE, type QcMergeTargetProduct } from "../lib/qc-merge-targets";
 import type { QcProposalContext } from "../lib/qc-proposal-context";
 import { type QcPendingSummary } from "../lib/qc-pending-summary";
 import type { StationCompletionDetailResponse, StationCompletionSummary } from "../lib/station-completion";
@@ -67,13 +68,13 @@ type Submission = {
   lock_last_activity_at: string | null; last_saved_at: string | null; updated_at: string;
 };
 type Account = { id: string; station_id: string; username: string; active: boolean; updated_at: string };
-type Product = { id: string; brand: string; model: string; active: boolean };
-type QcProductAlias = ProductAlias;
-type QcProductAliasRow = { product_id: string; brand_alias: string; model_alias: string };
+type Product = QcMergeTargetProduct;
+type QcMergeRecommendation = { product: Product; confidence: string; kind: "recommended" | "nearest" };
 type Proposal = {
   id: string; station_id: string; submission_id: string | null; operator_name: string | null;
   proposed_brand: string; proposed_model: string; normalized_brand: string; normalized_model: string;
   status: "PENDING" | "APPROVED" | "MERGED" | "REJECTED"; resolved_product_id: string | null;
+  resolved_product?: Pick<Product, "id" | "brand" | "model"> | null;
   reviewed_by: string | null; reviewed_at: string | null; review_note: string | null; created_at: string;
   reviewer: { username: string; displayName: string } | null;
   context: QcProposalContext;
@@ -294,8 +295,12 @@ export default function AdminDashboard({ username, displayName }: { username: st
   const [subtypes, setSubtypes] = useState<Subtype[]>([]);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
-  const [productAliases, setProductAliases] = useState<QcProductAlias[]>([]);
+  const [mergeTargetProducts, setMergeTargetProducts] = useState<Product[]>([]);
+  const [mergeTargetRecommendations, setMergeTargetRecommendations] = useState<QcMergeRecommendation[]>([]);
+  const [mergeTargetPage, setMergeTargetPage] = useState(1);
+  const [mergeTargetTotal, setMergeTargetTotal] = useState(0);
+  const [mergeSelectedProduct, setMergeSelectedProduct] = useState<Product | null>(null);
+  const [mergeTargetError, setMergeTargetError] = useState("");
   const [qcProductsLoading, setQcProductsLoading] = useState(false);
   const [productTotal, setProductTotal] = useState(0);
   const [proposals, setProposals] = useState<Proposal[]>([]);
@@ -356,27 +361,41 @@ export default function AdminDashboard({ username, displayName }: { username: st
   const unifiedSubmissionDetailRequestsRef = useRef(new Map<string, Promise<void>>());
   const [loadedAt, setLoadedAt] = useState(0);
   const [activeAction, setActiveAction] = useState<string | null>(null);
+  const mergeTargetRequestRef = useRef(0);
 
-  const loadQcProducts = useCallback(async () => {
-    const client = getSupabaseBrowserClient();
-    if (!client) return;
+  const loadQcMergeTargets = useCallback(async (proposalIds: string[], query: string, page: number) => {
+    const requestId = ++mergeTargetRequestRef.current;
     setQcProductsLoading(true);
+    setMergeTargetError("");
     try {
-      const [productResult, aliasResult] = await Promise.all([
-        client.from("products").select("id, brand, model, active").order("brand").order("model"),
-        client.from("product_aliases").select("product_id, brand_alias, model_alias"),
-      ]);
-      const error = productResult.error ?? aliasResult.error;
-      if (error) {
-        setMessage(`Gagal memuat produk QC: ${error.message}`);
+      const response = await fetch("/api/admin/qc-merge-targets", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        cache: "no-store",
+        body: JSON.stringify({ proposalIds, search: query, page, pageSize: QC_MERGE_TARGET_PAGE_SIZE }),
+      });
+      const payload = await response.json().catch(() => ({})) as {
+        rows?: Product[];
+        recommendations?: QcMergeRecommendation[];
+        totalCount?: number;
+        page?: number;
+        error?: string;
+      };
+      if (requestId !== mergeTargetRequestRef.current) return;
+      if (!response.ok) {
+        setMergeTargetError(payload.error ?? "Target merge gagal dimuat.");
         return;
       }
-      setProducts((productResult.data ?? []) as Product[]);
-      setProductAliases(((aliasResult.data ?? []) as QcProductAliasRow[]).map((alias) => ({ productId: alias.product_id, brand: alias.brand_alias, model: alias.model_alias })));
+      setMergeTargetProducts(Array.isArray(payload.rows) ? payload.rows : []);
+      setMergeTargetRecommendations(Array.isArray(payload.recommendations) ? payload.recommendations : []);
+      setMergeTargetTotal(typeof payload.totalCount === "number" ? payload.totalCount : 0);
+      if (typeof payload.page === "number") setMergeTargetPage(payload.page);
+    } catch {
+      if (requestId === mergeTargetRequestRef.current) setMergeTargetError("Target merge gagal dimuat. Periksa koneksi lalu coba lagi.");
     } finally {
-      setQcProductsLoading(false);
+      if (requestId === mergeTargetRequestRef.current) setQcProductsLoading(false);
     }
-  }, []);
+  }, [setMergeTargetError, setMergeTargetPage]);
 
   const refreshPendingProposalIds = useCallback(async () => {
     const client = getSupabaseBrowserClient();
@@ -674,12 +693,6 @@ export default function AdminDashboard({ username, displayName }: { username: st
   }, [fillingMode, refreshCompletionSummary, tab]);
 
   useEffect(() => {
-    if (tab !== "qc") return;
-    const timer = window.setTimeout(() => void loadQcProducts(), 0);
-    return () => window.clearTimeout(timer);
-  }, [loadQcProducts, tab]);
-
-  useEffect(() => {
     if (!credential) return;
     function closeOnEscape(event: KeyboardEvent) {
       if (event.key === "Escape") {
@@ -696,12 +709,10 @@ export default function AdminDashboard({ username, displayName }: { username: st
   const siteMap = useMemo(() => new Map(sites.map((site) => [site.id, site])), [sites]);
   const subtypeMap = useMemo(() => new Map(subtypes.map((subtype) => [subtype.id, subtype])), [subtypes]);
   const accountByStation = useMemo(() => new Map(accounts.map((account) => [account.station_id, account])), [accounts]);
-  const productMap = useMemo(() => new Map(products.map((product) => [product.id, product])), [products]);
   const adminIdentityMap = useMemo(() => new Map(adminIdentities.map((admin) => [admin.auth_user_id, {
     username: admin.username,
     displayName: admin.display_name?.trim() || admin.username,
   }])), [adminIdentities]);
-  const activeProducts = useMemo(() => products.filter((product) => product.active), [products]);
   const activeLocks = submissions.filter((submission) => submission.locked_by_session_id && submission.lock_last_activity_at
     && new Date(submission.lock_last_activity_at).getTime() >= loadedAt - 5 * 60_000);
   const query = search.trim().toLocaleLowerCase("id-ID");
@@ -770,28 +781,36 @@ export default function AdminDashboard({ username, displayName }: { username: st
   const searchTab = (tab === "stations" && fillingMode === "master") || tab === "accounts" || tab === "qc" ? tab : null;
   const selectedPendingProposals = useMemo(() => selectedProposals.map((id) => proposals.find((proposal) => proposal.id === id))
     .filter((proposal): proposal is Proposal => proposal?.status === "PENDING"), [proposals, selectedProposals]);
-  const mergeRecommendationRanks = useMemo(() => rankMergeProducts(
-    selectedPendingProposals.map((proposal) => ({ proposedBrand: proposal.proposed_brand, proposedModel: proposal.proposed_model })),
-    activeProducts,
-    productAliases,
-  ), [activeProducts, productAliases, selectedPendingProposals]);
   const mixedMergeSelection = useMemo(() => hasMixedMergeProposalFamilies(
     selectedPendingProposals.map((proposal) => ({ proposedBrand: proposal.proposed_brand, proposedModel: proposal.proposed_model })),
   ), [selectedPendingProposals]);
-  const normalizedMergeQuery = mergeProductQuery.trim().toLocaleLowerCase("id-ID");
-  const mergeSearchResults = useMemo(() => !normalizedMergeQuery ? activeProducts : activeProducts.filter((product) =>
-    `${product.brand} ${product.model}`.toLocaleLowerCase("id-ID").includes(normalizedMergeQuery)), [activeProducts, normalizedMergeQuery]);
+  const mergeTargetPageCount = Math.max(1, Math.ceil(mergeTargetTotal / QC_MERGE_TARGET_PAGE_SIZE));
+  const selectedMergeProposalKey = selectedPendingProposals.map((proposal) => proposal.id).join(",");
+
+  useEffect(() => {
+    if (!mergeDialogOpen || !selectedMergeProposalKey || mergeSelectedProduct) return;
+    const proposalIds = selectedMergeProposalKey.split(",");
+    const timer = window.setTimeout(
+      () => void loadQcMergeTargets(proposalIds, mergeProductQuery, mergeTargetPage),
+      mergeProductQuery.trim() ? 300 : 0,
+    );
+    return () => window.clearTimeout(timer);
+  }, [loadQcMergeTargets, mergeDialogOpen, mergeProductQuery, mergeSelectedProduct, mergeTargetPage, selectedMergeProposalKey]);
 
   function selectMergeProduct(product: Pick<Product, "id" | "brand" | "model">) {
     setQcValidationMessage("");
     setMergeProductId(product.id);
     setMergeProductQuery(`${product.brand} - ${product.model}`);
+    setMergeSelectedProduct({ ...product, active: true });
   }
 
   function clearMergeTarget() {
     setQcValidationMessage("");
     setMergeProductId("");
     setMergeProductQuery("");
+    setMergeSelectedProduct(null);
+    setMergeTargetPage(1);
+    setMergeTargetError("");
   }
 
   function openMergeDialog() {
@@ -828,7 +847,6 @@ export default function AdminDashboard({ username, displayName }: { username: st
       return false;
     }
     await refresh();
-    if (tab === "qc") await loadQcProducts();
     return true;
   }
 
@@ -838,7 +856,7 @@ export default function AdminDashboard({ username, displayName }: { username: st
       const product = conflict.existingBrand && conflict.existingModel
         ? ` (${conflict.existingBrand} - ${conflict.existingModel})`
         : "";
-      return `Produk canonical tersebut sudah ada${product}. Gunakan Gabungkan ini dan pilih Produk existing.`;
+      return `Produk canonical sudah ada${product}. Gunakan Gabungkan ini dan pilih Produk existing.`;
     }
     if (conflict.reason === "TARGET_INACTIVE") return "Produk tujuan sudah tidak aktif. Pilih Produk tujuan aktif lain.";
     if (conflict.reason === "TARGET_NOT_FOUND") return "Produk tujuan tidak lagi tersedia. Pilih Produk tujuan lain.";
@@ -867,6 +885,7 @@ export default function AdminDashboard({ username, displayName }: { username: st
     await Promise.all([refreshQcProposals(), refreshPendingProposalIds()]);
     setMergeProductId("");
     setMergeProductQuery("");
+    setMergeSelectedProduct(null);
     setMergeDialogOpen(false);
     setQcValidationMessage("");
     if (result.conflicts.length) {
@@ -899,15 +918,9 @@ export default function AdminDashboard({ username, displayName }: { username: st
       return false;
     }
     if (!approveDialogProposal) return false;
-    const existingProduct = products.find((product) => normalizeProductText(product.brand) === normalizeProductText(input.brand)
-      && normalizeProductText(product.model) === normalizeProductText(input.model));
-    if (existingProduct) {
-      setApproveDialogError(`Produk canonical sudah ada (${existingProduct.brand} - ${existingProduct.model}). Gunakan Gabungkan ini dan pilih Produk existing.`);
-      return false;
-    }
     const result = await qcRpc("admin_approve_product_proposal_v2", { p_proposal_id: approveDialogProposal.id, p_canonical_brand: input.brand, p_canonical_model: input.model, p_review_note: input.note || null });
     if (result?.outcome === "processed") {
-      await Promise.all([loadQcProducts(), refreshProductSummary()]);
+      await refreshProductSummary();
       feedback.toast("Proposal disetujui sebagai produk baru.", "success");
     }
     return result?.outcome === "processed";
@@ -918,8 +931,7 @@ export default function AdminDashboard({ username, displayName }: { username: st
       setQcValidationMessage(!ids.length ? "Pilih minimal satu proposal untuk di-merge." : "Pilih produk tujuan sebelum melakukan merge.");
       return false;
     }
-    const target = productMap.get(mergeProductId);
-    if (!target) {
+    if (!mergeSelectedProduct || mergeSelectedProduct.id !== mergeProductId) {
       setQcValidationMessage("Produk tujuan tidak lagi tersedia. Pilih produk lain.");
       return false;
     }
@@ -1146,7 +1158,7 @@ export default function AdminDashboard({ username, displayName }: { username: st
   const showQcResult = qcStatus !== "PENDING";
 
   function renderQcResultCell(proposal: Proposal) {
-    return <td className="qc-result-cell">{proposal.resolved_product_id ? <><strong>{`${productMap.get(proposal.resolved_product_id)?.brand ?? ""} - ${productMap.get(proposal.resolved_product_id)?.model ?? ""}`}</strong>{proposal.review_note?.trim() && <small className="qc-result-note">Catatan: {proposal.review_note}</small>}</> : proposal.review_note || "-"}{proposal.status !== "PENDING" && proposal.reviewer && <small className="qc-reviewer">Diproses oleh {proposal.reviewer.displayName}{proposal.reviewed_at ? ` · ${new Date(proposal.reviewed_at).toLocaleString("id-ID")}` : ""}</small>}</td>;
+    return <td className="qc-result-cell">{proposal.resolved_product ? <><strong>{`${proposal.resolved_product.brand} - ${proposal.resolved_product.model}`}</strong>{proposal.review_note?.trim() && <small className="qc-result-note">Catatan: {proposal.review_note}</small>}</> : proposal.review_note || "-"}{proposal.status !== "PENDING" && proposal.reviewer && <small className="qc-reviewer">Diproses oleh {proposal.reviewer.displayName}{proposal.reviewed_at ? ` · ${new Date(proposal.reviewed_at).toLocaleString("id-ID")}` : ""}</small>}</td>;
   }
 
   return (
@@ -1383,16 +1395,20 @@ export default function AdminDashboard({ username, displayName }: { username: st
       )}
       {mergeDialogOpen && <MergeTargetDialog
         proposals={selectedPendingProposals.map((proposal) => ({ id: proposal.id, brand: proposal.proposed_brand, model: proposal.proposed_model, siteName: proposal.context.siteName, subtypeName: proposal.context.subtypeName }))}
-        recommendations={mergeRecommendationRanks}
-        products={mergeSearchResults}
+        recommendations={mergeTargetRecommendations}
+        products={mergeTargetProducts}
         query={mergeProductQuery}
         selectedProductId={mergeProductId}
+        page={mergeTargetPage}
+        pageCount={mergeTargetPageCount}
+        totalCount={mergeTargetTotal}
         loadingProducts={qcProductsLoading}
-        validationMessage={qcValidationMessage}
+        validationMessage={mergeTargetError || qcValidationMessage}
         mixedSelection={mixedMergeSelection}
         onClose={closeMergeDialog}
-        onQueryChange={(query) => { setQcValidationMessage(""); setMergeProductId(""); setMergeProductQuery(query); }}
-        selectedProduct={activeProducts.find((product) => product.id === mergeProductId) ?? null}
+        onQueryChange={(query) => { setQcValidationMessage(""); setMergeTargetError(""); setMergeProductId(""); setMergeSelectedProduct(null); setMergeTargetPage(1); setMergeProductQuery(query); }}
+        onPageChange={setMergeTargetPage}
+        selectedProduct={mergeSelectedProduct}
         onSelectProduct={selectMergeProduct}
         onSubmit={(note) => merge(selectedPendingProposals.map((proposal) => proposal.id), note)}
       />}

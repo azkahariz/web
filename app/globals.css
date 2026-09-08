@@ -947,6 +947,11 @@ button[aria-busy="true"] { display: inline-flex; align-items: center; justify-co
 .qc-merge-dialog-results button strong { font-size: 12px; }
 .qc-merge-dialog-results button span { color: var(--muted); font-size: 11px; }
 .qc-merge-dialog-results button small { color: var(--green-deep); font-size: 9px; font-weight: 800; }
+.qc-merge-pagination { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 8px; margin-top: 7px; }
+.qc-merge-pagination small { color: var(--muted); font-size: 10px; text-align: center; }
+.qc-merge-pagination button { min-height: 32px; padding: 6px 9px; border: 1px solid #a9beb6; border-radius: 5px; background: #fff; color: var(--green-deep); font-size: 10px; font-weight: 800; cursor: pointer; }
+.qc-merge-pagination button:hover:not(:disabled), .qc-merge-pagination button:focus-visible { background: var(--green-soft); }
+.qc-merge-pagination button:disabled { cursor: not-allowed; opacity: .45; }
 .qc-proposals-table table { min-width: 1080px; }
 .qc-proposal-context { min-width: 205px; max-width: 300px; overflow-wrap: anywhere; }
 .qc-proposal-context strong { display: block; line-height: 1.4; }
