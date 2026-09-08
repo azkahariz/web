@@ -368,7 +368,7 @@ test("footer attribution memakai link eksternal yang aman pada layout utama", as
   assert.doesNotMatch(styles, /\.auth-shell \{[^}]*grid-template-rows/);
 });
 
-test("Vercel adalah deployment resmi dengan build Next.js native", async () => {
+test("Hostinger adalah deployment production canonical dengan build Next.js native", async () => {
   const [packageText, readme, developerGuide, productionSop] = await Promise.all([
     readFile(new URL("../package.json", import.meta.url), "utf8"),
     readFile(new URL("../README.md", import.meta.url), "utf8"),
@@ -381,8 +381,10 @@ test("Vercel adalah deployment resmi dengan build Next.js native", async () => {
   assert.match(packageText, /"start": "next start"/);
   assert.doesNotMatch(packageText, /legacy-sites|vinext|cloudflare|wrangler/i);
   for (const source of [readme, developerGuide, productionSop]) {
-    assert.match(source, /https:\/\/aloptama-collect\.vercel\.app/);
+    assert.match(source, /https:\/\/aloptama-collect\.azkahariz\.com/);
   }
+  assert.match(readme, /https:\/\/aloptama-collect\.vercel\.app/);
+  assert.match(readme, /mengarahkan pengguna dengan 307/);
   assert.doesNotMatch(developerGuide, /legacy Sites compatibility/i);
 });
 
