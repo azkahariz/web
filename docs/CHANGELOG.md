@@ -11,6 +11,11 @@
 Tanggal mengikuti Git history. Ini ringkasan milestone, bukan daftar seluruh
 commit.
 
+## 2026-09-08
+
+- QC menjaga UUID proposal REJECTED sebagai history terminal dan menampilkan pembeda proposal pada row yang beridentitas Produk sama.
+- Approve Baru mengembalikan conflict terstruktur untuk canonical duplicate; QC Merge mengikuti canonical successor target secara atomik.
+
 ## 2026-08-12
 
 - Domain `Seismograph InaTEWS` dipetakan ke Geofisika.
