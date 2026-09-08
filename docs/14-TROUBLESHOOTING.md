@@ -112,6 +112,8 @@ flowchart TD
 
 ### QC Merge Gagal
 
+Jika Product canonical aktif ada di menu Produk tetapi tidak muncul pada Gabungkan ini, cek request `/api/admin/qc-merge-targets`, filter `active`/`merged_into_product_id`, dan hasil search server-side. Jangan kembali ke pola mengambil maksimal 1.000 Product lalu mencari di browser karena Product setelah batas tersebut tidak akan pernah ditemukan.
+
 **Kemungkinan layer:** proposal bukan lagi PENDING, target tidak tersedia/inactive, atau target berubah karena Product Merge concurrent.
 **Cek pertama:** proposal UUID/status, Product target UUID, dan canonical successor. Refresh queue bila reviewer lain sudah memproses proposal.
 **Jangan lakukan:** update `resolved_product_id` manual atau mengabaikan stale conflict.
