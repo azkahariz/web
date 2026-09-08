@@ -122,6 +122,8 @@ Payload item yang menyimpan `productProposalId` tidak perlu berubah menjadi `pro
 
 Flow QC bernama Merge memilih satu atau beberapa proposal PENDING dan target `products.id` existing melalui `admin_merge_product_proposals_v2`. Ia mengubah proposal menjadi `MERGED`, mengisi `resolved_product_id`, menyimpan reviewer/note, dan membuat alias sesuai kontrak QC.
 
+Target pada dialog Gabungkan ini dicari melalui endpoint Admin secara server-side dan terpaginated. Kandidatnya adalah Product aktif yang masih canonical (`merged_into_product_id` null); Product tetap eligible walaupun sudah menjadi hasil QC proposal lain. Pencarian ini tidak bergantung pada katalog Product terbatas yang dimuat ke browser.
+
 Jika target yang dipilih baru saja menjadi source Product Merge, QC Merge mengikuti rantai `merged_into_product_id` ke canonical Product aktif terbaru. Target inactive yang tidak mempunyai canonical successor tetap ditolak.
 
 Istilah ini berbeda dari **Produk -> Gabungkan Produk**. QC Merge menyelesaikan proposal ke katalog existing; Product Merge menggabungkan dua Product canonical beserta dependency mereka.
@@ -167,7 +169,7 @@ QC action dapat gagal bila proposal tidak lagi PENDING, target Product berubah/t
 - `app/admin/AdminDashboard.tsx` - Admin shell, isolated summary/QC loading, navigation.
 - `app/admin/ApproveProductDialog.tsx`, `app/admin/MergeTargetDialog.tsx` - QC action UI.
 - `app/lib/qc-proposal-context.ts`, `app/lib/product-qc.ts` - context/resolution presentation.
-- `app/api/admin/product-proposals/route.ts` - paginated QC API.
+- `app/api/admin/product-proposals/route.ts`, `app/api/admin/qc-merge-targets/route.ts` - paginated QC list dan target discovery API.
 
 ## Relevant API / RPC
 

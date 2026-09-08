@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 import data from "../app/data.generated.json" with { type: "json" };
 import { hasMixedMergeProposalFamilies, normalizeProductText, rankMergeProducts, rankProductSearch, recommendStationProducts, recommendMergeProducts, resolveInstalledProduct, suggestProducts } from "../app/lib/product-qc.ts";
+import { isExactQcMergeTarget, normalizeQcMergeTargetPage, normalizeQcMergeTargetPageSize, qcMergeTargetSearchTerms } from "../app/lib/qc-merge-targets.ts";
 import { buildQcProposalContexts, proposalCategoriesById } from "../app/lib/qc-proposal-context.ts";
 
 test("normalisasi dan suggestion mengenali variasi Campbell CR1000X tanpa auto merge", () => {
@@ -271,12 +272,13 @@ test("station product proposal dan admin QC tetap mempertahankan format export l
 });
 
 test("QC merge memakai selection bar dan dialog target dengan ranking canonical existing", async () => {
-  const [dashboard, dialog] = await Promise.all([
+  const [dashboard, dialog, route] = await Promise.all([
     readFile(new URL("../app/admin/AdminDashboard.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/admin/MergeTargetDialog.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/admin/qc-merge-targets/route.ts", import.meta.url), "utf8"),
   ]);
   assert.match(dashboard, /selectedPendingProposals/);
-  assert.match(dashboard, /rankMergeProducts/);
+  assert.match(route, /rankMergeProducts/);
   assert.match(dashboard, /qc-selection-bar/);
   assert.match(dashboard, /Gabungkan \{selectedPendingProposals\.length\} pilihan/);
   assert.match(dashboard, /Gabungkan ini/);
@@ -303,7 +305,7 @@ test("QC Pending menyembunyikan Hasil QC tanpa mengubah tab resolved", async () 
   assert.match(dashboard, /function renderQcResultCell\(proposal: Proposal\)/);
   assert.match(dashboard, /\{showQcResult && renderQcResultCell\(proposal\)\}/);
   assert.match(dashboard, /<tr><td colSpan=\{6\}>Tidak ada proposal pada status ini\.<\/td><\/tr>/);
-  assert.match(dashboard, /proposal\.resolved_product_id \? <><strong>/);
+  assert.match(dashboard, /proposal\.resolved_product \? <><strong>/);
 });
 
 test("QC tidak lagi merender workflow rekonsiliasi Spreadsheet legacy", async () => {
@@ -347,12 +349,44 @@ test("QC Product action guard mengklasifikasikan duplicate approve dan mengikuti
   assert.match(dashboard, /Usulan \{proposal\.id\.slice\(0, 8\)\}/);
 });
 
+test("QC merge target memakai discovery server-side yang tidak terpotong 1000 Product", async () => {
+  const [dashboard, dialog, route, proposalRoute] = await Promise.all([
+    readFile(new URL("../app/admin/AdminDashboard.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/admin/MergeTargetDialog.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/admin/qc-merge-targets/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/admin/product-proposals/route.ts", import.meta.url), "utf8"),
+  ]);
+  assert.match(dashboard, /\/api\/admin\/qc-merge-targets/);
+  assert.doesNotMatch(dashboard, /client\.from\("products"\)\.select\("id, brand, model, active"\)\.order\("brand"\)/);
+  assert.match(route, /count:\s*"exact"/);
+  assert.match(route, /\.range\(from, to\)/);
+  assert.match(route, /\.eq\("active", true\)\.is\("merged_into_product_id", null\)/);
+  assert.match(route, /rankMergeProducts/);
+  assert.match(route, /auth\.client\.rpc\("admin_product_summary"\)/);
+  assert.match(route, /client\.auth\.getUser/);
+  assert.match(dialog, /Halaman \{page\} dari \{pageCount\}/);
+  assert.match(dialog, /Cocok dengan usulan/);
+  assert.match(dialog, /product\.id\.slice\(0, 8\)/);
+  assert.match(proposalRoute, /\.in\("id", resolvedProductIds\)/);
+  assert.match(proposalRoute, /resolved_product:/);
+  assert.match(dashboard, /proposal\.resolved_product\.brand/);
+
+  assert.deepEqual(qcMergeTargetSearchTerms(" XINGCO / PV-XC802 "), ["XINGCO", "PV-XC802"]);
+  assert.equal(normalizeQcMergeTargetPage(0), 1);
+  assert.equal(normalizeQcMergeTargetPage(22), 22);
+  assert.equal(normalizeQcMergeTargetPageSize(1000), 100);
+  assert.equal(isExactQcMergeTarget(
+    [{ id: "proposal", proposedBrand: "XINGCO", proposedModel: "PV-XC802" }],
+    { brand: "xingco", model: "PV XC802" },
+  ), true);
+});
+
 test("hasil QC menampilkan note APPROVED/MERGED tanpa mengubah fallback REJECTED", async () => {
   const dashboard = await readFile(new URL("../app/admin/AdminDashboard.tsx", import.meta.url), "utf8");
   assert.match(dashboard, /className="qc-result-cell"/);
   assert.match(dashboard, /proposal\.review_note\?\.trim\(\)/);
   assert.match(dashboard, /Catatan: \{proposal\.review_note\}/);
-  assert.match(dashboard, /proposal\.resolved_product_id \? <><strong>/);
+  assert.match(dashboard, /proposal\.resolved_product \? <><strong>/);
   assert.match(dashboard, /: proposal\.review_note \|\| "-"/);
 });
 

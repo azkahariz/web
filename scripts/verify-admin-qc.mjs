@@ -140,6 +140,61 @@ try {
     const allStations = await tx`select id from public.stations where active limit 2`;
     assert(allStations.length === 2, "Super Admin harus dapat melihat lintas stasiun.");
 
+    await tx`reset role`;
+    const discoveryToken = randomUUID().replaceAll("-", "").slice(0, 12);
+    await tx`
+      insert into public.products (brand, model, active, source_origin, spreadsheet_synced)
+      select
+        'AAA QC DISCOVERY ' || ${discoveryToken} || ' ' || lpad(fixture.n::text, 4, '0'),
+        'MODEL ' || fixture.n,
+        true,
+        'QC',
+        false
+      from generate_series(1, 1100) as fixture(n)
+    `;
+    const [discoveryTarget] = await tx`
+      insert into public.products (brand, model, active, source_origin, spreadsheet_synced)
+      values (${`XINGCO ${discoveryToken}`}, 'PV-XC802', true, 'QC', false)
+      returning id
+    `;
+    await tx`
+      insert into public.product_proposals (
+        station_id, submission_id, created_by_auth_user, operator_name,
+        proposed_brand, proposed_model, normalized_brand, normalized_model,
+        status, resolved_product_id, reviewed_by, reviewed_at
+      ) values (
+        ${scope.station_id}, ${stationOpen[0].submission_id}, ${scope.auth_user_id}, 'Verifier Discovery',
+        ${`XINGCO ${discoveryToken}`}, 'PV-XC802', ${`xingco${discoveryToken}`}, 'pvxc802',
+        'MERGED', ${discoveryTarget.id}, ${admin.auth_user_id}, now()
+      )
+    `;
+    const oldFirstPage = await tx`
+      select id from public.products
+      where active and merged_into_product_id is null
+      order by brand, model, id
+      limit 1000
+    `;
+    assert(!oldFirstPage.some((product) => product.id === discoveryTarget.id), "Fixture harus mereproduksi target di luar 1.000 row pertama.");
+    const discoverySearch = await tx`
+      select id from public.products
+      where active
+        and merged_into_product_id is null
+        and (brand ilike ${`%XINGCO ${discoveryToken}%`} or model ilike ${`%XINGCO ${discoveryToken}%`})
+        and (brand ilike '%PV-XC802%' or model ilike '%PV-XC802%')
+      order by brand, model, id
+      limit 50
+    `;
+    assert(discoverySearch.some((product) => product.id === discoveryTarget.id), "Server-side search harus menemukan canonical Product di luar page lama.");
+    const [discoveryReference] = await tx`
+      select count(*)::integer as count
+      from public.product_proposals
+      where resolved_product_id = ${discoveryTarget.id}
+    `;
+    assert(discoveryReference.count === 1, "Product dengan QC_RESULT existing tetap harus eligible sebagai target lain.");
+
+    await tx`set local role authenticated`;
+    await tx`select set_config('request.jwt.claim.sub', ${admin.auth_user_id}, true)`;
+
     const released = await tx`select public.admin_force_release_submission(${stationOpen[0].submission_id}) as released`;
     assert(released[0]?.released === true, "Admin force release gagal.");
     const takeover = await tx`select * from public.admin_force_takeover_submission(${stationOpen[0].submission_id}, ${adminSession}, 'Verifier Admin')`;

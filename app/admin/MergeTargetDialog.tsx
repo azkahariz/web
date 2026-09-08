@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import AsyncButton from "../components/AsyncButton";
 
-type ProductOption = { id: string; brand: string; model: string };
+type ProductOption = { id: string; brand: string; model: string; exactMatch?: boolean };
 type Recommendation = { product: ProductOption; confidence: string; kind: "recommended" | "nearest" };
 type ProposalContext = { id: string; brand: string; model: string; siteName: string | null; subtypeName: string | null };
 
@@ -14,11 +14,15 @@ type MergeTargetDialogProps = {
   selectedProduct: ProductOption | null;
   query: string;
   selectedProductId: string;
+  page: number;
+  pageCount: number;
+  totalCount: number;
   loadingProducts: boolean;
   validationMessage: string;
   mixedSelection: boolean;
   onClose: () => void;
   onQueryChange: (query: string) => void;
+  onPageChange: (page: number) => void;
   onSelectProduct: (product: ProductOption) => void;
   onSubmit: (note: string) => Promise<boolean>;
 };
@@ -30,11 +34,15 @@ export default function MergeTargetDialog({
   selectedProduct,
   query,
   selectedProductId,
+  page,
+  pageCount,
+  totalCount,
   loadingProducts,
   validationMessage,
   mixedSelection,
   onClose,
   onQueryChange,
+  onPageChange,
   onSelectProduct,
   onSubmit,
 }: MergeTargetDialogProps) {
@@ -75,9 +83,14 @@ export default function MergeTargetDialog({
         {!normalizedQuery && recommendations.length > 0 && <p className="qc-merge-section-label">{recommendations[0]?.kind === "nearest" ? "Kandidat terdekat" : "Disarankan"}</p>}
         {loadingProducts ? <p className="qc-merge-message">Memuat produk...</p> : visibleProducts.map((product) => {
           const recommendation = !normalizedQuery ? recommendations.find((item) => item.product.id === product.id) : null;
-          return <button key={product.id} type="button" role="option" aria-selected={selectedProductId === product.id} onClick={() => onSelectProduct(product)}><strong>{product.brand}</strong><span>{product.model}</span>{recommendation && <small>{recommendation.confidence}</small>}</button>;
+          return <button key={product.id} type="button" role="option" aria-selected={selectedProductId === product.id} onClick={() => onSelectProduct(product)}><strong>{product.brand}</strong><span>{product.model}</span><small>Produk {product.id.slice(0, 8)}{product.exactMatch ? " · Cocok dengan usulan" : recommendation ? ` · ${recommendation.confidence}` : ""}</small></button>;
         })}
         {!loadingProducts && normalizedQuery && !visibleProducts.length && <p className="qc-merge-message">Produk tidak ditemukan.</p>}
+      </div>}
+      {!selectedProduct && normalizedQuery && totalCount > 0 && <div className="qc-merge-pagination" aria-label="Pagination target merge">
+        <button type="button" disabled={page <= 1 || loadingProducts} onClick={() => onPageChange(page - 1)}>Sebelumnya</button>
+        <small>Halaman {page} dari {pageCount} · {totalCount} produk</small>
+        <button type="button" disabled={page >= pageCount || loadingProducts} onClick={() => onPageChange(page + 1)}>Berikutnya</button>
       </div>}
       <label>Catatan merge (opsional)<textarea value={note} onChange={(event) => setNote(event.target.value)} rows={3} /></label>
       {validationMessage && <p className="app-dialog-error" role="alert">{validationMessage}</p>}

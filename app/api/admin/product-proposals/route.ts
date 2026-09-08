@@ -63,6 +63,28 @@ export async function GET(request: Request) {
     response.listError = "Contract daftar proposal QC tidak valid.";
   } else {
     Object.assign(response, listResult.data);
+    const rows = Array.isArray((listResult.data as { rows?: unknown }).rows)
+      ? (listResult.data as { rows: Array<Record<string, unknown>> }).rows
+      : [];
+    const resolvedProductIds = [...new Set(rows
+      .map((row) => typeof row.resolved_product_id === "string" ? row.resolved_product_id : null)
+      .filter((id): id is string => Boolean(id)))];
+    if (resolvedProductIds.length) {
+      const productsResult = await client.from("products")
+        .select("id, brand, model")
+        .in("id", resolvedProductIds);
+      if (productsResult.error) {
+        response.listError = rpcError(productsResult.error.code, "Hasil QC produk gagal dimuat.");
+      } else {
+        const productsById = new Map((productsResult.data ?? []).map((product) => [product.id, product]));
+        response.rows = rows.map((row) => ({
+          ...row,
+          resolved_product: typeof row.resolved_product_id === "string"
+            ? productsById.get(row.resolved_product_id) ?? null
+            : null,
+        }));
+      }
+    }
   }
 
   const pendingSummary = parseQcPendingSummary(pendingSummaryResult.data);

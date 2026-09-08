@@ -28,6 +28,8 @@ Alias bukan Product Proposal dan bukan direct reference Submission. Alias tidak 
 
 Product yang dibuat dengan Approve Baru dapat memiliki banyak proposal history yang `resolved_product_id`-nya menunjuk Product tersebut.
 
+Karena satu Product canonical dapat menyelesaikan banyak proposal, keberadaan QC_RESULT sebelumnya tidak mengecualikan Product dari target QC Merge. Dialog QC mencari Product aktif/current berdasarkan UUID melalui search server-side terpaginated, bukan dengan memfilter satu halaman katalog di browser.
+
 Approve Baru menggunakan identity normalized Brand/Model yang sama dengan pengelolaan Product. Jika canonical Product sudah ada, proposal tidak diubah dan Admin harus menyelesaikannya melalui QC Merge. QC Merge menerima Product UUID pilihan, tetapi menyimpan `resolved_product_id` canonical terbaru bila target pilihan sudah digabungkan sebelumnya.
 
 ## Product Provenance
