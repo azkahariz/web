@@ -333,6 +333,20 @@ test("QC workflow memakai dialog approve satu form dan shortcut merge row", asyn
   assert.doesNotMatch(dashboard, /title: "Brand canonical"/);
 });
 
+test("QC Product action guard mengklasifikasikan duplicate approve dan mengikuti canonical merge target", async () => {
+  const [migration, dashboard] = await Promise.all([
+    readFile(new URL("../supabase/migrations/20260908120000_qc_product_action_guards.sql", import.meta.url), "utf8"),
+    readFile(new URL("../app/admin/AdminDashboard.tsx", import.meta.url), "utf8"),
+  ]);
+  assert.match(migration, /lock table public\.products in share row exclusive mode/);
+  assert.match(migration, /CANONICAL_PRODUCT_EXISTS/);
+  assert.match(migration, /public\.resolve_canonical_product_id\(p_product_id\)/);
+  assert.match(migration, /'targetResolved', v_target_id <> p_product_id/);
+  assert.match(dashboard, /Produk canonical sudah ada/);
+  assert.match(dashboard, /Gunakan Gabungkan ini/);
+  assert.match(dashboard, /Usulan \{proposal\.id\.slice\(0, 8\)\}/);
+});
+
 test("hasil QC menampilkan note APPROVED/MERGED tanpa mengubah fallback REJECTED", async () => {
   const dashboard = await readFile(new URL("../app/admin/AdminDashboard.tsx", import.meta.url), "utf8");
   assert.match(dashboard, /className="qc-result-cell"/);

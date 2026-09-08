@@ -27,7 +27,7 @@ import { formatCategoryLabel } from "../lib/category-label";
 import { logoutCurrentBrowser } from "../lib/local-logout";
 import { parseSiteTypeCompletionRows, siteTypeCompletionRows, summarizeSiteTypeProgress, summarizeSitesByType, summarizeStationMonitoring, summarizeQc } from "../lib/admin-summary";
 import { adminViewFromSearchParam, adminViewHref, type AdminView } from "../lib/admin-navigation";
-import { hasMixedMergeProposalFamilies, rankMergeProducts, type ProductAlias } from "../lib/product-qc";
+import { hasMixedMergeProposalFamilies, normalizeProductText, rankMergeProducts, type ProductAlias } from "../lib/product-qc";
 import type { QcProposalContext } from "../lib/qc-proposal-context";
 import { type QcPendingSummary } from "../lib/qc-pending-summary";
 import type { StationCompletionDetailResponse, StationCompletionSummary } from "../lib/station-completion";
@@ -83,6 +83,10 @@ type AdminIdentity = { auth_user_id: string; username: string; display_name?: st
 type QcConflict = {
   proposalId: string;
   currentStatus: Proposal["status"] | "NOT_FOUND";
+  reason?: "CANONICAL_PRODUCT_EXISTS" | "TARGET_INACTIVE" | "TARGET_NOT_FOUND";
+  existingProductId?: string;
+  existingBrand?: string;
+  existingModel?: string;
   reviewerAuthUserId: string | null;
   reviewerDisplayName: string | null;
   reviewedAt: string | null;
@@ -830,6 +834,14 @@ export default function AdminDashboard({ username, displayName }: { username: st
 
   function qcConflictMessage(conflict: QcConflict | undefined) {
     if (!conflict) return "Proposal sudah diproses Admin lain.";
+    if (conflict.reason === "CANONICAL_PRODUCT_EXISTS") {
+      const product = conflict.existingBrand && conflict.existingModel
+        ? ` (${conflict.existingBrand} - ${conflict.existingModel})`
+        : "";
+      return `Produk canonical tersebut sudah ada${product}. Gunakan Gabungkan ini dan pilih Produk existing.`;
+    }
+    if (conflict.reason === "TARGET_INACTIVE") return "Produk tujuan sudah tidak aktif. Pilih Produk tujuan aktif lain.";
+    if (conflict.reason === "TARGET_NOT_FOUND") return "Produk tujuan tidak lagi tersedia. Pilih Produk tujuan lain.";
     const actor = conflict.reviewerDisplayName ? ` oleh ${conflict.reviewerDisplayName}` : " oleh Admin lain";
     const status = conflict.currentStatus === "NOT_FOUND" ? "tidak lagi tersedia" : `sebagai ${conflict.currentStatus}`;
     return `Proposal ini sudah diproses${actor} ${status}.`;
@@ -887,6 +899,12 @@ export default function AdminDashboard({ username, displayName }: { username: st
       return false;
     }
     if (!approveDialogProposal) return false;
+    const existingProduct = products.find((product) => normalizeProductText(product.brand) === normalizeProductText(input.brand)
+      && normalizeProductText(product.model) === normalizeProductText(input.model));
+    if (existingProduct) {
+      setApproveDialogError(`Produk canonical sudah ada (${existingProduct.brand} - ${existingProduct.model}). Gunakan Gabungkan ini dan pilih Produk existing.`);
+      return false;
+    }
     const result = await qcRpc("admin_approve_product_proposal_v2", { p_proposal_id: approveDialogProposal.id, p_canonical_brand: input.brand, p_canonical_model: input.model, p_review_note: input.note || null });
     if (result?.outcome === "processed") {
       await Promise.all([loadQcProducts(), refreshProductSummary()]);
@@ -1321,7 +1339,7 @@ export default function AdminDashboard({ username, displayName }: { username: st
               </div>
             </div>}
             <div className={`admin-table-wrap qc-proposals-table${selectedPendingProposals.length ? " has-selection" : ""}`}><table><thead><tr>{qcStatus === "PENDING" && <th>Pilih</th>}<th>Usulan Brand / Tipe</th><th>Stasiun / Operator</th><th>Site / Subtipe / Kategori</th><th>Tanggal</th>{showQcResult && <th>Hasil QC</th>}<th>Aksi</th></tr></thead><tbody>
-              {filteredProposals.map((proposal) => <tr key={proposal.id}>{qcStatus === "PENDING" && <td><input type="checkbox" checked={selectedProposals.includes(proposal.id)} onChange={(event) => setSelectedProposals((current) => event.target.checked ? [...current, proposal.id] : current.filter((id) => id !== proposal.id))} /></td>}<td><strong>{proposal.proposed_brand}</strong><small>{proposal.proposed_model}</small></td><td>{stationMap.get(proposal.station_id)?.name}<small>{proposal.operator_name || "-"}</small></td><td className="qc-proposal-context"><strong>{proposal.context.siteName ?? (proposal.context.state === "missing-submission" ? "Konteks submission tidak tersedia" : proposal.context.state === "unavailable" ? "-" : "Site tidak ditemukan")}</strong>{proposal.context.state !== "missing-submission" && proposal.context.state !== "unavailable" && <small>{proposal.context.subtypeName ?? "Subtipe tidak ditemukan"}</small>}<small title={proposal.context.categories.join(" · ") || undefined}>{proposalCategoryLabel(proposal.context)}</small></td><td>{new Date(proposal.created_at).toLocaleDateString("id-ID")}</td>{showQcResult && renderQcResultCell(proposal)}<td className="table-actions">{proposal.status === "PENDING" && <><button onClick={() => void approve(proposal)}>Approve Baru</button><button onClick={() => { setSelectedProposals([proposal.id]); }}>Gabungkan ini</button><button className="danger-inline" onClick={() => void reject(proposal)}>Tolak</button></>}</td></tr>)}
+              {filteredProposals.map((proposal) => <tr key={proposal.id}>{qcStatus === "PENDING" && <td><input type="checkbox" checked={selectedProposals.includes(proposal.id)} onChange={(event) => setSelectedProposals((current) => event.target.checked ? [...current, proposal.id] : current.filter((id) => id !== proposal.id))} /></td>}<td><strong>{proposal.proposed_brand}</strong><small>{proposal.proposed_model}</small><small>Usulan {proposal.id.slice(0, 8)}</small></td><td>{stationMap.get(proposal.station_id)?.name}<small>{proposal.operator_name || "-"}</small></td><td className="qc-proposal-context"><strong>{proposal.context.siteName ?? (proposal.context.state === "missing-submission" ? "Konteks submission tidak tersedia" : proposal.context.state === "unavailable" ? "-" : "Site tidak ditemukan")}</strong>{proposal.context.state !== "missing-submission" && proposal.context.state !== "unavailable" && <small>{proposal.context.subtypeName ?? "Subtipe tidak ditemukan"}</small>}<small title={proposal.context.categories.join(" · ") || undefined}>{proposalCategoryLabel(proposal.context)}</small></td><td>{new Date(proposal.created_at).toLocaleDateString("id-ID")}</td>{showQcResult && renderQcResultCell(proposal)}<td className="table-actions">{proposal.status === "PENDING" && <><button onClick={() => void approve(proposal)}>Approve Baru</button><button onClick={() => { setSelectedProposals([proposal.id]); }}>Gabungkan ini</button><button className="danger-inline" onClick={() => void reject(proposal)}>Tolak</button></>}</td></tr>)}
               {!filteredProposals.length && <tr><td colSpan={6}>Tidak ada proposal pada status ini.</td></tr>}
             </tbody></table></div>
             <div className="submission-pagination qc-proposal-pagination" aria-label="Pagination proposal QC">
