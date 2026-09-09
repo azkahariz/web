@@ -77,6 +77,12 @@ Context referensi DIRECT berasal dari occurrence JSON exact: Station, Site, Tipe
 
 QC_RESULT menampilkan konteks Submission/proposal dan category result `Hasil QC`; proposal context QC terpisah dapat menemukan semua category payload yang memakai `productProposalId`. Multi-category dideduplikasi oleh source context sebelum UI menampilkan ringkasannya.
 
+Kolom **Kategori** pada daftar Admin Produk merangkum category display unik dari
+referensi current yang sama: occurrence DIRECT serta proposal APPROVED/MERGED
+yang masih direferensikan oleh Submission aktif. Nilai kosong tidak ditampilkan,
+duplikat exact ditampilkan sekali, dan hasil diurutkan alfabetis secara stabil.
+Kolom ini bukan master kategori pada Product dan tidak diturunkan dari Merk/Tipe.
+
 ## Pindahkan Referensi
 
 Pindahkan Referensi memindahkan **baris yang dipilih saja** dari Product source ke Product target active. Selection dapat berisi DIRECT, QC_RESULT, atau campuran sampai limit API yang tervalidasi.

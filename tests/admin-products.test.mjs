@@ -3,7 +3,9 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 import {
   filterAdminProducts,
+  loadProductReferenceCategoriesInBatches,
   loadProductUsageCountsInBatches,
+  normalizeProductReferenceCategories,
   normalizeProductSortDirection,
   normalizeProductSortField,
   normalizeProductStatusFilter,
@@ -67,6 +69,35 @@ test("usage Produk dibatch lengkap dan tidak mengubah kegagalan batch menjadi fa
   assert.equal(failed.error, "batch failed");
 });
 
+test("kategori referensi Produk dideduplikasi, diurutkan, dan dibatch tanpa partial success", async () => {
+  assert.deepEqual(
+    normalizeProductReferenceCategories([" Sensor Suhu ", "Display", "", "Display", "   ", "Sensor Tekanan"]),
+    ["Display", "Sensor Suhu", "Sensor Tekanan"],
+  );
+
+  const ids = Array.from({ length: 1103 }, (_, index) => `product-${index + 1}`);
+  const calls = [];
+  const loaded = await loadProductReferenceCategoriesInBatches(ids, async (batchIds) => {
+    calls.push(batchIds);
+    return {
+      data: batchIds.map((product_id) => ({
+        product_id,
+        categories: product_id === "product-1081" ? ["Sensor Suhu", "Display", "Display"] : [],
+      })),
+      error: null,
+    };
+  });
+  assert.deepEqual(calls.map((batch) => batch.length), [500, 500, 103]);
+  assert.equal(new Set(calls.flat()).size, ids.length);
+  assert.deepEqual(new Map((loaded.data ?? []).map((row) => [row.product_id, row.categories])).get("product-1081"), ["Display", "Sensor Suhu"]);
+
+  const failed = await loadProductReferenceCategoriesInBatches(ids, async (batchIds) => (
+    batchIds.includes("product-501") ? { data: null, error: "batch failed" } : { data: [], error: null }
+  ));
+  assert.equal(failed.data, null);
+  assert.equal(failed.error, "batch failed");
+});
+
 test("filter Produk membedakan status aktif, nonaktif, digabungkan, sumber, dan pencarian", () => {
   assert.deepEqual(filterAdminProducts(productRows).map((row) => row.id), ["a", "b"]);
   assert.deepEqual(filterAdminProducts(productRows, { status: "inactive" }).map((row) => row.id), ["c"]);
@@ -106,10 +137,11 @@ test("parameter Product list memakai allowlist dan label sumber manusiawi", () =
 });
 
 test("master Produk memakai RPC Super Admin, filter/sorting server-side, dan guard legacy sync", async () => {
-  const [migration, usageMigration, usageCountsMigration, route, listLib, pickerRoute, pickerLib, component, dashboard, globals, inventoryApp, submissionMonitor, submissionLib, hook, sync, packageJson] = await Promise.all([
+  const [migration, usageMigration, usageCountsMigration, categoryMigration, route, listLib, pickerRoute, pickerLib, component, dashboard, globals, inventoryApp, submissionMonitor, submissionLib, hook, sync, packageJson] = await Promise.all([
     readFile(new URL("../supabase/migrations/20260815120000_super_admin_product_management.sql", import.meta.url), "utf8"),
     readFile(new URL("../supabase/migrations/20260815130000_super_admin_product_usage.sql", import.meta.url), "utf8"),
     readFile(new URL("../supabase/migrations/20260815140000_super_admin_product_usage_counts.sql", import.meta.url), "utf8"),
+    readFile(new URL("../supabase/migrations/20260909120000_admin_product_reference_categories.sql", import.meta.url), "utf8"),
     readFile(new URL("../app/api/admin/products/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/lib/admin-product-list.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/products/route.ts", import.meta.url), "utf8"),
@@ -140,6 +172,14 @@ test("master Produk memakai RPC Super Admin, filter/sorting server-side, dan gua
   assert.match(usageCountsMigration, /submission\.archived_at is null/);
   assert.match(usageCountsMigration, /proposal\.status in \('APPROVED', 'MERGED'\)/);
   assert.match(usageCountsMigration, /security definer[\s\S]*set search_path = ''/);
+  assert.match(categoryMigration, /function public\.admin_product_reference_categories\(p_product_ids uuid\[\]\)/);
+  assert.match(categoryMigration, /require_super_admin/);
+  assert.match(categoryMigration, /submission_product_reference_category_rows/);
+  assert.match(categoryMigration, /submission\.archived_at is null/);
+  assert.match(categoryMigration, /proposal\.status in \('APPROVED', 'MERGED'\)/);
+  assert.match(categoryMigration, /array_agg\(distinct btrim\(ref\.category_label\) order by btrim\(ref\.category_label\)\)/);
+  assert.match(categoryMigration, /security definer[\s\S]*set search_path = ''/);
+  assert.doesNotMatch(categoryMigration, /\b(insert|update|delete)\s+(into|public\.|from)/i);
   for (const action of ["PRODUCT_CREATE", "PRODUCT_UPDATE", "PRODUCT_ACTIVATE", "PRODUCT_DEACTIVATE"]) assert.match(migration, new RegExp(action));
   assert.match(migration, /source_origin in \('SPREADSHEET', 'QC', 'ADMIN'\)/);
   assert.match(migration, /normalize_product_text/);
@@ -153,6 +193,8 @@ test("master Produk memakai RPC Super Admin, filter/sorting server-side, dan gua
   assert.match(route, /prepareAdminProductPage/);
   assert.match(route, /admin_product_usage_counts/);
   assert.match(route, /loadProductUsageCountsInBatches/);
+  assert.match(route, /admin_product_reference_categories/);
+  assert.match(route, /loadProductReferenceCategoriesInBatches/);
   assert.match(route, /\.eq\("active", true\)[\s\S]*\.order\("id"\)[\s\S]*\.range\(from, from \+ 999\)/);
   assert.match(route, /from\("product_aliases"\)[\s\S]*\.order\("product_id"\)[\s\S]*\.order\("id"\)/);
   assert.match(route, /const shouldLoadUsageCounts = !activeOnly \|\| sortField === "usage"/);
@@ -164,6 +206,7 @@ test("master Produk memakai RPC Super Admin, filter/sorting server-side, dan gua
   assert.match(listLib, /field === "usage"/);
   assert.match(listLib, /const filtered = filterAdminProducts/);
   assert.match(listLib, /const sorted = sortAdminProducts/);
+  assert.match(listLib, /normalizeProductReferenceCategories/);
   assert.match(route, /usageProductId/);
   assert.match(route, /admin_product_usage/);
   assert.match(route, /usageCountProductId/);
@@ -214,6 +257,11 @@ test("master Produk memakai RPC Super Admin, filter/sorting server-side, dan gua
   assert.match(component, /Masukkan merk/);
   assert.match(component, /Masukkan tipe/);
   assert.match(component, /Simpan Perubahan/);
+  assert.match(component, /<th>Kategori<\/th>/);
+  assert.match(component, /product\.categories\.map/);
+  assert.match(component, /product-category-empty/);
+  assert.match(component, /colSpan=\{7\}/);
+  assert.match(globals, /\.product-category-list[\s\S]*overflow-wrap: anywhere/);
   assert.doesNotMatch(component, /confirmLabel: "Berikutnya"/);
   for (const option of ["50", "100", "200", "500", "1000"]) assert.match(submissionLib, new RegExp(`\\b${option}\\b`));
   for (const contract of ["Baris per halaman", "Menampilkan", "Sebelumnya", "Berikutnya", "Halaman", "Custom..."]) {

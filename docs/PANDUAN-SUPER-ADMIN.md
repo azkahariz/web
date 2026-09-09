@@ -13,7 +13,8 @@ sebelum menjalankan tindakan yang mengubah data.
 
 - **Ringkasan**: jumlah stasiun, akun, Site, Produk, submission, lock, dan status QC.
 - **Stasiun & Pengisian**: kombinasi master Site/Subtipe dan submission.
-- **Produk**: master canonical Merk dan Tipe produk.
+- **Produk**: master canonical Merk dan Tipe produk, termasuk kategori unik dari
+  referensi aktif/current. Produk tanpa kategori referensi ditampilkan dengan `—`.
 - **Akun Stasiun**: provision, aktif/nonaktif, dan reset password.
 - **Lock Aktif**: lock yang belum melewati lima menit tanpa aktivitas.
 - **QC Produk**: pemeriksaan usulan Brand/Tipe.

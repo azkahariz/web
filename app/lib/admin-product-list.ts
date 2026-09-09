@@ -8,6 +8,11 @@ export type ProductUsageCountRow = {
   reference_count: number;
 };
 
+export type ProductReferenceCategoryRow = {
+  product_id: string;
+  categories: string[];
+};
+
 export type AdminProductListRow = {
   id: string;
   brand: string;
@@ -16,6 +21,7 @@ export type AdminProductListRow = {
   source_origin: string;
   merged_into_product_id?: string | null;
   usage_count?: number;
+  categories?: string[];
 };
 
 const collator = new Intl.Collator("id", { sensitivity: "base", numeric: true });
@@ -31,6 +37,29 @@ export async function loadProductUsageCountsInBatches<TError>(
     const result = await loadBatch(uniqueIds.slice(from, from + batchSize));
     if (result.error) return { data: null, error: result.error };
     rows.push(...(result.data ?? []));
+  }
+  return { data: rows, error: null };
+}
+
+export function normalizeProductReferenceCategories(categories: string[]) {
+  return [...new Set(categories.map((category) => category.trim()).filter(Boolean))]
+    .sort((left, right) => collator.compare(left, right) || left.localeCompare(right));
+}
+
+export async function loadProductReferenceCategoriesInBatches<TError>(
+  productIds: string[],
+  loadBatch: (productIds: string[]) => PromiseLike<{ data: ProductReferenceCategoryRow[] | null; error: TError | null }>,
+  batchSize = PRODUCT_USAGE_COUNT_BATCH_SIZE,
+) {
+  const uniqueIds = [...new Set(productIds)];
+  const rows: ProductReferenceCategoryRow[] = [];
+  for (let from = 0; from < uniqueIds.length; from += batchSize) {
+    const result = await loadBatch(uniqueIds.slice(from, from + batchSize));
+    if (result.error) return { data: null, error: result.error };
+    rows.push(...(result.data ?? []).map((row) => ({
+      ...row,
+      categories: normalizeProductReferenceCategories(row.categories ?? []),
+    })));
   }
   return { data: rows, error: null };
 }
