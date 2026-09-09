@@ -16,7 +16,7 @@ import ProductReferenceMoveDialog, { type MoveReferenceIdentity } from "./Produc
 import ProductMergeDialog from "./ProductMergeDialog";
 import ProductDeleteDialog from "./ProductDeleteDialog";
 
-type Product = { id: string; brand: string; model: string; active: boolean; source_origin: string; usage_count: number; merged_into_product_id?: string; merged_target?: { id: string; brand: string; model: string } };
+type Product = { id: string; brand: string; model: string; categories: string[]; active: boolean; source_origin: string; usage_count: number; merged_into_product_id?: string; merged_target?: { id: string; brand: string; model: string } };
 type Summary = { total_count: number; active_count: number; inactive_count: number };
 type ProductUsage = {
   rows: Array<{ stationName: string; siteName: string; siteTypeName: string; subtypeName: string; categories: string[]; referenceCount: number }>;
@@ -453,6 +453,11 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
       {([
         ["brand", "Merk"],
         ["model", "Tipe"],
+      ] as const).map(([field, label]) => <th key={field} aria-sort={sortField === field ? (sortDirection === "asc" ? "ascending" : "descending") : "none"}>
+        <button className="sortable-header" type="button" onClick={() => changeSort(field)}>{label}<span aria-hidden="true">{sortField === field ? (sortDirection === "asc" ? "\u25B2" : "\u25BC") : ""}</span></button>
+      </th>)}
+      <th>Kategori</th>
+      {([
         ["status", "Status"],
         ["source", "Sumber"],
         ["usage", "Penggunaan"],
@@ -461,8 +466,8 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
       </th>)}
       <th>Aksi</th>
     </tr></thead><tbody>
-      {rows.map((product) => <tr key={product.id}><td><strong>{product.brand}</strong>{product.merged_target && <small className="product-merged-target">Ke {product.merged_target.brand} · {product.merged_target.model}</small>}</td><td>{product.model}</td><td><span className={`status-pill ${product.merged_into_product_id ? "merged" : product.active ? "active" : "inactive"}`}>{product.merged_into_product_id ? "Digabungkan" : product.active ? "Aktif" : "Nonaktif"}</span></td><td>{productSourceLabel(product.source_origin)}</td><td><button className="usage-link" type="button" onClick={() => openUsage(product)}>{product.usage_count ?? 0} referensi</button></td><td className="table-actions">{product.merged_into_product_id ? <button type="button" onClick={() => openUsage(product)}>Lihat Riwayat</button> : <><AsyncButton loading={activeAction === `edit:${product.id}`} loadingText="Menyimpan..." onClick={() => openEditDialog(product)}>Edit</AsyncButton><AsyncButton className={product.active ? "danger-inline" : undefined} loading={activeAction === `active:${product.id}`} loadingText="Menyimpan..." onClick={() => void setActive(product)}>{product.active ? "Nonaktifkan" : "Aktifkan"}</AsyncButton><button className="product-merge-action" type="button" onClick={() => setMergeProduct(product)}>Gabungkan</button><button className="product-delete-action" type="button" disabled={product.active} title={product.active ? "Nonaktifkan Produk terlebih dahulu sebelum menghapus permanen." : "Periksa keterkaitan dan hapus Produk permanen"} onClick={() => setDeleteProduct(product)}>Hapus Permanen</button></>}</td></tr>)}
-      {!rows.length && <tr><td colSpan={6}>{loading ? "Memuat produk..." : "Tidak ada Produk yang sesuai dengan filter."}</td></tr>}
+      {rows.map((product) => <tr key={product.id}><td><strong>{product.brand}</strong>{product.merged_target && <small className="product-merged-target">Ke {product.merged_target.brand} · {product.merged_target.model}</small>}</td><td>{product.model}</td><td><div className="product-category-list">{product.categories.length ? product.categories.map((category) => <span key={category}>{category}</span>) : <span className="product-category-empty">—</span>}</div></td><td><span className={`status-pill ${product.merged_into_product_id ? "merged" : product.active ? "active" : "inactive"}`}>{product.merged_into_product_id ? "Digabungkan" : product.active ? "Aktif" : "Nonaktif"}</span></td><td>{productSourceLabel(product.source_origin)}</td><td><button className="usage-link" type="button" onClick={() => openUsage(product)}>{product.usage_count ?? 0} referensi</button></td><td className="table-actions">{product.merged_into_product_id ? <button type="button" onClick={() => openUsage(product)}>Lihat Riwayat</button> : <><AsyncButton loading={activeAction === `edit:${product.id}`} loadingText="Menyimpan..." onClick={() => openEditDialog(product)}>Edit</AsyncButton><AsyncButton className={product.active ? "danger-inline" : undefined} loading={activeAction === `active:${product.id}`} loadingText="Menyimpan..." onClick={() => void setActive(product)}>{product.active ? "Nonaktifkan" : "Aktifkan"}</AsyncButton><button className="product-merge-action" type="button" onClick={() => setMergeProduct(product)}>Gabungkan</button><button className="product-delete-action" type="button" disabled={product.active} title={product.active ? "Nonaktifkan Produk terlebih dahulu sebelum menghapus permanen." : "Periksa keterkaitan dan hapus Produk permanen"} onClick={() => setDeleteProduct(product)}>Hapus Permanen</button></>}</td></tr>)}
+      {!rows.length && <tr><td colSpan={7}>{loading ? "Memuat produk..." : "Tidak ada Produk yang sesuai dengan filter."}</td></tr>}
     </tbody></table></div>
     <div className="submission-pagination" aria-label="Pagination produk">
       <label className="page-size-control">Baris per halaman:

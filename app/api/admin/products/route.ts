@@ -6,6 +6,7 @@ import {
   normalizeProductSortDirection,
   normalizeProductSortField,
   normalizeProductStatusFilter,
+  loadProductReferenceCategoriesInBatches,
   loadProductUsageCountsInBatches,
   prepareAdminProductPage,
   productSourceLabel,
@@ -183,13 +184,21 @@ export async function GET(request: Request) {
     { search, status, source, sort: sortField, direction: sortDirection, page, pageSize },
   );
 
-  if (!activeOnly && prepared.rows.length) {
-    const canonicalResult = await auth.client.rpc("resolve_canonical_products", { p_product_ids: prepared.rows.map((row) => row.id) });
+  const categoryResult = !activeOnly && prepared.rows.length
+    ? await loadProductReferenceCategoriesInBatches(prepared.rows.map((row) => row.id),
+      (productIds) => auth.client.rpc("admin_product_reference_categories", { p_product_ids: productIds }))
+    : { data: [], error: null };
+  if (categoryResult.error) return rpcErrorResponse(categoryResult.error, "Kategori produk gagal dimuat.");
+  const categoriesById = new Map((categoryResult.data ?? []).map((row) => [row.product_id, row.categories]));
+  const preparedRows = prepared.rows.map((row) => ({ ...row, categories: categoriesById.get(row.id) ?? [] }));
+
+  if (!activeOnly && preparedRows.length) {
+    const canonicalResult = await auth.client.rpc("resolve_canonical_products", { p_product_ids: preparedRows.map((row) => row.id) });
     if (!canonicalResult.error) {
       const canonicalById = new Map(((canonicalResult.data ?? []) as CanonicalRow[]).map((row) => [row.product_id, row]));
       return NextResponse.json({
         ...prepared,
-        rows: prepared.rows.map((row) => {
+        rows: preparedRows.map((row) => {
           const canonical = canonicalById.get(row.id);
           return canonical && canonical.canonical_product_id !== row.id
             ? { ...row, merged_into_product_id: canonical.canonical_product_id, merged_target: { id: canonical.canonical_product_id, brand: canonical.brand, model: canonical.model } }
@@ -198,7 +207,7 @@ export async function GET(request: Request) {
       });
     }
   }
-  return NextResponse.json(prepared);
+  return NextResponse.json({ ...prepared, rows: preparedRows });
 }
 
 export async function POST(request: Request) {

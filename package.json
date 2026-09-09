@@ -29,6 +29,7 @@
     "verify:product-proposal-summary": "node --env-file-if-exists=.env.local scripts/verify-product-proposal-summary.mjs",
     "verify:admin-products": "node --env-file-if-exists=.env.local scripts/verify-admin-products.mjs",
     "verify:product-usage": "node --env-file-if-exists=.env.local scripts/verify-product-usage.mjs",
+    "verify:admin-product-categories": "node --env-file-if-exists=.env.local scripts/verify-admin-product-categories.mjs",
     "verify:product-dependencies": "node --env-file-if-exists=.env.local scripts/verify-product-dependencies.mjs",
     "verify:product-reference-move": "node --env-file-if-exists=.env.local scripts/verify-product-reference-move.mjs",
     "verify:product-merge": "node --env-file-if-exists=.env.local scripts/verify-product-merge.mjs",
