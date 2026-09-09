@@ -10,6 +10,8 @@ import {
   productSourceLabel,
   sortAdminProducts,
 } from "../app/lib/admin-product-list.ts";
+import { loadAllProductCatalogRows } from "../app/lib/product-picker.ts";
+import { rankProductSearch } from "../app/lib/product-qc.ts";
 
 const productRows = [
   { id: "a", brand: "Vaisala", model: "WXT536", active: true, source_origin: "SPREADSHEET", merged_into_product_id: null, usage_count: 12 },
@@ -17,6 +19,24 @@ const productRows = [
   { id: "c", brand: "Kipp", model: "CMP11", active: false, source_origin: "QC", merged_into_product_id: null, usage_count: 7 },
   { id: "d", brand: "Campbell", model: "CR6", active: false, source_origin: "ADMIN", merged_into_product_id: "b", usage_count: 1 },
 ];
+
+test("pencarian Product Picker memuat katalog melewati batas 1000 row", async () => {
+  const catalog = Array.from({ length: 1004 }, (_, index) => ({
+    id: `product-${index + 1}`,
+    brand: index === 1000 ? "Vega" : `Brand ${String(index + 1).padStart(4, "0")}`,
+    model: index === 1000 ? "Vegapuls C23" : `Model ${index + 1}`,
+    active: true,
+  }));
+  const requestedRanges = [];
+  const loaded = await loadAllProductCatalogRows(async (from, to) => {
+    requestedRanges.push([from, to]);
+    return { data: catalog.slice(from, to + 1), error: null };
+  });
+
+  assert.deepEqual(requestedRanges, [[0, 999], [1000, 1999]]);
+  assert.equal(loaded.data?.length, 1004);
+  assert.equal(rankProductSearch("Vega", loaded.data ?? [])[0]?.product.id, "product-1001");
+});
 
 test("filter Produk membedakan status aktif, nonaktif, digabungkan, sumber, dan pencarian", () => {
   assert.deepEqual(filterAdminProducts(productRows).map((row) => row.id), ["a", "b"]);
@@ -121,6 +141,8 @@ test("master Produk memakai RPC Super Admin, filter/sorting server-side, dan gua
   assert.match(pickerRoute, /mode === "recommend"/);
   assert.match(pickerRoute, /rankProductSearch/);
   assert.match(pickerRoute, /recommendStationProducts/);
+  assert.match(pickerRoute, /loadAllProductCatalogRows/);
+  assert.match(pickerRoute, /from\("product_aliases"\)[\s\S]*\.range\(from, to\)/);
   assert.match(pickerRoute, /count: "exact"/);
   assert.match(pickerRoute, /\.order\("brand"/);
   assert.match(pickerRoute, /\.order\("model"/);

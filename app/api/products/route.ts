@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "../../lib/supabase/server";
-import { PRODUCT_PICKER_PAGE_SIZE } from "../../lib/product-picker";
+import { loadAllProductCatalogRows, PRODUCT_PICKER_PAGE_SIZE } from "../../lib/product-picker";
 import { rankProductSearch, recommendStationProducts, type ProductAlias } from "../../lib/product-qc";
 
 type ProductRow = { id: string; brand: string; model: string; active: boolean; source_origin: string; spreadsheet_synced: boolean };
-type AliasRow = { product_id: string; brand_alias: string; model_alias: string };
+type AliasRow = { id: string; product_id: string; brand_alias: string; model_alias: string };
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function catalogRows(rows: ProductRow[]) {
@@ -37,8 +37,15 @@ export async function GET(request: Request) {
   const mode = url.searchParams.get("mode") || "browse";
   if ((mode === "search" || mode === "recommend") && (search || brand || model)) {
     const [productResult, aliasResult] = await Promise.all([
-      client.from("products").select("id, brand, model, active, source_origin, spreadsheet_synced").eq("active", true).order("brand").order("model").order("id"),
-      client.from("product_aliases").select("product_id, brand_alias, model_alias"),
+      loadAllProductCatalogRows((from, to) => client.from("products")
+        .select("id, brand, model, active, source_origin, spreadsheet_synced")
+        .eq("active", true)
+        .order("brand").order("model").order("id")
+        .range(from, to)),
+      loadAllProductCatalogRows((from, to) => client.from("product_aliases")
+        .select("id, product_id, brand_alias, model_alias")
+        .order("product_id").order("id")
+        .range(from, to)),
     ]);
     if (productResult.error || aliasResult.error) return NextResponse.json({ error: "Katalog produk gagal dimuat." }, { status: 400 });
     const rows = (productResult.data ?? []) as ProductRow[];
