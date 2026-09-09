@@ -6,6 +6,7 @@ import {
   normalizeProductSortDirection,
   normalizeProductSortField,
   normalizeProductStatusFilter,
+  loadProductUsageCountsInBatches,
   prepareAdminProductPage,
   productSourceLabel,
   type AdminProductListRow,
@@ -17,7 +18,7 @@ type RpcError = { code?: string | null };
 type ProductAction = "create" | "update" | "set-active";
 type ProductRow = AdminProductListRow;
 type CanonicalRow = { product_id: string; canonical_product_id: string; brand: string; model: string };
-type AliasRow = { product_id: string; brand_alias: string; model_alias: string };
+type AliasRow = { id: string; product_id: string; brand_alias: string; model_alias: string };
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function productPageSize(value: string | null) {
@@ -51,7 +52,8 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const usageCountProductIds = [...new Set(url.searchParams.getAll("usageCountProductId").filter((value) => UUID_PATTERN.test(value)))];
   if (usageCountProductIds.length) {
-    const { data, error } = await auth.client.rpc("admin_product_usage_counts", { p_product_ids: usageCountProductIds });
+    const { data, error } = await loadProductUsageCountsInBatches(usageCountProductIds,
+      (productIds) => auth.client.rpc("admin_product_usage_counts", { p_product_ids: productIds }));
     if (error) return rpcErrorResponse(error, "Jumlah penggunaan produk gagal dimuat.");
     return NextResponse.json({ usageCounts: data ?? [] });
   }
@@ -109,6 +111,7 @@ export async function GET(request: Request) {
         const result = await auth.client.from("products")
           .select("id, brand, model, active, source_origin")
           .eq("active", true)
+          .order("id")
           .range(from, from + 999);
         if (result.error) throw result.error;
         rows.push(...((result.data ?? []) as ProductRow[]));
@@ -120,7 +123,9 @@ export async function GET(request: Request) {
       const rows: AliasRow[] = [];
       for (let from = 0; ; from += 1000) {
         const result = await auth.client.from("product_aliases")
-          .select("product_id, brand_alias, model_alias")
+          .select("id, product_id, brand_alias, model_alias")
+          .order("product_id")
+          .order("id")
           .range(from, from + 999);
         if (result.error) throw result.error;
         rows.push(...((result.data ?? []) as AliasRow[]));
@@ -168,7 +173,8 @@ export async function GET(request: Request) {
 
   const shouldLoadUsageCounts = !activeOnly || sortField === "usage";
   const usageResult = matchingRows.length && shouldLoadUsageCounts
-    ? await auth.client.rpc("admin_product_usage_counts", { p_product_ids: matchingRows.map((row) => row.id) })
+    ? await loadProductUsageCountsInBatches(matchingRows.map((row) => row.id),
+      (productIds) => auth.client.rpc("admin_product_usage_counts", { p_product_ids: productIds }))
     : { data: [], error: null };
   if (usageResult.error) return rpcErrorResponse(usageResult.error, "Jumlah penggunaan produk gagal dimuat.");
   const usageById = new Map(((usageResult.data ?? []) as Array<{ product_id: string; reference_count: number }>).map((row) => [row.product_id, row.reference_count]));

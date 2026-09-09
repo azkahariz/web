@@ -80,6 +80,8 @@ Sebelum test yang dapat menulis: pastikan host local, project target benar, fixt
 
 Fixture verifier bersifat sementara dan harus dibersihkan/rollback oleh script. Jangan menggunakan count data production yang berubah sebagai assertion permanen. Product, Submission, dan master production bukan test fixture.
 
+Untuk query yang dapat melewati batas PostgREST, fixture harus melampaui 1.000 row dan memuat record penting setelah batas tersebut. Verifikasi seluruh UUID muncul tepat sekali, setiap batch gagal secara utuh bila salah satu request error, dan pagination memakai urutan deterministik dengan primary key sebagai tiebreaker.
+
 ## Feature-Specific Verification Matrix
 
 | Change type | Minimum tests | DB required | Preview required | Production read-only check |

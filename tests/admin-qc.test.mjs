@@ -4,6 +4,7 @@ import test from "node:test";
 import data from "../app/data.generated.json" with { type: "json" };
 import { hasMixedMergeProposalFamilies, normalizeProductText, rankMergeProducts, rankProductSearch, recommendStationProducts, recommendMergeProducts, resolveInstalledProduct, suggestProducts } from "../app/lib/product-qc.ts";
 import { isExactQcMergeTarget, normalizeQcMergeTargetPage, normalizeQcMergeTargetPageSize, qcMergeTargetSearchTerms } from "../app/lib/qc-merge-targets.ts";
+import { loadAllProductCatalogRows } from "../app/lib/product-picker.ts";
 import { buildQcProposalContexts, proposalCategoriesById } from "../app/lib/qc-proposal-context.ts";
 
 test("normalisasi dan suggestion mengenali variasi Campbell CR1000X tanpa auto merge", () => {
@@ -362,6 +363,8 @@ test("QC merge target memakai discovery server-side yang tidak terpotong 1000 Pr
   assert.match(route, /\.range\(from, to\)/);
   assert.match(route, /\.eq\("active", true\)\.is\("merged_into_product_id", null\)/);
   assert.match(route, /rankMergeProducts/);
+  assert.match(route, /select\("id, product_id, brand_alias, model_alias"\)/);
+  assert.match(route, /\.order\("product_id"\)\.order\("id"\)\.range\(offset, offset \+ 999\)/);
   assert.match(route, /auth\.client\.rpc\("admin_product_summary"\)/);
   assert.match(route, /client\.auth\.getUser/);
   assert.match(dialog, /Halaman \{page\} dari \{pageCount\}/);
@@ -379,6 +382,17 @@ test("QC merge target memakai discovery server-side yang tidak terpotong 1000 Pr
     [{ id: "proposal", proposedBrand: "XINGCO", proposedModel: "PV-XC802" }],
     { brand: "xingco", model: "PV XC802" },
   ), true);
+});
+
+test("pagination alias QC stabil saat alias satu Product melewati batas batch", async () => {
+  const aliases = Array.from({ length: 1005 }, (_, index) => ({
+    id: `alias-${String(index + 1).padStart(4, "0")}`,
+    productId: index < 1002 ? "shared-product" : `product-${index}`,
+  })).sort((left, right) => left.productId.localeCompare(right.productId) || left.id.localeCompare(right.id));
+  const loaded = await loadAllProductCatalogRows(async (from, to) => ({ data: aliases.slice(from, to + 1), error: null }));
+  assert.equal(loaded.data?.length, aliases.length);
+  assert.equal(new Set((loaded.data ?? []).map((alias) => alias.id)).size, aliases.length);
+  assert.deepEqual(loaded.data, aliases);
 });
 
 test("hasil QC menampilkan note APPROVED/MERGED tanpa mengubah fallback REJECTED", async () => {

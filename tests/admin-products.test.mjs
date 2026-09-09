@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 import {
   filterAdminProducts,
+  loadProductUsageCountsInBatches,
   normalizeProductSortDirection,
   normalizeProductSortField,
   normalizeProductStatusFilter,
@@ -10,6 +11,8 @@ import {
   productSourceLabel,
   sortAdminProducts,
 } from "../app/lib/admin-product-list.ts";
+import { loadAllProductCatalogRows } from "../app/lib/product-picker.ts";
+import { rankProductSearch } from "../app/lib/product-qc.ts";
 
 const productRows = [
   { id: "a", brand: "Vaisala", model: "WXT536", active: true, source_origin: "SPREADSHEET", merged_into_product_id: null, usage_count: 12 },
@@ -17,6 +20,52 @@ const productRows = [
   { id: "c", brand: "Kipp", model: "CMP11", active: false, source_origin: "QC", merged_into_product_id: null, usage_count: 7 },
   { id: "d", brand: "Campbell", model: "CR6", active: false, source_origin: "ADMIN", merged_into_product_id: "b", usage_count: 1 },
 ];
+
+test("pencarian Product Picker memuat katalog melewati batas 1000 row", async () => {
+  const catalog = Array.from({ length: 1004 }, (_, index) => ({
+    id: `product-${index + 1}`,
+    brand: index === 1000 ? "Vega" : `Brand ${String(index + 1).padStart(4, "0")}`,
+    model: index === 1000 ? "Vegapuls C23" : `Model ${index + 1}`,
+    active: true,
+  }));
+  const requestedRanges = [];
+  const loaded = await loadAllProductCatalogRows(async (from, to) => {
+    requestedRanges.push([from, to]);
+    return { data: catalog.slice(from, to + 1), error: null };
+  });
+
+  assert.deepEqual(requestedRanges, [[0, 999], [1000, 1999]]);
+  assert.equal(loaded.data?.length, 1004);
+  assert.equal(rankProductSearch("Vega", loaded.data ?? [])[0]?.product.id, "product-1001");
+});
+
+test("usage Produk dibatch lengkap dan tidak mengubah kegagalan batch menjadi false zero", async () => {
+  const ids = Array.from({ length: 1103 }, (_, index) => `product-${index + 1}`);
+  const authoritative = new Map(ids.map((id, index) => [id, index === 1080 ? 3 : index === 7 ? 8 : 0]));
+  const singleCallRows = ids.slice(0, 1000).map((product_id) => ({ product_id, reference_count: authoritative.get(product_id) ?? 0 }));
+  assert.equal(new Map(singleCallRows.map((row) => [row.product_id, row.reference_count])).get("product-1081") ?? 0, 0);
+
+  const calls = [];
+  const loaded = await loadProductUsageCountsInBatches(ids, async (batchIds) => {
+    calls.push(batchIds);
+    return { data: batchIds.map((product_id) => ({ product_id, reference_count: authoritative.get(product_id) ?? 0 })), error: null };
+  });
+  assert.deepEqual(calls.map((batch) => batch.length), [500, 500, 103]);
+  assert.equal(new Set(calls.flat()).size, ids.length);
+  assert.equal(new Map((loaded.data ?? []).map((row) => [row.product_id, row.reference_count])).get("product-1081"), 3);
+
+  const sorted = prepareAdminProductPage(ids.map((id) => ({
+    id, brand: id, model: "Model", active: true, source_origin: "ADMIN",
+    usage_count: new Map((loaded.data ?? []).map((row) => [row.product_id, row.reference_count])).get(id) ?? 0,
+  })), { sort: "usage", direction: "desc", pageSize: 2 });
+  assert.deepEqual(sorted.rows.map((row) => row.id), ["product-8", "product-1081"]);
+
+  const failed = await loadProductUsageCountsInBatches(ids, async (batchIds) => (
+    batchIds.includes("product-501") ? { data: null, error: "batch failed" } : { data: [], error: null }
+  ));
+  assert.equal(failed.data, null);
+  assert.equal(failed.error, "batch failed");
+});
 
 test("filter Produk membedakan status aktif, nonaktif, digabungkan, sumber, dan pencarian", () => {
   assert.deepEqual(filterAdminProducts(productRows).map((row) => row.id), ["a", "b"]);
@@ -103,6 +152,9 @@ test("master Produk memakai RPC Super Admin, filter/sorting server-side, dan gua
   assert.match(route, /normalizeProductSortDirection/);
   assert.match(route, /prepareAdminProductPage/);
   assert.match(route, /admin_product_usage_counts/);
+  assert.match(route, /loadProductUsageCountsInBatches/);
+  assert.match(route, /\.eq\("active", true\)[\s\S]*\.order\("id"\)[\s\S]*\.range\(from, from \+ 999\)/);
+  assert.match(route, /from\("product_aliases"\)[\s\S]*\.order\("product_id"\)[\s\S]*\.order\("id"\)/);
   assert.match(route, /const shouldLoadUsageCounts = !activeOnly \|\| sortField === "usage"/);
   assert.match(route, /matchingRows\.map\(\(row\) => row\.id\)/);
   assert.match(route, /search, status, source, sort: sortField, direction: sortDirection, page, pageSize/);
@@ -121,6 +173,8 @@ test("master Produk memakai RPC Super Admin, filter/sorting server-side, dan gua
   assert.match(pickerRoute, /mode === "recommend"/);
   assert.match(pickerRoute, /rankProductSearch/);
   assert.match(pickerRoute, /recommendStationProducts/);
+  assert.match(pickerRoute, /loadAllProductCatalogRows/);
+  assert.match(pickerRoute, /from\("product_aliases"\)[\s\S]*\.range\(from, to\)/);
   assert.match(pickerRoute, /count: "exact"/);
   assert.match(pickerRoute, /\.order\("brand"/);
   assert.match(pickerRoute, /\.order\("model"/);
@@ -201,6 +255,8 @@ test("master Produk memakai RPC Super Admin, filter/sorting server-side, dan gua
   assert.doesNotMatch(hook, /setLiveProducts\(\[\]\)/);
   assert.match(hook, /fetch\(`\/api\/products/);
   assert.match(hook, /PRODUCT_PICKER_PAGE_SIZE/);
+  assert.match(hook, /loadAllProductCatalogRows/);
+  assert.match(hook, /from\("product_proposals"\)[\s\S]*\.order\("id"\)[\s\S]*\.range\(from, to\)/);
   assert.match(hook, /setPage/);
   assert.doesNotMatch(hook, /data\.generated\.json/);
   assert.doesNotMatch(hook, /product_aliases/);

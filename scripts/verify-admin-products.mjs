@@ -17,7 +17,7 @@ function literal(value) {
 async function createAuthUser(tx, prefix) {
   const id = randomUUID();
   await tx`
-    insert into auth.users (id, aud, role, email, encrypted_password, confirmed_at, raw_app_meta_data, raw_user_meta_data, created_at, updated_at)
+    insert into auth.users (id, aud, role, email, encrypted_password, email_confirmed_at, raw_app_meta_data, raw_user_meta_data, created_at, updated_at)
     values (${id}, 'authenticated', 'authenticated', ${`${prefix}-${id}@verify.invalid`}, '', now(),
       '{"provider":"email","providers":["email"]}'::jsonb, '{}'::jsonb, now(), now())
   `;
