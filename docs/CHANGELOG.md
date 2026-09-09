@@ -11,6 +11,11 @@
 Tanggal mengikuti Git history. Ini ringkasan milestone, bukan daftar seluruh
 commit.
 
+## 2026-09-09
+
+- Daftar Admin Produk menampilkan kategori unik dari referensi Product current
+  melalui agregasi bulk tanpa query per Product.
+
 ## 2026-09-08
 
 - QC menjaga UUID proposal REJECTED sebagai history terminal dan menampilkan pembeda proposal pada row yang beridentitas Produk sama.
