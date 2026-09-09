@@ -98,6 +98,12 @@ flowchart TD
 **Cek pertama:** bandingkan aggregate status RPC dengan list yang dipaginasi.
 **Jangan lakukan:** menghitung total dari page client saja.
 
+### Hasil List Hilang setelah 1.000 Baris
+
+**Kemungkinan layer:** batas maksimum row PostgREST atau pagination tanpa urutan unik.
+**Cek pertama:** bandingkan count database dengan jumlah row seluruh batch; pastikan setiap `.range()` memakai primary key sebagai tiebreaker terakhir.
+**Jangan lakukan:** menaikkan batas global sebagai pengganti batching atau menganggap batch yang gagal sebagai nilai nol.
+
 ### Proposal REJECTED Terlihat Muncul Lagi
 
 **Kemungkinan layer:** proposal berbeda dengan Brand/Model sama, status list, atau history QC.

@@ -15,7 +15,7 @@ import {
 
 type RpcError = { code?: string | null };
 type ProposalRow = { id: string; proposed_brand: string; proposed_model: string; status: string };
-type AliasRow = { product_id: string; brand_alias: string; model_alias: string };
+type AliasRow = { id: string; product_id: string; brand_alias: string; model_alias: string };
 type RequestBody = { proposalIds?: unknown; search?: unknown; page?: unknown; pageSize?: unknown };
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -93,8 +93,8 @@ export async function POST(request: Request) {
       if ((batch.data?.length ?? 0) < 1000) break;
     }
     for (let offset = 0; ; offset += 1000) {
-      const batch = await auth.client.from("product_aliases").select("product_id, brand_alias, model_alias")
-        .order("product_id").range(offset, offset + 999);
+      const batch = await auth.client.from("product_aliases").select("id, product_id, brand_alias, model_alias")
+        .order("product_id").order("id").range(offset, offset + 999);
       if (batch.error) return errorResponse(batch.error, "Alias target merge gagal dimuat.");
       allAliases.push(...((batch.data ?? []) as AliasRow[]));
       if ((batch.data?.length ?? 0) < 1000) break;

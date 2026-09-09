@@ -1,6 +1,12 @@
 export type AdminProductStatusFilter = "active" | "inactive" | "merged" | "all";
 export type AdminProductSortField = "brand" | "model" | "status" | "source" | "usage";
 export type AdminProductSortDirection = "asc" | "desc";
+export const PRODUCT_USAGE_COUNT_BATCH_SIZE = 500;
+
+export type ProductUsageCountRow = {
+  product_id: string;
+  reference_count: number;
+};
 
 export type AdminProductListRow = {
   id: string;
@@ -13,6 +19,21 @@ export type AdminProductListRow = {
 };
 
 const collator = new Intl.Collator("id", { sensitivity: "base", numeric: true });
+
+export async function loadProductUsageCountsInBatches<TError>(
+  productIds: string[],
+  loadBatch: (productIds: string[]) => PromiseLike<{ data: ProductUsageCountRow[] | null; error: TError | null }>,
+  batchSize = PRODUCT_USAGE_COUNT_BATCH_SIZE,
+) {
+  const uniqueIds = [...new Set(productIds)];
+  const rows: ProductUsageCountRow[] = [];
+  for (let from = 0; from < uniqueIds.length; from += batchSize) {
+    const result = await loadBatch(uniqueIds.slice(from, from + batchSize));
+    if (result.error) return { data: null, error: result.error };
+    rows.push(...(result.data ?? []));
+  }
+  return { data: rows, error: null };
+}
 
 export function productSourceLabel(origin: string) {
   if (origin === "QC") return "QC Produk";

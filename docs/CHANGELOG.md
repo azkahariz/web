@@ -16,6 +16,7 @@ commit.
 - QC menjaga UUID proposal REJECTED sebagai history terminal dan menampilkan pembeda proposal pada row yang beridentitas Produk sama.
 - Approve Baru mengembalikan conflict terstruktur untuk canonical duplicate; QC Merge mengikuti canonical successor target secara atomik.
 - Target QC Merge memakai pencarian server-side terpaginated agar Product canonical tetap ditemukan ketika katalog melebihi 1.000 row.
+- Product Picker dan perhitungan penggunaan Product memakai batching melewati batas PostgREST; pagination rekomendasi Product/QC memakai urutan UUID deterministik.
 
 ## 2026-08-12
 

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getSupabaseBrowserClient } from "../lib/supabase/client";
 import type { Product, ProductProposal } from "../types/inventory";
-import { PRODUCT_PICKER_PAGE_SIZE } from "../lib/product-picker";
+import { loadAllProductCatalogRows, PRODUCT_PICKER_PAGE_SIZE } from "../lib/product-picker";
 
 type ProposalRow = {
   id: string;
@@ -52,7 +52,11 @@ export function useProductCatalog(stationId: string, search = "", recommendation
       const [productResponse, proposalResult] = await Promise.all([
       fetch(`/api/products?${params.toString()}`, { cache: "no-store" }),
       stationId
-        ? client.from("product_proposals").select("id, proposed_brand, proposed_model, status, resolved_product_id, review_note, resolved_product:products!product_proposals_resolved_product_id_fkey(brand, model)").eq("station_id", stationId)
+        ? loadAllProductCatalogRows((from, to) => client.from("product_proposals")
+          .select("id, proposed_brand, proposed_model, status, resolved_product_id, review_note, resolved_product:products!product_proposals_resolved_product_id_fkey(brand, model)")
+          .eq("station_id", stationId)
+          .order("id")
+          .range(from, to))
         : Promise.resolve({ data: [], error: null }),
       ]);
       const productResult = await productResponse.json() as { rows?: ProductRow[]; totalCount?: number; error?: string };
