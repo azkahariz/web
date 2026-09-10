@@ -187,6 +187,9 @@ test("master Produk memakai RPC Super Admin, filter/sorting server-side, dan gua
   assert.match(route, /auth\.getUser/);
   assert.match(route, /status: 403/);
   assert.match(route, /pageSize >= 10 && pageSize <= 1000/);
+  assert.match(hook, /referencedProductIds/);
+  assert.match(hook, /resolveProductId/);
+  assert.match(inventoryApp, /productCatalog\.canonicalProducts/);
   assert.match(route, /normalizeProductStatusFilter/);
   assert.match(route, /normalizeProductSortField/);
   assert.match(route, /normalizeProductSortDirection/);

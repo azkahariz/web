@@ -308,8 +308,17 @@ export function suggestProducts(
   return [...bestByProduct.values()].sort((left, right) => right.score - left.score).slice(0, 5).map(({ product }) => product);
 }
 
-export function resolveInstalledProduct(item: InstalledItem, proposals: Map<string, ProductProposal>) {
-  if (!item.productProposalId) return { brand: item.brand, model: item.model, status: item.proposalStatus };
+export function resolveInstalledProduct(
+  item: InstalledItem,
+  proposals: Map<string, ProductProposal>,
+  canonicalProducts: Map<string, Product> = new Map(),
+) {
+  if (!item.productProposalId) {
+    const canonical = item.productId ? canonicalProducts.get(item.productId) : undefined;
+    return canonical
+      ? { brand: canonical.brand, model: canonical.model, status: item.proposalStatus }
+      : { brand: item.brand, model: item.model, status: item.proposalStatus };
+  }
   const proposal = proposals.get(item.productProposalId);
   if (!proposal) return { brand: item.brand, model: item.model, status: item.proposalStatus ?? "PENDING" };
   if ((proposal.status === "APPROVED" || proposal.status === "MERGED") && proposal.resolvedBrand && proposal.resolvedModel) {

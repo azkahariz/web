@@ -215,6 +215,15 @@ test("resolusi proposal menjaga raw input dan memakai canonical hanya setelah QC
   assert.equal(item.model, "CR 1000 X");
 });
 
+test("referensi direct menampilkan nama canonical terbaru tanpa mengubah snapshot payload", () => {
+  const item = { id: "item", productId: "product-beyond-page", brand: "Merk Lama", model: "Tipe Lama", itemKind: "product", quantity: 1 };
+  const canonical = new Map([[item.productId, { productId: item.productId, brand: "Merk Baru", model: "Tipe Baru" }]]);
+  assert.deepEqual(resolveInstalledProduct(item, new Map(), canonical), { brand: "Merk Baru", model: "Tipe Baru", status: undefined });
+  assert.equal(item.brand, "Merk Lama");
+  assert.equal(item.model, "Tipe Lama");
+  assert.deepEqual(resolveInstalledProduct(item, new Map()), { brand: "Merk Lama", model: "Tipe Lama", status: undefined });
+});
+
 test("migration menegakkan super admin, QC, alias, audit, dan admin lock di database", async () => {
   const sql = await readFile(new URL("../supabase/migrations/20260810170000_super_admin_product_qc.sql", import.meta.url), "utf8");
   for (const table of ["super_admins", "product_proposals", "product_aliases", "admin_audit_log"]) {
