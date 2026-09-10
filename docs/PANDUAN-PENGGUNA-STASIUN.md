@@ -58,6 +58,8 @@ JSON menggunakan pola sama dengan akhiran `.json`.
    **Usulkan produk baru**.
 3. Status **Pending QC** berarti usulan telah tersimpan dan menunggu pemeriksaan
    Super Admin.
+
+Produk yang sudah terhubung ke master menampilkan Merk dan Tipe canonical terbaru setelah form dimuat ulang. Perubahan nama master tidak mengubah nomor seri, kondisi, catatan, atau data unit yang telah diisi.
 4. **Merged** berarti variasi tulisan dihubungkan ke produk yang sudah ada.
    **Approved** berarti menjadi produk canonical baru. **Rejected** berarti
    usulan ditolak; raw input tetap tersimpan bersama alasan admin.

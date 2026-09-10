@@ -130,6 +130,10 @@ Jika Product canonical aktif ada di menu Produk tetapi tidak muncul pada Gabungk
 **Cek pertama:** product UUID canonical, direct occurrence, `resolved_product_id`, dan active/archived Submission.
 **Jangan lakukan:** match berdasarkan Merk/Tipe saja.
 
+### Merk/Tipe Lama Masih Terlihat Setelah Product Diedit
+
+**Kemungkinan layer:** resolver tampilan masih memakai snapshot payload atau form belum memuat ulang canonical Product. **Cek pertama:** bandingkan `productId`/`resolved_product_id` dengan `products.id`, lalu muat ulang form secara authoritative. Snapshot payload dan nama usulan QC boleh tetap lama sebagai provenance. **Jangan lakukan:** rewrite massal `submissions.payload` atau mengubah proposal history hanya untuk menyamakan label.
+
 ### Pindahkan Referensi Gagal
 
 **Kemungkinan layer:** dependency preflight, target canonical, transaction/RPC.
