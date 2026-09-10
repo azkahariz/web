@@ -137,11 +137,12 @@ test("parameter Product list memakai allowlist dan label sumber manusiawi", () =
 });
 
 test("master Produk memakai RPC Super Admin, filter/sorting server-side, dan guard legacy sync", async () => {
-  const [migration, usageMigration, usageCountsMigration, categoryMigration, route, listLib, pickerRoute, pickerLib, component, dashboard, globals, inventoryApp, submissionMonitor, submissionLib, hook, sync, packageJson] = await Promise.all([
+  const [migration, usageMigration, usageCountsMigration, categoryMigration, referenceFilterMigration, route, listLib, pickerRoute, pickerLib, component, dashboard, globals, inventoryApp, submissionMonitor, submissionLib, hook, sync, packageJson] = await Promise.all([
     readFile(new URL("../supabase/migrations/20260815120000_super_admin_product_management.sql", import.meta.url), "utf8"),
     readFile(new URL("../supabase/migrations/20260815130000_super_admin_product_usage.sql", import.meta.url), "utf8"),
     readFile(new URL("../supabase/migrations/20260815140000_super_admin_product_usage_counts.sql", import.meta.url), "utf8"),
     readFile(new URL("../supabase/migrations/20260909120000_admin_product_reference_categories.sql", import.meta.url), "utf8"),
+    readFile(new URL("../supabase/migrations/20260910130000_admin_product_reference_filters.sql", import.meta.url), "utf8"),
     readFile(new URL("../app/api/admin/products/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/lib/admin-product-list.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/products/route.ts", import.meta.url), "utf8"),
@@ -180,6 +181,17 @@ test("master Produk memakai RPC Super Admin, filter/sorting server-side, dan gua
   assert.match(categoryMigration, /array_agg\(distinct btrim\(ref\.category_label\) order by btrim\(ref\.category_label\)\)/);
   assert.match(categoryMigration, /security definer[\s\S]*set search_path = ''/);
   assert.doesNotMatch(categoryMigration, /\b(insert|update|delete)\s+(into|public\.|from)/i);
+  assert.match(referenceFilterMigration, /function public\.admin_product_reference_filter_occurrences\(\)/);
+  assert.match(referenceFilterMigration, /function public\.admin_product_reference_filter_options\(\)/);
+  assert.match(referenceFilterMigration, /function public\.admin_product_reference_filter_ids/);
+  assert.match(referenceFilterMigration, /submission\.archived_at is null/);
+  assert.match(referenceFilterMigration, /proposal\.status in \('APPROVED', 'MERGED'\)/);
+  assert.match(referenceFilterMigration, /occurrence\.category_label = any\(v_categories\)/);
+  assert.match(referenceFilterMigration, /occurrence\.station_category_id = p_station_category_id/);
+  assert.match(referenceFilterMigration, /occurrence\.site_type_id = p_site_type_id/);
+  assert.match(referenceFilterMigration, /category\.code in \('METEOROLOGI', 'KLIMATOLOGI', 'GEOFISIKA'\)/);
+  assert.match(referenceFilterMigration, /security definer[\s\S]*set search_path = ''/);
+  assert.doesNotMatch(referenceFilterMigration, /\b(insert|update|delete|alter|create table|create index)\b/i);
   for (const action of ["PRODUCT_CREATE", "PRODUCT_UPDATE", "PRODUCT_ACTIVATE", "PRODUCT_DEACTIVATE"]) assert.match(migration, new RegExp(action));
   assert.match(migration, /source_origin in \('SPREADSHEET', 'QC', 'ADMIN'\)/);
   assert.match(migration, /normalize_product_text/);
@@ -204,6 +216,12 @@ test("master Produk memakai RPC Super Admin, filter/sorting server-side, dan gua
   assert.match(route, /matchingRows\.map\(\(row\) => row\.id\)/);
   assert.match(route, /search, status, source, sort: sortField, direction: sortDirection, page, pageSize/);
   assert.match(route, /searchParams\.get\("sources"\) === "1"/);
+  assert.match(route, /searchParams\.get\("referenceFilterOptions"\) === "1"/);
+  assert.match(route, /admin_product_reference_filter_options/);
+  assert.match(route, /searchParams\.getAll\("category"\)/);
+  assert.match(route, /admin_product_reference_filter_ids/);
+  assert.match(route, /referenceProductIds\.has\(row\.id\)/);
+  assert.ok(route.indexOf("referenceProductIds.has(row.id)") < route.indexOf("prepareAdminProductPage("), "Filter referensi harus diterapkan sebelum pagination.");
   assert.match(route, /productSourceLabel/);
   assert.match(listLib, /type AdminProductStatusFilter = "active" \| "inactive" \| "merged" \| "all"/);
   assert.match(listLib, /field === "usage"/);
@@ -254,6 +272,19 @@ test("master Produk memakai RPC Super Admin, filter/sorting server-side, dan gua
   assert.match(component, /changeSort\(field\)/);
   assert.match(component, /status: statusFilter/);
   assert.match(component, /params\.set\("source", sourceFilter\)/);
+  assert.match(component, /params\.append\("category", category\)/);
+  assert.match(component, /params\.set\("stationCategoryId", stationCategoryFilter\)/);
+  assert.match(component, /params\.set\("siteTypeId", siteTypeFilter\)/);
+  assert.match(component, /aria-multiselectable="true"/);
+  assert.match(component, /Semua kategori/);
+  assert.match(component, /Semua kelompok stasiun/);
+  assert.match(component, /Semua tipe site/);
+  assert.match(component, /Reset Filter/);
+  assert.match(component, /setStatusFilter\("active"\)/);
+  assert.match(component, /setCategoryFilters\(\[\]\)/);
+  assert.match(component, /setPage\(1\)/);
+  assert.match(globals, /\.product-reference-filters/);
+  assert.match(globals, /\.product-category-filter-menu/);
   assert.doesNotMatch(component, />Urutkan<select/);
   assert.match(component, /pageSize/);
   assert.match(component, /fetch\(`\/api\/admin\/products/);
