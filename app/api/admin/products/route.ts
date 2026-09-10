@@ -90,6 +90,11 @@ export async function GET(request: Request) {
     const sources = [...new Set(values)].sort((left, right) => productSourceLabel(left).localeCompare(productSourceLabel(right), "id", { sensitivity: "base" }));
     return NextResponse.json({ sources });
   }
+  if (url.searchParams.get("referenceFilterOptions") === "1") {
+    const { data, error } = await auth.client.rpc("admin_product_reference_filter_options");
+    if (error) return rpcErrorResponse(error, "Pilihan filter referensi produk gagal dimuat.");
+    return NextResponse.json({ referenceFilterOptions: data });
+  }
   const pageSize = productPageSize(url.searchParams.get("pageSize"));
   if (pageSize === null) return NextResponse.json({ error: "Jumlah per halaman harus berupa bilangan bulat 10-1000." }, { status: 400 });
   const page = Math.max(1, Number.parseInt(url.searchParams.get("page") || "1", 10) || 1);
@@ -99,6 +104,12 @@ export async function GET(request: Request) {
   const activeOnly = url.searchParams.get("activeOnly") === "1";
   const status = activeOnly ? "active" : normalizeProductStatusFilter(url.searchParams.get("status"));
   const source = url.searchParams.get("source")?.trim() || "";
+  const categories = [...new Set(url.searchParams.getAll("category").map((value) => value.trim()).filter(Boolean))].sort((left, right) => left.localeCompare(right, "id", { sensitivity: "base" }));
+  const stationCategoryId = url.searchParams.get("stationCategoryId")?.trim() || "";
+  const siteTypeId = url.searchParams.get("siteTypeId")?.trim() || "";
+  if (categories.length > 200) return NextResponse.json({ error: "Maksimal 200 kategori dapat dipilih." }, { status: 400 });
+  if (stationCategoryId && !UUID_PATTERN.test(stationCategoryId)) return NextResponse.json({ error: "Kelompok Stasiun tidak valid." }, { status: 400 });
+  if (siteTypeId && !UUID_PATTERN.test(siteTypeId)) return NextResponse.json({ error: "Tipe Site tidak valid." }, { status: 400 });
   const excludeProductId = url.searchParams.get("excludeProductId");
   const recommendationSourceId = url.searchParams.get("recommendationSourceId");
   if (excludeProductId && !UUID_PATTERN.test(excludeProductId)) return NextResponse.json({ error: "ID produk yang dikecualikan tidak valid." }, { status: 400 });
@@ -156,6 +167,18 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Rekomendasi Produk tujuan gagal dimuat." }, { status: 400 });
     }
   }
+  const hasReferenceFilters = categories.length > 0 || Boolean(stationCategoryId) || Boolean(siteTypeId);
+  const referenceFilterResult = hasReferenceFilters
+    ? await auth.client.rpc("admin_product_reference_filter_ids", {
+      p_categories: categories,
+      p_station_category_id: stationCategoryId || null,
+      p_site_type_id: siteTypeId || null,
+    })
+    : { data: null, error: null };
+  if (referenceFilterResult.error) return rpcErrorResponse(referenceFilterResult.error, "Filter referensi produk gagal diterapkan.");
+  const referenceProductIds = hasReferenceFilters
+    ? new Set((Array.isArray(referenceFilterResult.data) ? referenceFilterResult.data : []).filter((value): value is string => typeof value === "string" && UUID_PATTERN.test(value)))
+    : null;
   const matchingRows: ProductRow[] = [];
   for (let from = 0; ; from += 1000) {
     let query = auth.client.from("products")
@@ -168,7 +191,7 @@ export async function GET(request: Request) {
     if (search) query = query.or(`brand.ilike.%${search}%,model.ilike.%${search}%`);
     const result = await query.order("id").range(from, from + 999);
     if (result.error) return rpcErrorResponse(result.error, "Daftar produk gagal dimuat.");
-    matchingRows.push(...((result.data ?? []) as ProductRow[]));
+    matchingRows.push(...((result.data ?? []) as ProductRow[]).filter((row) => !referenceProductIds || referenceProductIds.has(row.id)));
     if ((result.data?.length ?? 0) < 1000) break;
   }
 

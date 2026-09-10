@@ -25,6 +25,11 @@ Super Admin mengelola pandangan lintas Station. UI Admin tidak menggantikan otor
 | Audit Admin | jejak tindakan Admin |
 | Panduan | panduan in-app untuk peran Admin |
 
+Daftar Produk menerapkan Search, Status, Sumber, Kategori, Kelompok Stasiun, dan
+Tipe Site sebelum pagination. Beberapa Kategori berarti OR, sedangkan kelompok
+filter berbeda berarti AND pada occurrence DIRECT atau QC_RESULT current yang
+sama; filter tidak menggabungkan atribut dari dua reference berbeda.
+
 ## Admin Ringkasan
 
 `AdminDashboard.tsx` menyusun Ringkasan dari dataset yang terpisah. Basic counts, Completion monitoring, summary Tipe Site, QC status, dan data UI lain tidak boleh diasumsikan berasal dari satu query besar.

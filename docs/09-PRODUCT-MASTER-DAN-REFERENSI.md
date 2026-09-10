@@ -90,6 +90,13 @@ yang masih direferensikan oleh Submission aktif. Nilai kosong tidak ditampilkan,
 duplikat exact ditampilkan sekali, dan hasil diurutkan alfabetis secara stabil.
 Kolom ini bukan master kategori pada Product dan tidak diturunkan dari Merk/Tipe.
 
+Filter referensi pada daftar Admin Produk memakai source occurrence yang sama.
+Kategori menggunakan label canonical tersebut dan dapat dipilih lebih dari satu
+(OR). Kelompok Stasiun memakai `stations.station_category_id`, sedangkan Tipe
+Site memakai `sites.site_type_id`; ketiganya digabungkan dengan AND pada satu
+occurrence. Filtering berlangsung sebelum sorting dan pagination, sementara
+kolom Kategori tetap menampilkan seluruh kategori Product pada halaman aktif.
+
 ## Pindahkan Referensi
 
 Pindahkan Referensi memindahkan **baris yang dipilih saja** dari Product source ke Product target active. Selection dapat berisi DIRECT, QC_RESULT, atau campuran sampai limit API yang tervalidasi.
