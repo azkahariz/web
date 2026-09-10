@@ -18,6 +18,8 @@ import ProductDeleteDialog from "./ProductDeleteDialog";
 
 type Product = { id: string; brand: string; model: string; categories: string[]; active: boolean; source_origin: string; usage_count: number; merged_into_product_id?: string; merged_target?: { id: string; brand: string; model: string } };
 type Summary = { total_count: number; active_count: number; inactive_count: number };
+type ReferenceFilterOption = { id: string; name: string };
+type ReferenceFilterOptions = { categories: string[]; stationGroups: ReferenceFilterOption[]; siteTypes: ReferenceFilterOption[] };
 type ProductUsage = {
   rows: Array<{ stationName: string; siteName: string; siteTypeName: string; subtypeName: string; categories: string[]; referenceCount: number }>;
   totalCount: number;
@@ -78,6 +80,44 @@ type DependencyPaginationProps = {
   onPageSize: (pageSize: number) => void;
 };
 
+function CategoryMultiSelect({ options, selected, disabled, onChange }: { options: string[]; selected: string[]; disabled: boolean; onChange: (categories: string[]) => void }) {
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const summary = selected.length === 0 ? "Semua kategori" : selected.length === 1 ? selected[0] : `${selected[0]} +${selected.length - 1}`;
+
+  useEffect(() => {
+    if (!open) return;
+    function closeOutside(event: MouseEvent) {
+      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+    }
+    function closeOnEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") setOpen(false);
+    }
+    document.addEventListener("mousedown", closeOutside);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("mousedown", closeOutside);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [open]);
+
+  function toggle(category: string) {
+    const next = selected.includes(category) ? selected.filter((value) => value !== category) : [...selected, category];
+    onChange(next.sort((left, right) => left.localeCompare(right, "id", { sensitivity: "base" })));
+  }
+
+  return <div className="product-category-filter" ref={rootRef}>
+    <span>Kategori</span>
+    <button type="button" className="product-category-filter-trigger" aria-haspopup="listbox" aria-expanded={open} disabled={disabled} onClick={() => setOpen((current) => !current)}>
+      <span>{disabled ? "Memuat kategori..." : summary}</span><span aria-hidden="true">&#9662;</span>
+    </button>
+    {open && <div className="product-category-filter-menu" role="listbox" aria-label="Pilih kategori" aria-multiselectable="true">
+      {options.map((category) => <label key={category}><input type="checkbox" checked={selected.includes(category)} onChange={() => toggle(category)} /><span>{category}</span></label>)}
+      {!options.length && <p>Tidak ada kategori referensi.</p>}
+    </div>}
+  </div>;
+}
+
 function DependencyPagination({ page, pageSize, total, loading, label, onPage, onPageSize }: DependencyPaginationProps) {
   const pages = Math.max(1, Math.ceil(total / pageSize));
   const first = total ? (page - 1) * pageSize + 1 : 0;
@@ -117,6 +157,12 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
   const [statusFilter, setStatusFilter] = useState<AdminProductStatusFilter>("active");
   const [sourceFilter, setSourceFilter] = useState("");
   const [sourceOptions, setSourceOptions] = useState<string[]>([]);
+  const [referenceFilterOptions, setReferenceFilterOptions] = useState<ReferenceFilterOptions>({ categories: [], stationGroups: [], siteTypes: [] });
+  const [referenceFilterOptionsLoading, setReferenceFilterOptionsLoading] = useState(true);
+  const [referenceFilterOptionsError, setReferenceFilterOptionsError] = useState("");
+  const [categoryFilters, setCategoryFilters] = useState<string[]>([]);
+  const [stationCategoryFilter, setStationCategoryFilter] = useState("");
+  const [siteTypeFilter, setSiteTypeFilter] = useState("");
   const [sortField, setSortField] = useState<AdminProductSortField>("brand");
   const [sortDirection, setSortDirection] = useState<AdminProductSortDirection>("asc");
   const [totalCount, setTotalCount] = useState(0);
@@ -172,6 +218,27 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
     return () => controller.abort();
   }, []);
 
+  useEffect(() => {
+    const controller = new AbortController();
+    async function loadReferenceFilterOptions() {
+      setReferenceFilterOptionsLoading(true);
+      setReferenceFilterOptionsError("");
+      try {
+        const response = await fetch("/api/admin/products?referenceFilterOptions=1", { cache: "no-store", signal: controller.signal });
+        const result = await response.json() as { referenceFilterOptions?: ReferenceFilterOptions; error?: string };
+        if (!response.ok) throw new Error(result.error || "Pilihan filter referensi produk gagal dimuat.");
+        setReferenceFilterOptions(result.referenceFilterOptions ?? { categories: [], stationGroups: [], siteTypes: [] });
+      } catch (optionsError) {
+        if (optionsError instanceof DOMException && optionsError.name === "AbortError") return;
+        setReferenceFilterOptionsError(optionsError instanceof Error ? optionsError.message : "Pilihan filter referensi produk gagal dimuat.");
+      } finally {
+        if (!controller.signal.aborted) setReferenceFilterOptionsLoading(false);
+      }
+    }
+    void loadReferenceFilterOptions();
+    return () => controller.abort();
+  }, []);
+
   const load = useCallback(async () => {
     setLoading(true);
     setError("");
@@ -184,6 +251,9 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
     });
     if (search) params.set("search", search);
     if (sourceFilter) params.set("source", sourceFilter);
+    categoryFilters.forEach((category) => params.append("category", category));
+    if (stationCategoryFilter) params.set("stationCategoryId", stationCategoryFilter);
+    if (siteTypeFilter) params.set("siteTypeId", siteTypeFilter);
     try {
       const [listResponse, summaryResponse] = await Promise.all([
         fetch(`/api/admin/products?${params.toString()}`, { cache: "no-store" }),
@@ -203,7 +273,7 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
     } finally {
       setLoading(false);
     }
-  }, [page, pageSize, search, sortDirection, sortField, sourceFilter, statusFilter]);
+  }, [categoryFilters, page, pageSize, search, siteTypeFilter, sortDirection, sortField, sourceFilter, stationCategoryFilter, statusFilter]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => void load(), 0);
@@ -431,6 +501,18 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
     ["Aktif", summary?.active_count ?? 0],
     ["Nonaktif", summary?.inactive_count ?? 0],
   ], [summary]);
+  const hasActiveFilters = Boolean(searchInput || search || sourceFilter || categoryFilters.length || stationCategoryFilter || siteTypeFilter || statusFilter !== "active");
+
+  function resetFilters() {
+    setSearchInput("");
+    setSearch("");
+    setStatusFilter("active");
+    setSourceFilter("");
+    setCategoryFilters([]);
+    setStationCategoryFilter("");
+    setSiteTypeFilter("");
+    setPage(1);
+  }
 
   return <section className="product-admin" aria-label="Pengelolaan produk">
     <p className="admin-page-description">Kelola master Merk dan Tipe produk.</p>
@@ -448,6 +530,13 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
         <AsyncButton className="secondary-button" loading={loading} loadingText="Memuat..." onClick={() => void load()}>Muat ulang</AsyncButton>
       </div>
     </div>
+    <div className="product-reference-filters" aria-label="Filter referensi produk">
+      <CategoryMultiSelect options={referenceFilterOptions.categories} selected={categoryFilters} disabled={referenceFilterOptionsLoading || Boolean(referenceFilterOptionsError)} onChange={(categories) => { setCategoryFilters(categories); setPage(1); }} />
+      <label>Kelompok Stasiun<select value={stationCategoryFilter} disabled={referenceFilterOptionsLoading || Boolean(referenceFilterOptionsError)} onChange={(event) => { setStationCategoryFilter(event.target.value); setPage(1); }}><option value="">Semua kelompok stasiun</option>{referenceFilterOptions.stationGroups.map((option) => <option key={option.id} value={option.id}>{option.name}</option>)}</select></label>
+      <label>Tipe Site<select value={siteTypeFilter} disabled={referenceFilterOptionsLoading || Boolean(referenceFilterOptionsError)} onChange={(event) => { setSiteTypeFilter(event.target.value); setPage(1); }}><option value="">Semua tipe site</option>{referenceFilterOptions.siteTypes.map((option) => <option key={option.id} value={option.id}>{option.name}</option>)}</select></label>
+      <div className="product-reference-filter-reset">{hasActiveFilters && <button type="button" className="secondary-button" onClick={resetFilters}>Reset Filter</button>}</div>
+    </div>
+    {referenceFilterOptionsError && <p className="product-filter-options-error" role="status">{referenceFilterOptionsError} Daftar Produk tetap dapat digunakan tanpa filter referensi.</p>}
     {error && <p className="admin-message" role="status">{error}</p>}
     <div className={`admin-table-wrap product-table${loading ? " is-loading" : ""}`} aria-busy={loading}><table><thead><tr>
       {([
