@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 import {
+  enrichAdminProductPage,
   filterAdminProducts,
   loadProductReferenceCategoriesInBatches,
   loadProductUsageCountsInBatches,
@@ -96,6 +97,26 @@ test("kategori referensi Produk dideduplikasi, diurutkan, dan dibatch tanpa part
   ));
   assert.equal(failed.data, null);
   assert.equal(failed.error, "batch failed");
+});
+
+test("enrichment halaman Product tidak mengubah kegagalan ancillary menjadi nol palsu", () => {
+  const products = Array.from({ length: 50 }, (_, index) => ({
+    id: `product-${index + 1}`,
+    brand: `Brand ${index + 1}`,
+    model: `Model ${index + 1}`,
+    active: true,
+    source_origin: "ADMIN",
+  }));
+  const unavailable = enrichAdminProductPage(products, [], [], { usageUnavailable: true, categoriesUnavailable: true });
+  assert.equal(unavailable.length, 50);
+  assert.equal(unavailable[0].usage_count, null);
+  assert.equal(unavailable[0].categories, null);
+
+  const loaded = enrichAdminProductPage(products, [{ product_id: "product-1", reference_count: 7 }], [{ product_id: "product-1", categories: ["Sensor pasut"] }]);
+  assert.equal(loaded[0].usage_count, 7);
+  assert.deepEqual(loaded[0].categories, ["Sensor pasut"]);
+  assert.equal(loaded[1].usage_count, 0);
+  assert.deepEqual(loaded[1].categories, []);
 });
 
 test("filter Produk membedakan status aktif, nonaktif, digabungkan, sumber, dan pencarian", () => {
@@ -212,8 +233,17 @@ test("master Produk memakai RPC Super Admin, filter/sorting server-side, dan gua
   assert.match(route, /loadProductReferenceCategoriesInBatches/);
   assert.match(route, /\.eq\("active", true\)[\s\S]*\.order\("id"\)[\s\S]*\.range\(from, from \+ 999\)/);
   assert.match(route, /from\("product_aliases"\)[\s\S]*\.order\("product_id"\)[\s\S]*\.order\("id"\)/);
-  assert.match(route, /const shouldLoadUsageCounts = !activeOnly \|\| sortField === "usage"/);
-  assert.match(route, /matchingRows\.map\(\(row\) => row\.id\)/);
+  assert.match(route, /const usageSort = sortField === "usage"/);
+  assert.match(route, /matchingRows\.length && usageSort[\s\S]*matchingRows\.map\(\(row\) => row\.id\)/);
+  assert.match(route, /const pageProductIds = prepared\.rows\.map\(\(row\) => row\.id\)/);
+  assert.match(route, /!activeOnly && !usageSort && pageProductIds\.length[\s\S]*loadProductUsageCountsInBatches\(pageProductIds/);
+  assert.ok(route.indexOf("const pageProductIds = prepared.rows.map") > route.indexOf("prepareAdminProductPage("), "Usage sort biasa harus dipaginasi sebelum enrichment.");
+  assert.match(route, /const pageUsageResult = !activeOnly && !usageSort/);
+  assert.match(route, /const \[categoryResult, canonicalResult\] = await Promise\.all/);
+  assert.match(route, /enrichAdminProductPage/);
+  assert.match(route, /usageUnavailable: Boolean\(pageUsageResult\.error\)/);
+  assert.match(route, /categoriesUnavailable: Boolean\(categoryResult\.error\)/);
+  assert.match(route, /issues/);
   assert.match(route, /search, status, source, sort: sortField, direction: sortDirection, page, pageSize/);
   assert.match(route, /searchParams\.get\("sources"\) === "1"/);
   assert.match(route, /searchParams\.get\("referenceFilterOptions"\) === "1"/);
@@ -308,12 +338,22 @@ test("master Produk memakai RPC Super Admin, filter/sorting server-side, dan gua
   assert.match(component, /normalizeSubmissionPageSize/);
   assert.match(component, /onBlur=\{\(\) => applyPageSize\(pageSizeDraft\)\}/);
   assert.match(component, /pageSizeCancelRef/);
-  assert.match(component, /await onChanged\(\)/);
+  assert.match(component, /Promise\.all\(\[load\(\), loadSummary\(\), onChanged\(\)\]\)/);
   assert.match(component, /Math\.min\(current, Math\.max\(1, Math\.ceil\(nextTotalCount \/ pageSize\)\)\)/);
   assert.match(dashboard, /refreshProductSummary/);
   assert.match(dashboard, /<AdminProducts onChanged=\{refreshProductSummary\}/);
+  assert.match(dashboard, /if \(tab === "products" \|\| dashboardLoaded\) return/);
+  assert.match(dashboard, /\{tab === "products" && <AdminProducts/);
+  assert.match(dashboard, /loading && tab !== "products"/);
   assert.doesNotMatch(dashboard, /<AdminProducts onChanged=\{\(\) => void refresh\(\)\}/);
-  assert.match(component, /product\.usage_count \?\? 0/);
+  assert.match(component, /product\.usage_count === null \? "Gagal dimuat"/);
+  assert.doesNotMatch(component, /product\.usage_count \?\? 0/);
+  assert.match(component, /product\.categories === null/);
+  assert.match(component, /const loadSummary = useCallback/);
+  assert.match(component, /listRequestSequenceRef/);
+  assert.match(component, /signal: controller\.signal|load\(controller\.signal\)/);
+  assert.match(component, /summary\?\.total_count \?\? "\\u2014"/);
+  assert.match(component, /listError && !listLoaded/);
   assert.doesNotMatch(component, /loadUsageCounts/);
   assert.match(component, /referensi/);
   assert.match(component, /product-usage-state/);

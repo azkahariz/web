@@ -20,8 +20,8 @@ export type AdminProductListRow = {
   active: boolean;
   source_origin: string;
   merged_into_product_id?: string | null;
-  usage_count?: number;
-  categories?: string[];
+  usage_count?: number | null;
+  categories?: string[] | null;
 };
 
 const collator = new Intl.Collator("id", { sensitivity: "base", numeric: true });
@@ -44,6 +44,21 @@ export async function loadProductUsageCountsInBatches<TError>(
 export function normalizeProductReferenceCategories(categories: string[]) {
   return [...new Set(categories.map((category) => category.trim()).filter(Boolean))]
     .sort((left, right) => collator.compare(left, right) || left.localeCompare(right));
+}
+
+export function enrichAdminProductPage(
+  products: AdminProductListRow[],
+  usageCounts: ProductUsageCountRow[],
+  referenceCategories: ProductReferenceCategoryRow[],
+  { preserveUsage = false, usageUnavailable = false, categoriesUnavailable = false } = {},
+) {
+  const usageById = new Map(usageCounts.map((row) => [row.product_id, row.reference_count]));
+  const categoriesById = new Map(referenceCategories.map((row) => [row.product_id, row.categories]));
+  return products.map((product) => ({
+    ...product,
+    usage_count: preserveUsage ? product.usage_count ?? 0 : usageUnavailable ? null : usageById.get(product.id) ?? 0,
+    categories: categoriesUnavailable ? null : categoriesById.get(product.id) ?? [],
+  }));
 }
 
 export async function loadProductReferenceCategoriesInBatches<TError>(

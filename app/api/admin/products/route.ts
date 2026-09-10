@@ -6,6 +6,7 @@ import {
   normalizeProductSortDirection,
   normalizeProductSortField,
   normalizeProductStatusFilter,
+  enrichAdminProductPage,
   loadProductReferenceCategoriesInBatches,
   loadProductUsageCountsInBatches,
   prepareAdminProductPage,
@@ -21,6 +22,15 @@ type ProductRow = AdminProductListRow;
 type CanonicalRow = { product_id: string; canonical_product_id: string; brand: string; model: string };
 type AliasRow = { id: string; product_id: string; brand_alias: string; model_alias: string };
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function logProductReadIssue(requestId: string, operation: string, error: RpcError, startedAt: number) {
+  console.error("Admin Product read failed", {
+    requestId,
+    operation,
+    errorCode: error.code ?? "UNKNOWN",
+    durationMs: Math.round(performance.now() - startedAt),
+  });
+}
 
 function productPageSize(value: string | null) {
   const raw = value?.trim() || "50";
@@ -48,6 +58,8 @@ async function requireAuthenticatedUser(request: Request) {
 }
 
 export async function GET(request: Request) {
+  const requestId = crypto.randomUUID();
+  const startedAt = performance.now();
   const auth = await requireAuthenticatedUser(request);
   if ("response" in auth) return auth.response;
   const url = new URL(request.url);
@@ -55,7 +67,10 @@ export async function GET(request: Request) {
   if (usageCountProductIds.length) {
     const { data, error } = await loadProductUsageCountsInBatches(usageCountProductIds,
       (productIds) => auth.client.rpc("admin_product_usage_counts", { p_product_ids: productIds }));
-    if (error) return rpcErrorResponse(error, "Jumlah penggunaan produk gagal dimuat.");
+    if (error) {
+      logProductReadIssue(requestId, "admin_product_usage_counts", error, startedAt);
+      return rpcErrorResponse(error, "Jumlah penggunaan produk gagal dimuat.");
+    }
     return NextResponse.json({ usageCounts: data ?? [] });
   }
   const usageProductId = url.searchParams.get("usageProductId");
@@ -195,42 +210,61 @@ export async function GET(request: Request) {
     if ((result.data?.length ?? 0) < 1000) break;
   }
 
-  const shouldLoadUsageCounts = !activeOnly || sortField === "usage";
-  const usageResult = matchingRows.length && shouldLoadUsageCounts
+  const usageSort = sortField === "usage";
+  const usageSortResult = matchingRows.length && usageSort
     ? await loadProductUsageCountsInBatches(matchingRows.map((row) => row.id),
       (productIds) => auth.client.rpc("admin_product_usage_counts", { p_product_ids: productIds }))
     : { data: [], error: null };
-  if (usageResult.error) return rpcErrorResponse(usageResult.error, "Jumlah penggunaan produk gagal dimuat.");
-  const usageById = new Map(((usageResult.data ?? []) as Array<{ product_id: string; reference_count: number }>).map((row) => [row.product_id, row.reference_count]));
+  if (usageSortResult.error) {
+    logProductReadIssue(requestId, "admin_product_usage_counts:sort", usageSortResult.error, startedAt);
+    return rpcErrorResponse(usageSortResult.error, "Jumlah penggunaan produk gagal dimuat untuk pengurutan.");
+  }
+  const usageById = new Map(((usageSortResult.data ?? []) as Array<{ product_id: string; reference_count: number }>).map((row) => [row.product_id, row.reference_count]));
   const prepared = prepareAdminProductPage(
-    matchingRows.map((row) => ({ ...row, usage_count: usageById.get(row.id) ?? 0 })),
+    matchingRows.map((row) => usageSort ? { ...row, usage_count: usageById.get(row.id) ?? 0 } : row),
     { search, status, source, sort: sortField, direction: sortDirection, page, pageSize },
   );
 
-  const categoryResult = !activeOnly && prepared.rows.length
-    ? await loadProductReferenceCategoriesInBatches(prepared.rows.map((row) => row.id),
-      (productIds) => auth.client.rpc("admin_product_reference_categories", { p_product_ids: productIds }))
+  const pageProductIds = prepared.rows.map((row) => row.id);
+  const pageUsageResult = !activeOnly && !usageSort && pageProductIds.length
+    ? await loadProductUsageCountsInBatches(pageProductIds,
+      (productIds) => auth.client.rpc("admin_product_usage_counts", { p_product_ids: productIds }))
     : { data: [], error: null };
-  if (categoryResult.error) return rpcErrorResponse(categoryResult.error, "Kategori produk gagal dimuat.");
-  const categoriesById = new Map((categoryResult.data ?? []).map((row) => [row.product_id, row.categories]));
-  const preparedRows = prepared.rows.map((row) => ({ ...row, categories: categoriesById.get(row.id) ?? [] }));
+  const [categoryResult, canonicalResult] = await Promise.all([
+    !activeOnly && pageProductIds.length
+      ? loadProductReferenceCategoriesInBatches(pageProductIds,
+        (productIds) => auth.client.rpc("admin_product_reference_categories", { p_product_ids: productIds }))
+      : Promise.resolve({ data: [], error: null }),
+    !activeOnly && pageProductIds.length
+      ? auth.client.rpc("resolve_canonical_products", { p_product_ids: pageProductIds })
+      : Promise.resolve({ data: [], error: null }),
+  ]);
+  const canonicalById = new Map(((canonicalResult.data ?? []) as CanonicalRow[]).map((row) => [row.product_id, row]));
+  const enrichedRows = enrichAdminProductPage(
+    prepared.rows,
+    pageUsageResult.data ?? [],
+    categoryResult.data ?? [],
+    { preserveUsage: usageSort, usageUnavailable: Boolean(pageUsageResult.error), categoriesUnavailable: Boolean(categoryResult.error) },
+  );
+  const preparedRows = enrichedRows.map((row) => {
+    const canonical = canonicalById.get(row.id);
+    return {
+      ...row,
+      ...(canonical && canonical.canonical_product_id !== row.id
+        ? { merged_into_product_id: canonical.canonical_product_id, merged_target: { id: canonical.canonical_product_id, brand: canonical.brand, model: canonical.model } }
+        : {}),
+    };
+  });
+  const issues = {
+    ...(pageUsageResult.error ? { usage: "Jumlah penggunaan produk gagal dimuat." } : {}),
+    ...(categoryResult.error ? { categories: "Kategori produk gagal dimuat." } : {}),
+    ...(canonicalResult.error ? { canonical: "Status produk gabungan gagal dimuat." } : {}),
+  };
+  if (pageUsageResult.error) logProductReadIssue(requestId, "admin_product_usage_counts:page", pageUsageResult.error, startedAt);
+  if (categoryResult.error) logProductReadIssue(requestId, "admin_product_reference_categories:page", categoryResult.error, startedAt);
+  if (canonicalResult.error) logProductReadIssue(requestId, "resolve_canonical_products:page", canonicalResult.error, startedAt);
 
-  if (!activeOnly && preparedRows.length) {
-    const canonicalResult = await auth.client.rpc("resolve_canonical_products", { p_product_ids: preparedRows.map((row) => row.id) });
-    if (!canonicalResult.error) {
-      const canonicalById = new Map(((canonicalResult.data ?? []) as CanonicalRow[]).map((row) => [row.product_id, row]));
-      return NextResponse.json({
-        ...prepared,
-        rows: preparedRows.map((row) => {
-          const canonical = canonicalById.get(row.id);
-          return canonical && canonical.canonical_product_id !== row.id
-            ? { ...row, merged_into_product_id: canonical.canonical_product_id, merged_target: { id: canonical.canonical_product_id, brand: canonical.brand, model: canonical.model } }
-            : row;
-        }),
-      });
-    }
-  }
-  return NextResponse.json({ ...prepared, rows: preparedRows });
+  return NextResponse.json({ ...prepared, rows: preparedRows, issues, requestId });
 }
 
 export async function POST(request: Request) {

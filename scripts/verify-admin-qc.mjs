@@ -18,10 +18,10 @@ try {
       const authUserId = randomUUID();
       await tx`
         insert into auth.users (
-          id, aud, role, email, encrypted_password, email_confirmed_at,
+          id, aud, role, email, encrypted_password,
           raw_app_meta_data, raw_user_meta_data, created_at, updated_at
         ) values (
-          ${authUserId}, 'authenticated', 'authenticated', ${`admin-${authUserId}@verify.invalid`}, '', now(),
+          ${authUserId}, 'authenticated', 'authenticated', ${`admin-${authUserId}@verify.invalid`}, '',
           '{"provider":"email","providers":["email"]}'::jsonb, '{}'::jsonb, now(), now()
         )
       `;
@@ -31,10 +31,10 @@ try {
     const secondAdminAuthId = randomUUID();
     await tx`
       insert into auth.users (
-        id, aud, role, email, encrypted_password, email_confirmed_at,
+        id, aud, role, email, encrypted_password,
         raw_app_meta_data, raw_user_meta_data, created_at, updated_at
       ) values (
-        ${secondAdminAuthId}, 'authenticated', 'authenticated', ${`admin-b-${secondAdminAuthId}@verify.invalid`}, '', now(),
+        ${secondAdminAuthId}, 'authenticated', 'authenticated', ${`admin-b-${secondAdminAuthId}@verify.invalid`}, '',
         '{"provider":"email","providers":["email"]}'::jsonb, '{}'::jsonb, now(), now()
       )
     `;
@@ -67,10 +67,10 @@ try {
       const authUserId = randomUUID();
       await tx`
         insert into auth.users (
-          id, aud, role, email, encrypted_password, email_confirmed_at,
+          id, aud, role, email, encrypted_password,
           raw_app_meta_data, raw_user_meta_data, created_at, updated_at
         ) values (
-          ${authUserId}, 'authenticated', 'authenticated', ${`station-${authUserId}@verify.invalid`}, '', now(),
+          ${authUserId}, 'authenticated', 'authenticated', ${`station-${authUserId}@verify.invalid`}, '',
           '{"provider":"email","providers":["email"]}'::jsonb, '{}'::jsonb, now(), now()
         )
       `;
