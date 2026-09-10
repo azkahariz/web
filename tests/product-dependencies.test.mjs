@@ -35,7 +35,7 @@ test("Product dependency preflight tetap read-only, beridentitas stabil, dan han
     assert.match(route, /productDependencyRpcError/);
   }
   assert.match(referencesRoute, /pageSize/);
-  assert.match(referencesRoute, /admin_product_references/);
+  assert.match(referencesRoute, /admin_product_reference_occurrences/);
   assert.match(unifiedReferencesMigration, /reference_type[\s\S]*QC_RESULT/);
   assert.match(unifiedReferencesMigration, /proposal\.resolved_product_id/);
   assert.match(categoryContextMigration, /function public\.submission_product_reference_category_rows/);

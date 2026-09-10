@@ -15,7 +15,7 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
   const size = pageSize(url.searchParams.get("pageSize"));
   if (size === null) return NextResponse.json({ error: "Baris per halaman harus 50, 100, atau 200." }, { status: 400 });
   const page = Math.max(1, Number.parseInt(url.searchParams.get("page") || "1", 10) || 1);
-  const { data, error } = await auth.client.rpc("admin_product_references", {
+  const { data, error } = await auth.client.rpc("admin_product_reference_occurrences", {
     p_product_id: id,
     p_page: page,
     p_page_size: size,
