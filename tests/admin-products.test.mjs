@@ -285,6 +285,8 @@ test("master Produk memakai RPC Super Admin, filter/sorting server-side, dan gua
   assert.match(component, /setPage\(1\)/);
   assert.match(globals, /\.product-reference-filters/);
   assert.match(globals, /\.product-category-filter-menu/);
+  assert.match(globals, /\.product-category-filter-menu label \{[^}]*display: flex;[^}]*align-items: center;[^}]*gap: 8px;/);
+  assert.match(globals, /\.product-category-filter-menu input \{[^}]*margin: 0;/);
   assert.doesNotMatch(component, />Urutkan<select/);
   assert.match(component, /pageSize/);
   assert.match(component, /fetch\(`\/api\/admin\/products/);
