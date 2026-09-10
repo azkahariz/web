@@ -54,6 +54,11 @@ Relasi `productId` dan `productProposalId` berada di JSON payload; bukan FK conv
 
 Merk/Tipe yang terlihat untuk reference resolved berasal dari Product canonical current. DIRECT di-resolve melalui `productId`; QC_RESULT di-resolve melalui `product_proposals.resolved_product_id`. Snapshot DIRECT serta Brand/Tipe usulan proposal tetap disimpan untuk provenance dan fallback, tetapi tidak mengalahkan canonical Product yang tersedia. PENDING yang belum mempunyai canonical result tetap menampilkan usulan asli.
 
+Aturan ini berlaku pada form Station/Admin-as-user, detail Submission Admin, dan
+export inventaris current. Resolver melakukan lookup bulk hanya untuk UUID yang
+direferensikan. Alias membantu pencarian tetapi tidak menjadi identity tampilan;
+QC History dan label Usulan tetap menyajikan nilai historis.
+
 ## Direct Reference
 
 **DIRECT** adalah satu occurrence exact `productId` pada item `submissions.payload.inventory` current. Identity selective move adalah kombinasi Submission UUID, expected Submission version, dan `itemId`. Reference direct tidak selectable bila Submission archived atau memiliki active lock.

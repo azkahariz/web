@@ -62,6 +62,7 @@ export type SubmissionDetail = SubmissionSummary & {
   payload: Record<string, unknown>;
   expected_items: Array<{ name: string; filled: boolean }>;
   qc_pending_count: number;
+  product_displays?: Record<string, { brand: string; model: string }>;
 };
 
 export type SubmissionItemDisplay = {
@@ -119,7 +120,7 @@ export function normalizeSubmissionPageSize(value: unknown, fallback = SUBMISSIO
 }
 
 export function submissionItemDisplays(
-  detail: Pick<SubmissionDetail, "payload" | "expected_items">,
+  detail: Pick<SubmissionDetail, "payload" | "expected_items" | "product_displays">,
   pendingProposalIds: ReadonlySet<string> = new Set(),
 ): SubmissionItemDisplay[] {
   const payloadInventory = detail.payload?.inventory;
@@ -133,7 +134,8 @@ export function submissionItemDisplays(
       if (row.itemKind === "material") {
         return [{ kind: "material" as const, primary: row.material!.trim(), unitCount: getItemUnits(row).length, functions: getItemFunctionCategories(row, storageCategory), pendingQc }];
       }
-      return [{ kind: "product" as const, primary: row.brand.trim(), secondary: row.model.trim(), unitCount: getItemUnits(row).length, functions: getItemFunctionCategories(row, storageCategory), pendingQc }];
+      const productDisplay = row.id ? detail.product_displays?.[row.id] : undefined;
+      return [{ kind: "product" as const, primary: productDisplay?.brand.trim() || row.brand.trim(), secondary: productDisplay?.model.trim() || row.model.trim(), unitCount: getItemUnits(row).length, functions: getItemFunctionCategories(row, storageCategory), pendingQc }];
     });
     return { name: expected.name, filled: entries.length > 0, hasPendingQc: entries.some((entry) => entry.pendingQc), entries };
   });

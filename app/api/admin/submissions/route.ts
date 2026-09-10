@@ -2,6 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 import { getPublicSupabaseConfig } from "../../../lib/supabase/config";
 import { createSupabaseServerClient } from "../../../lib/supabase/server";
+import { resolveSubmissionProductDisplays } from "../../../lib/product-display-source";
 import {
   normalizeSubmissionPageSize,
   type SubmissionSortDirection,
@@ -57,7 +58,12 @@ export async function GET(request: Request) {
       p_submission_id: submissionId,
     });
     if (error) return rpcErrorResponse(error, "Detail submission gagal dimuat.");
-    return NextResponse.json({ detail: data });
+    try {
+      const productDisplays = await resolveSubmissionProductDisplays(auth.client, data?.payload);
+      return NextResponse.json({ detail: { ...data, product_displays: productDisplays } });
+    } catch {
+      return NextResponse.json({ error: "Identitas Product pada detail submission gagal dimuat." }, { status: 400 });
+    }
   }
 
   const page = Math.max(1, Number.parseInt(url.searchParams.get("page") || "1", 10) || 1);

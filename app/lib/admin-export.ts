@@ -1,7 +1,7 @@
 "use client";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { InstalledItem, ProductProposal, StationRuntimeMaster } from "../types/inventory";
+import type { InstalledItem, Product, ProductProposal, StationRuntimeMaster } from "../types/inventory";
 import { buildStationFillingView, loadAllAdminRows, type AdminSite, type AdminSiteType, type AdminSubtype } from "./admin-view";
 import { buildAdminExportPlan, type AdminExportScope } from "./admin-export-plan";
 import { downloadBlob, downloadText } from "./download";
@@ -10,6 +10,7 @@ import { resolveInstalledProduct } from "./product-qc";
 import type { DraftPayload } from "./server-draft";
 import { inventoryCategoryNames } from "./category-functions";
 import { isWarehouseContext } from "./warehouse";
+import { inventoryProductItems, loadCanonicalProductMap } from "./product-display-source";
 
 type SubmissionRow = {
   id: string;
@@ -33,17 +34,18 @@ function one<T>(value: T | T[] | null) {
   return Array.isArray(value) ? value[0] ?? null : value;
 }
 
-function proposalMap(rows: ProposalRow[]) {
+function proposalMap(rows: ProposalRow[], canonicalProducts: Map<string, Product>) {
   return new Map(rows.map((row) => {
     const resolved = one(row.resolved_product);
+    const canonical = row.resolved_product_id ? canonicalProducts.get(row.resolved_product_id) : undefined;
     return [row.id, {
       id: row.id,
       proposedBrand: row.proposed_brand,
       proposedModel: row.proposed_model,
       status: row.status,
-      resolvedProductId: row.resolved_product_id ?? undefined,
-      resolvedBrand: resolved?.brand,
-      resolvedModel: resolved?.model,
+      resolvedProductId: canonical?.productId ?? row.resolved_product_id ?? undefined,
+      resolvedBrand: canonical?.brand ?? resolved?.brand,
+      resolvedModel: canonical?.model ?? resolved?.model,
       reviewNote: row.review_note ?? undefined,
     } satisfies ProductProposal];
   }));
@@ -98,7 +100,14 @@ export async function downloadAdminInventory({
   if (proposalResult.error) throw new Error(proposalResult.error.message);
 
   const submissions = (submissionResult.data ?? []) as SubmissionRow[];
-  const proposals = proposalMap((proposalResult.data ?? []) as ProposalRow[]);
+  const proposalRows = (proposalResult.data ?? []) as ProposalRow[];
+  const items = inventoryProductItems(submissions.map((submission) => submission.payload));
+  const referencedProposalIds = new Set(items.flatMap((item) => item.productProposalId ? [item.productProposalId] : []));
+  const canonicalProducts = await loadCanonicalProductMap(client, [
+    ...items.flatMap((item) => !item.productProposalId && item.productId ? [item.productId] : []),
+    ...proposalRows.flatMap((row) => referencedProposalIds.has(row.id) && row.resolved_product_id ? [row.resolved_product_id] : []),
+  ]);
+  const proposals = proposalMap(proposalRows, canonicalProducts);
   const sites: AdminSite[] = runtimeMaster.stationSites.map((site) => ({
     id: site.siteId ?? "",
     station_id: site.stationId ?? runtimeMaster.station.id,
@@ -127,7 +136,7 @@ export async function downloadAdminInventory({
       : definition.categories;
     const resolveItem = (item: InstalledItem) => {
       if (item.itemKind === "material") return item;
-      const resolved = resolveInstalledProduct(item, proposals);
+      const resolved = resolveInstalledProduct(item, proposals, canonicalProducts);
       return { ...item, brand: resolved.brand, model: resolved.model };
     };
     return {

@@ -132,7 +132,7 @@ Jika Product canonical aktif ada di menu Produk tetapi tidak muncul pada Gabungk
 
 ### Merk/Tipe Lama Masih Terlihat Setelah Product Diedit
 
-**Kemungkinan layer:** resolver tampilan masih memakai snapshot payload atau form belum memuat ulang canonical Product. **Cek pertama:** bandingkan `productId`/`resolved_product_id` dengan `products.id`, lalu muat ulang form secara authoritative. Snapshot payload dan nama usulan QC boleh tetap lama sebagai provenance. **Jangan lakukan:** rewrite massal `submissions.payload` atau mengubah proposal history hanya untuk menyamakan label.
+**Kemungkinan layer:** resolver tampilan/API/export masih memakai snapshot payload atau lookup canonical gagal. **Cek pertama:** bandingkan `productId`/`resolved_product_id` dengan `products.id`, lalu muat ulang data secara authoritative. Detail Submission dan export current harus mengikuti Product canonical; Usulan, QC History, dan Alias tetap historis. Snapshot payload dan nama usulan QC boleh tetap lama sebagai provenance. **Jangan lakukan:** rewrite massal `submissions.payload` atau mengubah proposal history hanya untuk menyamakan label.
 
 ### Pindahkan Referensi Gagal
 
