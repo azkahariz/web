@@ -108,6 +108,8 @@ Kategori yang valid berasal dari Item Profile Subtipe, lalu Profile Item master.
 
 Proposal APPROVED/MERGED mendapatkan `resolved_product_id` di tabel proposal. Payload tidak perlu direwrite hanya karena QC selesai; reference itu tetap QC_RESULT dan resolver menggunakan proposal untuk menemukan Product canonical.
 
+Untuk tampilan form, UUID tetap menjadi identity. Item DIRECT menggunakan `productId` untuk mengambil Merk/Tipe canonical terbaru secara bulk; `brand` dan `model` di payload tetap dipertahankan sebagai snapshot/fallback dan tidak ditulis ulang ketika master Product diubah. Proposal APPROVED/MERGED mengikuti `resolved_product_id`, sedangkan proposal PENDING tetap menampilkan Brand/Tipe usulan asli.
+
 ## Edit Mode
 
 `useServerDraft.ts` membedakan `browsing`, `opening`, `editing`, `saving`, `saved`, `read-only`, `conflict`, dan `local-only`. `retryAcquireEdit()` membersihkan snapshot lock/error lama lalu selalu memanggil `open_submission`/`admin_open_submission` terbaru.
@@ -251,6 +253,7 @@ payload, completion, Gudang, Product, atau QC.
 - Soft lock coordinates edit access but never authorizes a user outside Station scope.
 - Current session can release only its own lock.
 - Product Proposal resolution must not be repaired by global payload rewrite.
+- Product canonical rename must not rewrite Submission payload; display current names by UUID and preserve the stored snapshot as fallback.
 - Archived Submission remains history and is not active Station work.
 
 ## Hal yang Tidak Boleh Dilakukan

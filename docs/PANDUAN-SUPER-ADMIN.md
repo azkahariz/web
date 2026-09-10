@@ -148,6 +148,8 @@ riwayat Submission dan hasil QC tetap menunjuk UUID canonical yang sama.
 Rename menyimpan pasangan Merk/Tipe lama sebagai alias agar resolusi data lama
 tetap dapat dilakukan. Semua perubahan Produk tercatat di Audit Admin.
 
+Setelah rename, form Station dan tampilan form dari Admin mengambil Merk/Tipe terbaru berdasarkan UUID Product. Snapshot lama pada Submission dan nama usulan QC tetap dipertahankan sebagai riwayat; tidak diperlukan rewrite payload Submission.
+
 Produk APPROVED dari QC dan target MERGED langsung memakai master yang sama.
 Station User tidak mengubah master ini secara langsung; input baru mereka tetap
 masuk sebagai proposal QC.

@@ -111,8 +111,6 @@ export default function InventoryApp({
   const downloadRef = useRef<HTMLDivElement | null>(null);
   const autoEditStartedRef = useRef(false);
   const proposalInFlightRef = useRef(new Set<string>());
-  const productCatalog = useProductCatalog(account.stationId, productQuery, customBrand, customModel);
-  const { findCanonical, refresh: refreshProductCatalog } = productCatalog;
   const isAdminEditor = adminMode || Boolean(adminSubmissionId);
 
   useEffect(() => {
@@ -215,6 +213,11 @@ export default function InventoryApp({
     ? `template::${profile}`
     : `site::${account.stationId}::${selectedSite?.siteId ?? ""}::${selectedSubtype?.subtypeId ?? ""}`;
   const inventory = useMemo(() => drafts[draftKey] ?? {}, [draftKey, drafts]);
+  const referencedProductIds = useMemo(() => [...new Set(
+    Object.values(inventory).flatMap((items) => items.flatMap((item) => item.productId ? [item.productId] : [])),
+  )].sort(), [inventory]);
+  const productCatalog = useProductCatalog(account.stationId, productQuery, customBrand, customModel, referencedProductIds);
+  const { findCanonical, refresh: refreshProductCatalog } = productCatalog;
   const categoryIds = useMemo(() => itemIdByName(data.master), [data.master]);
   const warehouseCategories = useMemo(() => {
     const allowed = new Set(profileCategories);
@@ -580,7 +583,7 @@ export default function InventoryApp({
   }, [draftCanEdit, draftKey, findCanonical, handleDraftAccessError, inventory, operatorName, refreshProductCatalog, selectedSiteId, selectedSubtypeId]);
 
   function productForDisplay(item: InstalledItem) {
-    return resolveInstalledProduct(item, productCatalog.proposalMap);
+    return resolveInstalledProduct(item, productCatalog.proposalMap, productCatalog.canonicalProducts);
   }
 
   function productForExport(item: InstalledItem) {

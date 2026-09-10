@@ -15,6 +15,8 @@ commit.
 
 - Super Admin memperoleh kontrol global DIBUKA/DITUTUP untuk akses pengisian
   UPT, dengan enforcement RPC Station, stale-tab handling, dan audit transisi.
+- Form Station dan tampilan form Admin me-resolve Merk/Tipe Product current dari
+  UUID canonical tanpa menulis ulang snapshot Submission atau history QC.
 
 ## 2026-09-09
 

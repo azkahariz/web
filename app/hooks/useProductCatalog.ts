@@ -23,7 +23,13 @@ function one<T>(value: T | T[] | null) {
   return Array.isArray(value) ? value[0] ?? null : value;
 }
 
-export function useProductCatalog(stationId: string, search = "", recommendationBrand = "", recommendationModel = "") {
+export function useProductCatalog(
+  stationId: string,
+  search = "",
+  recommendationBrand = "",
+  recommendationModel = "",
+  referencedProductIds: string[] = [],
+) {
   const [liveProducts, setLiveProducts] = useState<Product[]>([]);
   const [proposals, setProposals] = useState<ProductProposal[]>([]);
   const [page, setPage] = useState(1);
@@ -32,6 +38,7 @@ export function useProductCatalog(stationId: string, search = "", recommendation
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [recommendations, setRecommendations] = useState<ProductRecommendation[]>([]);
+  const [canonicalProducts, setCanonicalProducts] = useState<Map<string, Product>>(new Map());
   const [recommendationLoading, setRecommendationLoading] = useState(false);
   const [recommendationError, setRecommendationError] = useState("");
   const requestSequenceRef = useRef(0);
@@ -62,9 +69,12 @@ export function useProductCatalog(stationId: string, search = "", recommendation
       const productResult = await productResponse.json() as { rows?: ProductRow[]; totalCount?: number; error?: string };
       if (!productResponse.ok) throw new Error(productResult.error || "Katalog produk gagal dimuat.");
       const proposalRows = (proposalResult.data ?? []) as ProposalRow[];
-      const resolvedIds = [...new Set(proposalRows.flatMap((row) => row.resolved_product_id ? [row.resolved_product_id] : []))];
+      const resolvedIds = [...new Set([
+        ...referencedProductIds,
+        ...proposalRows.flatMap((row) => row.resolved_product_id ? [row.resolved_product_id] : []),
+      ])];
       let canonicalById = new Map<string, CanonicalResolution>();
-      if (!proposalResult.error && resolvedIds.length) {
+      if (resolvedIds.length) {
         const batches = Array.from({ length: Math.ceil(resolvedIds.length / 100) }, (_, index) => resolvedIds.slice(index * 100, (index + 1) * 100));
         const resolutions = await Promise.all(batches.map(async (ids) => {
           const resolutionParams = new URLSearchParams();
@@ -86,6 +96,14 @@ export function useProductCatalog(stationId: string, search = "", recommendation
       })));
       setTotalCount(productResult.totalCount ?? 0);
       setDisplayPage(page);
+      setCanonicalProducts(new Map(referencedProductIds.flatMap((productId) => {
+        const canonical = canonicalById.get(productId);
+        return canonical ? [[productId, {
+          productId: canonical.canonical_product_id,
+          brand: canonical.brand,
+          model: canonical.model,
+        } satisfies Product] as const] : [];
+      })));
       if (!proposalResult.error) {
         setProposals(proposalRows.map((row) => {
           const resolved = one(row.resolved_product);
@@ -108,7 +126,7 @@ export function useProductCatalog(stationId: string, search = "", recommendation
     } finally {
       if (requestSequence === requestSequenceRef.current) setLoading(false);
     }
-  }, [page, search, stationId]);
+  }, [page, referencedProductIds, search, stationId]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => void refresh(), search.trim() ? 250 : 0);
@@ -166,5 +184,5 @@ export function useProductCatalog(stationId: string, search = "", recommendation
     const row = result.rows?.[0];
     return row ? { productId: row.id, brand: row.brand, model: row.model, active: row.active, sourceOrigin: row.source_origin as Product["sourceOrigin"], spreadsheetSynced: row.spreadsheet_synced } : null;
   }, []);
-  return { products, proposals, proposalMap, refresh, page, displayPage, pageCount, totalCount, loading, error, setPage, findCanonical, recommendations, recommendationLoading, recommendationError };
+  return { products, proposals, proposalMap, canonicalProducts, refresh, page, displayPage, pageCount, totalCount, loading, error, setPage, findCanonical, recommendations, recommendationLoading, recommendationError };
 }
