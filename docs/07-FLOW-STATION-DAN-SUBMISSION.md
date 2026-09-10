@@ -186,12 +186,27 @@ Permanent delete adalah Admin operation khusus dan bukan cara Station User mengo
 | version conflict | save RPC | load payload/version terbaru, jangan silent overwrite |
 | RPC/network failure | hook/client | retain local draft, state `local-only` |
 | logout release failure | release best effort | logout local tetap selesai; expiry fallback |
+| pengisian UPT ditutup | RPC `42501` + `upt_data_entry_closed` | keluar dari edit mode, hentikan autosave, tampilkan halaman penutupan |
+
+## Gate Akses Pengisian UPT
+
+Sebelum menampilkan form, halaman Station membaca status global dari Supabase.
+Status **DIBUKA** mempertahankan seluruh lifecycle normal. Status **DITUTUP**
+tetap mengizinkan login, tetapi form tidak dirender dan mutation Station tidak
+dapat dilewati melalui direct RPC.
+
+Tab yang sudah terbuka saat Super Admin menutup pengisian akan menerima error
+terstruktur pada heartbeat atau write berikutnya. Client menghentikan edit dan
+autosave, mencoba melepas lock session sendiri, lalu menampilkan informasi bahwa
+periode pengisian telah selesai. Toggle tidak mengubah Submission, version,
+payload, completion, Gudang, Product, atau QC.
 
 ## Execution Path Lengkap
 
 | Step | Frontend | API | DB/RPC | Mutation |
 | --- | --- | --- | --- | --- |
 | resolve user | `app/page.tsx` | SSR | Auth + Station account | no |
+| check data-entry access | `app/page.tsx` | SSR | `get_upt_data_entry_status` | no |
 | load master | SSR/runtime parser | page path | `station_runtime_master` | no |
 | select context | `InventoryApp.tsx` | none | none | no |
 | inspect draft | `useServerDraft` | none | `get_submission_state` | no |
@@ -216,6 +231,7 @@ Permanent delete adalah Admin operation khusus dan bukan cara Station User mengo
 - Admin equivalent: `admin_get_submission_state`, `admin_open_submission`, `admin_save_submission`, `admin_touch_submission_lock`, `admin_release_submission_lock`.
 - Admin monitoring: `/api/admin/submissions`, `/api/admin/submissions/ensure`.
 - Product Proposal: Station creation RPC and Admin QC `_v2` RPC family.
+- Global access: `get_upt_data_entry_status`, `set_upt_data_entry_enabled`, dan gate internal Station.
 
 ## Relevant Tests
 
