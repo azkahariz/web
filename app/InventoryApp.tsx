@@ -988,7 +988,7 @@ export default function InventoryApp({
                               <strong>{item.itemKind === "material" ? "Bahan mounting" : resolved.brand}</strong>
                               <span>{item.itemKind === "material" ? item.material : resolved.model}</span>
                             </p>
-                            <button aria-label={`Hapus ${item.itemKind === "material" ? item.material : `${item.brand} ${item.model}`}`} onClick={() => void removeItem(storageCategory, item)}>Hapus</button>
+                            <button aria-label={`Hapus ${item.itemKind === "material" ? item.material : `${resolved.brand} ${resolved.model}`}`} onClick={() => void removeItem(storageCategory, item)}>Hapus</button>
                           </div>
                           {resolved.status === "PENDING" && <p className="proposal-message">Produk ini sedang menunggu pemeriksaan admin.</p>}
                           {resolved.status === "PENDING_LOCAL" && <p className="proposal-message">Usulan masih tersimpan lokal dan akan dikirim saat server tersedia.</p>}
