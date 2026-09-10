@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import AsyncButton from "../components/AsyncButton";
 import { useAppFeedback } from "../components/AppFeedback";
 import {
+  enrichAdminProductPage,
   productSourceLabel,
   type AdminProductSortDirection,
   type AdminProductSortField,
@@ -16,10 +17,12 @@ import ProductReferenceMoveDialog, { type MoveReferenceIdentity } from "./Produc
 import ProductMergeDialog from "./ProductMergeDialog";
 import ProductDeleteDialog from "./ProductDeleteDialog";
 
-type Product = { id: string; brand: string; model: string; categories: string[]; active: boolean; source_origin: string; usage_count: number; merged_into_product_id?: string; merged_target?: { id: string; brand: string; model: string } };
+type Product = { id: string; brand: string; model: string; categories?: string[] | null; active: boolean; source_origin: string; usage_count?: number | null; merged_into_product_id?: string; merged_target?: { id: string; brand: string; model: string } };
 type Summary = { total_count: number; active_count: number; inactive_count: number };
 type ReferenceFilterOption = { id: string; name: string };
 type ReferenceFilterOptions = { categories: string[]; stationGroups: ReferenceFilterOption[]; siteTypes: ReferenceFilterOption[] };
+type ProductEnrichment = { product_id: string; reference_count: number; categories: string[] };
+let cachedReferenceFilterOptions: ReferenceFilterOptions | null = null;
 type ProductUsage = {
   rows: Array<{ stationName: string; siteName: string; siteTypeName: string; subtypeName: string; categories: string[]; referenceCount: number }>;
   totalCount: number;
@@ -157,8 +160,9 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
   const [statusFilter, setStatusFilter] = useState<AdminProductStatusFilter>("active");
   const [sourceFilter, setSourceFilter] = useState("");
   const [sourceOptions, setSourceOptions] = useState<string[]>([]);
-  const [referenceFilterOptions, setReferenceFilterOptions] = useState<ReferenceFilterOptions>({ categories: [], stationGroups: [], siteTypes: [] });
-  const [referenceFilterOptionsLoading, setReferenceFilterOptionsLoading] = useState(true);
+  const [sourceOptionsError, setSourceOptionsError] = useState("");
+  const [referenceFilterOptions, setReferenceFilterOptions] = useState<ReferenceFilterOptions>(() => cachedReferenceFilterOptions ?? { categories: [], stationGroups: [], siteTypes: [] });
+  const [referenceFilterOptionsLoading, setReferenceFilterOptionsLoading] = useState(() => !cachedReferenceFilterOptions);
   const [referenceFilterOptionsError, setReferenceFilterOptionsError] = useState("");
   const [categoryFilters, setCategoryFilters] = useState<string[]>([]);
   const [stationCategoryFilter, setStationCategoryFilter] = useState("");
@@ -167,7 +171,13 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
   const [sortDirection, setSortDirection] = useState<AdminProductSortDirection>("asc");
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [enrichmentLoading, setEnrichmentLoading] = useState(false);
+  const [initialEnrichmentSettled, setInitialEnrichmentSettled] = useState(false);
+  const [listLoaded, setListLoaded] = useState(false);
+  const [listError, setListError] = useState("");
+  const [listIssues, setListIssues] = useState<string[]>([]);
+  const [summaryError, setSummaryError] = useState("");
+  const listRequestSequenceRef = useRef(0);
   const [activeAction, setActiveAction] = useState<string | null>(null);
   const [productDialog, setProductDialog] = useState<{ mode: "create" | "edit"; productId?: string; brand: string; model: string } | null>(null);
   const [dialogError, setDialogError] = useState("");
@@ -204,6 +214,7 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
   useEffect(() => {
     const controller = new AbortController();
     async function loadSourceOptions() {
+      setSourceOptionsError("");
       try {
         const response = await fetch("/api/admin/products?sources=1", { cache: "no-store", signal: controller.signal });
         const result = await response.json() as { sources?: string[]; error?: string };
@@ -211,7 +222,7 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
         setSourceOptions(result.sources ?? []);
       } catch (sourceError) {
         if (sourceError instanceof DOMException && sourceError.name === "AbortError") return;
-        setError(sourceError instanceof Error ? sourceError.message : "Pilihan sumber produk gagal dimuat.");
+        setSourceOptionsError(sourceError instanceof Error ? sourceError.message : "Pilihan sumber produk gagal dimuat.");
       }
     }
     void loadSourceOptions();
@@ -219,6 +230,8 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
   }, []);
 
   useEffect(() => {
+    if (!initialEnrichmentSettled) return;
+    if (cachedReferenceFilterOptions) return;
     const controller = new AbortController();
     async function loadReferenceFilterOptions() {
       setReferenceFilterOptionsLoading(true);
@@ -227,7 +240,9 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
         const response = await fetch("/api/admin/products?referenceFilterOptions=1", { cache: "no-store", signal: controller.signal });
         const result = await response.json() as { referenceFilterOptions?: ReferenceFilterOptions; error?: string };
         if (!response.ok) throw new Error(result.error || "Pilihan filter referensi produk gagal dimuat.");
-        setReferenceFilterOptions(result.referenceFilterOptions ?? { categories: [], stationGroups: [], siteTypes: [] });
+        const options = result.referenceFilterOptions ?? { categories: [], stationGroups: [], siteTypes: [] };
+        cachedReferenceFilterOptions = options;
+        setReferenceFilterOptions(options);
       } catch (optionsError) {
         if (optionsError instanceof DOMException && optionsError.name === "AbortError") return;
         setReferenceFilterOptionsError(optionsError instanceof Error ? optionsError.message : "Pilihan filter referensi produk gagal dimuat.");
@@ -237,11 +252,26 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
     }
     void loadReferenceFilterOptions();
     return () => controller.abort();
+  }, [initialEnrichmentSettled]);
+
+  const loadSummary = useCallback(async (signal?: AbortSignal) => {
+    setSummaryError("");
+    try {
+      const response = await fetch("/api/admin/products?summary=1", { cache: "no-store", signal });
+      const result = await response.json() as { summary?: Summary; error?: string };
+      if (!response.ok) throw new Error(result.error || "Ringkasan produk gagal dimuat.");
+      setSummary(result.summary ?? null);
+    } catch (loadError) {
+      if (loadError instanceof DOMException && loadError.name === "AbortError") return;
+      setSummaryError(loadError instanceof Error ? loadError.message : "Ringkasan produk gagal dimuat.");
+    }
   }, []);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (signal?: AbortSignal) => {
+    const requestSequence = ++listRequestSequenceRef.current;
     setLoading(true);
-    setError("");
+    setEnrichmentLoading(false);
+    setListError("");
     const params = new URLSearchParams({
       page: String(page),
       pageSize: String(pageSize),
@@ -254,31 +284,70 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
     categoryFilters.forEach((category) => params.append("category", category));
     if (stationCategoryFilter) params.set("stationCategoryId", stationCategoryFilter);
     if (siteTypeFilter) params.set("siteTypeId", siteTypeFilter);
+    if (sortField !== "usage") params.set("deferEnrichment", "1");
     try {
-      const [listResponse, summaryResponse] = await Promise.all([
-        fetch(`/api/admin/products?${params.toString()}`, { cache: "no-store" }),
-        fetch("/api/admin/products?summary=1", { cache: "no-store" }),
-      ]);
-      const list = await listResponse.json() as { rows?: Product[]; totalCount?: number; error?: string };
-      const summaryResult = await summaryResponse.json() as { summary?: Summary; error?: string };
+      const listResponse = await fetch(`/api/admin/products?${params.toString()}`, { cache: "no-store", signal });
+      const list = await listResponse.json() as { rows?: Product[]; totalCount?: number; issues?: Record<string, string>; error?: string };
       if (!listResponse.ok) throw new Error(list.error || "Daftar produk gagal dimuat.");
-      if (!summaryResponse.ok) throw new Error(summaryResult.error || "Ringkasan produk gagal dimuat.");
-      setRows(list.rows ?? []);
+      if (requestSequence !== listRequestSequenceRef.current) return;
+      const nextRows = list.rows ?? [];
+      setRows(nextRows);
       const nextTotalCount = list.totalCount ?? 0;
       setTotalCount(nextTotalCount);
       setPage((current) => Math.min(current, Math.max(1, Math.ceil(nextTotalCount / pageSize))));
-      setSummary(summaryResult.summary ?? null);
-    } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : "Daftar produk gagal dimuat.");
-    } finally {
+      setListIssues(Object.values(list.issues ?? {}));
+      setListLoaded(true);
       setLoading(false);
+
+      if (sortField !== "usage" && nextRows.length) {
+        setEnrichmentLoading(true);
+        const enrichmentParams = new URLSearchParams();
+        nextRows.forEach((product) => enrichmentParams.append("enrichmentProductId", product.id));
+        try {
+          const enrichmentResponse = await fetch(`/api/admin/products?${enrichmentParams.toString()}`, { cache: "no-store", signal });
+          const enrichmentResult = await enrichmentResponse.json() as { enrichment?: ProductEnrichment[]; error?: string };
+          if (!enrichmentResponse.ok) throw new Error(enrichmentResult.error || "Penggunaan dan kategori produk gagal dimuat.");
+          if (requestSequence !== listRequestSequenceRef.current) return;
+          setRows((current) => enrichAdminProductPage(current, enrichmentResult.enrichment ?? [], enrichmentResult.enrichment ?? []) as Product[]);
+        } catch (enrichmentError) {
+          if (enrichmentError instanceof DOMException && enrichmentError.name === "AbortError") return;
+          if (requestSequence === listRequestSequenceRef.current) {
+            setRows((current) => enrichAdminProductPage(current, [], [], { usageUnavailable: true, categoriesUnavailable: true }) as Product[]);
+            setListIssues([enrichmentError instanceof Error ? enrichmentError.message : "Penggunaan dan kategori produk gagal dimuat."]);
+          }
+        } finally {
+          if (requestSequence === listRequestSequenceRef.current) setEnrichmentLoading(false);
+        }
+      }
+      if (requestSequence === listRequestSequenceRef.current) setInitialEnrichmentSettled(true);
+    } catch (loadError) {
+      if (loadError instanceof DOMException && loadError.name === "AbortError") return;
+      if (requestSequence === listRequestSequenceRef.current) {
+        setListError(loadError instanceof Error ? loadError.message : "Daftar produk gagal dimuat.");
+        setInitialEnrichmentSettled(true);
+      }
+    } finally {
+      if (requestSequence === listRequestSequenceRef.current) setLoading(false);
     }
   }, [categoryFilters, page, pageSize, search, siteTypeFilter, sortDirection, sortField, sourceFilter, stationCategoryFilter, statusFilter]);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => void load(), 0);
-    return () => window.clearTimeout(timer);
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => void load(controller.signal), 0);
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
   }, [load]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => void loadSummary(controller.signal), 0);
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
+  }, [loadSummary]);
 
   const pageCount = Math.max(1, Math.ceil(totalCount / pageSize));
   const firstRow = totalCount ? (page - 1) * pageSize + 1 : 0;
@@ -297,8 +366,7 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
     const response = await fetch("/api/admin/products", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
     const result = await response.json() as { error?: string };
     if (!response.ok) throw new Error(result.error || "Aksi produk gagal diproses.");
-    await load();
-    await onChanged();
+    await Promise.all([load(), loadSummary(), onChanged()]);
   }
 
   function openCreateDialog() {
@@ -452,18 +520,18 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
     setSelectedReferences(new Map());
     setMoveDialogOpen(false);
     setReferencePageSize(50);
-    await Promise.all([loadReferences(usageProduct, 1, 50), loadDependencies(usageProduct), loadUsage(usageProduct, 1, dependencyPageSize), load(), onChanged()]);
+    await Promise.all([loadReferences(usageProduct, 1, 50), loadDependencies(usageProduct), loadUsage(usageProduct, 1, dependencyPageSize), load(), loadSummary(), onChanged()]);
   }
 
   async function completeProductMerge() {
     setMergeProduct(null);
     setUsageProduct(null);
-    await Promise.all([load(), onChanged()]);
+    await Promise.all([load(), loadSummary(), onChanged()]);
   }
 
   async function completeProductDelete() {
     setDeleteProduct(null);
-    await Promise.all([load(), onChanged()]);
+    await Promise.all([load(), loadSummary(), onChanged()]);
   }
 
   function inspectDeleteBlockers(product: Product, tab: DependencyTab) {
@@ -497,9 +565,9 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
   }
 
   const compactSummary = useMemo(() => [
-    ["Total", summary?.total_count ?? 0],
-    ["Aktif", summary?.active_count ?? 0],
-    ["Nonaktif", summary?.inactive_count ?? 0],
+    ["Total", summary?.total_count ?? "\u2014"],
+    ["Aktif", summary?.active_count ?? "\u2014"],
+    ["Nonaktif", summary?.inactive_count ?? "\u2014"],
   ], [summary]);
   const hasActiveFilters = Boolean(searchInput || search || sourceFilter || categoryFilters.length || stationCategoryFilter || siteTypeFilter || statusFilter !== "active");
 
@@ -527,7 +595,7 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
       </div>
       <div className="product-toolbar-actions">
         <AsyncButton className="primary-button" loading={activeAction === "create"} loadingText="Menambah..." onClick={openCreateDialog}>Tambah Produk</AsyncButton>
-        <AsyncButton className="secondary-button" loading={loading} loadingText="Memuat..." onClick={() => void load()}>Muat ulang</AsyncButton>
+        <AsyncButton className="secondary-button" loading={loading} loadingText="Memuat..." onClick={() => void Promise.all([load(), loadSummary()])}>Muat ulang</AsyncButton>
       </div>
     </div>
     <div className="product-reference-filters" aria-label="Filter referensi produk">
@@ -537,8 +605,11 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
       <div className="product-reference-filter-reset">{hasActiveFilters && <button type="button" className="secondary-button" onClick={resetFilters}>Reset Filter</button>}</div>
     </div>
     {referenceFilterOptionsError && <p className="product-filter-options-error" role="status">{referenceFilterOptionsError} Daftar Produk tetap dapat digunakan tanpa filter referensi.</p>}
-    {error && <p className="admin-message" role="status">{error}</p>}
-    <div className={`admin-table-wrap product-table${loading ? " is-loading" : ""}`} aria-busy={loading}><table><thead><tr>
+    {sourceOptionsError && <p className="product-filter-options-error" role="status">{sourceOptionsError} Daftar Produk tetap dapat digunakan tanpa filter sumber.</p>}
+    {summaryError && <p className="product-filter-options-error" role="status">{summaryError} Angka ringkasan tidak ditampilkan sebagai nol.</p>}
+    {listIssues.length > 0 && <p className="product-filter-options-error" role="status">{listIssues.join(" ")} Daftar Produk tetap ditampilkan; gunakan Muat ulang untuk mencoba kembali.</p>}
+    {listError && <p className="admin-message" role="alert">{listError} {listLoaded && "Data terakhir tetap ditampilkan."}</p>}
+    <div className={`admin-table-wrap product-table${loading ? " is-loading" : ""}`} aria-busy={loading || enrichmentLoading}><table><thead><tr>
       {([
         ["brand", "Merk"],
         ["model", "Tipe"],
@@ -555,8 +626,8 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
       </th>)}
       <th>Aksi</th>
     </tr></thead><tbody>
-      {rows.map((product) => <tr key={product.id}><td><strong>{product.brand}</strong>{product.merged_target && <small className="product-merged-target">Ke {product.merged_target.brand} · {product.merged_target.model}</small>}</td><td>{product.model}</td><td><div className="product-category-list">{product.categories.length ? product.categories.map((category) => <span key={category}>{category}</span>) : <span className="product-category-empty">—</span>}</div></td><td><span className={`status-pill ${product.merged_into_product_id ? "merged" : product.active ? "active" : "inactive"}`}>{product.merged_into_product_id ? "Digabungkan" : product.active ? "Aktif" : "Nonaktif"}</span></td><td>{productSourceLabel(product.source_origin)}</td><td><button className="usage-link" type="button" onClick={() => openUsage(product)}>{product.usage_count ?? 0} referensi</button></td><td className="table-actions">{product.merged_into_product_id ? <button type="button" onClick={() => openUsage(product)}>Lihat Riwayat</button> : <><AsyncButton loading={activeAction === `edit:${product.id}`} loadingText="Menyimpan..." onClick={() => openEditDialog(product)}>Edit</AsyncButton><AsyncButton className={product.active ? "danger-inline" : undefined} loading={activeAction === `active:${product.id}`} loadingText="Menyimpan..." onClick={() => void setActive(product)}>{product.active ? "Nonaktifkan" : "Aktifkan"}</AsyncButton><button className="product-merge-action" type="button" onClick={() => setMergeProduct(product)}>Gabungkan</button><button className="product-delete-action" type="button" disabled={product.active} title={product.active ? "Nonaktifkan Produk terlebih dahulu sebelum menghapus permanen." : "Periksa keterkaitan dan hapus Produk permanen"} onClick={() => setDeleteProduct(product)}>Hapus Permanen</button></>}</td></tr>)}
-      {!rows.length && <tr><td colSpan={7}>{loading ? "Memuat produk..." : "Tidak ada Produk yang sesuai dengan filter."}</td></tr>}
+      {rows.map((product) => <tr key={product.id}><td><strong>{product.brand}</strong>{product.merged_target && <small className="product-merged-target">Ke {product.merged_target.brand} · {product.merged_target.model}</small>}</td><td>{product.model}</td><td><div className="product-category-list">{product.categories === undefined ? <span className="product-category-loading">Memuat...</span> : product.categories === null ? <span className="product-category-unavailable">Gagal dimuat</span> : product.categories.length ? product.categories.map((category) => <span key={category}>{category}</span>) : <span className="product-category-empty">—</span>}</div></td><td><span className={`status-pill ${product.merged_into_product_id ? "merged" : product.active ? "active" : "inactive"}`}>{product.merged_into_product_id ? "Digabungkan" : product.active ? "Aktif" : "Nonaktif"}</span></td><td>{productSourceLabel(product.source_origin)}</td><td><button className={`usage-link${product.usage_count === null ? " is-unavailable" : ""}`} type="button" disabled={product.usage_count === undefined} onClick={() => openUsage(product)}>{product.usage_count === undefined ? "Memuat..." : product.usage_count === null ? "Gagal dimuat" : `${product.usage_count} referensi`}</button></td><td className="table-actions">{product.merged_into_product_id ? <button type="button" onClick={() => openUsage(product)}>Lihat Riwayat</button> : <><AsyncButton loading={activeAction === `edit:${product.id}`} loadingText="Menyimpan..." onClick={() => openEditDialog(product)}>Edit</AsyncButton><AsyncButton className={product.active ? "danger-inline" : undefined} loading={activeAction === `active:${product.id}`} loadingText="Menyimpan..." onClick={() => void setActive(product)}>{product.active ? "Nonaktifkan" : "Aktifkan"}</AsyncButton><button className="product-merge-action" type="button" onClick={() => setMergeProduct(product)}>Gabungkan</button><button className="product-delete-action" type="button" disabled={product.active} title={product.active ? "Nonaktifkan Produk terlebih dahulu sebelum menghapus permanen." : "Periksa keterkaitan dan hapus Produk permanen"} onClick={() => setDeleteProduct(product)}>Hapus Permanen</button></>}</td></tr>)}
+      {!rows.length && <tr><td colSpan={7}>{loading && !listLoaded ? "Memuat produk..." : listError && !listLoaded ? "Daftar Produk belum dapat dimuat. Gunakan Muat ulang untuk mencoba kembali." : "Tidak ada Produk yang sesuai dengan filter."}</td></tr>}
     </tbody></table></div>
     <div className="submission-pagination" aria-label="Pagination produk">
       <label className="page-size-control">Baris per halaman:

@@ -109,6 +109,19 @@ Untuk card blank, lambat, percentage salah, atau Gudang salah: cek RPC completio
 
 Untuk count/reference/merge/category salah: cek RPC status/list paginasi, `resolved_product_id`, direct JSON occurrence, QC reference, stale guard, dan audit. Jangan rewrite semua payload Submission secara global.
 
+Jika Admin Produk lambat atau menampilkan kegagalan penggunaan, pisahkan query
+master Product dari enrichment `admin_product_usage_counts`,
+`admin_product_reference_categories`, penggantinya
+`admin_product_page_enrichment`, dan filter referensi. Gunakan jendela log
+yang terbatas, `pg_stat_statements`, koneksi/wait event, serta request ID log
+aplikasi; jangan menjalankan stress test production. Nilai ringkasan `—` dan
+field **Gagal dimuat** berarti dependency belum authoritative, bukan Product
+berjumlah nol. Sorting Penggunaan memang boleh gagal eksplisit bila usage count
+tidak tersedia karena hasil urut tidak boleh dipalsukan.
+Pada sort biasa, baris Product seharusnya dapat tampil sebelum enrichment
+selesai. Jika tidak, audit parameter `deferEnrichment`, request page-level
+`enrichmentProductId`, dan stale-request guard sebelum mengubah timeout.
+
 ## Legacy Redirect Incident
 
 Periksa legacy hostname, status 307, header Location, path, query, lalu canonical Hostinger. Bila canonical gagal, jangan menganggap redirect sebagai root cause tanpa bukti.

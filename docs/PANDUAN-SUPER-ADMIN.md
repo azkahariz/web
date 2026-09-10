@@ -164,6 +164,13 @@ semantik OR; kelompok filter yang berbeda digabungkan dengan AND pada occurrence
 referensi yang sama. Tombol **Reset Filter** mengembalikan Search, Status, Sumber,
 dan ketiga filter referensi ke nilai awal tanpa mengubah data Produk.
 
+Jika jumlah penggunaan atau kategori sementara gagal dimuat, daftar Product
+yang tersedia tetap ditampilkan dan field terkait bertuliskan **Gagal dimuat**.
+Gunakan **Muat ulang** untuk mencoba kembali. Tanda `—` pada kartu ringkasan
+berarti ringkasan belum berhasil dimuat, bukan jumlah Product nol. Sorting
+**Penggunaan** membutuhkan seluruh count dan dapat menampilkan error bila count
+belum tersedia agar urutan tidak menyesatkan.
+
 ### Pindahkan Referensi, Gabungkan, dan Hapus Produk
 
 - **Pindahkan Referensi** memindahkan referensi yang dipilih dari Produk sumber

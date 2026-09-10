@@ -81,11 +81,18 @@ try {
     const [usageB] = await tx`select public.admin_product_usage(${productB.id}, 1, 50, null) as data`;
     assert(usageB.data.siteCount === 1 && usageB.data.referenceCount === 1, "Usage harus berbasis UUID, bukan nama yang mirip.");
     const usageCounts = await tx`select * from public.admin_product_usage_counts(${[productA.id, productB.id, ...productsWithoutReferences]})`;
+    const pageEnrichment = await tx`select * from public.admin_product_page_enrichment(${[productA.id, productB.id, ...productsWithoutReferences]})`;
+    const categoryCounts = await tx`select * from public.admin_product_reference_categories(${[productA.id, productB.id, ...productsWithoutReferences]})`;
     const usageCountsByProductId = new Map(usageCounts.map((count) => [count.product_id, count.reference_count]));
+    const enrichmentByProductId = new Map(pageEnrichment.map((row) => [row.product_id, row]));
+    const categoriesByProductId = new Map(categoryCounts.map((row) => [row.product_id, row.categories]));
     assert(usageCounts.length === 53, "Bulk usage count harus mengembalikan semua UUID termasuk produk tanpa referensi.");
     assert(usageCountsByProductId.get(productA.id) === 6, "Bulk usage count harus menghitung direct, APPROVED, MERGED, dan produk nonaktif.");
     assert(usageCountsByProductId.get(productB.id) === 1, "Bulk usage count tidak boleh mencampur UUID produk yang mirip.");
     assert(productsWithoutReferences.every((productId) => usageCountsByProductId.get(productId) === 0), "Produk tanpa referensi harus mengembalikan nol.");
+    assert(pageEnrichment.every((row) => row.reference_count === usageCountsByProductId.get(row.product_id)), "Combined enrichment harus identik dengan usage count existing.");
+    assert(pageEnrichment.every((row) => JSON.stringify(row.categories) === JSON.stringify(categoriesByProductId.get(row.product_id))), "Combined enrichment harus identik dengan kategori existing.");
+    assert(enrichmentByProductId.get(productA.id)?.categories?.includes("Sensor Tekanan Udara"), "Combined enrichment harus mempertahankan functionCategories QC_RESULT.");
     await tx`reset role`;
 
     await tx`set local role authenticated`;

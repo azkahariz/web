@@ -171,12 +171,32 @@ Guardrail current:
 | merge apply | `/merge` | `admin_merge_product` | all supported dependencies + source state |
 | delete preflight/apply | `/delete-preflight`, `DELETE /[id]` | delete RPC | only eligible inactive orphan Product |
 
+## Admin Product List Reliability
+
+Pada sort biasa, daftar Product menampilkan baris master dan canonical merge
+lebih dahulu. Satu request page-level kemudian mengisi jumlah penggunaan dan
+kategori melalui `admin_product_page_enrichment`; RPC ini mengekstrak occurrence
+Submission satu kali dan mempertahankan agregasi usage serta category yang
+berbeda. Filter metadata yang relatif mahal baru dimuat setelah enrichment awal
+selesai dan digunakan kembali selama sesi UI. Full-population enrichment hanya
+diperlukan saat sorting **Penggunaan**, karena urutan tidak boleh dihitung dari
+sebagian Product.
+
+Kegagalan enrichment pada sort biasa tidak boleh mengubah Product menjadi
+kosong atau jumlah referensi menjadi nol. API mengembalikan baris yang sudah
+tersedia beserta issue terpisah; UI menampilkan **Gagal dimuat** pada field yang
+tidak authoritative dan mempertahankan data terakhir. Ringkasan Product dimuat
+terpisah dan tidak diulang pada setiap pagination, search, atau filter.
+Ketika URL langsung membuka menu Produk, shell Admin tidak memulai preload
+seluruh data Stasiun, Submission, Akun, dan Audit. Data shell tersebut baru
+dimuat saat view lain membutuhkannya.
+
 ## Relevant Source / RPC / Migration
 
 - `app/admin/AdminProducts.tsx`, `ProductReferenceMoveDialog.tsx`, `ProductMergeDialog.tsx`.
 - `app/lib/admin-product-api.ts`, `app/lib/product-reference-selection.ts`, `app/lib/admin-product-list.ts`.
 - `app/api/admin/products/[id]/dependencies`, `references`, `move-preflight`, `move`, `merge-preflight`, `merge`.
-- `20260821120000_product_reference_preflight.sql` through `20260904120000_product_reference_category_context.sql`.
+- `20260821120000_product_reference_preflight.sql` through `20260911120000_admin_product_page_enrichment.sql`.
 
 ## Relevant Tests
 

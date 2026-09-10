@@ -339,6 +339,7 @@ export default function AdminDashboard({ username, displayName }: { username: st
   const [credential, setCredential] = useState<{ username: string; password: string; title: string } | null>(null);
   const [credentialVisible, setCredentialVisible] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [dashboardLoaded, setDashboardLoaded] = useState(false);
   const [completionRows, setCompletionRows] = useState<StationCompletionSummary[]>([]);
   const [siteTypeCompletionRowsState, setSiteTypeCompletionRowsState] = useState<ReturnType<typeof siteTypeCompletionRows>>([]);
   const stationMonitoringFilters = useMemo(() => monitoringFiltersFromSearchParams(new URLSearchParams(searchParams.toString())), [searchParams]);
@@ -641,6 +642,7 @@ export default function AdminDashboard({ username, displayName }: { username: st
       setMessage("Gagal memuat dashboard. Periksa koneksi lalu muat ulang.");
     } finally {
       setLoadedAt(Date.now());
+      setDashboardLoaded(true);
       setLoading(false);
     }
   }, []);
@@ -677,9 +679,10 @@ export default function AdminDashboard({ username, displayName }: { username: st
   }, [refresh, refreshCompletionSummary]);
 
   useEffect(() => {
+    if (tab === "products" || dashboardLoaded) return;
     const timer = window.setTimeout(() => void refresh(), 0);
     return () => window.clearTimeout(timer);
-  }, [refresh]);
+  }, [dashboardLoaded, refresh, tab]);
 
   useEffect(() => {
     if (loading) return;
@@ -1175,7 +1178,7 @@ export default function AdminDashboard({ username, displayName }: { username: st
         <section className={`admin-content${tab === "accounts" ? " accounts-view" : ""}`}>
           <div className="admin-heading"><div><p className="kicker">PENGELOLAAN APLIKASI</p><h2>{tabs.find((item) => item.id === tab)?.label}</h2></div>{!(tab === "stations" && fillingMode === "submissions") && tab !== "products" && <AsyncButton className="secondary-button" type="button" loading={loading || ((tab === "stations" || tab === "summary") && (completionLoading || siteTypeCompletionLoading))} loadingText="Memuat..." onClick={() => void (tab === "stations" && fillingMode === "master" ? refreshMasterCompletion() : tab === "summary" ? refreshSummary() : refresh())}>Muat ulang</AsyncButton>}</div>
           {message && message !== "Pilih produk tujuan pada kotak merge." && <p className="admin-message" role="status">{message}</p>}
-          {loading && <p className="loading-copy">Memuat data admin...</p>}
+          {loading && tab !== "products" && <p className="loading-copy">Memuat data admin...</p>}
 
           {!loading && tab === "summary" && <div className="admin-stats">
             <button onClick={() => navigate("stations", { fillingMode: "master" })}><strong>{stations.filter((row) => row.active).length}</strong><span>Stasiun aktif</span></button>
@@ -1249,7 +1252,7 @@ export default function AdminDashboard({ username, displayName }: { username: st
             <button role="tab" aria-selected={fillingMode === "submissions"} className={fillingMode === "submissions" ? "active" : ""} onClick={() => changeFillingMode("submissions")}>Semua Pengisian</button>
           </div>}
 
-          {!loading && tab === "products" && <AdminProducts onChanged={refreshProductSummary} />}
+          {tab === "products" && <AdminProducts onChanged={refreshProductSummary} />}
 
           {!loading && searchTab && tab !== "stations" && <label className="admin-search">Cari<input autoComplete="off" value={search} onChange={(event) => setSearch(event.target.value)} placeholder={adminSearchPlaceholder(searchTab)} /></label>}
 
