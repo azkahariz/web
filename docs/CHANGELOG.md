@@ -13,6 +13,9 @@ commit.
 
 ## 2026-09-10
 
+- Admin Produk membatasi enrichment usage/kategori ke page aktif pada sort
+  biasa, membatalkan request list stale, dan memisahkan kegagalan enrichment
+  dari zero/empty state Product.
 - Admin Produk menyediakan filter referensi Kategori multi-select, Kelompok
   Stasiun, dan Tipe Site dengan same-occurrence semantics sebelum pagination.
 - Super Admin memperoleh kontrol global DIBUKA/DITUTUP untuk akses pengisian

@@ -171,6 +171,23 @@ Guardrail current:
 | merge apply | `/merge` | `admin_merge_product` | all supported dependencies + source state |
 | delete preflight/apply | `/delete-preflight`, `DELETE /[id]` | delete RPC | only eligible inactive orphan Product |
 
+## Admin Product List Reliability
+
+Daftar Product memuat baris master lebih dahulu, lalu memperkaya Product pada
+page aktif dengan jumlah penggunaan, kategori referensi, dan canonical merge.
+Usage dan kategori tidak dijalankan sebagai dua JSON scan global bersamaan agar
+peak database pressure per request tetap terbatas. Full usage aggregation hanya diperlukan saat sorting
+**Penggunaan**, karena urutan tidak boleh dihitung dari sebagian Product.
+
+Kegagalan enrichment pada sort biasa tidak boleh mengubah Product menjadi
+kosong atau jumlah referensi menjadi nol. API mengembalikan baris yang sudah
+tersedia beserta issue terpisah; UI menampilkan **Gagal dimuat** pada field yang
+tidak authoritative dan mempertahankan data terakhir. Ringkasan Product dimuat
+terpisah dan tidak diulang pada setiap pagination, search, atau filter.
+Ketika URL langsung membuka menu Produk, shell Admin tidak memulai preload
+seluruh data Stasiun, Submission, Akun, dan Audit. Data shell tersebut baru
+dimuat saat view lain membutuhkannya.
+
 ## Relevant Source / RPC / Migration
 
 - `app/admin/AdminProducts.tsx`, `ProductReferenceMoveDialog.tsx`, `ProductMergeDialog.tsx`.

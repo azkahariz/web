@@ -156,6 +156,19 @@ filter ulang hanya pada page browser atau menebak kelompok dari nama Station.
 **Cek pertama:** source/target UUID, aliases, product proposals resolved, direct references, dan transaction error.
 **Jangan lakukan:** hard delete loser Product yang masih memiliki history/reference.
 
+### Admin Produk Lambat atau Penggunaan Gagal Dimuat
+
+**Kemungkinan layer:** RPC usage/category yang memindai referensi Submission,
+statement timeout, atau request list yang tumpang tindih. **Cek pertama:** catat
+waktu kejadian dan request ID, lalu korelasikan log route dengan Data API serta
+`pg_stat_statements` untuk `admin_product_usage_counts` dan
+`admin_product_reference_categories`. Pastikan query Product master sendiri
+memang gagal sebelum menyimpulkan database kosong. Pada sort biasa, daftar tetap
+boleh tampil dengan **Gagal dimuat** pada enrichment; pada sorting Penggunaan,
+error eksplisit diperlukan agar urutan tidak salah. **Jangan lakukan:** mengubah
+failure menjadi `0 referensi`, menaikkan timeout/pool secara spekulatif, atau
+menjalankan load test ke production.
+
 ### Category Context Salah
 
 **Kemungkinan layer:** inventory scan dan proposal context enrichment.
