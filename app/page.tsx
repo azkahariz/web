@@ -4,10 +4,12 @@ import AccountProblem from "./AccountProblem";
 import InventoryApp from "./InventoryApp";
 import LoginForm from "./LoginForm";
 import RuntimeMasterProblem from "./RuntimeMasterProblem";
+import StationDataEntryClosed from "./StationDataEntryClosed";
 import FooterAttribution from "./components/FooterAttribution";
 import { getPublicSupabaseConfig } from "./lib/supabase/config";
 import { createSupabaseServerClient } from "./lib/supabase/server";
 import { tryParseStationRuntimeMaster } from "./lib/station-runtime-master";
+import { parseUptDataEntryStatus } from "./lib/upt-data-entry-access";
 
 export const metadata: Metadata = {
   title: "Aloptama Collect | Pendataan Aloptama",
@@ -47,5 +49,9 @@ export default async function Home() {
   const runtimeMaster = tryParseStationRuntimeMaster(runtimePayload);
   if (!runtimeMaster) return <RuntimeMasterProblem />;
   if (runtimeMaster.station.id !== row.station_id) return <AccountProblem message="Akun tidak sesuai dengan master stasiun aktif." />;
+  const { data: accessPayload, error: accessError } = await supabase!.rpc("get_upt_data_entry_status");
+  const access = accessError ? null : parseUptDataEntryStatus(accessPayload);
+  if (!access) return <AccountProblem message="Status akses pengisian belum dapat diverifikasi. Hubungi pengelola aplikasi." />;
+  if (!access.enabled) return <StationDataEntryClosed />;
   return <InventoryApp account={{ id: row.id, stationId: row.station_id, stationName: runtimeMaster.station.name, username: row.username }} runtimeMaster={runtimeMaster} />;
 }

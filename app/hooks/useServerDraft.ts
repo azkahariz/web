@@ -11,6 +11,7 @@ import {
   writeScopedLocalDraft,
   type DraftPayload,
 } from "../lib/server-draft";
+import { isUptDataEntryClosedError } from "../lib/upt-data-entry-access";
 
 type Scope = { stationId: string; siteId: string; siteSubtypeId: string };
 type RpcState = {
@@ -71,6 +72,7 @@ export function useServerDraft({
   const [latestPayload, setLatestPayload] = useState<DraftPayload | null>(null);
   const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
   const [openError, setOpenError] = useState("");
+  const [accessClosed, setAccessClosed] = useState(false);
   const [retryTick, setRetryTick] = useState(0);
   const versionRef = useRef(0);
   const initializedKeyRef = useRef("");
@@ -84,7 +86,28 @@ export function useServerDraft({
   const siteSubtypeId = scope?.siteSubtypeId ?? "";
   const serializedPayload = payload ? payloadFingerprint(payload) : "";
   const payloadReady = Boolean(serializedPayload);
-  const canEdit = isEditing && !latestPayload;
+  const canEdit = isEditing && !latestPayload && !accessClosed;
+
+  const handleAccessError = useCallback((error: { code?: string; message?: string } | null | undefined) => {
+    if (adminMode || !isUptDataEntryClosedError(error)) return false;
+    setAccessClosed(true);
+    setIsEditing(false);
+    setDirty(false);
+    setCanTakeover(false);
+    setLatestPayload(null);
+    setOpenError("");
+    setStatus("read-only");
+
+    if (siteId && siteSubtypeId) {
+      const client = getSupabaseBrowserClient();
+      if (client) void client.rpc("release_submission_lock", {
+        p_site_id: siteId,
+        p_site_subtype_id: siteSubtypeId,
+        p_session_id: getTabSessionId(),
+      });
+    }
+    return true;
+  }, [adminMode, siteId, siteSubtypeId]);
 
   useEffect(() => {
     setDirty(Boolean(isEditing && serializedPayload && serializedPayload !== lastSavedFingerprintRef.current));
@@ -153,6 +176,7 @@ export function useServerDraft({
           p_operator_name: operatorName || null,
         });
       if (error) {
+        if (handleAccessError(error)) return "read-only";
         setStatus("local-only");
         return "local-only";
       }
@@ -185,7 +209,7 @@ export function useServerDraft({
     } finally {
       saveInFlightRef.current = false;
     }
-  }, [adminSubmissionId, isEditing, latestPayload, operatorName, payload, scope, serializedPayload]);
+  }, [adminSubmissionId, handleAccessError, isEditing, latestPayload, operatorName, payload, scope, serializedPayload]);
 
   useEffect(() => {
     const generation = ++generationRef.current;
@@ -247,6 +271,7 @@ export function useServerDraft({
       if (generation !== generationRef.current) return;
       initializedKeyRef.current = key;
       if (error) {
+        if (handleAccessError(error)) return;
         setOpenError(siteSubtypeError(error));
         versionRef.current = local?.serverVersion ?? 0;
         lastSavedFingerprintRef.current = local?.payload ? payloadFingerprint(local.payload) : "";
@@ -279,7 +304,7 @@ export function useServerDraft({
     })();
   // Browse changes only read state; they must not acquire or release locks.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [adminMode, adminSubmissionId, payloadReady, retryTick, siteId, siteSubtypeId, stationId]);
+  }, [adminMode, adminSubmissionId, handleAccessError, payloadReady, retryTick, siteId, siteSubtypeId, stationId]);
 
   useEffect(() => {
     if (!isEditing || !stationId || !siteId || !siteSubtypeId || !serializedPayload || !initializedKeyRef.current) return;
@@ -302,7 +327,7 @@ export function useServerDraft({
   }, [dirty, isEditing, saveNow, serializedPayload, siteId, siteSubtypeId, stationId]);
 
   const retryAcquireEdit = useCallback(async () => {
-    if (!scope) return false;
+    if (!scope || accessClosed) return false;
     if (adminMode && !adminSubmissionId) return false;
     const key = scopedDraftKey(scope.stationId, scope.siteId, scope.siteSubtypeId);
     const client = getSupabaseBrowserClient();
@@ -338,6 +363,7 @@ export function useServerDraft({
         p_operator_name: operatorName || null,
       });
     if (error) {
+      if (handleAccessError(error)) return false;
       const message = siteSubtypeError(error);
       setOpenError(message);
       setStatus(message ? "browsing" : "local-only");
@@ -368,7 +394,7 @@ export function useServerDraft({
     setOpenError("");
     setStatus("read-only");
     return false;
-  }, [adminMode, adminSubmissionId, onRemotePayload, operatorName, scope]);
+  }, [accessClosed, adminMode, adminSubmissionId, handleAccessError, onRemotePayload, operatorName, scope]);
 
   const startEditing = retryAcquireEdit;
 
@@ -378,7 +404,7 @@ export function useServerDraft({
     const client = getSupabaseBrowserClient();
     if (!client) return;
     void (async () => {
-      const { data } = adminSubmissionId
+      const { data, error } = adminSubmissionId
         ? await client.rpc("admin_touch_submission_lock", {
           p_submission_id: adminSubmissionId,
           p_session_id: getTabSessionId(),
@@ -390,7 +416,8 @@ export function useServerDraft({
           p_session_id: getTabSessionId(),
           p_operator_name: operatorName || null,
         });
-      if (data === false) {
+      if (handleAccessError(error)) return;
+      if (error || data === false) {
         setIsEditing(false);
         setDirty(false);
         setStatus("read-only");
@@ -398,7 +425,7 @@ export function useServerDraft({
         setLockLastActivityAt(new Date().toISOString());
       }
     })();
-  }, [adminSubmissionId, isEditing, operatorName, scope]);
+  }, [adminSubmissionId, handleAccessError, isEditing, operatorName, scope]);
 
   const takeover = useCallback(async () => {
     if (!scope) return;
@@ -417,6 +444,7 @@ export function useServerDraft({
         p_operator_name: operatorName || null,
       });
     const row = firstRow(data as Array<RpcState & { acquired: boolean }>);
+    if (handleAccessError(error)) return;
     if (!error && row?.acquired) {
       versionRef.current = row.version;
       if (row.payload && "schemaVersion" in row.payload) onRemotePayload(row.payload as DraftPayload);
@@ -427,7 +455,7 @@ export function useServerDraft({
       setLockLastActivityAt(row.lock_last_activity_at ?? null);
       setStatus("editing");
     }
-  }, [adminSubmissionId, onRemotePayload, operatorName, scope]);
+  }, [adminSubmissionId, handleAccessError, onRemotePayload, operatorName, scope]);
 
   const loadLatest = useCallback(() => {
     if (!latestPayload) return;
@@ -462,6 +490,8 @@ export function useServerDraft({
     lockLastActivityAt,
     lastSavedAt,
     openError,
+    accessClosed,
+    handleAccessError,
     touchActivity,
     startEditing,
     retryAcquireEdit,

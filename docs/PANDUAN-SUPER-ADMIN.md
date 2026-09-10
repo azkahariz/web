@@ -116,6 +116,20 @@ konfirmasi karena perubahan editor lama yang belum tersimpan dapat gagal disimpa
 Gunakan setelah menghubungi editor bila memungkinkan. Tindakan ini tetap memakai
 version check dan tercatat dalam audit.
 
+## Akses Pengisian UPT
+
+Kontrol global berada pada **Ringkasan -> Akses Pengisian UPT**.
+
+- **DIBUKA**: Station User dapat membuka form, memperoleh lock, dan menyimpan.
+- **DITUTUP**: Station User tetap dapat login, tetapi form dan seluruh mutation
+  pengisian ditolak server. Akses dan editor Super Admin tetap tersedia.
+
+Gunakan **Tutup Pengisian** hanya setelah membaca konfirmasi. Data tersimpan,
+Submission, completion, Gudang, Product, QC, dan akun Station tidak diubah oleh
+toggle. Waktu perubahan tampil pada kontrol dan transisi tercatat di Audit
+Admin. Gunakan **Buka Pengisian** untuk memulihkan akses dengan aturan lock dan
+version normal. Jangan memakai SQL sebagai jalan pintas.
+
 ## Akun Stasiun
 
 - **Provision akun** membuat akun untuk stasiun yang belum memiliki akun.

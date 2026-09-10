@@ -79,6 +79,11 @@ Lihat [Panduan QC Produk](PANDUAN-QC-PRODUK.md) untuk penjelasan status.
   draft yang sama lalu tekan **Edit Data** dan **Simpan**.
 - Logout: tekan **Keluar**. Hanya browser/perangkat ini yang logout; aplikasi
   mencoba melepas lock session ini terlebih dahulu.
+- **Pengisian data telah ditutup oleh Super Admin** berarti periode pengisian
+  sedang ditutup secara global. Anda tetap dapat login, tetapi form dan save
+  tidak tersedia. Bila form sudah terbuka, aplikasi menghentikan edit pada
+  pemeriksaan server berikutnya. Hubungi pengelola bila pengisian perlu dibuka
+  kembali; jangan menghapus draf browser.
 
 ## Yang jangan dilakukan
 

@@ -479,6 +479,17 @@ button[aria-busy="true"] { display: inline-flex; align-items: center; justify-co
 .admin-stats strong, .admin-stats span { display: block; }
 .admin-stats strong { font: 500 28px/1 Georgia, serif; color: var(--ink); }
 .admin-stats span { margin-top: 10px; color: var(--muted); font-size: 10px; font-weight: 800; text-transform: uppercase; }
+.upt-access-control { margin-top: 14px; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; gap: 18px; border: 1px solid var(--line); border-radius: 7px; background: white; }
+.upt-access-control > div:first-child { min-width: 0; }
+.upt-access-control .admin-section-heading { justify-content: flex-start; }
+.upt-access-control p { margin: 6px 0 0; color: var(--muted); font-size: 11px; line-height: 1.45; }
+.upt-access-control small { display: block; margin-top: 5px; color: var(--muted); font-size: 9px; }
+.upt-access-status { padding: 3px 7px; border-radius: 999px; font-size: 9px; font-weight: 900; }
+.upt-access-status.is-open { background: var(--green-soft); color: var(--green-deep); }
+.upt-access-status.is-closed { background: #f7e6e2; color: var(--red); }
+.upt-access-actions { flex: 0 0 auto; display: flex; gap: 8px; }
+.upt-access-control .upt-access-error { color: var(--red); }
+.closed-entry-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .admin-site-type-summary { margin-top: 26px; }
 .admin-section-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
 .admin-section-heading h3 { margin: 0; color: var(--ink); font-size: 15px; }
@@ -1101,6 +1112,8 @@ button[aria-busy="true"] { display: inline-flex; align-items: center; justify-co
   .admin-heading { align-items: flex-start; }
   .admin-heading .secondary-button { width: auto; }
   .admin-stats { grid-template-columns: 1fr 1fr; }
+  .upt-access-control { align-items: stretch; flex-direction: column; }
+  .upt-access-actions { width: 100%; flex-direction: column; }
   .admin-monitoring-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .admin-monitoring-grid > div:last-child { grid-column: 1 / -1; }
   .qc-toolbar { align-items: stretch; flex-direction: column; }

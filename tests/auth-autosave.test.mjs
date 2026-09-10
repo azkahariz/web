@@ -134,7 +134,7 @@ test("browse mode tidak acquire lock atau autosave server sebelum edit eksplisit
 
 test("edit mode dimulai eksplisit dan gagal menjadi read-only saat lock milik sesi lain", async () => {
   const hook = await readFile(new URL("../app/hooks/useServerDraft.ts", import.meta.url), "utf8");
-  const retryAcquire = hook.match(/const retryAcquireEdit = useCallback[\s\S]*?\}, \[adminSubmissionId, onRemotePayload, operatorName, scope\]\);/)?.[0] ?? "";
+  const retryAcquire = hook.match(/const retryAcquireEdit = useCallback[\s\S]*?\}, \[accessClosed, adminMode, adminSubmissionId, handleAccessError, onRemotePayload, operatorName, scope\]\);/)?.[0] ?? "";
   assert.match(retryAcquire, /open_submission/);
   assert.match(retryAcquire, /setIsEditing\(true\)/);
   assert.match(retryAcquire, /setStatus\("editing"\)/);
@@ -182,7 +182,7 @@ test("seluruh logout memakai scope lokal dan read-only dapat mencoba acquire ula
 
 test("retry acquire memakai respons lock dan versi server terbaru, bukan state read-only lama", async () => {
   const hook = await readFile(new URL("../app/hooks/useServerDraft.ts", import.meta.url), "utf8");
-  const retryAcquire = hook.match(/const retryAcquireEdit = useCallback[\s\S]*?\}, \[adminSubmissionId, onRemotePayload, operatorName, scope\]\);/)?.[0] ?? "";
+  const retryAcquire = hook.match(/const retryAcquireEdit = useCallback[\s\S]*?\}, \[accessClosed, adminMode, adminSubmissionId, handleAccessError, onRemotePayload, operatorName, scope\]\);/)?.[0] ?? "";
   assert.match(retryAcquire, /setLatestPayload\(null\)/);
   assert.match(retryAcquire, /generationRef\.current \+= 1/);
   assert.match(retryAcquire, /setLockOperator\(""\)/);
@@ -211,7 +211,7 @@ test("navigasi client-side dari Submission menghydrate payload server pada rende
 
   assert.match(hook, /const payloadReady = Boolean\(serializedPayload\)/);
   assert.match(hook, /if \(!stationId \|\| !siteId \|\| !siteSubtypeId \|\| !payloadReady\)/);
-  assert.match(hook, /\[adminMode, adminSubmissionId, payloadReady, retryTick, siteId, siteSubtypeId, stationId\]/);
+  assert.match(hook, /\[adminMode, adminSubmissionId, handleAccessError, payloadReady, retryTick, siteId, siteSubtypeId, stationId\]/);
   assert.match(hook, /client\.rpc\("admin_get_submission_state", \{ p_submission_id: adminSubmissionId \}\)/);
   assert.match(hook, /if \(choice\.payload\) onRemotePayload\(choice\.payload\)/);
 

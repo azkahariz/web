@@ -47,6 +47,20 @@ Periksa history migration, schema/RPC/grant yang berubah, dan oracle read-only. 
 
 Setelah gate migration dan Preview lulus, merge feature ke `main`, jalankan `npm.cmd run check` serta `npm.cmd run build` pada hasil merge, lalu push normal. Jangan force push atau rewrite history.
 
+## Membuka atau Menutup Pengisian UPT
+
+Gunakan **Super Admin -> Ringkasan -> Akses Pengisian UPT**. Jangan mengubah
+nilai melalui SQL manual. Pastikan status authoritative berhasil dimuat sebelum
+menekan aksi, baca konfirmasi, lalu verifikasi label **DIBUKA** atau **DITUTUP**
+setelah request selesai. Transisi tercatat sebagai `UPT_DATA_ENTRY_OPENED` atau
+`UPT_DATA_ENTRY_CLOSED` pada Audit Admin.
+
+Menutup akses tidak menonaktifkan akun, mengarsipkan Submission, mengubah
+completion, atau melepas semua lock. Station User yang sudah membuka form akan
+dihentikan pada heartbeat/write berikutnya. Untuk membuka kembali, gunakan
+kontrol yang sama dan verifikasi Station dapat memulai edit dengan aturan lock
+normal.
+
 ## Production Smoke
 
 Verifikasi canonical app, login, Admin Ringkasan, Station flow terdampak, feature baru, serta error 5xx jelas. Untuk redirect, periksa legacy host memberi 307 dengan Location canonical dan path/query utuh. Jangan membuat data test production kecuali eksplisit diperlukan dan diotorisasi.

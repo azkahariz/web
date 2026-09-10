@@ -178,6 +178,18 @@ Jika Product canonical aktif ada di menu Produk tetapi tidak muncul pada Gabungk
 **Cek pertama:** `npx supabase status`, container/port local, lalu `npx supabase start` bila diperlukan.
 **Jangan lakukan:** mengarahkan verifier local ke production.
 
+### UPT Tidak Dapat Membuka atau Menyimpan Form
+
+**Kemungkinan layer:** status global **Akses Pengisian UPT** sedang DITUTUP,
+status gagal dibaca, atau Station account/scope bermasalah.
+**Cek pertama:** buka **Super Admin -> Ringkasan**, periksa status authoritative,
+lalu lihat Audit Admin untuk transisi `UPT_DATA_ENTRY_CLOSED` terbaru. Bila tab
+Station sudah terbuka sebelum penutupan, heartbeat atau save berikutnya memang
+akan menghentikan edit.
+**Expected:** Super Admin tetap dapat membuka data saat Station User diblokir.
+**Jangan lakukan:** bypass dengan SQL, menonaktifkan akun Station, melepas semua
+lock, atau mengubah Submission agar form dapat dibuka.
+
 ## Historical Incident Cards
 
 ### Product Proposal count lebih dari 1000

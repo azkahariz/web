@@ -11,6 +11,11 @@
 Tanggal mengikuti Git history. Ini ringkasan milestone, bukan daftar seluruh
 commit.
 
+## 2026-09-10
+
+- Super Admin memperoleh kontrol global DIBUKA/DITUTUP untuk akses pengisian
+  UPT, dengan enforcement RPC Station, stale-tab handling, dan audit transisi.
+
 ## 2026-09-09
 
 - Daftar Admin Produk menampilkan kategori unik dari referensi Product current

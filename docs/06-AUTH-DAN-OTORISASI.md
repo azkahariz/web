@@ -130,6 +130,20 @@ RLS restricts direct table access by authenticated identity, notably Station acc
 
 The database remains the final boundary for a direct RPC caller; the API remains responsible for session validation, input parsing, error mapping, and privileged action scope.
 
+## Akses Pengisian UPT Global
+
+Status **Akses Pengisian UPT** disimpan sebagai satu nilai authoritative di
+Supabase. Station User dan Super Admin yang aktif dapat membaca status, tetapi
+hanya Super Admin aktif yang dapat mengubahnya. Perubahan dilakukan melalui RPC
+yang memanggil `require_super_admin()` dan mencatat transisi pada
+`admin_audit_log`.
+
+Saat status **DITUTUP**, `require_submission_scope` menolak read form, open,
+lock acquire/takeover/heartbeat, save, dan pembuatan Product Proposal dari jalur
+Station dengan error `42501` dan kode pesan `upt_data_entry_closed`. RPC Admin
+terpisah tidak memakai gate Station ini. Release lock milik session Station
+tetap diizinkan agar logout atau stale editor tidak meninggalkan lock aktif.
+
 ## SUPABASE_SECRET_KEY
 
 `SUPABASE_SECRET_KEY` is **server only**. `app/lib/supabase/admin.ts` is marked `server-only` and creates a non-persistent admin client only when the secret exists.
@@ -162,6 +176,7 @@ Because the redirect moves to another hostname, prior legacy host cookies are no
 | stale tab overwrites newer Submission | expected `version` check in save RPC |
 | one shared Station account has two devices | per-tab session UUID and local-scope logout |
 | service key reaches browser | `server-only` admin client and no public variable |
+| Station bypasses closed data entry | authoritative setting check inside Station RPC scope |
 | legacy host session appears lost | host cookie isolation; user reauthenticates canonical host |
 
 ## Hal yang Tidak Boleh Dilakukan

@@ -10,6 +10,7 @@ import ApproveProductDialog from "./ApproveProductDialog";
 import MergeTargetDialog from "./MergeTargetDialog";
 import StationMonitoringControls from "./StationMonitoringControls";
 import UnifiedFillingList from "./UnifiedFillingList";
+import UptDataEntryAccessControl from "./UptDataEntryAccessControl";
 import { useAppFeedback } from "../components/AppFeedback";
 import AsyncButton from "../components/AsyncButton";
 import EyeIcon from "../components/EyeIcon";
@@ -1188,6 +1189,8 @@ export default function AdminDashboard({ username, displayName }: { username: st
             <button onClick={() => navigate("qc", { qcStatus: "MERGED" })}><strong>{qcStatusSummary?.MERGED ?? "-"}</strong><span>Merged</span></button>
             <button onClick={() => navigate("qc", { qcStatus: "REJECTED" })}><strong>{qcStatusSummary?.REJECTED ?? "-"}</strong><span>Rejected</span></button>
           </div>}
+
+          {!loading && tab === "summary" && <UptDataEntryAccessControl />}
 
           {!loading && tab === "summary" && qcStatusSummaryError && <div className="station-completion-error" role="alert"><span>{qcStatusSummaryError}</span><button type="button" onClick={() => void refreshQcProposals()}>Coba muat ulang</button></div>}
 
