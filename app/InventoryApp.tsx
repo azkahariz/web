@@ -48,6 +48,7 @@ import SiteMetadataForm from "./SiteMetadataForm";
 import StationSiteProgressPanel from "./components/StationSiteProgressPanel";
 import FooterAttribution from "./components/FooterAttribution";
 import GuideNoticeLink from "./components/GuideNoticeLink";
+import StationDataEntryClosed from "./StationDataEntryClosed";
 import type {
   Condition,
   DraftContexts,
@@ -296,7 +297,7 @@ export default function InventoryApp({
     const client = getSupabaseBrowserClient();
     let proposalId: string | undefined;
     if (client && selectedSiteId && selectedSubtypeId) {
-      const { data: proposalRows } = await client.rpc("create_product_proposal", {
+      const { data: proposalRows, error } = await client.rpc("create_product_proposal", {
         p_site_id: selectedSiteId,
         p_site_subtype_id: selectedSubtypeId,
         p_brand: brand,
@@ -304,6 +305,7 @@ export default function InventoryApp({
         p_operator_name: operatorName || null,
         p_note: customProductNote.trim() || null,
       });
+      if (sync.handleAccessError(error)) return;
       const proposal = Array.isArray(proposalRows) ? proposalRows[0] : proposalRows;
       proposalId = proposal?.proposal_id;
     }
@@ -470,6 +472,8 @@ export default function InventoryApp({
     adminSubmissionId,
     adminMode: isAdminEditor,
   });
+  const draftCanEdit = sync.canEdit;
+  const handleDraftAccessError = sync.handleAccessError;
   const {
     rows: stationSiteProgressRows,
     loading: stationSiteProgressLoading,
@@ -518,7 +522,7 @@ export default function InventoryApp({
   }, [adminSubmissionId, hydrated, startInEditMode, sync]);
 
   useEffect(() => {
-    if (!sync.canEdit || !selectedSiteId || !selectedSubtypeId) return;
+    if (!draftCanEdit || !selectedSiteId || !selectedSubtypeId) return;
     const pendingItems = Object.entries(inventory).flatMap(([category, items]) =>
       items.filter((item) => item.itemKind !== "material" && !item.productId && !item.productProposalId).map((item) => ({ category, item })),
     );
@@ -543,7 +547,7 @@ export default function InventoryApp({
           }));
           continue;
         }
-        const { data: proposalRows } = await client.rpc("create_product_proposal", {
+        const { data: proposalRows, error } = await client.rpc("create_product_proposal", {
           p_site_id: selectedSiteId,
           p_site_subtype_id: selectedSubtypeId,
           p_brand: item.brand,
@@ -551,6 +555,10 @@ export default function InventoryApp({
           p_operator_name: operatorName || null,
           p_note: "Konversi otomatis dari produk custom pada draf lama/lokal.",
         });
+        if (handleDraftAccessError(error)) {
+          proposalInFlightRef.current.delete(item.id);
+          return;
+        }
         const proposal = Array.isArray(proposalRows) ? proposalRows[0] : proposalRows;
         if (proposal?.proposal_id) {
           created = true;
@@ -569,7 +577,7 @@ export default function InventoryApp({
       }
       if (created) void refreshProductCatalog();
     })();
-  }, [draftKey, findCanonical, inventory, operatorName, refreshProductCatalog, selectedSiteId, selectedSubtypeId, sync.canEdit]);
+  }, [draftCanEdit, draftKey, findCanonical, handleDraftAccessError, inventory, operatorName, refreshProductCatalog, selectedSiteId, selectedSubtypeId]);
 
   function productForDisplay(item: InstalledItem) {
     return resolveInstalledProduct(item, productCatalog.proposalMap);
@@ -745,6 +753,8 @@ export default function InventoryApp({
       )}
     </div>;
   }
+
+  if (sync.accessClosed && !isAdminEditor) return <StationDataEntryClosed />;
 
   return (
     <main className="app-shell">
