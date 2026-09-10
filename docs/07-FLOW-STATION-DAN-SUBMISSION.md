@@ -142,11 +142,11 @@ Jika browser Supabase client tidak tersedia atau RPC gagal, state menjadi `local
 
 `submissions.version` adalah counter optimistic concurrency. Normal save yang diterima menaikkan `version` satu. Save memeriksa `p_expected_version`; bila tidak sama, RPC mengembalikan `version_conflict` dan payload baru tidak ditulis.
 
-Operation Admin tertentu yang secara sengaja mengubah item payload, seperti Product reference move atau Product merge, juga menaikkan version Submission yang disentuh. QC-only resolution dapat mengubah `resolved_product_id` tanpa mengubah payload Submission. Jangan menyimpulkan semua operation Product menaikkan Submission version.
+Operation Admin tertentu yang secara sengaja mengubah item payload, seperti Product reference move, Product reference removal, atau Product merge, juga menaikkan version Submission yang disentuh. Hapus Referensi melepas hanya `productId` atau `productProposalId` pada occurrence terpilih dan mempertahankan item serta snapshot historisnya. QC-only resolution dapat mengubah `resolved_product_id` tanpa mengubah payload Submission. Jangan menyimpulkan semua operation Product menaikkan Submission version.
 
 ## Optimistic / Stale Write Protection
 
-Stale protection mempunyai dua lapis: expected version dan current lock session. Pada conflict, `useServerDraft` memanggil `get_submission_state`/`admin_get_submission_state`, menyimpan payload terbaru sebagai `latestPayload`, dan menahan edit normal sampai user memilih recovery/reload yang tersedia. Client tidak boleh silently retry dengan version baru dan payload lama.
+Stale protection mempunyai dua lapis: expected version dan current lock session. Pada conflict, `useServerDraft` memanggil `get_submission_state`/`admin_get_submission_state`, menyimpan payload terbaru sebagai `latestPayload`, dan menahan edit normal sampai user memilih recovery/reload yang tersedia. Client tidak boleh silently retry dengan version baru dan payload lama. Karena reference removal menaikkan version, save dari form lama tidak dapat menghidupkan kembali linkage yang sudah dilepas.
 
 ## Soft Lock
 

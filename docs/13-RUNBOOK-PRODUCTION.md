@@ -39,6 +39,12 @@ Migration adalah operasi terpisah dari merge. Gunakan hanya jika feature membutu
 
 Terapkan migration sekali ke target yang sudah diverifikasi. Jangan menjalankan ulang migration yang telah applied. Simpan bukti status migration dan ringkasan hasil tanpa secret.
 
+Untuk migration reference removal yang hanya mengganti/menambah function, gate
+wajib menyatakan: additive, tanpa business DML/backfill/table rewrite/index/ALTER
+hot table, backward-compatible dengan frontend lama, dan verifier local lulus.
+Apply migration tidak sama dengan menjalankan `Hapus Referensi`; jangan memakai
+data production sebagai fixture mutation.
+
 ## Post-Migration Verification
 
 Periksa history migration, schema/RPC/grant yang berubah, dan oracle read-only. Lanjutkan ke deployment frontend hanya jika app current/baru kompatibel.

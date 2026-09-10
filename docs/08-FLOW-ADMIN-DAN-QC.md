@@ -18,7 +18,7 @@ Super Admin mengelola pandangan lintas Station. UI Admin tidak menggantikan otor
 | --- | --- |
 | Ringkasan | angka dasar, monitoring Completion, Site berdasarkan Tipe Site, Gudang informational progress, ringkasan QC |
 | Stasiun & Pengisian | master scoped Station dan monitoring/detail/archive Submission |
-| Produk | Product canonical, status, dependency, reference, move, merge, delete guarded |
+| Produk | Product canonical, status, dependency, reference, selective move/remove, merge, delete guarded |
 | QC Produk | review Product Proposal PENDING/hasil QC |
 | Akun Stasiun | provision, reset password, aktivasi account Station |
 | Lock Aktif | observasi soft lock Submission |
@@ -46,6 +46,13 @@ views. Untuk DIRECT, Merk/Tipe dibaca dari Product canonical melalui `productId`
 untuk QC_RESULT, melalui proposal APPROVED/MERGED dan `resolved_product_id`.
 Snapshot payload hanya fallback. Kolom Usulan dan QC History tetap memakai nilai
 proposal asli karena keduanya adalah konteks historis.
+
+Pada **Produk -> Referensi**, Super Admin dapat memilih occurrence current lalu
+memindahkannya ke Product lain atau memakai **Hapus Referensi** untuk melepas
+hubungan canonical dari occurrence itu saja. Removal memakai preflight, lock row,
+expected Submission version, revalidation, dan satu transaction. DIRECT melepas
+`productId`; QC_RESULT melepas `productProposalId` dari item, tetapi row proposal,
+status review, `resolved_product_id`, dan QC History tetap disimpan.
 
 ## Monitoring Pengisian
 

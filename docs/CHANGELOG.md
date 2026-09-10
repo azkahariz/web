@@ -13,6 +13,10 @@ commit.
 
 ## 2026-09-11
 
+- Super Admin dapat melepas occurrence Product terpilih secara atomik melalui
+  Hapus Referensi tanpa menghapus Product, Submission, atau riwayat QC.
+- Daftar referensi Product menyajikan QC_RESULT per inventory occurrence agar
+  jumlah, kategori, filter, dan tindakan selektif memakai source current yang sama.
 - Admin Produk menampilkan baris master lebih dahulu dan mengisi Usage/Kategori
   secara asinkron untuk sort biasa.
 - Enrichment page-level menggabungkan dua traversal referensi menjadi satu scan

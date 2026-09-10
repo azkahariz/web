@@ -108,24 +108,41 @@ Pindahkan Referensi memindahkan **baris yang dipilih saja** dari Product source 
 
 Operation mengambil lock row proposal/Submission, menjalankan validation ulang setelah lock, dan seluruh mutation berada dalam satu transaction RPC. Bila precondition gagal, return status conflict tanpa partial mutation.
 
+## Hapus Referensi
+
+Hapus Referensi melepas **occurrence yang dipilih saja** dari Product canonical
+tanpa menghapus Product, Submission, kategori, alias, atau riwayat QC. Identity
+occurrence memakai `submissionId`, expected version, storage category, ordinal
+item, dan item ID bila tersedia; QC_RESULT juga membawa proposal ID dan snapshot
+`updated_at` proposal.
+
+| Reference type | Mutation |
+| --- | --- |
+| DIRECT | key `productId` dilepas dari item exact; Brand/Model snapshot dan metadata item tetap |
+| QC_RESULT | key `productProposalId` dilepas dari item exact; proposal APPROVED/MERGED dan review history tetap |
+
+RPC mengunci proposal dan Submission terkait dengan urutan deterministik, lalu
+memvalidasi ulang seluruh selection. Setiap Submission yang berubah naik satu
+version. Jika satu occurrence stale, archived, berubah Product, atau memiliki
+lock aktif, seluruh batch rollback. Request kedua dengan snapshot lama ditolak
+oleh version guard dan tidak membuat audit sukses ganda.
+
 ## Gabungkan Produk
 
 Product Merge memindahkan **semua dependency supported** dari Product source ke target setelah preflight token current. Ia menangani direct reference current, QC_RESULT resolved proposal, aliases, audit, lalu membuat source inactive dan mengisi `merged_into_product_id` target.
 
 Merge tidak sama dengan destructive delete. Source UUID/history tetap ada untuk traceability, tetapi status UI menjadi Digabungkan dan Product tidak lagi active untuk selection baru.
 
-## Pindahkan Referensi dan Gabungkan Produk
+## Perbedaan Operasi Product
 
-| Behavior | Pindahkan Referensi | Gabungkan Produk |
-| --- | --- | --- |
-| Scope | selected reference rows | all supported source dependencies |
-| DIRECT | hanya item terpilih | seluruh direct current reference source |
-| QC_RESULT | hanya proposal result terpilih | seluruh resolved proposal result source |
-| Submission version | naik untuk Submission DIRECT yang diubah | naik untuk Submission direct payload yang diubah |
-| Alias | tidak berubah | pindah/deduplicate ke target |
-| Source Product | tetap apa adanya | inactive dan `merged_into_product_id` target |
-| Target | harus Product active | harus Product active dan bukan source |
-| Audit | `PRODUCT_REFERENCE_MOVE` | `PRODUCT_MERGE` |
+| Behavior | Edit Product | Pindahkan Referensi | Hapus Referensi | Gabungkan Produk | Hapus Product |
+| --- | --- | --- | --- | --- | --- |
+| Scope | satu canonical Product | selected reference rows | selected exact occurrences | semua dependency source yang didukung | Product master yang lolos guard |
+| Reference | tetap terhubung dan current display mengikuti nama baru | source ke Product target | linkage dilepas, item tetap | seluruh dependency supported ke target | tidak berlaku bila dependency masih ada |
+| Submission version | tidak berubah | naik untuk payload DIRECT yang diubah | naik sekali per Submission yang diubah | naik untuk payload direct yang diubah | tidak mengubah Submission |
+| Alias/QC history | sesuai rename alias existing | tidak berubah | tidak berubah | dikonsolidasikan sesuai kontrak merge | harus lolos dependency preflight |
+| Product source | UUID sama | tetap | tetap | inactive dan menunjuk target | row dihapus hanya bila aman |
+| Audit | `PRODUCT_UPDATE` | `PRODUCT_REFERENCE_MOVE` | `PRODUCT_REFERENCE_REMOVE` | `PRODUCT_MERGE` | `PRODUCT_DELETE` |
 
 Gunakan Pindahkan Referensi untuk koreksi subset. Gunakan Gabungkan Produk hanya ketika dua canonical Product memang harus menjadi satu identity operational.
 
@@ -146,7 +163,7 @@ Ini melengkapi [Flow Station dan Submission](./07-FLOW-STATION-DAN-SUBMISSION.md
 
 ## Audit Trail
 
-Reference move mencatat `PRODUCT_REFERENCE_MOVE` per Submission yang payload-nya berubah dan satu record Product-level. Merge mencatat `PRODUCT_MERGE` beserta snapshot/preflight semantics. QC resolution memiliki reviewer/timestamp/note pada proposal dan audit Admin. Audit membantu traceability, bukan izin untuk melewati preflight.
+Reference move mencatat `PRODUCT_REFERENCE_MOVE`. Reference removal mencatat `PRODUCT_REFERENCE_REMOVE` per Submission yang berubah dan satu record Product-level tanpa menyimpan seluruh payload. Merge mencatat `PRODUCT_MERGE` beserta snapshot/preflight semantics. QC resolution memiliki reviewer/timestamp/note pada proposal dan audit Admin. Audit membantu traceability, bukan izin untuk melewati preflight.
 
 ## Legacy / Historical Guardrails
 
@@ -164,9 +181,11 @@ Guardrail current:
 | Operation | API | RPC | Primary mutation |
 | --- | --- | --- | --- |
 | list/dependency | `/api/admin/products`, `/dependencies` | list/dependencies | no |
-| reference view | `/references` | `admin_product_references` | no |
+| reference view | `/references` | `admin_product_reference_occurrences` | no |
 | move preflight | `/move-preflight` | `admin_product_reference_move_preflight` | no |
 | move apply | `/move` | `admin_move_product_references` | selected JSON/reference result |
+| remove preflight | `/remove-preflight` | `admin_product_reference_removal_preflight` | no |
+| remove apply | `/remove` | `admin_remove_product_references` | selected occurrence linkage |
 | merge preflight | `/merge-preflight` | `admin_product_merge_preflight` | no |
 | merge apply | `/merge` | `admin_merge_product` | all supported dependencies + source state |
 | delete preflight/apply | `/delete-preflight`, `DELETE /[id]` | delete RPC | only eligible inactive orphan Product |
@@ -193,14 +212,15 @@ dimuat saat view lain membutuhkannya.
 
 ## Relevant Source / RPC / Migration
 
-- `app/admin/AdminProducts.tsx`, `ProductReferenceMoveDialog.tsx`, `ProductMergeDialog.tsx`.
+- `app/admin/AdminProducts.tsx`, `ProductReferenceMoveDialog.tsx`, `ProductReferenceRemoveDialog.tsx`, `ProductMergeDialog.tsx`.
 - `app/lib/admin-product-api.ts`, `app/lib/product-reference-selection.ts`, `app/lib/admin-product-list.ts`.
-- `app/api/admin/products/[id]/dependencies`, `references`, `move-preflight`, `move`, `merge-preflight`, `merge`.
-- `20260821120000_product_reference_preflight.sql` through `20260911120000_admin_product_page_enrichment.sql`.
+- `app/api/admin/products/[id]/dependencies`, `references`, `move-preflight`, `move`, `remove-preflight`, `remove`, `merge-preflight`, `merge`.
+- `20260821120000_product_reference_preflight.sql` through `20260911130000_product_reference_removal.sql`.
 
 ## Relevant Tests
 
 - `tests/product-dependencies.test.mjs` - dependency visibility.
+- `tests/product-reference-removal.test.mjs` dan `verify:product-reference-removal` - exact unlink, atomicity, stale guard, projection, dan QC history preservation.
 - `tests/product-reference-context.test.mjs`, `tests/product-reference-move.test.mjs`, `tests/product-reference-selection.test.mjs` - exact reference/move contract.
 - `tests/product-merge.test.mjs`, `tests/product-delete.test.mjs` - merge/delete safety.
 - `tests/admin-products.test.mjs` - Product Admin list/create/edit/status behavior.
