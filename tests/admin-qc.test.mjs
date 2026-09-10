@@ -6,6 +6,9 @@ import { hasMixedMergeProposalFamilies, normalizeProductText, rankMergeProducts,
 import { isExactQcMergeTarget, normalizeQcMergeTargetPage, normalizeQcMergeTargetPageSize, qcMergeTargetSearchTerms } from "../app/lib/qc-merge-targets.ts";
 import { loadAllProductCatalogRows } from "../app/lib/product-picker.ts";
 import { buildQcProposalContexts, proposalCategoriesById } from "../app/lib/qc-proposal-context.ts";
+import { loadCanonicalProductMap, resolveSubmissionProductDisplays } from "../app/lib/product-display-source.ts";
+
+const productUuid = (index) => `00000000-0000-4000-8000-${String(index).padStart(12, "0")}`;
 
 test("normalisasi dan suggestion mengenali variasi Campbell CR1000X tanpa auto merge", () => {
   assert.equal(normalizeProductText(" CR-1000 X "), "cr1000x");
@@ -222,6 +225,75 @@ test("referensi direct menampilkan nama canonical terbaru tanpa mengubah snapsho
   assert.equal(item.brand, "Merk Lama");
   assert.equal(item.model, "Tipe Lama");
   assert.deepEqual(resolveInstalledProduct(item, new Map()), { brand: "Merk Lama", model: "Tipe Lama", status: undefined });
+});
+
+test("lookup canonical membatch lebih dari 1000 Product tanpa N+1", async () => {
+  const requestedBatches = [];
+  const client = {
+    async rpc(name, { p_product_ids: ids }) {
+      assert.equal(name, "resolve_canonical_products");
+      requestedBatches.push(ids);
+      return { data: ids.map((id) => ({ product_id: id, canonical_product_id: id, brand: `Merk ${id}`, model: `Tipe ${id}` })), error: null };
+    },
+  };
+  const ids = Array.from({ length: 1101 }, (_, index) => productUuid(index + 1));
+  const products = await loadCanonicalProductMap(client, ids);
+  assert.equal(products.get(ids[1100])?.brand, `Merk ${ids[1100]}`);
+  assert.equal(requestedBatches.length, 12);
+  assert.ok(requestedBatches.every((batch) => batch.length <= 100));
+});
+
+test("resolver detail membedakan DIRECT, QC_RESULT, PENDING, dan fallback", async () => {
+  const directId = productUuid(1);
+  const resolvedId = productUuid(2);
+  const missingId = productUuid(3);
+  const resolvedProposalId = productUuid(101);
+  const pendingProposalId = productUuid(102);
+  const proposalRows = [
+    { id: resolvedProposalId, proposed_brand: "Usulan Lama", proposed_model: "Model Lama", status: "MERGED", resolved_product_id: resolvedId, review_note: "historis" },
+    { id: pendingProposalId, proposed_brand: "Pending Asli", proposed_model: "Model Pending", status: "PENDING", resolved_product_id: null, review_note: null },
+  ];
+  const client = {
+    from(table) {
+      assert.equal(table, "product_proposals");
+      return { select: () => ({ in: async (_column, ids) => ({ data: proposalRows.filter((row) => ids.includes(row.id)), error: null }) }) };
+    },
+    async rpc(_name, { p_product_ids: ids }) {
+      return { data: ids.filter((id) => id !== missingId).map((id) => ({
+        product_id: id,
+        canonical_product_id: id,
+        brand: id === directId ? "Direct Baru" : "Hasil Baru",
+        model: id === directId ? "Model Direct Baru" : "Model Hasil Baru",
+      })), error: null };
+    },
+  };
+  const displays = await resolveSubmissionProductDisplays(client, { inventory: { Sensor: [
+    { id: "direct", productId: directId, brand: "Direct Lama", model: "Model Direct Lama" },
+    { id: "resolved", productProposalId: resolvedProposalId, brand: "Usulan Lama", model: "Model Lama" },
+    { id: "pending", productProposalId: pendingProposalId, brand: "Pending Asli", model: "Model Pending" },
+    { id: "fallback", productId: missingId, brand: "Fallback Lama", model: "Model Fallback" },
+  ] } });
+  assert.deepEqual(displays, {
+    direct: { brand: "Direct Baru", model: "Model Direct Baru" },
+    resolved: { brand: "Hasil Baru", model: "Model Hasil Baru" },
+  });
+  assert.equal(proposalRows[0].proposed_brand, "Usulan Lama");
+  assert.equal(proposalRows[1].proposed_brand, "Pending Asli");
+});
+
+test("refresh canonical bersifat display-only dan save Station tidak menulis Product master", async () => {
+  const [catalogHook, draftHook, inventoryApp, migration] = await Promise.all([
+    readFile(new URL("../app/hooks/useProductCatalog.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/hooks/useServerDraft.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/InventoryApp.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../supabase/migrations/20260824120000_product_merge.sql", import.meta.url), "utf8"),
+  ]);
+  const updateProduct = migration.match(/create or replace function public\.admin_update_product[\s\S]*?\n\$\$;/)?.[0] ?? "";
+  assert.match(catalogHook, /setCanonicalProducts/);
+  assert.doesNotMatch(catalogHook, /setDrafts|saveNow|save_submission/);
+  assert.doesNotMatch(draftHook, /from\("products"\)|admin_update_product/);
+  assert.match(inventoryApp, /productCatalog\.canonicalProducts/);
+  assert.doesNotMatch(updateProduct, /submissions|product_proposals/);
 });
 
 test("migration menegakkan super admin, QC, alias, audit, dan admin lock di database", async () => {

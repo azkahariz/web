@@ -98,6 +98,30 @@ test("detail barang menampilkan produk ganda, material, dan item kosong dari sat
   assert.equal(rows[2].filled, false);
 });
 
+test("detail submission memakai identity Product canonical dan mempertahankan snapshot sebagai fallback", () => {
+  const rows = submissionItemDisplays({
+    expected_items: [{ name: "Sensor", filled: true }],
+    payload: { inventory: { Sensor: [
+      { id: "direct", productId: "product-direct", brand: "Merk Direct Lama", model: "Tipe Direct Lama", quantity: 1 },
+      { id: "resolved", productProposalId: "proposal-resolved", brand: "Merk Usulan Lama", model: "Tipe Usulan Lama", quantity: 1 },
+      { id: "pending", productProposalId: "proposal-pending", brand: "Merk Pending", model: "Tipe Pending", quantity: 1 },
+      { id: "fallback", productId: "product-missing", brand: "Merk Fallback", model: "Tipe Fallback", quantity: 1 },
+    ] } },
+    product_displays: {
+      direct: { brand: "Merk Direct Baru", model: "Tipe Direct Baru" },
+      resolved: { brand: "Merk Hasil Baru", model: "Tipe Hasil Baru" },
+    },
+  }, new Set(["proposal-pending"]));
+
+  assert.deepEqual(rows[0].entries.map((entry) => [entry.primary, entry.secondary]), [
+    ["Merk Direct Baru", "Tipe Direct Baru"],
+    ["Merk Hasil Baru", "Tipe Hasil Baru"],
+    ["Merk Pending", "Tipe Pending"],
+    ["Merk Fallback", "Tipe Fallback"],
+  ]);
+  assert.equal(rows[0].entries[2].pendingQc, true);
+});
+
 test("payload kategori legacy tetap dikenali dengan identity canonical lama", () => {
   const category = "SIstem Catu Daya Tidak Terputus";
   const inventory = { [category]: [product(1)] };
@@ -144,6 +168,7 @@ test("list ringan, lazy detail cache, sorting, page size, dan delete dijaga oleh
 
   assert.match(route, /admin_list_submissions/);
   assert.match(route, /admin_get_submission_detail/);
+  assert.match(route, /resolveSubmissionProductDisplays/);
   assert.match(route, /admin_archive_submission/);
   assert.match(route, /admin_restore_submission/);
   assert.match(route, /auth\.getUser\(bearer\)/);

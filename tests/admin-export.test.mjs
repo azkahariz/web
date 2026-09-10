@@ -164,6 +164,8 @@ test("download Browse dan Admin tidak menjalankan lifecycle lock atau write", as
   assert.match(inventory, /buildInventoryJson/);
   assert.doesNotMatch(adminExport, /\.rpc\(|\.insert\(|\.update\(|\.upsert\(|open_submission|release_submission|touch_submission|takeover/);
   assert.match(adminExport, /loadAllAdminRows[\s\S]*\.eq\("station_id", scope\.stationId\)/);
+  assert.match(adminExport, /loadCanonicalProductMap/);
+  assert.match(adminExport, /resolveInstalledProduct\(item, proposals, canonicalProducts\)/);
   assert.match(unified, /target="_blank" rel="noopener noreferrer">Buka<\/Link>[\s\S]*>Unduh<\/AsyncButton>/);
   const masterTable = dashboard.match(/fillingMode === "master" && <div className="admin-list">[\s\S]*?submissionMonitorMounted/)?.[0] ?? "";
   assert.doesNotMatch(masterTable, /Edit sebagai Admin|editRow|\/ensure/);
