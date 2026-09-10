@@ -158,6 +158,12 @@ Produk APPROVED dari QC dan target MERGED langsung memakai master yang sama.
 Station User tidak mengubah master ini secara langsung; input baru mereka tetap
 masuk sebagai proposal QC.
 
+Daftar Produk dapat difilter berdasarkan **Kategori**, **Kelompok Stasiun**, dan
+**Tipe Site** dari referensi current. Kategori mendukung beberapa pilihan dengan
+semantik OR; kelompok filter yang berbeda digabungkan dengan AND pada occurrence
+referensi yang sama. Tombol **Reset Filter** mengembalikan Search, Status, Sumber,
+dan ketiga filter referensi ke nilai awal tanpa mengubah data Produk.
+
 ### Pindahkan Referensi, Gabungkan, dan Hapus Produk
 
 - **Pindahkan Referensi** memindahkan referensi yang dipilih dari Produk sumber

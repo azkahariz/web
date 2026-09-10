@@ -130,6 +130,16 @@ Jika Product canonical aktif ada di menu Produk tetapi tidak muncul pada Gabungk
 **Cek pertama:** product UUID canonical, direct occurrence, `resolved_product_id`, dan active/archived Submission.
 **Jangan lakukan:** match berdasarkan Merk/Tipe saja.
 
+### Filter Referensi Produk Tidak Sesuai
+
+**Kemungkinan layer:** filter option gagal dimuat, ID Kelompok/Tipe Site stale,
+atau query membandingkan agregat Product alih-alih occurrence yang sama.
+**Cek pertama:** request `/api/admin/products`, parameter `category`,
+`stationCategoryId`, dan `siteTypeId`, lalu RPC
+`admin_product_reference_filter_ids`. Kategori pilihan bersifat OR; antar
+kelompok bersifat AND pada occurrence current yang sama. **Jangan lakukan:**
+filter ulang hanya pada page browser atau menebak kelompok dari nama Station.
+
 ### Merk/Tipe Lama Masih Terlihat Setelah Product Diedit
 
 **Kemungkinan layer:** resolver tampilan/API/export masih memakai snapshot payload atau lookup canonical gagal. **Cek pertama:** bandingkan `productId`/`resolved_product_id` dengan `products.id`, lalu muat ulang data secara authoritative. Detail Submission dan export current harus mengikuti Product canonical; Usulan, QC History, dan Alias tetap historis. Snapshot payload dan nama usulan QC boleh tetap lama sebagai provenance. **Jangan lakukan:** rewrite massal `submissions.payload` atau mengubah proposal history hanya untuk menyamakan label.

@@ -13,6 +13,8 @@ commit.
 
 ## 2026-09-10
 
+- Admin Produk menyediakan filter referensi Kategori multi-select, Kelompok
+  Stasiun, dan Tipe Site dengan same-occurrence semantics sebelum pagination.
 - Super Admin memperoleh kontrol global DIBUKA/DITUTUP untuk akses pengisian
   UPT, dengan enforcement RPC Station, stale-tab handling, dan audit transisi.
 - Form Station dan tampilan form Admin me-resolve Merk/Tipe Product current dari
