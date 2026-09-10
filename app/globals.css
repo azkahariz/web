@@ -559,8 +559,10 @@ button[aria-busy="true"] { display: inline-flex; align-items: center; justify-co
 .product-table table { min-width: 940px; font-size: 12px; }
 .product-category-list { display: grid; gap: 3px; min-width: 130px; max-width: 230px; line-height: 1.35; overflow-wrap: anywhere; }
 .product-category-empty { color: var(--muted); }
+.product-category-loading { color: var(--muted); font-weight: 600; }
 .product-category-unavailable, .usage-link.is-unavailable { color: var(--muted); }
 .usage-link { padding: 0; border: 0; background: transparent; color: var(--green-deep); font-size: 10px; font-weight: 800; cursor: pointer; white-space: nowrap; }
+.usage-link:disabled { color: var(--muted); cursor: default; text-decoration: none; }
 .usage-link:hover, .usage-link:focus-visible { text-decoration: underline; }
 .app-dialog.product-usage-dialog { width: min(680px, calc(100vw - 32px)); max-height: calc(100vh - 36px); display: flex; flex-direction: column; overflow: hidden; }
 .product-usage-name { margin: 0 0 8px; }

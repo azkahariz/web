@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   enrichAdminProductPage,
   filterAdminProducts,
+  loadProductPageEnrichmentInBatches,
   loadProductReferenceCategoriesInBatches,
   loadProductUsageCountsInBatches,
   normalizeProductReferenceCategories,
@@ -99,6 +100,23 @@ test("kategori referensi Produk dideduplikasi, diurutkan, dan dibatch tanpa part
   assert.equal(failed.error, "batch failed");
 });
 
+test("combined Product enrichment dibatch tanpa partial success", async () => {
+  const ids = Array.from({ length: 1100 }, (_, index) => `product-${index + 1}`);
+  const batchSizes = [];
+  const loaded = await loadProductPageEnrichmentInBatches(ids, async (batch) => {
+    batchSizes.push(batch.length);
+    return { data: batch.map((product_id) => ({ product_id, reference_count: 2, categories: [" Sensor ", "Sensor"] })), error: null };
+  });
+  assert.deepEqual(batchSizes, [500, 500, 100]);
+  assert.equal(loaded.data?.length, 1100);
+  assert.deepEqual(loaded.data?.[0].categories, ["Sensor"]);
+  const failed = await loadProductPageEnrichmentInBatches(ids, async (batch) => batch[0] === "product-501"
+    ? { data: null, error: "batch failed" }
+    : { data: batch.map((product_id) => ({ product_id, reference_count: 0, categories: [] })), error: null });
+  assert.equal(failed.data, null);
+  assert.equal(failed.error, "batch failed");
+});
+
 test("enrichment halaman Product tidak mengubah kegagalan ancillary menjadi nol palsu", () => {
   const products = Array.from({ length: 50 }, (_, index) => ({
     id: `product-${index + 1}`,
@@ -158,12 +176,13 @@ test("parameter Product list memakai allowlist dan label sumber manusiawi", () =
 });
 
 test("master Produk memakai RPC Super Admin, filter/sorting server-side, dan guard legacy sync", async () => {
-  const [migration, usageMigration, usageCountsMigration, categoryMigration, referenceFilterMigration, route, listLib, pickerRoute, pickerLib, component, dashboard, globals, inventoryApp, submissionMonitor, submissionLib, hook, sync, packageJson] = await Promise.all([
+  const [migration, usageMigration, usageCountsMigration, categoryMigration, referenceFilterMigration, enrichmentMigration, route, listLib, pickerRoute, pickerLib, component, dashboard, globals, inventoryApp, submissionMonitor, submissionLib, hook, sync, packageJson] = await Promise.all([
     readFile(new URL("../supabase/migrations/20260815120000_super_admin_product_management.sql", import.meta.url), "utf8"),
     readFile(new URL("../supabase/migrations/20260815130000_super_admin_product_usage.sql", import.meta.url), "utf8"),
     readFile(new URL("../supabase/migrations/20260815140000_super_admin_product_usage_counts.sql", import.meta.url), "utf8"),
     readFile(new URL("../supabase/migrations/20260909120000_admin_product_reference_categories.sql", import.meta.url), "utf8"),
     readFile(new URL("../supabase/migrations/20260910130000_admin_product_reference_filters.sql", import.meta.url), "utf8"),
+    readFile(new URL("../supabase/migrations/20260911120000_admin_product_page_enrichment.sql", import.meta.url), "utf8"),
     readFile(new URL("../app/api/admin/products/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/lib/admin-product-list.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/products/route.ts", import.meta.url), "utf8"),
@@ -213,6 +232,13 @@ test("master Produk memakai RPC Super Admin, filter/sorting server-side, dan gua
   assert.match(referenceFilterMigration, /category\.code in \('METEOROLOGI', 'KLIMATOLOGI', 'GEOFISIKA'\)/);
   assert.match(referenceFilterMigration, /security definer[\s\S]*set search_path = ''/);
   assert.doesNotMatch(referenceFilterMigration, /\b(insert|update|delete|alter|create table|create index)\b/i);
+  assert.match(enrichmentMigration, /function public\.admin_product_page_enrichment\(p_product_ids uuid\[\]\)/);
+  assert.match(enrichmentMigration, /require_super_admin/);
+  assert.match(enrichmentMigration, /submission\.archived_at is null/);
+  assert.match(enrichmentMigration, /proposal_status in \('APPROVED', 'MERGED'\)/);
+  assert.match(enrichmentMigration, /resolve_canonical_product_id/);
+  assert.match(enrichmentMigration, /functionCategories/);
+  assert.doesNotMatch(enrichmentMigration, /\b(insert|update|delete|alter|create table|create index)\b/i);
   for (const action of ["PRODUCT_CREATE", "PRODUCT_UPDATE", "PRODUCT_ACTIVATE", "PRODUCT_DEACTIVATE"]) assert.match(migration, new RegExp(action));
   assert.match(migration, /source_origin in \('SPREADSHEET', 'QC', 'ADMIN'\)/);
   assert.match(migration, /normalize_product_text/);
@@ -229,20 +255,19 @@ test("master Produk memakai RPC Super Admin, filter/sorting server-side, dan gua
   assert.match(route, /prepareAdminProductPage/);
   assert.match(route, /admin_product_usage_counts/);
   assert.match(route, /loadProductUsageCountsInBatches/);
-  assert.match(route, /admin_product_reference_categories/);
-  assert.match(route, /loadProductReferenceCategoriesInBatches/);
+  assert.match(route, /admin_product_page_enrichment/);
+  assert.match(route, /loadProductPageEnrichmentInBatches/);
   assert.match(route, /\.eq\("active", true\)[\s\S]*\.order\("id"\)[\s\S]*\.range\(from, from \+ 999\)/);
   assert.match(route, /from\("product_aliases"\)[\s\S]*\.order\("product_id"\)[\s\S]*\.order\("id"\)/);
   assert.match(route, /const usageSort = sortField === "usage"/);
   assert.match(route, /matchingRows\.length && usageSort[\s\S]*matchingRows\.map\(\(row\) => row\.id\)/);
   assert.match(route, /const pageProductIds = prepared\.rows\.map\(\(row\) => row\.id\)/);
-  assert.match(route, /!activeOnly && !usageSort && pageProductIds\.length[\s\S]*loadProductUsageCountsInBatches\(pageProductIds/);
+  assert.match(route, /const deferEnrichment = url\.searchParams\.get\("deferEnrichment"\) === "1" && !usageSort/);
   assert.ok(route.indexOf("const pageProductIds = prepared.rows.map") > route.indexOf("prepareAdminProductPage("), "Usage sort biasa harus dipaginasi sebelum enrichment.");
-  assert.match(route, /const pageUsageResult = !activeOnly && !usageSort/);
-  assert.match(route, /const \[categoryResult, canonicalResult\] = await Promise\.all/);
+  assert.match(route, /const pageEnrichmentResult = !activeOnly && !deferEnrichment/);
   assert.match(route, /enrichAdminProductPage/);
-  assert.match(route, /usageUnavailable: Boolean\(pageUsageResult\.error\)/);
-  assert.match(route, /categoriesUnavailable: Boolean\(categoryResult\.error\)/);
+  assert.match(route, /usageUnavailable: Boolean\(pageEnrichmentResult\.error\)/);
+  assert.match(route, /categoriesUnavailable: Boolean\(pageEnrichmentResult\.error\)/);
   assert.match(route, /issues/);
   assert.match(route, /search, status, source, sort: sortField, direction: sortDirection, page, pageSize/);
   assert.match(route, /searchParams\.get\("sources"\) === "1"/);
@@ -347,10 +372,14 @@ test("master Produk memakai RPC Super Admin, filter/sorting server-side, dan gua
   assert.match(dashboard, /loading && tab !== "products"/);
   assert.doesNotMatch(dashboard, /<AdminProducts onChanged=\{\(\) => void refresh\(\)\}/);
   assert.match(component, /product\.usage_count === null \? "Gagal dimuat"/);
+  assert.match(component, /product\.usage_count === undefined \? "Memuat\.\.\."/);
   assert.doesNotMatch(component, /product\.usage_count \?\? 0/);
   assert.match(component, /product\.categories === null/);
   assert.match(component, /const loadSummary = useCallback/);
   assert.match(component, /listRequestSequenceRef/);
+  assert.match(component, /enrichmentProductId/);
+  assert.match(component, /cachedReferenceFilterOptions/);
+  assert.match(component, /initialEnrichmentSettled/);
   assert.match(component, /signal: controller\.signal|load\(controller\.signal\)/);
   assert.match(component, /summary\?\.total_count \?\? "\\u2014"/);
   assert.match(component, /listError && !listLoaded/);

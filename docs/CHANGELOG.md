@@ -11,6 +11,15 @@
 Tanggal mengikuti Git history. Ini ringkasan milestone, bukan daftar seluruh
 commit.
 
+## 2026-09-11
+
+- Admin Produk menampilkan baris master lebih dahulu dan mengisi Usage/Kategori
+  secara asinkron untuk sort biasa.
+- Enrichment page-level menggabungkan dua traversal referensi menjadi satu scan
+  dengan parity DIRECT, QC_RESULT, archived, count, dan category terverifikasi.
+- Filter metadata dimuat setelah enrichment awal dan digunakan kembali selama
+  sesi UI agar tidak bersaing dengan critical path pertama.
+
 ## 2026-09-10
 
 - Admin Produk membatasi enrichment usage/kategori ke page aktif pada sort

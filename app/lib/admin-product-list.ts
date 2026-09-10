@@ -13,6 +13,8 @@ export type ProductReferenceCategoryRow = {
   categories: string[];
 };
 
+export type ProductPageEnrichmentRow = ProductUsageCountRow & ProductReferenceCategoryRow;
+
 export type AdminProductListRow = {
   id: string;
   brand: string;
@@ -68,6 +70,24 @@ export async function loadProductReferenceCategoriesInBatches<TError>(
 ) {
   const uniqueIds = [...new Set(productIds)];
   const rows: ProductReferenceCategoryRow[] = [];
+  for (let from = 0; from < uniqueIds.length; from += batchSize) {
+    const result = await loadBatch(uniqueIds.slice(from, from + batchSize));
+    if (result.error) return { data: null, error: result.error };
+    rows.push(...(result.data ?? []).map((row) => ({
+      ...row,
+      categories: normalizeProductReferenceCategories(row.categories ?? []),
+    })));
+  }
+  return { data: rows, error: null };
+}
+
+export async function loadProductPageEnrichmentInBatches<TError>(
+  productIds: string[],
+  loadBatch: (productIds: string[]) => PromiseLike<{ data: ProductPageEnrichmentRow[] | null; error: TError | null }>,
+  batchSize = PRODUCT_USAGE_COUNT_BATCH_SIZE,
+) {
+  const uniqueIds = [...new Set(productIds)];
+  const rows: ProductPageEnrichmentRow[] = [];
   for (let from = 0; from < uniqueIds.length; from += batchSize) {
     const result = await loadBatch(uniqueIds.slice(from, from + batchSize));
     if (result.error) return { data: null, error: result.error };

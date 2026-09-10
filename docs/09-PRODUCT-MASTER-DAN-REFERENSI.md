@@ -173,11 +173,14 @@ Guardrail current:
 
 ## Admin Product List Reliability
 
-Daftar Product memuat baris master lebih dahulu, lalu memperkaya Product pada
-page aktif dengan jumlah penggunaan, kategori referensi, dan canonical merge.
-Usage dan kategori tidak dijalankan sebagai dua JSON scan global bersamaan agar
-peak database pressure per request tetap terbatas. Full usage aggregation hanya diperlukan saat sorting
-**Penggunaan**, karena urutan tidak boleh dihitung dari sebagian Product.
+Pada sort biasa, daftar Product menampilkan baris master dan canonical merge
+lebih dahulu. Satu request page-level kemudian mengisi jumlah penggunaan dan
+kategori melalui `admin_product_page_enrichment`; RPC ini mengekstrak occurrence
+Submission satu kali dan mempertahankan agregasi usage serta category yang
+berbeda. Filter metadata yang relatif mahal baru dimuat setelah enrichment awal
+selesai dan digunakan kembali selama sesi UI. Full-population enrichment hanya
+diperlukan saat sorting **Penggunaan**, karena urutan tidak boleh dihitung dari
+sebagian Product.
 
 Kegagalan enrichment pada sort biasa tidak boleh mengubah Product menjadi
 kosong atau jumlah referensi menjadi nol. API mengembalikan baris yang sudah
@@ -193,7 +196,7 @@ dimuat saat view lain membutuhkannya.
 - `app/admin/AdminProducts.tsx`, `ProductReferenceMoveDialog.tsx`, `ProductMergeDialog.tsx`.
 - `app/lib/admin-product-api.ts`, `app/lib/product-reference-selection.ts`, `app/lib/admin-product-list.ts`.
 - `app/api/admin/products/[id]/dependencies`, `references`, `move-preflight`, `move`, `merge-preflight`, `merge`.
-- `20260821120000_product_reference_preflight.sql` through `20260904120000_product_reference_category_context.sql`.
+- `20260821120000_product_reference_preflight.sql` through `20260911120000_admin_product_page_enrichment.sql`.
 
 ## Relevant Tests
 

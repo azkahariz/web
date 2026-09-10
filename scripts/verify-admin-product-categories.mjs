@@ -79,8 +79,10 @@ try {
     await tx`select set_config('request.jwt.claim.sub', ${adminAuthId}, true)`;
     const requestedIds = products.map((product) => product.id);
     const categoryRows = [];
+    const enrichmentRows = [];
     for (let from = 0; from < requestedIds.length; from += 500) {
       categoryRows.push(...await tx`select * from public.admin_product_reference_categories(${requestedIds.slice(from, from + 500)})`);
+      enrichmentRows.push(...await tx`select * from public.admin_product_page_enrichment(${requestedIds.slice(from, from + 500)})`);
     }
     const categoriesById = new Map(categoryRows.map((row) => [row.product_id, row.categories]));
     assert(categoryRows.length === 1100, "RPC harus mengembalikan semua 1.100 Product yang diminta.");
@@ -90,6 +92,9 @@ try {
     assert(categoriesById.get(multipleCategories.id)?.join(",") === "Sensor Suhu,Sensor Tekanan", "Semua kategori unik harus diurutkan deterministik.");
     assert(categoriesById.get(directAndQc.id)?.join(",") === "Display,Perangkat Jaringan", "DIRECT dan QC_RESULT harus digabung sesuai referensi current.");
     assert(categoriesById.get(beyondOneThousand.id)?.join(",") === "Kategori Bulk", "Product #1081 dan >1.000 occurrence harus tetap lengkap.");
+    const enrichmentCategoriesById = new Map(enrichmentRows.map((row) => [row.product_id, row.categories]));
+    assert(enrichmentRows.length === categoryRows.length, "Combined enrichment harus mengembalikan seluruh Product yang diminta.");
+    assert(categoryRows.every((row) => JSON.stringify(row.categories) === JSON.stringify(enrichmentCategoriesById.get(row.product_id))), "Kategori combined enrichment harus identik dengan RPC kategori existing.");
     await tx`reset role`;
 
     await tx`set local role authenticated`;

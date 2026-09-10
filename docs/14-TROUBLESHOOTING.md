@@ -162,12 +162,18 @@ filter ulang hanya pada page browser atau menebak kelompok dari nama Station.
 statement timeout, atau request list yang tumpang tindih. **Cek pertama:** catat
 waktu kejadian dan request ID, lalu korelasikan log route dengan Data API serta
 `pg_stat_statements` untuk `admin_product_usage_counts` dan
-`admin_product_reference_categories`. Pastikan query Product master sendiri
+`admin_product_reference_categories`, lalu bandingkan dengan
+`admin_product_page_enrichment`. Pastikan query Product master sendiri
 memang gagal sebelum menyimpulkan database kosong. Pada sort biasa, daftar tetap
 boleh tampil dengan **Gagal dimuat** pada enrichment; pada sorting Penggunaan,
 error eksplisit diperlukan agar urutan tidak salah. **Jangan lakukan:** mengubah
 failure menjadi `0 referensi`, menaikkan timeout/pool secara spekulatif, atau
 menjalankan load test ke production.
+
+Pada sort biasa, Network seharusnya menunjukkan list dasar lebih dahulu lalu
+satu enrichment page-level. Filter options boleh menyusul dan tidak boleh
+memblokir baris. Sorting Penggunaan tetap satu request blocking karena usage
+seluruh hasil filter dibutuhkan sebelum pagination.
 
 ### Category Context Salah
 

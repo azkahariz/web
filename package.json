@@ -47,7 +47,8 @@
     "verify:station-runtime-master": "node --experimental-strip-types scripts/verify-station-runtime-master.mjs",
     "verify:site-subtype-family": "node scripts/verify-site-subtype-family.mjs",
     "verify:station-completion": "node --env-file-if-exists=.env.local scripts/verify-station-completion.mjs",
-    "benchmark:station-completion": "node scripts/benchmark-station-completion.mjs"
+    "benchmark:station-completion": "node scripts/benchmark-station-completion.mjs",
+    "benchmark:admin-product-enrichment": "node scripts/benchmark-admin-product-enrichment.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.4",

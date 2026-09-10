@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import AsyncButton from "../components/AsyncButton";
 import { useAppFeedback } from "../components/AppFeedback";
 import {
+  enrichAdminProductPage,
   productSourceLabel,
   type AdminProductSortDirection,
   type AdminProductSortField,
@@ -16,10 +17,12 @@ import ProductReferenceMoveDialog, { type MoveReferenceIdentity } from "./Produc
 import ProductMergeDialog from "./ProductMergeDialog";
 import ProductDeleteDialog from "./ProductDeleteDialog";
 
-type Product = { id: string; brand: string; model: string; categories: string[] | null; active: boolean; source_origin: string; usage_count: number | null; merged_into_product_id?: string; merged_target?: { id: string; brand: string; model: string } };
+type Product = { id: string; brand: string; model: string; categories?: string[] | null; active: boolean; source_origin: string; usage_count?: number | null; merged_into_product_id?: string; merged_target?: { id: string; brand: string; model: string } };
 type Summary = { total_count: number; active_count: number; inactive_count: number };
 type ReferenceFilterOption = { id: string; name: string };
 type ReferenceFilterOptions = { categories: string[]; stationGroups: ReferenceFilterOption[]; siteTypes: ReferenceFilterOption[] };
+type ProductEnrichment = { product_id: string; reference_count: number; categories: string[] };
+let cachedReferenceFilterOptions: ReferenceFilterOptions | null = null;
 type ProductUsage = {
   rows: Array<{ stationName: string; siteName: string; siteTypeName: string; subtypeName: string; categories: string[]; referenceCount: number }>;
   totalCount: number;
@@ -158,8 +161,8 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
   const [sourceFilter, setSourceFilter] = useState("");
   const [sourceOptions, setSourceOptions] = useState<string[]>([]);
   const [sourceOptionsError, setSourceOptionsError] = useState("");
-  const [referenceFilterOptions, setReferenceFilterOptions] = useState<ReferenceFilterOptions>({ categories: [], stationGroups: [], siteTypes: [] });
-  const [referenceFilterOptionsLoading, setReferenceFilterOptionsLoading] = useState(true);
+  const [referenceFilterOptions, setReferenceFilterOptions] = useState<ReferenceFilterOptions>(() => cachedReferenceFilterOptions ?? { categories: [], stationGroups: [], siteTypes: [] });
+  const [referenceFilterOptionsLoading, setReferenceFilterOptionsLoading] = useState(() => !cachedReferenceFilterOptions);
   const [referenceFilterOptionsError, setReferenceFilterOptionsError] = useState("");
   const [categoryFilters, setCategoryFilters] = useState<string[]>([]);
   const [stationCategoryFilter, setStationCategoryFilter] = useState("");
@@ -168,6 +171,8 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
   const [sortDirection, setSortDirection] = useState<AdminProductSortDirection>("asc");
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [enrichmentLoading, setEnrichmentLoading] = useState(false);
+  const [initialEnrichmentSettled, setInitialEnrichmentSettled] = useState(false);
   const [listLoaded, setListLoaded] = useState(false);
   const [listError, setListError] = useState("");
   const [listIssues, setListIssues] = useState<string[]>([]);
@@ -225,6 +230,8 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
   }, []);
 
   useEffect(() => {
+    if (!initialEnrichmentSettled) return;
+    if (cachedReferenceFilterOptions) return;
     const controller = new AbortController();
     async function loadReferenceFilterOptions() {
       setReferenceFilterOptionsLoading(true);
@@ -233,7 +240,9 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
         const response = await fetch("/api/admin/products?referenceFilterOptions=1", { cache: "no-store", signal: controller.signal });
         const result = await response.json() as { referenceFilterOptions?: ReferenceFilterOptions; error?: string };
         if (!response.ok) throw new Error(result.error || "Pilihan filter referensi produk gagal dimuat.");
-        setReferenceFilterOptions(result.referenceFilterOptions ?? { categories: [], stationGroups: [], siteTypes: [] });
+        const options = result.referenceFilterOptions ?? { categories: [], stationGroups: [], siteTypes: [] };
+        cachedReferenceFilterOptions = options;
+        setReferenceFilterOptions(options);
       } catch (optionsError) {
         if (optionsError instanceof DOMException && optionsError.name === "AbortError") return;
         setReferenceFilterOptionsError(optionsError instanceof Error ? optionsError.message : "Pilihan filter referensi produk gagal dimuat.");
@@ -243,7 +252,7 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
     }
     void loadReferenceFilterOptions();
     return () => controller.abort();
-  }, []);
+  }, [initialEnrichmentSettled]);
 
   const loadSummary = useCallback(async (signal?: AbortSignal) => {
     setSummaryError("");
@@ -261,6 +270,7 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
   const load = useCallback(async (signal?: AbortSignal) => {
     const requestSequence = ++listRequestSequenceRef.current;
     setLoading(true);
+    setEnrichmentLoading(false);
     setListError("");
     const params = new URLSearchParams({
       page: String(page),
@@ -274,21 +284,47 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
     categoryFilters.forEach((category) => params.append("category", category));
     if (stationCategoryFilter) params.set("stationCategoryId", stationCategoryFilter);
     if (siteTypeFilter) params.set("siteTypeId", siteTypeFilter);
+    if (sortField !== "usage") params.set("deferEnrichment", "1");
     try {
       const listResponse = await fetch(`/api/admin/products?${params.toString()}`, { cache: "no-store", signal });
       const list = await listResponse.json() as { rows?: Product[]; totalCount?: number; issues?: Record<string, string>; error?: string };
       if (!listResponse.ok) throw new Error(list.error || "Daftar produk gagal dimuat.");
       if (requestSequence !== listRequestSequenceRef.current) return;
-      setRows(list.rows ?? []);
+      const nextRows = list.rows ?? [];
+      setRows(nextRows);
       const nextTotalCount = list.totalCount ?? 0;
       setTotalCount(nextTotalCount);
       setPage((current) => Math.min(current, Math.max(1, Math.ceil(nextTotalCount / pageSize))));
       setListIssues(Object.values(list.issues ?? {}));
       setListLoaded(true);
+      setLoading(false);
+
+      if (sortField !== "usage" && nextRows.length) {
+        setEnrichmentLoading(true);
+        const enrichmentParams = new URLSearchParams();
+        nextRows.forEach((product) => enrichmentParams.append("enrichmentProductId", product.id));
+        try {
+          const enrichmentResponse = await fetch(`/api/admin/products?${enrichmentParams.toString()}`, { cache: "no-store", signal });
+          const enrichmentResult = await enrichmentResponse.json() as { enrichment?: ProductEnrichment[]; error?: string };
+          if (!enrichmentResponse.ok) throw new Error(enrichmentResult.error || "Penggunaan dan kategori produk gagal dimuat.");
+          if (requestSequence !== listRequestSequenceRef.current) return;
+          setRows((current) => enrichAdminProductPage(current, enrichmentResult.enrichment ?? [], enrichmentResult.enrichment ?? []) as Product[]);
+        } catch (enrichmentError) {
+          if (enrichmentError instanceof DOMException && enrichmentError.name === "AbortError") return;
+          if (requestSequence === listRequestSequenceRef.current) {
+            setRows((current) => enrichAdminProductPage(current, [], [], { usageUnavailable: true, categoriesUnavailable: true }) as Product[]);
+            setListIssues([enrichmentError instanceof Error ? enrichmentError.message : "Penggunaan dan kategori produk gagal dimuat."]);
+          }
+        } finally {
+          if (requestSequence === listRequestSequenceRef.current) setEnrichmentLoading(false);
+        }
+      }
+      if (requestSequence === listRequestSequenceRef.current) setInitialEnrichmentSettled(true);
     } catch (loadError) {
       if (loadError instanceof DOMException && loadError.name === "AbortError") return;
       if (requestSequence === listRequestSequenceRef.current) {
         setListError(loadError instanceof Error ? loadError.message : "Daftar produk gagal dimuat.");
+        setInitialEnrichmentSettled(true);
       }
     } finally {
       if (requestSequence === listRequestSequenceRef.current) setLoading(false);
@@ -573,7 +609,7 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
     {summaryError && <p className="product-filter-options-error" role="status">{summaryError} Angka ringkasan tidak ditampilkan sebagai nol.</p>}
     {listIssues.length > 0 && <p className="product-filter-options-error" role="status">{listIssues.join(" ")} Daftar Produk tetap ditampilkan; gunakan Muat ulang untuk mencoba kembali.</p>}
     {listError && <p className="admin-message" role="alert">{listError} {listLoaded && "Data terakhir tetap ditampilkan."}</p>}
-    <div className={`admin-table-wrap product-table${loading ? " is-loading" : ""}`} aria-busy={loading}><table><thead><tr>
+    <div className={`admin-table-wrap product-table${loading ? " is-loading" : ""}`} aria-busy={loading || enrichmentLoading}><table><thead><tr>
       {([
         ["brand", "Merk"],
         ["model", "Tipe"],
@@ -590,7 +626,7 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
       </th>)}
       <th>Aksi</th>
     </tr></thead><tbody>
-      {rows.map((product) => <tr key={product.id}><td><strong>{product.brand}</strong>{product.merged_target && <small className="product-merged-target">Ke {product.merged_target.brand} · {product.merged_target.model}</small>}</td><td>{product.model}</td><td><div className="product-category-list">{product.categories === null ? <span className="product-category-unavailable">Gagal dimuat</span> : product.categories.length ? product.categories.map((category) => <span key={category}>{category}</span>) : <span className="product-category-empty">—</span>}</div></td><td><span className={`status-pill ${product.merged_into_product_id ? "merged" : product.active ? "active" : "inactive"}`}>{product.merged_into_product_id ? "Digabungkan" : product.active ? "Aktif" : "Nonaktif"}</span></td><td>{productSourceLabel(product.source_origin)}</td><td><button className={`usage-link${product.usage_count === null ? " is-unavailable" : ""}`} type="button" onClick={() => openUsage(product)}>{product.usage_count === null ? "Gagal dimuat" : `${product.usage_count} referensi`}</button></td><td className="table-actions">{product.merged_into_product_id ? <button type="button" onClick={() => openUsage(product)}>Lihat Riwayat</button> : <><AsyncButton loading={activeAction === `edit:${product.id}`} loadingText="Menyimpan..." onClick={() => openEditDialog(product)}>Edit</AsyncButton><AsyncButton className={product.active ? "danger-inline" : undefined} loading={activeAction === `active:${product.id}`} loadingText="Menyimpan..." onClick={() => void setActive(product)}>{product.active ? "Nonaktifkan" : "Aktifkan"}</AsyncButton><button className="product-merge-action" type="button" onClick={() => setMergeProduct(product)}>Gabungkan</button><button className="product-delete-action" type="button" disabled={product.active} title={product.active ? "Nonaktifkan Produk terlebih dahulu sebelum menghapus permanen." : "Periksa keterkaitan dan hapus Produk permanen"} onClick={() => setDeleteProduct(product)}>Hapus Permanen</button></>}</td></tr>)}
+      {rows.map((product) => <tr key={product.id}><td><strong>{product.brand}</strong>{product.merged_target && <small className="product-merged-target">Ke {product.merged_target.brand} · {product.merged_target.model}</small>}</td><td>{product.model}</td><td><div className="product-category-list">{product.categories === undefined ? <span className="product-category-loading">Memuat...</span> : product.categories === null ? <span className="product-category-unavailable">Gagal dimuat</span> : product.categories.length ? product.categories.map((category) => <span key={category}>{category}</span>) : <span className="product-category-empty">—</span>}</div></td><td><span className={`status-pill ${product.merged_into_product_id ? "merged" : product.active ? "active" : "inactive"}`}>{product.merged_into_product_id ? "Digabungkan" : product.active ? "Aktif" : "Nonaktif"}</span></td><td>{productSourceLabel(product.source_origin)}</td><td><button className={`usage-link${product.usage_count === null ? " is-unavailable" : ""}`} type="button" disabled={product.usage_count === undefined} onClick={() => openUsage(product)}>{product.usage_count === undefined ? "Memuat..." : product.usage_count === null ? "Gagal dimuat" : `${product.usage_count} referensi`}</button></td><td className="table-actions">{product.merged_into_product_id ? <button type="button" onClick={() => openUsage(product)}>Lihat Riwayat</button> : <><AsyncButton loading={activeAction === `edit:${product.id}`} loadingText="Menyimpan..." onClick={() => openEditDialog(product)}>Edit</AsyncButton><AsyncButton className={product.active ? "danger-inline" : undefined} loading={activeAction === `active:${product.id}`} loadingText="Menyimpan..." onClick={() => void setActive(product)}>{product.active ? "Nonaktifkan" : "Aktifkan"}</AsyncButton><button className="product-merge-action" type="button" onClick={() => setMergeProduct(product)}>Gabungkan</button><button className="product-delete-action" type="button" disabled={product.active} title={product.active ? "Nonaktifkan Produk terlebih dahulu sebelum menghapus permanen." : "Periksa keterkaitan dan hapus Produk permanen"} onClick={() => setDeleteProduct(product)}>Hapus Permanen</button></>}</td></tr>)}
       {!rows.length && <tr><td colSpan={7}>{loading && !listLoaded ? "Memuat produk..." : listError && !listLoaded ? "Daftar Produk belum dapat dimuat. Gunakan Muat ulang untuk mencoba kembali." : "Tidak ada Produk yang sesuai dengan filter."}</td></tr>}
     </tbody></table></div>
     <div className="submission-pagination" aria-label="Pagination produk">
