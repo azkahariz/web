@@ -84,6 +84,10 @@ dan jumlah QC Pending. Kategori dengan beberapa produk dapat dibuka lagi tanpa
 request tambahan. Membuka tab tidak mengunduh seluruh payload. **Buka** membuka
 read-only view di tab baru dan **Unduh** memakai snapshot terbaru.
 
+Merk dan Tipe pada detail serta file Unduh mengikuti nama Product master terbaru
+jika item telah memiliki Product canonical. Nilai lama di payload tetap disimpan
+sebagai riwayat dan fallback; perubahan nama Product tidak menulis ulang Submission.
+
 **Arsipkan Submission** mengeluarkan submission dari pengisian aktif tanpa
 menghapus UUID, payload, atau version. Kombinasi tersebut kembali berstatus
 "Belum ada submission" pada Master Pengisian. Gunakan filter **Diarsipkan** dan

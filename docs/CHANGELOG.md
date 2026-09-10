@@ -17,6 +17,8 @@ commit.
   UPT, dengan enforcement RPC Station, stale-tab handling, dan audit transisi.
 - Form Station dan tampilan form Admin me-resolve Merk/Tipe Product current dari
   UUID canonical tanpa menulis ulang snapshot Submission atau history QC.
+- Detail Submission dan export inventaris Admin menggunakan Merk/Tipe Product
+  canonical current; snapshot, usulan, QC History, dan alias historis tetap utuh.
 
 ## 2026-09-09
 

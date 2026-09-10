@@ -110,6 +110,10 @@ Proposal APPROVED/MERGED mendapatkan `resolved_product_id` di tabel proposal. Pa
 
 Untuk tampilan form, UUID tetap menjadi identity. Item DIRECT menggunakan `productId` untuk mengambil Merk/Tipe canonical terbaru secara bulk; `brand` dan `model` di payload tetap dipertahankan sebagai snapshot/fallback dan tidak ditulis ulang ketika master Product diubah. Proposal APPROVED/MERGED mengikuti `resolved_product_id`, sedangkan proposal PENDING tetap menampilkan Brand/Tipe usulan asli.
 
+Tampilan operasional dan export current yang membaca Submission mengikuti precedence
+yang sama. Lookup dibatasi pada UUID Product/Proposal yang direferensikan payload;
+ia tidak memuat seluruh katalog Product dan tidak mengubah payload atau version.
+
 ## Edit Mode
 
 `useServerDraft.ts` membedakan `browsing`, `opening`, `editing`, `saving`, `saved`, `read-only`, `conflict`, dan `local-only`. `retryAcquireEdit()` membersihkan snapshot lock/error lama lalu selalu memanggil `open_submission`/`admin_open_submission` terbaru.

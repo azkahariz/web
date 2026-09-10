@@ -36,6 +36,12 @@ Super Admin mengelola pandangan lintas Station. UI Admin tidak menggantikan otor
 
 Loading/error dataset Completion dan QC diisolasi agar kegagalan salah satunya tidak harus menjatuhkan seluruh shell Admin.
 
+Detail Submission pada Monitoring Pengisian dan download Admin adalah current-state
+views. Untuk DIRECT, Merk/Tipe dibaca dari Product canonical melalui `productId`;
+untuk QC_RESULT, melalui proposal APPROVED/MERGED dan `resolved_product_id`.
+Snapshot payload hanya fallback. Kolom Usulan dan QC History tetap memakai nilai
+proposal asli karena keduanya adalah konteks historis.
+
 ## Monitoring Pengisian
 
 Monitoring menggunakan status Station hasil agregasi pair Site/Subtipe non-Gudang:
