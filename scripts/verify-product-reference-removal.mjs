@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { performance } from "node:perf_hooks";
 import { randomUUID } from "node:crypto";
 import postgres from "postgres";
+import { buildInventoryCsv, buildInventoryJson } from "../app/lib/inventory-export.ts";
 
 const databaseUrl = process.env.SUPABASE_DB_URL?.trim();
 if (!databaseUrl) throw new Error("SUPABASE_DB_URL wajib tersedia untuk verifier lokal.");
@@ -166,6 +167,19 @@ try {
     assert.deepEqual(findItem(directAfter.payload, directKeep.id), directKeep);
     assert.deepEqual(findItem(directAfter.payload, sibling.id), sibling);
     assert.deepEqual(directAfter.payload.inventory.Empty, []);
+    const exportContext = {
+      stationName: "Verifier Station",
+      siteName: "Verifier Site",
+      siteTypeName: "Verifier Type",
+      subtypeName: "Verifier Subtype",
+      profile: "Verifier Profile",
+      categories: ["Remove Last Category"],
+      payload: directAfter.payload,
+    };
+    const exportedProduct = buildInventoryJson(exportContext).items[0].products.find((item) => item.id === directRemove.id);
+    assert.equal(exportedProduct.productId, undefined, "Current export tidak boleh membawa canonical link yang sudah dilepas.");
+    assert.deepEqual({ brand: exportedProduct.brand, model: exportedProduct.model }, { brand: source.brand, model: source.model }, "Current export tetap mempertahankan snapshot historis item.");
+    assert.match(buildInventoryCsv(exportContext), new RegExp(`${source.brand}.*${source.model}`));
     const directProjection = await callEnrichment(tx, adminId, source.id);
     assert.equal(directProjection.reference_count, 1);
     assert.equal((await callReferences(tx, adminId, source.id)).totalCount, directProjection.reference_count);
@@ -304,4 +318,4 @@ try {
   await sql.end({ timeout: 5 });
 }
 
-console.log("Verifikasi penghapusan referensi Produk lulus; DIRECT, QC_RESULT, mixed atomicity, stale guard, lock, audit, projection, >1000 pagination, dan rollback fixture teruji.");
+console.log("Verifikasi penghapusan referensi Produk lulus; DIRECT, QC_RESULT, mixed atomicity, stale guard, lock, audit, projection, export, >1000 pagination, dan rollback fixture teruji.");
