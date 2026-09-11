@@ -176,13 +176,14 @@ test("parameter Product list memakai allowlist dan label sumber manusiawi", () =
 });
 
 test("master Produk memakai RPC Super Admin, filter/sorting server-side, dan guard legacy sync", async () => {
-  const [migration, usageMigration, usageCountsMigration, categoryMigration, referenceFilterMigration, enrichmentMigration, route, listLib, pickerRoute, pickerLib, component, dashboard, globals, inventoryApp, submissionMonitor, submissionLib, hook, sync, packageJson] = await Promise.all([
+  const [migration, usageMigration, usageCountsMigration, categoryMigration, referenceFilterMigration, enrichmentMigration, optimizedEnrichmentMigration, route, listLib, pickerRoute, pickerLib, component, dashboard, globals, inventoryApp, submissionMonitor, submissionLib, hook, sync, packageJson] = await Promise.all([
     readFile(new URL("../supabase/migrations/20260815120000_super_admin_product_management.sql", import.meta.url), "utf8"),
     readFile(new URL("../supabase/migrations/20260815130000_super_admin_product_usage.sql", import.meta.url), "utf8"),
     readFile(new URL("../supabase/migrations/20260815140000_super_admin_product_usage_counts.sql", import.meta.url), "utf8"),
     readFile(new URL("../supabase/migrations/20260909120000_admin_product_reference_categories.sql", import.meta.url), "utf8"),
     readFile(new URL("../supabase/migrations/20260910130000_admin_product_reference_filters.sql", import.meta.url), "utf8"),
     readFile(new URL("../supabase/migrations/20260911120000_admin_product_page_enrichment.sql", import.meta.url), "utf8"),
+    readFile(new URL("../supabase/migrations/20260911150000_optimize_timeout_prone_admin_rpcs.sql", import.meta.url), "utf8"),
     readFile(new URL("../app/api/admin/products/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/lib/admin-product-list.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/products/route.ts", import.meta.url), "utf8"),
@@ -239,6 +240,14 @@ test("master Produk memakai RPC Super Admin, filter/sorting server-side, dan gua
   assert.match(enrichmentMigration, /resolve_canonical_product_id/);
   assert.match(enrichmentMigration, /functionCategories/);
   assert.doesNotMatch(enrichmentMigration, /\b(insert|update|delete|alter|create table|create index)\b/i);
+  const optimizedEnrichment = optimizedEnrichmentMigration.match(/create or replace function public\.admin_product_page_enrichment\(p_product_ids uuid\[\]\)[\s\S]*?comment on function public\.admin_product_page_enrichment/)?.[0] ?? "";
+  assert.match(optimizedEnrichment, /with recursive requested as materialized/);
+  assert.match(optimizedEnrichment, /usage_product_map/);
+  assert.match(optimizedEnrichment, /child\.merged_into_product_id = mapping\.product_id/);
+  assert.doesNotMatch(optimizedEnrichment, /resolve_canonical_product_id/);
+  assert.match(optimizedEnrichment, /resolved_items as materialized/);
+  assert.ok(optimizedEnrichment.indexOf("resolved_items as materialized") < optimizedEnrichment.indexOf("jsonb_array_elements_text(item.category_sources)"));
+  assert.doesNotMatch(optimizedEnrichment, /\b(insert|update|delete|alter|create table|create index)\b/i);
   for (const action of ["PRODUCT_CREATE", "PRODUCT_UPDATE", "PRODUCT_ACTIVATE", "PRODUCT_DEACTIVATE"]) assert.match(migration, new RegExp(action));
   assert.match(migration, /source_origin in \('SPREADSHEET', 'QC', 'ADMIN'\)/);
   assert.match(migration, /normalize_product_text/);

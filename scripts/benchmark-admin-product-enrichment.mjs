@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { readFile } from "node:fs/promises";
 import postgres from "postgres";
 
 const databaseUrl = process.env.SUPABASE_DB_URL?.trim() || "postgresql://postgres:postgres@127.0.0.1:54322/postgres";
@@ -72,6 +73,27 @@ try {
       from unnest(${sites.map((site) => site.id)}::uuid[]) with ordinality as site(id, site_no)
     `;
 
+    if (process.env.BENCHMARK_PENDING === "1") {
+      const legacyPendingSql = (await readFile(new URL("../supabase/migrations/20260830150000_admin_pending_product_proposal_summary.sql", import.meta.url), "utf8"))
+        .replaceAll("admin_pending_product_proposal_summary", "admin_pending_product_proposal_summary_benchmark_legacy");
+      await tx.unsafe(legacyPendingSql);
+      const [submission] = await tx`select id from public.submissions where station_id = ${station.id} order by id limit 1`;
+      const [proposal] = await tx`
+        insert into public.product_proposals (
+          station_id, submission_id, created_by_auth_user, operator_name,
+          proposed_brand, proposed_model, normalized_brand, normalized_model, status
+        ) values (
+          ${station.id}, ${submission.id}, ${adminId}, 'Product Benchmark',
+          'Benchmark Pending', ${suffix}, 'benchmarkpending', ${suffix}, 'PENDING'
+        ) returning id
+      `;
+      await tx`
+        update public.submissions
+        set payload = jsonb_set(payload, '{inventory,Sensor,0,productProposalId}', to_jsonb(${proposal.id}::text), true)
+        where id = ${submission.id}
+      `;
+    }
+
     await tx`set local role authenticated`;
     await tx`select set_config('request.jwt.claim.sub', ${adminId}, true)`;
     const pageIds = productIds.slice(0, 50);
@@ -92,12 +114,28 @@ try {
       metrics.combinedPage = await measure(() => tx`select * from public.admin_product_page_enrichment(${pageIds})`);
       metrics.combinedUsageSort = await measure(() => tx`select * from public.admin_product_page_enrichment(${productIds})`);
     }
+    if (process.env.BENCHMARK_PENDING === "1") {
+      const [legacyPending, optimizedPending] = await Promise.all([
+        tx`select public.admin_pending_product_proposal_summary_benchmark_legacy() as value`,
+        tx`select public.admin_pending_product_proposal_summary() as value`,
+      ]);
+      if (JSON.stringify(legacyPending[0].value) !== JSON.stringify(optimizedPending[0].value)) {
+        throw new Error("Output pending Product Proposal berubah setelah optimasi.");
+      }
+      metrics.pendingSummaryLegacy = await measure(() => tx`select public.admin_pending_product_proposal_summary_benchmark_legacy()`);
+      metrics.pendingSummaryOptimized = await measure(() => tx`select public.admin_pending_product_proposal_summary()`);
+      metrics.pendingSummaryOutput = optimizedPending[0].value;
+    }
     if (process.env.BENCHMARK_EXPLAIN === "1") {
       const plans = {};
       for (const [name, query] of [
         ["usagePage", tx`explain (analyze, buffers, format json) select * from public.admin_product_usage_counts(${pageIds})`],
         ["categoryPage", tx`explain (analyze, buffers, format json) select * from public.admin_product_reference_categories(${pageIds})`],
         ["combinedPage", tx`explain (analyze, buffers, format json) select * from public.admin_product_page_enrichment(${pageIds})`],
+        ...(process.env.BENCHMARK_PENDING === "1" ? [
+          ["pendingSummaryLegacy", tx`explain (analyze, buffers, format json) select public.admin_pending_product_proposal_summary_benchmark_legacy()`],
+          ["pendingSummaryOptimized", tx`explain (analyze, buffers, format json) select public.admin_pending_product_proposal_summary()`],
+        ] : []),
       ]) {
         const rows = await query;
         const plan = rows[0]["QUERY PLAN"][0];

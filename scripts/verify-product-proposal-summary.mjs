@@ -84,10 +84,14 @@ try {
         has_function_privilege('authenticated', p.oid, 'EXECUTE') as authenticated_execute
       from pg_proc as p
       join pg_namespace as n on n.oid = p.pronamespace
-      where n.nspname = 'public' and p.proname in ('admin_product_proposal_status_summary', 'admin_list_product_proposals')
+      where n.nspname = 'public' and p.proname in (
+        'admin_product_proposal_status_summary',
+        'admin_pending_product_proposal_summary',
+        'admin_list_product_proposals'
+      )
       order by p.proname
     `;
-    assert(functionAudit.length === 2, "Dua RPC Product Proposal wajib tersedia.");
+    assert(functionAudit.length === 3, "Tiga RPC Product Proposal wajib tersedia.");
     for (const fn of functionAudit) {
       assert(fn.prosecdef === true, `${fn.proname} wajib SECURITY DEFINER.`);
       assert(fn.provolatile === "s", `${fn.proname} wajib STABLE.`);
@@ -99,6 +103,12 @@ try {
     assert(summary.total === 1200, "Summary harus menghitung seluruh 1.200 proposal.");
     for (const status of ["pending", "approved", "merged", "rejected"]) assert(summary[status] === 300, `${status} harus 300.`);
     assert(summary.other === 0, "OTHER harus nol untuk domain status saat ini.");
+
+    const pendingSummary = valueOf(await tx`select public.admin_pending_product_proposal_summary() as data`);
+    assert(pendingSummary.total_pending === 300, "Pending context summary harus menghitung 300 proposal PENDING.");
+    assert(pendingSummary.pending_pengisian === 60, "Enam puluh proposal aktif harus masuk bucket PENGISIAN.");
+    assert(pendingSummary.pending_gudang === 0, "Fixture ini tidak memiliki proposal Gudang.");
+    assert(pendingSummary.pending_tidak_digunakan === 240, "Dua ratus empat puluh proposal orphan harus dihitung.");
 
     const summaries = [];
     for (const pageSize of [25, 50, 100]) {
@@ -147,7 +157,7 @@ try {
     `;
     assert(statusConstraint.some((row) => ["PENDING", "APPROVED", "MERGED", "REJECTED"].every((status) => row.definition.includes(status))), "Status constraint tidak membatasi empat status canonical.");
 
-    report = { total: summary.total, statuses: summary, pageSize: 50, filteredCount: search.totalCount };
+    report = { total: summary.total, statuses: summary, pendingSummary, pageSize: 50, filteredCount: search.totalCount };
     throw new Error(rollbackMarker);
   });
 } catch (error) {

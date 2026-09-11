@@ -37,10 +37,12 @@ export async function GET(request: Request) {
   if (authorizationError) return errorResponse(authorizationError.code, "Akses QC Produk gagal divalidasi.");
 
   const url = new URL(request.url);
+  const summaryOnly = url.searchParams.get("summaryOnly") === "1";
+  const includeSummaries = summaryOnly || url.searchParams.get("includeSummaries") !== "0";
   const status = url.searchParams.get("status") || "PENDING";
   if (!statuses.has(status)) return NextResponse.json({ error: "Status QC tidak valid." }, { status: 400 });
   const [listResult, pendingSummaryResult, statusSummaryResult] = await Promise.all([
-    client.rpc("admin_list_product_proposals", {
+    summaryOnly ? Promise.resolve({ data: null, error: null }) : client.rpc("admin_list_product_proposals", {
       p_status: status,
       p_page: page(url.searchParams.get("page")),
       p_page_size: pageSize(url.searchParams.get("pageSize")),
@@ -49,59 +51,63 @@ export async function GET(request: Request) {
       p_site_type_id: optionalUuid(url.searchParams.get("siteTypeId")),
       p_qc_context: url.searchParams.get("qcContext")?.trim() || null,
     }),
-    client.rpc("admin_pending_product_proposal_summary"),
-    client.rpc("admin_product_proposal_status_summary"),
+    includeSummaries ? client.rpc("admin_pending_product_proposal_summary") : Promise.resolve({ data: null, error: null }),
+    includeSummaries ? client.rpc("admin_product_proposal_status_summary") : Promise.resolve({ data: null, error: null }),
   ]);
   if (listResult.error?.code === "42501" || pendingSummaryResult.error?.code === "42501" || statusSummaryResult.error?.code === "42501") {
     return NextResponse.json({ error: "Akses Super Admin diperlukan." }, { status: 403 });
   }
 
   const response: Record<string, unknown> = {};
-  if (listResult.error) {
-    response.listError = rpcError(listResult.error.code, "Proposal produk gagal dimuat.");
-  } else if (!listResult.data || typeof listResult.data !== "object" || Array.isArray(listResult.data)) {
-    response.listError = "Contract daftar proposal QC tidak valid.";
-  } else {
-    Object.assign(response, listResult.data);
-    const rows = Array.isArray((listResult.data as { rows?: unknown }).rows)
-      ? (listResult.data as { rows: Array<Record<string, unknown>> }).rows
-      : [];
-    const resolvedProductIds = [...new Set(rows
-      .map((row) => typeof row.resolved_product_id === "string" ? row.resolved_product_id : null)
-      .filter((id): id is string => Boolean(id)))];
-    if (resolvedProductIds.length) {
-      const productsResult = await client.from("products")
-        .select("id, brand, model")
-        .in("id", resolvedProductIds);
-      if (productsResult.error) {
-        response.listError = rpcError(productsResult.error.code, "Hasil QC produk gagal dimuat.");
-      } else {
-        const productsById = new Map((productsResult.data ?? []).map((product) => [product.id, product]));
-        response.rows = rows.map((row) => ({
-          ...row,
-          resolved_product: typeof row.resolved_product_id === "string"
-            ? productsById.get(row.resolved_product_id) ?? null
-            : null,
-        }));
+  if (!summaryOnly) {
+    if (listResult.error) {
+      response.listError = rpcError(listResult.error.code, "Proposal produk gagal dimuat.");
+    } else if (!listResult.data || typeof listResult.data !== "object" || Array.isArray(listResult.data)) {
+      response.listError = "Contract daftar proposal QC tidak valid.";
+    } else {
+      Object.assign(response, listResult.data);
+      const rows = Array.isArray((listResult.data as { rows?: unknown }).rows)
+        ? (listResult.data as { rows: Array<Record<string, unknown>> }).rows
+        : [];
+      const resolvedProductIds = [...new Set(rows
+        .map((row) => typeof row.resolved_product_id === "string" ? row.resolved_product_id : null)
+        .filter((id): id is string => Boolean(id)))];
+      if (resolvedProductIds.length) {
+        const productsResult = await client.from("products")
+          .select("id, brand, model")
+          .in("id", resolvedProductIds);
+        if (productsResult.error) {
+          response.listError = rpcError(productsResult.error.code, "Hasil QC produk gagal dimuat.");
+        } else {
+          const productsById = new Map((productsResult.data ?? []).map((product) => [product.id, product]));
+          response.rows = rows.map((row) => ({
+            ...row,
+            resolved_product: typeof row.resolved_product_id === "string"
+              ? productsById.get(row.resolved_product_id) ?? null
+              : null,
+          }));
+        }
       }
     }
   }
 
-  const pendingSummary = parseQcPendingSummary(pendingSummaryResult.data);
-  const statusSummary = parseQcProposalStatusSummary(statusSummaryResult.data);
-  if (pendingSummaryResult.error) {
-    response.pendingSummaryError = rpcError(pendingSummaryResult.error.code, "Ringkasan QC Pending gagal dimuat.");
-  } else if (!pendingSummary) {
-    response.pendingSummaryError = "Contract ringkasan QC Pending tidak valid.";
-  } else {
-    response.pendingSummary = pendingSummary;
-  }
-  if (statusSummaryResult.error) {
-    response.statusSummaryError = rpcError(statusSummaryResult.error.code, "Ringkasan status QC gagal dimuat.");
-  } else if (!statusSummary) {
-    response.statusSummaryError = "Contract ringkasan status QC tidak valid.";
-  } else {
-    response.statusSummary = statusSummary;
+  if (includeSummaries) {
+    const pendingSummary = parseQcPendingSummary(pendingSummaryResult.data);
+    const statusSummary = parseQcProposalStatusSummary(statusSummaryResult.data);
+    if (pendingSummaryResult.error) {
+      response.pendingSummaryError = rpcError(pendingSummaryResult.error.code, "Ringkasan QC Pending gagal dimuat.");
+    } else if (!pendingSummary) {
+      response.pendingSummaryError = "Contract ringkasan QC Pending tidak valid.";
+    } else {
+      response.pendingSummary = pendingSummary;
+    }
+    if (statusSummaryResult.error) {
+      response.statusSummaryError = rpcError(statusSummaryResult.error.code, "Ringkasan status QC gagal dimuat.");
+    } else if (!statusSummary) {
+      response.statusSummaryError = "Contract ringkasan status QC tidak valid.";
+    } else {
+      response.statusSummary = statusSummary;
+    }
   }
   return NextResponse.json(response);
 }

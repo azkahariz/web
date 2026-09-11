@@ -38,9 +38,10 @@ test("ringkasan status QC database-wide tidak bergantung pada page list lebih da
   assert.equal(parseQcProposalStatusSummary({ total: 1187, pending: 167, approved: 351, merged: 499, rejected: 169, other: 0 }), null);
 });
 
-test("Ringkasan QC memakai aggregate terpisah dan list berhalaman tanpa mengubah Monitoring Pengisian", async () => {
-  const [migration, statusMigration, listMigration, route, dashboard] = await Promise.all([
+test("Ringkasan QC memakai aggregate terpisah, satu inventory scan, dan hanya dimuat pada view relevan", async () => {
+  const [migration, optimizedMigration, statusMigration, listMigration, route, dashboard] = await Promise.all([
     readFile(new URL("../supabase/migrations/20260830150000_admin_pending_product_proposal_summary.sql", import.meta.url), "utf8"),
+    readFile(new URL("../supabase/migrations/20260911150000_optimize_timeout_prone_admin_rpcs.sql", import.meta.url), "utf8"),
     readFile(new URL("../supabase/migrations/20260902120000_admin_product_proposal_status_summary.sql", import.meta.url), "utf8"),
     readFile(new URL("../supabase/migrations/20260902130000_admin_list_product_proposals.sql", import.meta.url), "utf8"),
     readFile(new URL("../app/api/admin/product-proposals/route.ts", import.meta.url), "utf8"),
@@ -52,6 +53,11 @@ test("Ringkasan QC memakai aggregate terpisah dan list berhalaman tanpa mengubah
   assert.match(migration, /TIDAK_DIGUNAKAN_SAAT_INI/);
   assert.match(migration, /submission_inventory_facts/);
   assert.match(migration, /station_completion_rows\(null\)/);
+  const optimizedPending = optimizedMigration.match(/create or replace function public\.admin_pending_product_proposal_summary\(\)[\s\S]*?comment on function public\.admin_pending_product_proposal_summary/)?.[0] ?? "";
+  assert.match(optimizedPending, /station_completion_expected_contexts\(null\)/);
+  assert.doesNotMatch(optimizedPending, /station_completion_rows/);
+  assert.equal(optimizedPending.match(/submission_inventory_facts/g)?.length, 1);
+  assert.doesNotMatch(optimizedPending, /\b(insert|update|delete|alter|create table|create index)\b/i);
   assert.match(route, /admin_pending_product_proposal_summary/);
   assert.match(statusMigration, /admin_product_proposal_status_summary/);
   assert.match(statusMigration, /count\(\*\) filter \(where proposal\.status = 'PENDING'\)/);
@@ -68,7 +74,13 @@ test("Ringkasan QC memakai aggregate terpisah dan list berhalaman tanpa mengubah
   assert.doesNotMatch(dashboard, /qcStatusSummary\?\.PENDING \?\? qcPendingSummary/);
   assert.doesNotMatch(dashboard, /qcStatusSummary\?\.\[status\] \?\? proposals\.filter/);
   assert.match(dashboard, /setPendingProposalIds\(new Set/);
-  assert.match(dashboard, /Promise\.all\(\[refreshQcProposals\(\), refreshPendingProposalIds\(\)\]\)/);
+  assert.match(route, /summaryOnly/);
+  assert.match(route, /includeSummaries/);
+  assert.match(dashboard, /params\.set\("includeSummaries", "0"\)/);
+  assert.match(dashboard, /product-proposals\?summaryOnly=1/);
+  assert.match(dashboard, /if \(loading \|\| tab !== "qc"\) return/);
+  assert.match(dashboard, /tab !== "summary" && tab !== "qc"/);
+  assert.match(dashboard, /Promise\.all\(\[refreshQcProposals\(\), refreshQcSummaries\(\), refreshPendingProposalIds\(\)\]\)/);
   assert.match(route, /pendingSummary/);
   assert.match(dashboard, /QC Pending/);
   assert.match(dashboard, /Pengisian/);

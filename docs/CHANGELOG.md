@@ -13,6 +13,10 @@ commit.
 
 ## 2026-09-11
 
+- Tekanan statement timeout Admin dikurangi dengan membatasi ringkasan QC ke
+  view relevan, memisahkan refresh daftar dari aggregate summary, dan
+  mengoptimalkan pending-summary serta enrichment Product tanpa mengubah timeout
+  global maupun kontrak hasil RPC.
 - Semantik Hapus Referensi dikoreksi: exact item terpilih kini dihapus dari
   inventory current, bukan hanya dilepas dari pointer Product. Product,
   Submission row, proposal/QC history, dan snapshot audit item tetap dipertahankan.

@@ -136,6 +136,22 @@ Pada sort biasa, baris Product seharusnya dapat tampil sebelum enrichment
 selesai. Jika tidak, audit parameter `deferEnrichment`, request page-level
 `enrichmentProductId`, dan stale-request guard sebelum mengubah timeout.
 
+Untuk `SQLSTATE 57014`, mulai dari jendela log terbatas dan kelompokkan wrapper
+PostgREST berdasarkan nama RPC. Korelasikan dengan `pg_stat_statements`, caller
+UI, koneksi, dan wait event. Hilangkan preload/refetch yang tidak dibutuhkan,
+lalu optimalkan query dan buktikan output parity serta lima warm run pada
+fixture lokal production-shaped. Jangan menaikkan `statement_timeout` global.
+Override per-function maksimal 15 detik hanya boleh dipertimbangkan setelah
+query plan dan resource pressure diaudit, pekerjaan yang dapat dihindari sudah
+dihapus, dan runtime optimized masih terbukti sedikit melampaui default.
+
+Incident 2026-09-11 mempertahankan timeout efektif `authenticated` sebesar 8
+detik. `admin_pending_product_proposal_summary()` diubah menjadi satu traversal
+inventory dan expected-context ringan; `admin_product_page_enrichment(uuid[])`
+memakai canonical map set-based serta menunda ekspansi kategori sampai item
+relevan ditemukan. Ringkasan QC hanya dimuat pada Ringkasan/QC, dan perubahan
+search/filter/page QC tidak lagi menjalankan ulang aggregate summary.
+
 ## Legacy Redirect Incident
 
 Periksa legacy hostname, status 307, header Location, path, query, lalu canonical Hostinger. Bila canonical gagal, jangan menganggap redirect sebagai root cause tanpa bukti.
