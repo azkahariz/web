@@ -19,13 +19,6 @@ function findItem(payload, itemId) {
   return Object.values(payload.inventory ?? {}).flat().find((item) => item.id === itemId);
 }
 
-function withoutLinks(item) {
-  const value = structuredClone(item);
-  delete value.productId;
-  delete value.productProposalId;
-  return value;
-}
-
 function directReference(submission, storageCategory, itemOrdinal, itemId, version = submission.version) {
   return { referenceType: "DIRECT", submissionId: submission.id, expectedSubmissionVersion: version, storageCategory, itemOrdinal, itemId };
 }
@@ -162,8 +155,7 @@ try {
     assert.equal(directResult.status, "removed");
     const [directAfter] = await tx`select payload, version from public.submissions where id = ${directSubmission.id}`;
     assert.equal(directAfter.version, 5);
-    assert.equal(findItem(directAfter.payload, directRemove.id).productId, undefined);
-    assert.deepEqual(withoutLinks(findItem(directAfter.payload, directRemove.id)), withoutLinks(directRemove));
+    assert.equal(findItem(directAfter.payload, directRemove.id), undefined, "Exact DIRECT item harus hilang dari current inventory.");
     assert.deepEqual(findItem(directAfter.payload, directKeep.id), directKeep);
     assert.deepEqual(findItem(directAfter.payload, sibling.id), sibling);
     assert.deepEqual(directAfter.payload.inventory.Empty, []);
@@ -177,9 +169,10 @@ try {
       payload: directAfter.payload,
     };
     const exportedProduct = buildInventoryJson(exportContext).items[0].products.find((item) => item.id === directRemove.id);
-    assert.equal(exportedProduct.productId, undefined, "Current export tidak boleh membawa canonical link yang sudah dilepas.");
-    assert.deepEqual({ brand: exportedProduct.brand, model: exportedProduct.model }, { brand: source.brand, model: source.model }, "Current export tetap mempertahankan snapshot historis item.");
-    assert.match(buildInventoryCsv(exportContext), new RegExp(`${source.brand}.*${source.model}`));
+    assert.equal(exportedProduct, undefined, "Exact DIRECT item harus hilang dari current JSON export.");
+    assert.doesNotMatch(buildInventoryCsv(exportContext), new RegExp(`${source.brand}.*${source.model}`), "Exact DIRECT item harus hilang dari current CSV export.");
+    const [directAudit] = await tx`select metadata from public.admin_audit_log where action = 'PRODUCT_REFERENCE_REMOVE' and target_type = 'submission' and target_id = ${directSubmission.id} order by created_at desc limit 1`;
+    assert.equal(directAudit.metadata.removedItems[0].itemSnapshot.id, directRemove.id, "Audit menyimpan snapshot exact item untuk provenance/recovery.");
     const directProjection = await callEnrichment(tx, adminId, source.id);
     assert.equal(directProjection.reference_count, 1);
     assert.equal((await callReferences(tx, adminId, source.id)).totalCount, directProjection.reference_count);
@@ -201,8 +194,7 @@ try {
     assert.equal((await callRemove(tx, adminId, source.id, [qcSelection])).status, "removed");
     const [qcSubmissionAfter] = await tx`select payload, version from public.submissions where id = ${qcSubmission.id}`;
     assert.equal(qcSubmissionAfter.version, 8);
-    assert.equal(findItem(qcSubmissionAfter.payload, qcItem.id).productProposalId, undefined);
-    assert.deepEqual(withoutLinks(findItem(qcSubmissionAfter.payload, qcItem.id)), withoutLinks(qcItem));
+    assert.equal(findItem(qcSubmissionAfter.payload, qcItem.id), undefined, "Exact QC_RESULT item harus hilang dari current inventory.");
     const qcAfter = await tx`select * from public.product_proposals where id = ${proposal.id}`;
     for (const field of ["id", "submission_id", "status", "resolved_product_id", "reviewed_by", "reviewed_at", "review_note", "proposed_brand", "proposed_model"]) assert.deepEqual(qcAfter[0][field], qcBefore[0][field], `Proposal field ${field} harus tetap.`);
     const qcRowsAfter = await callReferences(tx, adminId, source.id, 1, 50);
@@ -234,8 +226,23 @@ try {
     assert.equal(mixedResult.status, "removed");
     const [mixedAfter] = await tx`select payload, version from public.submissions where id = ${mixedSubmission.id}`;
     assert.equal(mixedAfter.version, 3, "Mixed batch pada satu Submission hanya menaikkan version sekali.");
-    assert.equal(findItem(mixedAfter.payload, "mixed-direct").productId, undefined);
-    assert.equal(findItem(mixedAfter.payload, "mixed-qc").productProposalId, undefined);
+    assert.equal(findItem(mixedAfter.payload, "mixed-direct"), undefined);
+    assert.equal(findItem(mixedAfter.payload, "mixed-qc"), undefined);
+    assert.deepEqual(mixedAfter.payload.inventory.Mixed, [], "Multi-remove pada array yang sama harus menyisakan array kosong.");
+
+    const duplicateA = { id: "duplicate-a", productId: source.id, brand: source.brand, model: source.model };
+    const duplicateB = { id: "duplicate-b", productId: source.id, brand: source.brand, model: source.model };
+    const legacyWithoutId = { productId: source.id, brand: source.brand, model: source.model, notes: "legacy-no-id" };
+    const ordinalSubmission = await createSubmission({ Sensor: [duplicateA, duplicateB, legacyWithoutId, sibling] }, { version: 12 });
+    const ordinalResult = await callRemove(tx, adminId, source.id, [
+      directReference(ordinalSubmission, "Sensor", 1, duplicateA.id),
+      directReference(ordinalSubmission, "Sensor", 3, null),
+    ]);
+    assert.equal(ordinalResult.status, "removed");
+    const [ordinalAfter] = await tx`select payload, version from public.submissions where id = ${ordinalSubmission.id}`;
+    assert.equal(ordinalAfter.version, 13);
+    assert.deepEqual(ordinalAfter.payload.inventory.Sensor.map((item) => item.id), [duplicateB.id, sibling.id], "Ordinal difilter serentak tanpa salah hapus akibat index shift.");
+    assert.deepEqual(findItem(ordinalAfter.payload, duplicateB.id), duplicateB, "Duplicate textual Product yang tidak dipilih harus tetap.");
 
     const staleA = await createSubmission({ Sensor: [{ id: "stale-a", productId: source.id }] }, { version: 3 });
     const staleB = await createSubmission({ Sensor: [{ id: "stale-b", productId: source.id }] }, { version: 5 });
@@ -271,7 +278,7 @@ try {
     const [staleSave] = await asAdmin(tx, adminId, () => tx`select * from public.admin_save_submission(${resurrection.id}, ${staleSessionId}, 6, ${tx.json(stalePayload)}, 'Verifier')`);
     assert.equal(staleSave.status, "version_conflict", "Stale save harus ditolak setelah removal menaikkan version.");
     const [resurrectionAfter] = await tx`select payload from public.submissions where id = ${resurrection.id}`;
-    assert.equal(findItem(resurrectionAfter.payload, "resurrection").productId, undefined);
+    assert.equal(findItem(resurrectionAfter.payload, "resurrection"), undefined, "Stale save tidak boleh membangkitkan kembali whole item.");
 
     const scaleItems = Array.from({ length: 1005 }, (_, index) => ({ id: `scale-${index + 1}`, productId: source.id, functionCategories: [index === 1004 ? "Beyond 1000" : "Scale"] }));
     const scaleSubmission = await createSubmission({ Scale: scaleItems }, { version: 1 });
@@ -318,4 +325,4 @@ try {
   await sql.end({ timeout: 5 });
 }
 
-console.log("Verifikasi penghapusan referensi Produk lulus; DIRECT, QC_RESULT, mixed atomicity, stale guard, lock, audit, projection, export, >1000 pagination, dan rollback fixture teruji.");
+console.log("PRODUCT LIFECYCLE CURRENT-STATE CONSISTENCY: reference removal PASS; whole-item DIRECT/QC_RESULT, mixed atomicity, ordinal shift, duplicate/no-ID item, stale resurrection, lock, audit provenance, projection, current export, >1000 pagination, dan rollback fixture teruji.");

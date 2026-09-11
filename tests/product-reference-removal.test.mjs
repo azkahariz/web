@@ -5,8 +5,9 @@ import test from "node:test";
 const read = (path) => readFile(new URL(path, import.meta.url), "utf8");
 
 test("Product reference removal memakai occurrence exact, preflight, lock, version, dan transaksi atomik", async () => {
-  const [migration, apiHelper, referencesRoute, preflightRoute, removeRoute, component, dialog, css, packageJson] = await Promise.all([
+  const [baseMigration, migration, apiHelper, referencesRoute, preflightRoute, removeRoute, component, dialog, css, packageJson] = await Promise.all([
     read("../supabase/migrations/20260911130000_product_reference_removal.sql"),
+    read("../supabase/migrations/20260911140000_fix_product_reference_removal_current_inventory.sql"),
     read("../app/lib/admin-product-api.ts"),
     read("../app/api/admin/products/[id]/references/route.ts"),
     read("../app/api/admin/products/[id]/remove-preflight/route.ts"),
@@ -17,28 +18,31 @@ test("Product reference removal memakai occurrence exact, preflight, lock, versi
     read("../package.json"),
   ]);
 
-  for (const rpc of ["product_reference_removal_validation", "admin_product_reference_removal_preflight", "admin_remove_product_references"]) {
-    assert.match(migration, new RegExp(`function public\\.${rpc}`));
+  for (const rpc of ["product_reference_removal_validation", "admin_product_reference_removal_preflight"]) {
+    assert.match(baseMigration, new RegExp(`function public\\.${rpc}`));
   }
-  assert.match(migration, /perform public\.require_super_admin\(\)/);
-  assert.match(migration, /function public\.admin_product_reference_occurrences/);
+  assert.match(migration, /function public\.admin_remove_product_references/);
+  assert.match(migration, /v_admin := public\.require_super_admin\(\)/);
+  assert.match(baseMigration, /function public\.admin_product_reference_occurrences/);
   assert.match(migration, /security definer[\s\S]*set search_path = ''/);
-  assert.match(migration, /storageCategory/);
-  assert.match(migration, /itemOrdinal/);
-  assert.match(migration, /expectedSubmissionVersion/);
-  assert.match(migration, /expectedProposalUpdatedAt/);
+  assert.match(baseMigration, /storageCategory/);
+  assert.match(baseMigration, /itemOrdinal/);
+  assert.match(baseMigration, /expectedSubmissionVersion/);
+  assert.match(baseMigration, /expectedProposalUpdatedAt/);
   assert.match(migration, /order by submission\.id[\s\S]*for update of submission/);
   assert.ok((migration.match(/product_reference_removal_validation\(p_source_product_id, p_references\)/g) ?? []).length >= 2, "Execute harus revalidate setelah row lock.");
-  assert.match(migration, /submission\.version <> selected\.expected_version/);
-  assert.match(migration, /interval '5 minutes'/);
-  assert.match(migration, /entry\.value - 'productId'/);
-  assert.match(migration, /entry\.value - 'productProposalId'/);
+  assert.match(baseMigration, /submission\.version <> selected\.expected_version/);
+  assert.match(baseMigration, /interval '5 minutes'/);
+  assert.doesNotMatch(migration, /entry\.value - 'productId'/);
+  assert.doesNotMatch(migration, /entry\.value - 'productProposalId'/);
+  assert.match(migration, /filter \(where selected\.value is null\)/);
+  assert.match(migration, /'removedItems', v_removed_items/);
   assert.match(migration, /version = submission\.version \+ 1/);
   assert.match(migration, /'PRODUCT_REFERENCE_REMOVE'/);
   assert.match(migration, /oldSubmissionVersion[\s\S]*newSubmissionVersion/);
   assert.doesNotMatch(migration, /\b(update|delete)\s+public\.(products|product_proposals|product_aliases)\b/i);
   assert.doesNotMatch(migration, /\b(alter table|create index|truncate)\b/i);
-  assert.match(migration, /revoke all on function public\.product_reference_removal_validation/);
+  assert.match(baseMigration, /revoke all on function public\.product_reference_removal_validation/);
   assert.match(migration, /grant execute on function public\.admin_remove_product_references/);
 
   assert.match(apiHelper, /parseProductRemoveRequest/);
@@ -60,8 +64,9 @@ test("Product reference removal memakai occurrence exact, preflight, lock, versi
   assert.match(component, /ProductReferenceRemoveDialog/);
   assert.match(dialog, /remove-preflight/);
   assert.match(dialog, /\/remove`/);
-  assert.match(dialog, /Produk dan Submission tidak akan dihapus/);
-  assert.match(dialog, /Riwayat proposal dan hasil QC tetap dipertahankan/);
+  assert.match(dialog, /Item terpilih akan hilang dari form/);
+  assert.match(dialog, /Produk dan Submission tetap ada/);
+  assert.match(dialog, /riwayat proposal dan hasil QC tetap dipertahankan/i);
   assert.match(dialog, /className="danger-button"/);
   assert.match(dialog, /disabled=\{plan\?\.status !== "ready" \|\| preflightLoading\}/);
   assert.match(css, /\.product-remove-reference-list/);
@@ -80,7 +85,7 @@ test("Reference list menampilkan resolved QC per inventory occurrence dan tidak 
 });
 
 test("Migration reference removal additive dan tidak memuat business DML saat deployment", async () => {
-  const migration = await read("../supabase/migrations/20260911130000_product_reference_removal.sql");
+  const migration = await read("../supabase/migrations/20260911140000_fix_product_reference_removal_current_inventory.sql");
   const topLevel = migration.replace(/as \$\$[\s\S]*?\$\$/g, "FUNCTION_BODY");
   assert.doesNotMatch(topLevel, /\b(insert|update|delete|alter|truncate)\b/i);
   assert.match(topLevel, /create or replace function/i);

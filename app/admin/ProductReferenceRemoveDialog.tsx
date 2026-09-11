@@ -119,7 +119,7 @@ export default function ProductReferenceRemoveDialog({ source, references, onClo
       <h2 id="product-remove-title">Hapus Referensi</h2>
       <p className="product-move-source"><small>Produk</small><strong>{source.brand}</strong><span>{source.model}</span></p>
       <div className="product-remove-content" aria-busy={preflightLoading || executing}>
-        <p className="product-reference-scope">Periksa kembali occurrence yang akan dilepas dari Produk ini.</p>
+        <p className="product-reference-scope">Periksa kembali item yang akan dihapus dari pengisian saat ini.</p>
         <div className="product-remove-reference-list">
           {references.map((reference, index) => <div key={reference.referenceId}>
             <span>{index + 1}</span>
@@ -128,10 +128,10 @@ export default function ProductReferenceRemoveDialog({ source, references, onClo
         </div>
         {preflightLoading && <p className="product-usage-state" role="status"><span className="product-usage-spinner" aria-hidden="true" />Memeriksa referensi terbaru...</p>}
         {plan?.status === "ready" && <div className="product-remove-plan">
-          <strong>{plan.referenceCount ?? references.length} referensi siap dihapus</strong>
+          <strong>{plan.referenceCount ?? references.length} item siap dihapus dari pengisian saat ini</strong>
           <span>{plan.directReferenceCount ?? 0} item langsung · {plan.qcResultCount ?? 0} hasil QC · {plan.submissionCount ?? 0} Submission</span>
         </div>}
-        <p className="product-remove-warning">Produk dan Submission tidak akan dihapus. Referensi lain tidak berubah. Riwayat proposal dan hasil QC tetap dipertahankan.</p>
+        <p className="product-remove-warning">Item terpilih akan hilang dari form, Stasiun &amp; Pengisian, dan unduhan saat ini. Produk dan Submission tetap ada, referensi lain tidak berubah, serta riwayat proposal dan hasil QC tetap dipertahankan.</p>
         {message && <p className={plan && plan.status !== "ready" ? "product-move-conflict" : "app-dialog-error"} role="alert">{message}</p>}
       </div>
       <div className="app-dialog-actions"><button className="secondary-button" type="button" disabled={executing} onClick={onClose}>Batal</button><AsyncButton className="danger-button" loading={executing} loadingText="Menghapus..." disabled={plan?.status !== "ready" || preflightLoading} onClick={() => void executeRemoval()}>Hapus {plan?.referenceCount ?? references.length} Referensi</AsyncButton></div>

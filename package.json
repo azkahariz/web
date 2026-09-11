@@ -37,6 +37,7 @@
     "verify:product-dependencies": "node --env-file-if-exists=.env.local scripts/verify-product-dependencies.mjs",
     "verify:product-reference-move": "node --env-file-if-exists=.env.local scripts/verify-product-reference-move.mjs",
     "verify:product-reference-removal": "node --experimental-strip-types --env-file-if-exists=.env.local scripts/verify-product-reference-removal.mjs",
+    "verify:product-lifecycle-consistency": "npm run verify:admin-products && npm run verify:product-usage && npm run verify:admin-product-categories && npm run verify:admin-product-reference-filters && npm run verify:product-dependencies && npm run verify:product-reference-move && npm run verify:product-reference-removal && npm run verify:product-merge && npm run verify:product-delete && npm run verify:admin-qc",
     "verify:product-merge": "node --env-file-if-exists=.env.local scripts/verify-product-merge.mjs",
     "verify:product-delete": "node --env-file-if-exists=.env.local scripts/verify-product-delete.mjs && npm run verify:product-delete-concurrency",
     "verify:product-delete-concurrency": "node --env-file-if-exists=.env.local scripts/verify-product-delete-concurrency.mjs",
