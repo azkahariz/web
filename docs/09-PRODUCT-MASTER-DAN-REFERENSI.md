@@ -110,20 +110,21 @@ Operation mengambil lock row proposal/Submission, menjalankan validation ulang s
 
 ## Hapus Referensi
 
-Hapus Referensi melepas **occurrence yang dipilih saja** dari Product canonical
-tanpa menghapus Product, Submission, kategori, alias, atau riwayat QC. Identity
+Hapus Referensi menghapus **occurrence yang dipilih saja** dari current inventory
+tanpa menghapus Product, Submission row, master kategori, alias, atau riwayat QC. Identity
 occurrence memakai `submissionId`, expected version, storage category, ordinal
 item, dan item ID bila tersedia; QC_RESULT juga membawa proposal ID dan snapshot
 `updated_at` proposal.
 
 | Reference type | Mutation |
 | --- | --- |
-| DIRECT | key `productId` dilepas dari item exact; Brand/Model snapshot dan metadata item tetap |
-| QC_RESULT | key `productProposalId` dilepas dari item exact; proposal APPROVED/MERGED dan review history tetap |
+| DIRECT | seluruh item exact dihapus dari array kategori current; Product master tetap |
+| QC_RESULT | seluruh item exact dihapus dari array kategori current; proposal APPROVED/MERGED dan review history tetap |
 
 RPC mengunci proposal dan Submission terkait dengan urutan deterministik, lalu
 memvalidasi ulang seluruh selection. Setiap Submission yang berubah naik satu
-version. Jika satu occurrence stale, archived, berubah Product, atau memiliki
+version. Beberapa ordinal pada array yang sama difilter serentak agar pergeseran
+index tidak dapat menghapus item yang salah. Jika satu occurrence stale, archived, berubah Product, atau memiliki
 lock aktif, seluruh batch rollback. Request kedua dengan snapshot lama ditolak
 oleh version guard dan tidak membuat audit sukses ganda.
 
@@ -138,7 +139,7 @@ Merge tidak sama dengan destructive delete. Source UUID/history tetap ada untuk 
 | Behavior | Edit Product | Pindahkan Referensi | Hapus Referensi | Gabungkan Produk | Hapus Product |
 | --- | --- | --- | --- | --- | --- |
 | Scope | satu canonical Product | selected reference rows | selected exact occurrences | semua dependency source yang didukung | Product master yang lolos guard |
-| Reference | tetap terhubung dan current display mengikuti nama baru | source ke Product target | linkage dilepas, item tetap | seluruh dependency supported ke target | tidak berlaku bila dependency masih ada |
+| Reference | tetap terhubung dan current display mengikuti nama baru | source ke Product target | item current terpilih dihapus | seluruh dependency supported ke target | tidak berlaku bila dependency masih ada |
 | Submission version | tidak berubah | naik untuk payload DIRECT yang diubah | naik sekali per Submission yang diubah | naik untuk payload direct yang diubah | tidak mengubah Submission |
 | Alias/QC history | sesuai rename alias existing | tidak berubah | tidak berubah | dikonsolidasikan sesuai kontrak merge | harus lolos dependency preflight |
 | Product source | UUID sama | tetap | tetap | inactive dan menunjuk target | row dihapus hanya bila aman |
@@ -157,13 +158,15 @@ Failure seperti `version_conflict`, `active_lock`, `reference_changed`, atau `so
 
 ## Submission Version Semantics
 
-Direct Product reference mutation mengubah JSON payload sehingga menaikkan `submissions.version`. QC_RESULT move hanya mengubah `resolved_product_id` proposal sehingga tidak menaikkan version Submission. Product Merge mengikuti aturan yang sama: direct payload current yang berubah menaikkan version; repoint QC result tidak membutuhkan rewrite payload.
+Direct Product reference mutation mengubah JSON payload sehingga menaikkan `submissions.version`. Hapus Referensi juga menaikkan version satu kali per Submission, termasuk untuk QC_RESULT karena item current dihapus dari payload. QC_RESULT move hanya mengubah `resolved_product_id` proposal sehingga tidak menaikkan version Submission. Product Merge mengikuti aturan yang sama: direct payload current yang berubah menaikkan version; repoint QC result tidak membutuhkan rewrite payload.
+
+Schema current tidak menyimpan snapshot payload untuk setiap angka version; `version` adalah counter optimistic concurrency. Audit Hapus Referensi menyimpan exact item snapshot yang dihapus. Archived Submission dan proposal/QC history tetap utuh, tetapi version payload lama tidak boleh disebut sebagai historical snapshot yang dapat dibuka.
 
 Ini melengkapi [Flow Station dan Submission](./07-FLOW-STATION-DAN-SUBMISSION.md): expected version tetap wajib untuk semua mutation payload direct.
 
 ## Audit Trail
 
-Reference move mencatat `PRODUCT_REFERENCE_MOVE`. Reference removal mencatat `PRODUCT_REFERENCE_REMOVE` per Submission yang berubah dan satu record Product-level tanpa menyimpan seluruh payload. Merge mencatat `PRODUCT_MERGE` beserta snapshot/preflight semantics. QC resolution memiliki reviewer/timestamp/note pada proposal dan audit Admin. Audit membantu traceability, bukan izin untuk melewati preflight.
+Reference move mencatat `PRODUCT_REFERENCE_MOVE`. Reference removal mencatat `PRODUCT_REFERENCE_REMOVE` per Submission yang berubah, termasuk snapshot item yang dihapus, dan satu record Product-level tanpa menyalin seluruh payload. Merge mencatat `PRODUCT_MERGE` beserta snapshot/preflight semantics. QC resolution memiliki reviewer/timestamp/note pada proposal dan audit Admin. Audit membantu traceability, bukan izin untuk melewati preflight.
 
 ## Legacy / Historical Guardrails
 

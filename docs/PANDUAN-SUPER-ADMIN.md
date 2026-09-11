@@ -176,9 +176,10 @@ belum tersedia agar urutan tidak menyesatkan.
 - **Pindahkan Referensi** memindahkan referensi yang dipilih dari Produk sumber
   ke Produk tujuan. Gunakan untuk koreksi subset referensi dan periksa jenis
   referensi yang didukung pada preflight.
-- **Hapus Referensi** melepas referensi terpilih dari Produk tanpa menghapus item,
-  Submission, Produk, atau riwayat QC. Periksa Station, Site, kategori, dan jenis
-  referensi pada dialog, lalu konfirmasi hanya jika occurrence yang dipilih benar.
+- **Hapus Referensi** menghapus item terpilih dari pengisian saat ini tanpa
+  menghapus Submission row, Produk master, atau riwayat QC. Item langsung hilang
+  dari form, Stasiun & Pengisian, dan unduhan current. Periksa Station, Site,
+  kategori, dan jenis referensi pada dialog, lalu konfirmasi hanya jika occurrence yang dipilih benar.
   Conflict berarti data perlu dimuat ulang, bukan alasan untuk memaksa operasi.
 - **Gabungkan Produk** menyatukan Produk sumber ke Produk tujuan: referensi yang
   didukung dan alias dikonsolidasikan, Produk sumber masuk state final sebagai

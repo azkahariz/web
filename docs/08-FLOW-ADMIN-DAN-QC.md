@@ -48,11 +48,12 @@ Snapshot payload hanya fallback. Kolom Usulan dan QC History tetap memakai nilai
 proposal asli karena keduanya adalah konteks historis.
 
 Pada **Produk -> Referensi**, Super Admin dapat memilih occurrence current lalu
-memindahkannya ke Product lain atau memakai **Hapus Referensi** untuk melepas
-hubungan canonical dari occurrence itu saja. Removal memakai preflight, lock row,
-expected Submission version, revalidation, dan satu transaction. DIRECT melepas
-`productId`; QC_RESULT melepas `productProposalId` dari item, tetapi row proposal,
-status review, `resolved_product_id`, dan QC History tetap disimpan.
+memindahkannya ke Product lain atau memakai **Hapus Referensi** untuk menghapus
+exact item tersebut dari current inventory. Removal memakai preflight, lock row,
+expected Submission version, revalidation, dan satu transaction. DIRECT maupun
+QC_RESULT menghapus item current; Product master, Submission row, proposal,
+status review, `resolved_product_id`, dan QC History tetap disimpan. Audit
+Submission menyimpan snapshot exact item yang dihapus.
 
 ## Monitoring Pengisian
 

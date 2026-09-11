@@ -159,6 +159,13 @@ Referensi dan periksa status preflight terstruktur (`version_conflict`,
 menghapus Product/proposal, mengosongkan `resolved_product_id`, atau menulis ulang
 payload lama untuk melewati conflict.
 
+Jika tab Referensi menyatakan occurrence sudah hilang tetapi item masih muncul
+di form, Stasiun & Pengisian, atau unduhan current, audit `submissions.payload`
+dan event `PRODUCT_REFERENCE_REMOVE`. Ini adalah ciri partial-removal dari
+semantik lama yang hanya mengosongkan pointer. Jangan hapus item production
+secara manual; siapkan recovery exact berdasarkan Submission UUID, version,
+kategori, ordinal/item ID, dan audit snapshot, lalu minta otorisasi mutation.
+
 ### Product Merge Gagal
 
 **Kemungkinan layer:** product dependency dan QC references.

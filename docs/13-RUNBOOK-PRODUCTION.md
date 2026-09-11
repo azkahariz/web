@@ -45,6 +45,14 @@ hot table, backward-compatible dengan frontend lama, dan verifier local lulus.
 Apply migration tidak sama dengan menjalankan `Hapus Referensi`; jangan memakai
 data production sebagai fixture mutation.
 
+Migration `20260911130000_product_reference_removal.sql` pernah menerapkan
+semantik lama yang hanya melepas pointer. Forward-fix
+`20260911140000_fix_product_reference_removal_current_inventory.sql` mengganti
+function agar exact item hilang dari current inventory. Jangan edit/reapply
+migration lama dan jangan memakai migration baru untuk memperbaiki partial item
+legacy secara otomatis; recovery row production memerlukan audit serta izin
+mutation terpisah.
+
 ## Post-Migration Verification
 
 Periksa history migration, schema/RPC/grant yang berubah, dan oracle read-only. Lanjutkan ke deployment frontend hanya jika app current/baru kompatibel.

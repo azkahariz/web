@@ -89,6 +89,7 @@ Untuk query yang dapat melewati batas PostgREST, fixture harus melampaui 1.000 r
 | Submission/autosave/Auth | focused test + `check` + `verify:auth-autosave` | local | ya | bila incident/migration |
 | QC/Product | focused test + `check` + verifier domain | local | ya | bila data/RPC berubah |
 | Product reference move/merge/delete | focused test + verifier domain | local | ya | ya sebelum mutation release |
+| Product lifecycle/current inventory | `verify:product-lifecycle-consistency` + focused current form/export tests | local | ya | read-only anomaly audit |
 | Completion/Gudang | completion tests + verifier/benchmark relevan | local | ya | bila RPC/migration berubah |
 | redirect/deployment | redirect test + build | tidak selalu | ya | canonical/legacy smoke |
 | documentation-only | link, secret, Mermaid, `diff --check` | tidak | tidak | tidak |
