@@ -191,6 +191,19 @@ satu enrichment page-level. Filter options boleh menyusul dan tidak boleh
 memblokir baris. Sorting Penggunaan tetap satu request blocking karena usage
 seluruh hasil filter dibutuhkan sebelum pagination.
 
+### SQLSTATE 57014 / Statement Timeout
+
+**Kemungkinan layer:** RPC melakukan traversal JSON berulang, filter terlambat,
+atau aggregate mahal dipanggil dari view/filter yang tidak membutuhkannya.
+**Cek pertama:** ambil window log terbatas, normalisasi wrapper PostgREST ke nama
+RPC, urutkan count/share, lalu cocokkan caller source dan `pg_stat_statements`.
+Audit koneksi serta wait event sebelum menyimpulkan resource exhaustion.
+Bandingkan output dan plan sebelum/sesudah pada fixture lokal production-shaped.
+**Jangan lakukan:** menaikkan timeout global, menambah retry, stress test
+production, atau menganggap semua `57014` berasal dari RPC yang sama. Timeout
+per-function bukan langkah pertama dan hanya boleh dipakai bila gate runbook
+terpenuhi; incident 2026-09-11 tidak memerlukan override tersebut.
+
 ### Category Context Salah
 
 **Kemungkinan layer:** inventory scan dan proposal context enrichment.

@@ -310,6 +310,7 @@ export default function AdminDashboard({ username, displayName }: { username: st
   const [qcStatusSummary, setQcStatusSummary] = useState<QcProposalStatusSummary | null>(null);
   const [qcPendingSummaryError, setQcPendingSummaryError] = useState("");
   const [qcStatusSummaryError, setQcStatusSummaryError] = useState("");
+  const qcSummaryRequestRef = useRef<Promise<boolean> | null>(null);
   const [audits, setAudits] = useState<Audit[]>([]);
   const [adminIdentities, setAdminIdentities] = useState<AdminIdentity[]>([]);
   const [search, setSearch] = useState("");
@@ -412,13 +413,14 @@ export default function AdminDashboard({ username, displayName }: { username: st
 
   const refreshQcProposals = useCallback(async () => {
     const params = new URLSearchParams({ status: qcStatus, page: String(qcPage), pageSize: String(qcPageSize) });
+    params.set("includeSummaries", "0");
     if (search.trim()) params.set("search", search.trim());
     if (stationMonitoringFilters.stationCategoryId !== "all") params.set("stationCategoryId", stationMonitoringFilters.stationCategoryId);
     if (stationMonitoringFilters.siteTypeId !== "all") params.set("siteTypeId", stationMonitoringFilters.siteTypeId);
     if (qcContextFilter !== "all") params.set("qcContext", qcContextFilter);
     setQcListLoading(true);
     const response = await fetch(`/api/admin/product-proposals?${params.toString()}`, { cache: "no-store" });
-    const payload = await response.json().catch(() => ({})) as { rows?: Proposal[]; totalCount?: number; page?: number; pendingSummary?: QcPendingSummary; statusSummary?: QcProposalStatusSummary; listError?: string; pendingSummaryError?: string; statusSummaryError?: string; error?: string };
+    const payload = await response.json().catch(() => ({})) as { rows?: Proposal[]; totalCount?: number; page?: number; listError?: string; error?: string };
     if (!response.ok) {
       setMessage(payload.error || "Proposal produk gagal dimuat.");
       setQcListLoading(false);
@@ -430,13 +432,31 @@ export default function AdminDashboard({ username, displayName }: { username: st
       setQcTotalCount(typeof payload.totalCount === "number" && Number.isInteger(payload.totalCount) && payload.totalCount >= 0 ? payload.totalCount : 0);
       if (typeof payload.page === "number" && Number.isInteger(payload.page) && payload.page >= 1 && payload.page !== qcPage) setQcPage(payload.page);
     }
-    setQcPendingSummaryError(payload.pendingSummaryError ?? "");
-    if (payload.pendingSummary) setQcPendingSummary(payload.pendingSummary);
-    setQcStatusSummaryError(payload.statusSummaryError ?? "");
-    if (payload.statusSummary) setQcStatusSummary(payload.statusSummary);
     setQcListLoading(false);
     return !payload.listError;
   }, [qcContextFilter, qcPage, qcPageSize, qcStatus, search, setQcPage, stationMonitoringFilters.siteTypeId, stationMonitoringFilters.stationCategoryId]);
+
+  const refreshQcSummaries = useCallback(async () => {
+    if (qcSummaryRequestRef.current) return qcSummaryRequestRef.current;
+    const request = (async () => {
+      const response = await fetch("/api/admin/product-proposals?summaryOnly=1", { cache: "no-store" });
+      const payload = await response.json().catch(() => ({})) as { pendingSummary?: QcPendingSummary; statusSummary?: QcProposalStatusSummary; pendingSummaryError?: string; statusSummaryError?: string; error?: string };
+      if (!response.ok) {
+        setQcPendingSummaryError(payload.error || "Ringkasan QC Pending gagal dimuat.");
+        setQcStatusSummaryError(payload.error || "Ringkasan status QC gagal dimuat.");
+        return false;
+      }
+      setQcPendingSummaryError(payload.pendingSummaryError ?? "");
+      if (payload.pendingSummary) setQcPendingSummary(payload.pendingSummary);
+      setQcStatusSummaryError(payload.statusSummaryError ?? "");
+      if (payload.statusSummary) setQcStatusSummary(payload.statusSummary);
+      return !payload.pendingSummaryError && !payload.statusSummaryError;
+    })().finally(() => {
+      qcSummaryRequestRef.current = null;
+    });
+    qcSummaryRequestRef.current = request;
+    return request;
+  }, []);
 
   const refreshCompletionSummary = useCallback(async (force = false) => {
     if (!force && completionLoadedRef.current && siteTypeCompletionLoadedRef.current) return;
@@ -675,8 +695,8 @@ export default function AdminDashboard({ username, displayName }: { username: st
   }, [expandedStationId, invalidateCompletionDetail, loadCompletionDetail, refresh, refreshCompletionSummary]);
 
   const refreshSummary = useCallback(async () => {
-    await Promise.all([refresh(), refreshCompletionSummary(true)]);
-  }, [refresh, refreshCompletionSummary]);
+    await Promise.all([refresh(), refreshCompletionSummary(true), refreshQcSummaries()]);
+  }, [refresh, refreshCompletionSummary, refreshQcSummaries]);
 
   useEffect(() => {
     if (tab === "products" || dashboardLoaded) return;
@@ -685,10 +705,16 @@ export default function AdminDashboard({ username, displayName }: { username: st
   }, [dashboardLoaded, refresh, tab]);
 
   useEffect(() => {
-    if (loading) return;
+    if (loading || tab !== "qc") return;
     const timer = window.setTimeout(() => void refreshQcProposals(), 0);
     return () => window.clearTimeout(timer);
-  }, [loading, refreshQcProposals]);
+  }, [loading, refreshQcProposals, tab]);
+
+  useEffect(() => {
+    if (loading || (tab !== "summary" && tab !== "qc")) return;
+    const timer = window.setTimeout(() => void refreshQcSummaries(), 0);
+    return () => window.clearTimeout(timer);
+  }, [loading, refreshQcSummaries, tab]);
 
   useEffect(() => {
     if (tab !== "summary" && (tab !== "stations" || fillingMode !== "master")) return;
@@ -886,7 +912,7 @@ export default function AdminDashboard({ username, displayName }: { username: st
       ...result.conflicts.map((conflict) => conflict.proposalId),
     ]);
     setSelectedProposals((current) => current.filter((id) => !completedIds.has(id)));
-    await Promise.all([refreshQcProposals(), refreshPendingProposalIds()]);
+    await Promise.all([refreshQcProposals(), refreshQcSummaries(), refreshPendingProposalIds()]);
     setMergeProductId("");
     setMergeProductQuery("");
     setMergeSelectedProduct(null);
@@ -1195,7 +1221,7 @@ export default function AdminDashboard({ username, displayName }: { username: st
 
           {!loading && tab === "summary" && <UptDataEntryAccessControl />}
 
-          {!loading && tab === "summary" && qcStatusSummaryError && <div className="station-completion-error" role="alert"><span>{qcStatusSummaryError}</span><button type="button" onClick={() => void refreshQcProposals()}>Coba muat ulang</button></div>}
+          {!loading && tab === "summary" && qcStatusSummaryError && <div className="station-completion-error" role="alert"><span>{qcStatusSummaryError}</span><button type="button" onClick={() => void refreshQcSummaries()}>Coba muat ulang</button></div>}
 
           {!loading && tab === "summary" && <section className="admin-monitoring-summary" aria-labelledby="monitoring-summary-heading">
             <div className="admin-section-heading"><h3 id="monitoring-summary-heading">Ringkasan Monitoring Pengisian</h3><span>{monitoringSummary.total} stasiun aktif</span></div>
@@ -1342,7 +1368,7 @@ export default function AdminDashboard({ username, displayName }: { username: st
 
           {!loading && tab === "qc" && <>
             <div className="qc-toolbar"><div className="status-tabs">{(["PENDING", "APPROVED", "MERGED", "REJECTED"] as const).map((status) => <button key={status} className={qcStatus === status ? "active" : ""} onClick={() => changeQcStatus(status)}>{status} ({qcStatusSummary?.[status] ?? "-"})</button>)}</div></div>
-            {qcStatusSummaryError && <div className="station-completion-error" role="alert"><span>{qcStatusSummaryError}</span><button type="button" onClick={() => void refreshQcProposals()}>Coba muat ulang ringkasan</button></div>}
+            {qcStatusSummaryError && <div className="station-completion-error" role="alert"><span>{qcStatusSummaryError}</span><button type="button" onClick={() => void refreshQcSummaries()}>Coba muat ulang ringkasan</button></div>}
             {qcListError && <div className="station-completion-error" role="alert"><span>{qcListError}</span><button type="button" onClick={() => void refreshQcProposals()}>Coba muat ulang daftar</button></div>}
             <div className="qc-context-filter">
               <label>Jenis Stasiun<select value={activeMonitoringFilters.stationCategoryId} onChange={(event) => changeMonitoringFilters({ ...activeMonitoringFilters, stationCategoryId: event.target.value, siteTypeId: "all" })}><option value="all">Semua jenis stasiun</option>{stationCategoryOptions.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select></label>

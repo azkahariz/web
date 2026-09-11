@@ -422,6 +422,26 @@ try {
         limit 1
       `;
     }
+    if (!otherScope) {
+      await tx`reset role`;
+      const [fallbackType] = await tx`
+        insert into public.site_types (name)
+        values (${`VERIFY QC FALLBACK TYPE ${randomUUID()}`})
+        returning id
+      `;
+      const [fallbackSite] = await tx`
+        insert into public.sites (station_id, site_type_id, name)
+        values (${scope.station_id}, ${fallbackType.id}, ${`VERIFY QC FALLBACK SITE ${randomUUID()}`})
+        returning id
+      `;
+      const [fallbackSubtype] = await tx`
+        insert into public.site_subtypes (site_type_id, name)
+        values (${fallbackType.id}, ${`VERIFY QC FALLBACK SUBTYPE ${randomUUID()}`})
+        returning id
+      `;
+      otherScope = { site_id: fallbackSite.id, subtype_id: fallbackSubtype.id };
+      await tx`set local role authenticated`;
+    }
     assert(otherScope, "Scope submission kedua untuk verifikasi cleanup tidak tersedia.");
     const otherOpen = await tx`select * from public.open_submission(${otherScope.site_id}, ${otherScope.subtype_id}, ${randomUUID()}, 'Verifier Other')`;
     assert(otherOpen[0]?.submission_id, "Submission kedua tidak dapat dibuka.");
