@@ -14,6 +14,7 @@ import { clearProductReferenceSelection, getCurrentPageSelectionState, isProduct
 import { formatReferenceContext } from "../lib/product-reference-context";
 import { normalizeSubmissionPageSize, SUBMISSION_PAGE_SIZE, SUBMISSION_PAGE_SIZE_MAX, SUBMISSION_PAGE_SIZE_MIN, SUBMISSION_PAGE_SIZE_OPTIONS } from "../lib/submission-monitoring";
 import ProductReferenceMoveDialog, { type MoveReferenceIdentity } from "./ProductReferenceMoveDialog";
+import ProductReferenceRemoveDialog, { type RemoveReferencePreview } from "./ProductReferenceRemoveDialog";
 import ProductMergeDialog from "./ProductMergeDialog";
 import ProductDeleteDialog from "./ProductDeleteDialog";
 
@@ -60,6 +61,8 @@ type ProductReference = {
   categoryName: string | null;
   categories: string[];
   functionCategories: string[];
+  storageCategory: string;
+  itemOrdinal: number;
   itemId: string | null;
   unitCount: number;
   archivedAt: string | null;
@@ -200,6 +203,7 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
   const [dependencyPageSize, setDependencyPageSize] = useState(50);
   const [selectedReferences, setSelectedReferences] = useState<Map<string, ProductReference>>(new Map());
   const [moveDialogOpen, setMoveDialogOpen] = useState(false);
+  const [removeDialogOpen, setRemoveDialogOpen] = useState(false);
   const [mergeProduct, setMergeProduct] = useState<Product | null>(null);
   const [deleteProduct, setDeleteProduct] = useState<Product | null>(null);
 
@@ -484,6 +488,7 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
     setDependencyPageSize(50);
     setSelectedReferences(new Map());
     setMoveDialogOpen(false);
+    setRemoveDialogOpen(false);
     void loadUsage(product);
     void loadDependencies(product);
     if (initialTab === "references") void loadReferences(product, 1, 50);
@@ -523,6 +528,14 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
     await Promise.all([loadReferences(usageProduct, 1, 50), loadDependencies(usageProduct), loadUsage(usageProduct, 1, dependencyPageSize), load(), loadSummary(), onChanged()]);
   }
 
+  async function completeReferenceRemoval() {
+    if (!usageProduct) return;
+    setSelectedReferences(new Map());
+    setRemoveDialogOpen(false);
+    setReferencePageSize(50);
+    await Promise.all([loadReferences(usageProduct, 1, 50), loadDependencies(usageProduct), loadUsage(usageProduct, 1, dependencyPageSize), load(), loadSummary(), onChanged()]);
+  }
+
   async function completeProductMerge() {
     setMergeProduct(null);
     setUsageProduct(null);
@@ -539,9 +552,37 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
     openUsage(product, tab);
   }
 
-  const selectedMoveReferences = useMemo(() => [...selectedReferences.values()].flatMap((reference): MoveReferenceIdentity[] => {
-    if (reference.referenceType === "QC_RESULT" && reference.proposalId && reference.expectedProposalUpdatedAt) return [{ referenceType: "QC_RESULT", proposalId: reference.proposalId, expectedProposalUpdatedAt: reference.expectedProposalUpdatedAt }];
-    return reference.itemId ? [{ referenceType: "DIRECT", submissionId: reference.submissionId, expectedSubmissionVersion: reference.expectedSubmissionVersion, itemId: reference.itemId }] : [];
+  const selectedMoveReferences = useMemo(() => {
+    const proposalIds = new Set<string>();
+    return [...selectedReferences.values()].flatMap((reference): MoveReferenceIdentity[] => {
+      if (reference.referenceType === "QC_RESULT" && reference.proposalId && reference.expectedProposalUpdatedAt) {
+        if (proposalIds.has(reference.proposalId)) return [];
+        proposalIds.add(reference.proposalId);
+        return [{ referenceType: "QC_RESULT", proposalId: reference.proposalId, expectedProposalUpdatedAt: reference.expectedProposalUpdatedAt }];
+      }
+      return reference.itemId ? [{ referenceType: "DIRECT", submissionId: reference.submissionId, expectedSubmissionVersion: reference.expectedSubmissionVersion, itemId: reference.itemId }] : [];
+    });
+  }, [selectedReferences]);
+  const selectedRemoveReferences = useMemo(() => [...selectedReferences.values()].flatMap((reference): RemoveReferencePreview[] => {
+    if (!reference.storageCategory || !reference.itemOrdinal) return [];
+    const preview = {
+      referenceId: reference.referenceId,
+      submissionId: reference.submissionId,
+      expectedSubmissionVersion: reference.expectedSubmissionVersion,
+      storageCategory: reference.storageCategory,
+      itemOrdinal: reference.itemOrdinal,
+      itemId: reference.itemId,
+      stationName: reference.stationName,
+      siteName: reference.siteName,
+      siteTypeName: reference.siteTypeName,
+      siteSubtypeName: reference.siteSubtypeName,
+      categories: reference.categories,
+    };
+    if (reference.referenceType === "QC_RESULT") {
+      if (!reference.proposalId || !reference.expectedProposalUpdatedAt) return [];
+      return [{ ...preview, referenceType: "QC_RESULT", proposalId: reference.proposalId, expectedProposalUpdatedAt: reference.expectedProposalUpdatedAt }];
+    }
+    return [{ ...preview, referenceType: "DIRECT" }];
   }), [selectedReferences]);
   const selectedDirectCount = useMemo(() => [...selectedReferences.values()].filter((reference) => reference.referenceType === "DIRECT").length, [selectedReferences]);
   const selectedQcCount = selectedReferences.size - selectedDirectCount;
@@ -690,7 +731,7 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
           </>}
           </>}
           {dependencyTab === "references" && <>
-            <p className="product-reference-scope">Pilih referensi yang ingin dipindahkan ke Produk tujuan.<br />Referensi dapat berupa item langsung atau hasil QC. Produk sumber, alias, dan riwayat tetap dipertahankan.</p>
+            <p className="product-reference-scope">Pilih referensi yang ingin dipindahkan atau dilepas dari Produk ini.<br />Referensi dapat berupa item langsung atau hasil QC. Produk, Submission, alias, dan riwayat tetap dipertahankan.</p>
             {!references && referencesLoading && <p className="product-usage-state" role="status"><span className="product-usage-spinner" aria-hidden="true" />Memuat referensi...</p>}
             {dependenciesError && <p className="app-dialog-error" role="alert">{dependenciesError}</p>}
             {references && <><DependencyPagination page={references.page} pageSize={referencePageSize} total={references.totalCount} loading={referencesLoading} label="referensi" onPage={(nextPage) => void loadReferences(usageProduct, nextPage, referencePageSize)} onPageSize={(nextPageSize) => { setReferencePageSize(nextPageSize); void loadReferences(usageProduct, 1, nextPageSize); }} />
@@ -702,6 +743,7 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
                 <div className="product-reference-selection-actions">
                   {selectedReferences.size > 0 && <button className="product-reference-clear-selection" type="button" onClick={() => setSelectedReferences(clearProductReferenceSelection())}>Batalkan semua</button>}
                   <button className="primary-button" type="button" disabled={!selectedReferences.size} onClick={() => setMoveDialogOpen(true)}>{selectedReferences.size ? `Pindahkan ${selectedReferences.size} Referensi` : "Pindahkan Referensi"}</button>
+                  <button className="danger-button" type="button" disabled={!selectedRemoveReferences.length} onClick={() => setRemoveDialogOpen(true)}>{selectedRemoveReferences.length ? `Hapus ${selectedRemoveReferences.length} Referensi` : "Hapus Referensi"}</button>
                 </div>
               </div>
               <div className="product-reference-list">{references.rows.map((row) => {
@@ -716,10 +758,11 @@ export default function AdminProducts({ onChanged }: { onChanged: () => Promise<
           {dependencyTab === "qc" && <div className="product-reference-list">{dependenciesLoading && <p className="product-usage-state" role="status"><span className="product-usage-spinner" aria-hidden="true" />Memuat QC history...</p>}{dependencies?.qcProposals.map((proposal) => <div key={proposal.proposalId}><strong>{proposal.proposedBrand} · {proposal.proposedModel}</strong><span>{proposal.status}{proposal.reviewerName ? ` · ${proposal.reviewerName}` : ""}</span>{proposal.reviewNote && <small>Catatan: {proposal.reviewNote}</small>}</div>)}{dependencies && !dependencies.qcProposals.length && <p>Belum ada proposal QC yang resolved ke produk ini.</p>}</div>}
           {dependencyTab === "aliases" && <div className="product-reference-list">{dependenciesLoading && <p className="product-usage-state" role="status"><span className="product-usage-spinner" aria-hidden="true" />Memuat alias...</p>}{dependencies?.aliases.map((alias) => <div key={alias.aliasId}><strong>{alias.brand}</strong><span>{alias.model}</span>{alias.sourceProposalId && <small>Asal proposal QC</small>}</div>)}{dependencies && !dependencies.aliases.length && <p>Produk ini belum memiliki alias.</p>}</div>}
         </div>
-        <div className="app-dialog-actions"><button className="secondary-button" type="button" onClick={() => { setUsageProduct(null); setSelectedReferences(new Map()); }}>Tutup</button></div>
+        <div className="app-dialog-actions"><button className="secondary-button" type="button" onClick={() => { setUsageProduct(null); setSelectedReferences(new Map()); setMoveDialogOpen(false); setRemoveDialogOpen(false); }}>Tutup</button></div>
       </section>
     </div>}
     {usageProduct && moveDialogOpen && selectedMoveReferences.length > 0 && <ProductReferenceMoveDialog source={usageProduct} references={selectedMoveReferences} onClose={() => setMoveDialogOpen(false)} onMoved={completeReferenceMove} />}
+    {usageProduct && removeDialogOpen && selectedRemoveReferences.length > 0 && <ProductReferenceRemoveDialog source={usageProduct} references={selectedRemoveReferences} onClose={() => setRemoveDialogOpen(false)} onRemoved={completeReferenceRemoval} />}
     {mergeProduct && <ProductMergeDialog source={mergeProduct} onClose={() => setMergeProduct(null)} onMerged={completeProductMerge} />}
     {deleteProduct && <ProductDeleteDialog product={deleteProduct} onClose={() => setDeleteProduct(null)} onDeleted={completeProductDelete} onInspect={(tab) => inspectDeleteBlockers(deleteProduct, tab)} />}
   </section>;

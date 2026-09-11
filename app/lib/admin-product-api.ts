@@ -16,6 +16,24 @@ export type ProductMoveReference = {
   expectedProposalUpdatedAt: string;
 };
 
+export type ProductRemoveReference = {
+  referenceType: "DIRECT";
+  submissionId: string;
+  expectedSubmissionVersion: number;
+  storageCategory: string;
+  itemOrdinal: number;
+  itemId: string | null;
+} | {
+  referenceType: "QC_RESULT";
+  submissionId: string;
+  expectedSubmissionVersion: number;
+  storageCategory: string;
+  itemOrdinal: number;
+  itemId: string | null;
+  proposalId: string;
+  expectedProposalUpdatedAt: string;
+};
+
 export const PRODUCT_UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export function productDependencyRpcError(error: RpcError, fallback: string) {
@@ -54,6 +72,55 @@ export function productMoveConflictMessage(status: string) {
   if (status === "target_inactive") return "Produk tujuan sudah tidak aktif. Pilih Produk tujuan lain.";
   if (status === "same_product") return "Produk tujuan harus berbeda dari Produk sumber.";
   if (status === "source_not_found" || status === "target_not_found" || status === "submission_not_found") return "Produk atau Submission tidak lagi tersedia.";
+  return "Pilihan referensi tidak valid atau sudah berubah.";
+}
+
+export function parseProductRemoveRequest(body: unknown): { references: ProductRemoveReference[] } | null {
+  if (!body || typeof body !== "object") return null;
+  const value = body as { references?: unknown };
+  if (!Array.isArray(value.references) || value.references.length === 0 || value.references.length > 500) return null;
+  const references = value.references.map((reference) => {
+    if (!reference || typeof reference !== "object") return null;
+    const row = reference as {
+      referenceType?: unknown;
+      submissionId?: unknown;
+      expectedSubmissionVersion?: unknown;
+      storageCategory?: unknown;
+      itemOrdinal?: unknown;
+      itemId?: unknown;
+      proposalId?: unknown;
+      expectedProposalUpdatedAt?: unknown;
+    };
+    if (row.referenceType !== "DIRECT" && row.referenceType !== "QC_RESULT") return null;
+    if (typeof row.submissionId !== "string" || !PRODUCT_UUID_PATTERN.test(row.submissionId)) return null;
+    if (!Number.isInteger(row.expectedSubmissionVersion) || Number(row.expectedSubmissionVersion) < 0) return null;
+    if (typeof row.storageCategory !== "string" || !row.storageCategory.trim() || row.storageCategory.length > 500) return null;
+    if (!Number.isInteger(row.itemOrdinal) || Number(row.itemOrdinal) < 1) return null;
+    if (row.itemId !== null && row.itemId !== undefined && (typeof row.itemId !== "string" || !row.itemId.trim() || row.itemId.length > 200)) return null;
+    const base = {
+      referenceType: row.referenceType,
+      submissionId: row.submissionId,
+      expectedSubmissionVersion: Number(row.expectedSubmissionVersion),
+      storageCategory: row.storageCategory.trim(),
+      itemOrdinal: Number(row.itemOrdinal),
+      itemId: typeof row.itemId === "string" ? row.itemId.trim() : null,
+    };
+    if (row.referenceType === "QC_RESULT") {
+      if (typeof row.proposalId !== "string" || !PRODUCT_UUID_PATTERN.test(row.proposalId) || typeof row.expectedProposalUpdatedAt !== "string" || !row.expectedProposalUpdatedAt.trim()) return null;
+      return { ...base, referenceType: "QC_RESULT" as const, proposalId: row.proposalId, expectedProposalUpdatedAt: row.expectedProposalUpdatedAt.trim() };
+    }
+    return { ...base, referenceType: "DIRECT" as const };
+  });
+  if (references.some((reference) => reference === null)) return null;
+  return { references: references as ProductRemoveReference[] };
+}
+
+export function productRemoveConflictMessage(status: string) {
+  if (status === "version_conflict") return "Data berubah sejak referensi dipilih. Tidak ada referensi yang dihapus. Muat ulang data lalu pilih kembali.";
+  if (status === "active_lock") return "Sebagian data sedang diedit. Tidak ada referensi yang dihapus. Coba kembali setelah proses pengisian selesai.";
+  if (status === "missing_item" || status === "source_mismatch" || status === "reference_changed" || status === "unsupported_reference") return "Referensi sudah berubah atau tidak dapat dihapus. Tidak ada data yang diubah. Muat ulang daftar referensi.";
+  if (status === "archived_submission") return "Submission sudah diarsipkan. Referensi arsip tidak dapat dihapus.";
+  if (status === "source_not_found" || status === "submission_not_found") return "Produk atau Submission tidak lagi tersedia.";
   return "Pilihan referensi tidak valid atau sudah berubah.";
 }
 

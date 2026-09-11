@@ -150,6 +150,22 @@ filter ulang hanya pada page browser atau menebak kelompok dari nama Station.
 **Cek pertama:** dependency list, target UUID, stale/version guard, dan audit result.
 **Jangan lakukan:** edit seluruh inventory JSON secara global.
 
+### Hapus Referensi Gagal
+
+**Kemungkinan layer:** selection occurrence stale, Submission version berubah,
+lock masih aktif, atau proposal QC sudah berubah. **Cek pertama:** muat ulang tab
+Referensi dan periksa status preflight terstruktur (`version_conflict`,
+`active_lock`, `reference_changed`, atau `source_mismatch`). **Jangan lakukan:**
+menghapus Product/proposal, mengosongkan `resolved_product_id`, atau menulis ulang
+payload lama untuk melewati conflict.
+
+Jika tab Referensi menyatakan occurrence sudah hilang tetapi item masih muncul
+di form, Stasiun & Pengisian, atau unduhan current, audit `submissions.payload`
+dan event `PRODUCT_REFERENCE_REMOVE`. Ini adalah ciri partial-removal dari
+semantik lama yang hanya mengosongkan pointer. Jangan hapus item production
+secara manual; siapkan recovery exact berdasarkan Submission UUID, version,
+kategori, ordinal/item ID, dan audit snapshot, lalu minta otorisasi mutation.
+
 ### Product Merge Gagal
 
 **Kemungkinan layer:** product dependency dan QC references.

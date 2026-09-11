@@ -13,6 +13,13 @@ commit.
 
 ## 2026-09-11
 
+- Semantik Hapus Referensi dikoreksi: exact item terpilih kini dihapus dari
+  inventory current, bukan hanya dilepas dari pointer Product. Product,
+  Submission row, proposal/QC history, dan snapshot audit item tetap dipertahankan.
+- Super Admin dapat menghapus occurrence Product terpilih secara atomik melalui
+  Hapus Referensi tanpa menghapus Product, Submission, atau riwayat QC.
+- Daftar referensi Product menyajikan QC_RESULT per inventory occurrence agar
+  jumlah, kategori, filter, dan tindakan selektif memakai source current yang sama.
 - Admin Produk menampilkan baris master lebih dahulu dan mengisi Usage/Kategori
   secara asinkron untuk sort biasa.
 - Enrichment page-level menggabungkan dua traversal referensi menjadi satu scan

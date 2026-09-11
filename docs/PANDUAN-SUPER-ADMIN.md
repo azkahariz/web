@@ -171,11 +171,16 @@ berarti ringkasan belum berhasil dimuat, bukan jumlah Product nol. Sorting
 **Penggunaan** membutuhkan seluruh count dan dapat menampilkan error bila count
 belum tersedia agar urutan tidak menyesatkan.
 
-### Pindahkan Referensi, Gabungkan, dan Hapus Produk
+### Pindahkan Referensi, Hapus Referensi, Gabungkan, dan Hapus Produk
 
 - **Pindahkan Referensi** memindahkan referensi yang dipilih dari Produk sumber
   ke Produk tujuan. Gunakan untuk koreksi subset referensi dan periksa jenis
   referensi yang didukung pada preflight.
+- **Hapus Referensi** menghapus item terpilih dari pengisian saat ini tanpa
+  menghapus Submission row, Produk master, atau riwayat QC. Item langsung hilang
+  dari form, Stasiun & Pengisian, dan unduhan current. Periksa Station, Site,
+  kategori, dan jenis referensi pada dialog, lalu konfirmasi hanya jika occurrence yang dipilih benar.
+  Conflict berarti data perlu dimuat ulang, bukan alasan untuk memaksa operasi.
 - **Gabungkan Produk** menyatukan Produk sumber ke Produk tujuan: referensi yang
   didukung dan alias dikonsolidasikan, Produk sumber masuk state final sebagai
   riwayat. Ini bukan sekadar rename dan berbeda dari Pindahkan Referensi.
@@ -184,7 +189,7 @@ belum tersedia agar urutan tidak menyesatkan.
   dependency; Produk dengan referensi, alias, atau riwayat yang menghalangi tidak
   dapat dihapus.
 
-Ketiga tindakan memakai dialog preflight/konfirmasi dan tercatat di Audit Admin.
+Tindakan mutasi tersebut memakai dialog preflight/konfirmasi dan tercatat di Audit Admin.
 Jangan menganggap `0 referensi` sebagai izin otomatis untuk hapus permanen.
 
 ## Gudang pada Master dan Submission
